@@ -21,11 +21,15 @@ import yaml
 from . import __version__
 from .config import STAGES
 from .skill import AntiShortcutSkill
+from .state import CorruptedStateError
 
 
 def _build_skill(args: argparse.Namespace) -> AntiShortcutSkill:
+    ws = Path(args.workspace).resolve()
+    if not ws.is_dir():
+        raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
     return AntiShortcutSkill(
-        args.workspace,
+        ws,
         config=args.config,
         user_request=getattr(args, "user_request", "") or "",
     )
@@ -104,6 +108,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         return args.func(args)
+    except CorruptedStateError as exc:
+        print(f"ERROR: 门禁状态不可用: {exc}", file=sys.stderr)
+        return 1
     except FileNotFoundError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1

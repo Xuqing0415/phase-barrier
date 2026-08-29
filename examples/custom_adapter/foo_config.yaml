@@ -1,0 +1,8 @@
+# 通过导入路径加载自定义适配器（优先级高于自动检测与默认 Python）
+language_adapter: "foo_language.FooAdapter"
+
+# 传给适配器的额外参数（由适配器自行解释；基类默认忽略）
+adapter_options:
+  min_test_functions: 1
+
+spec_min_chars: 10

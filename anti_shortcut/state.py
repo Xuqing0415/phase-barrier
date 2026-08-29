@@ -18,6 +18,10 @@ from .config import STAGES
 STATE_VERSION = 1
 
 
+class CorruptedStateError(ValueError):
+    """状态文件无法解析 / 顶层结构异常 / 版本不兼容（损坏或被篡改）。"""
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -70,10 +74,21 @@ class StateManager:
         }
 
     def _load(self) -> dict:
-        with self.state_file.open("r", encoding="utf-8") as fh:
-            data = json.load(fh)
+        try:
+            with self.state_file.open("r", encoding="utf-8") as fh:
+                data = json.load(fh)
+        except (json.JSONDecodeError, OSError) as exc:
+            raise CorruptedStateError(
+                f"状态文件 {self.state_file.name} 无法解析: {exc}"
+            ) from exc
+        if not isinstance(data, dict):
+            raise CorruptedStateError(
+                f"状态文件 {self.state_file.name} 顶层结构异常: 期望 JSON 对象"
+            )
         if data.get("version") != STATE_VERSION:
-            raise ValueError(f"状态文件版本不兼容: {data.get('version')} != {STATE_VERSION}")
+            raise CorruptedStateError(
+                f"状态文件版本不兼容: {data.get('version')} != {STATE_VERSION}"
+            )
         return data
 
     def _atomic_write(self) -> None:

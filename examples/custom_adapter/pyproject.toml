@@ -1,0 +1,15 @@
+# 把自定义适配器发布为独立包的示例（可选步骤，仅用于演示入口点注册）。
+# 安装该包后，任意项目都可通过配置 `language: foo` 直接使用此适配器。
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phase-barrier-foo-adapter"
+version = "0.1.0"
+description = "Example custom LanguageAdapter for phase-barrier (.foo language)"
+requires-python = ">=3.10"
+dependencies = ["phase-barrier>=0.3.0"]
+
+[project.entry-points."phase_barrier.languages"]
+foo = "foo_language:FooAdapter"

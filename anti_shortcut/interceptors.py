@@ -42,7 +42,8 @@ def is_language_test_command(
     """判断命令是否为测试运行命令（语言适配器版本）。
 
     优先级：语言适配器的识别规则 > 配置的通用正则 > 关键词兜底。
-    关键词兜底匹配独立的 ``test`` 单词（如 ``make test``、``./test`` 脚本）。
+    关键词兜底匹配独立的 ``test`` 单词（如 ``make test``）或 ``/test`` 脚本路径
+    （如 ``./test``、``scripts/test``）。
     防御优先：宁可多拦一步，也不让测试命令在实现完成前漏网；
     真正的识别以适配器规则与 ``config.test_commands`` 为准。
     """
@@ -55,7 +56,7 @@ def is_language_test_command(
             return True
     if is_test_command(cmd, config):
         return True
-    return bool(re.search(r"(^|\s)test($|\s)", cmd, flags=re.IGNORECASE))
+    return bool(re.search(r"(^|[/\s])test([/\s]|$)", cmd, flags=re.IGNORECASE))
 
 
 # ---------- 门禁目录保护 ----------
@@ -77,6 +78,9 @@ def touches_gate_dir(command: str, gate_dir: Path) -> bool:
         if tok.startswith(name + "/") or tok.startswith(name + "\\"):
             return True
         if tok.startswith(str(gate_dir) + "/") or tok.startswith(str(gate_dir) + "\\"):
+            return True
+        # 路径段匹配：$HOME/.agent_gate/state.json、/tmp/.agent_gate/x、C:\ws\.agent_gate\y 等
+        if re.search(r"(^|[/\\])" + re.escape(name) + r"([/\\]|$)", tok):
             return True
     return False
 
@@ -124,6 +128,10 @@ def extract_written_paths(command: str) -> list[str]:
                 for t in tokens[j:]:
                     if not t.startswith("-"):
                         paths.append(t)
+        elif tok == "dd":
+            for t in tokens[i + 1:]:
+                if t.startswith("of="):
+                    paths.append(t[3:])
         elif tok in ("rm", "touch", "tee", "truncate", "unlink", "shred"):
             for t in tokens[i + 1:]:
                 if t == "--" or t.startswith("-"):

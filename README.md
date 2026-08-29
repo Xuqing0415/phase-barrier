@@ -297,7 +297,9 @@ test_commands:
 
 ### 自定义适配器
 
-实现 `anti_shortcut.languages.base.LanguageAdapter`，再通过配置导入：
+只需 4 步即可接入一种新语言（10 分钟内可完成最小实现）：
+
+**1. 实现 `LanguageAdapter`**（文件识别用默认模式即可，至少实现 `check_syntax`）：
 
 ```python
 # my_adapters.py
@@ -305,12 +307,20 @@ from anti_shortcut.languages import LanguageAdapter
 
 class MyLanguageAdapter(LanguageAdapter):
     name = "mylang"
-    source_file_patterns = ["*.foo"]
-    test_file_patterns = ["*.test.foo"]
+    source_file_patterns = ["*.foo"]        # 实现文件模式
+    test_file_patterns = ["*.test.foo"]     # 测试文件模式
+    test_command_patterns = [r"^\s*foo\s+test\b"]  # 测试命令正则
 
     def check_syntax(self, path):
         return True, "ok"   # 返回 (是否通过, 错误信息)
+
+    def analyze_tests(self, path):
+        # 返回 {"test_functions": [...], "assertions_total": N}
+        # 可参考 anti_shortcut/languages/javascript.py 的启发式实现
+        ...
 ```
+
+**2. 本地配置加载**（无需打包，直接指定导入路径）：
 
 ```yaml
 language_adapter: "my_adapters.MyLanguageAdapter"
@@ -318,12 +328,32 @@ adapter_options:
   min_test_functions: 3    # 传给适配器的额外参数（由适配器自行解释）
 ```
 
-也可以发布为独立包，通过入口点组 `phase_barrier.languages` 注册：
+**3. 打包发布为独立包**（便于复用与分享）：
 
 ```toml
+[project]
+name = "phase-barrier-mylang-adapter"
+version = "0.1.0"
+dependencies = ["phase-barrier>=0.3.0"]
+
 [project.entry-points."phase_barrier.languages"]
 mylang = "my_adapters:MyLanguageAdapter"
 ```
+
+```bash
+python -m build && twine check dist/* && twine upload dist/*
+```
+
+**4. 入口点注册后按名称引用**（安装插件包即可，无需再写导入路径）：
+
+```yaml
+language: mylang
+```
+
+**可运行示例**：`examples/custom_adapter/` 提供了一个虚构 `.foo` 语言的完整插件
+（`foo_language.py` + `foo_config.yaml` + `pyproject.toml`），运行
+`python examples/custom_adapter/demo.py` 可看到自定义适配器参与
+文件识别、语法检查、测试校验与测试命令识别的完整拦截流程。
 
 适配器选择优先级：显式 `language` > 自定义 `language_adapter` > 自动检测 > 默认 Python。
 
@@ -372,6 +402,12 @@ v0.3.0 起推荐使用语言适配层：`language: javascript`（内置 Python /
 - **供应链**：接入 sigstore 签名与 trusted publishing，提升包可信度。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
+
+## 反馈与贡献
+
+- 使用中遇到问题或想提需求：请在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 反馈，最好附上复现步骤（版本、配置、命令输出）。
+- 关注 PyPI 下载量与版本更新：[phase-barrier · PyPI](https://pypi.org/project/phase-barrier/)。
+- 欢迎贡献代码：提交前请运行 `python -m pytest`，并遵循 Conventional Commits 提交规范（`feat:` / `fix:` / `docs:` / `test:`）。
 
 ## 构建与发布（PyPI）
 

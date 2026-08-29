@@ -85,6 +85,22 @@ class GateConfig(BaseModel):
     # HMAC-SHA256 密钥：设置后 state.json 写入 signature 并在加载时校验，
     # 防止不可信环境下 Agent 篡改状态；未设置时回退环境变量 PHASE_BARRIER_HMAC_KEY
     state_hmac_key: str | None = None
+    # ---- 密钥轮换（v0.9.0）----
+    # 轮换期仍接受的旧密钥列表（仅用于验证；签名始终使用 state_hmac_key），
+    # 也可通过环境变量 PHASE_BARRIER_HMAC_KEYS（逗号 / 空白分隔）提供
+    state_hmac_keys: list[str] = Field(default_factory=list)
+    # ---- 证据签名（v0.9.0）----
+    # 阶段推进时把证据文件哈希写入 .agent_gate/evidence_manifest.json（带 HMAC 签名），
+    # 供交付 / CI 用 verify-evidence 对照工作区，检测事后篡改
+    evidence_signing: bool = True
+    # ---- 审计远程推送（v0.9.0）----
+    # 设置后审计事件异步 POST 到该 HTTP 端点（SIEM / webhook），推送失败不影响门禁
+    audit_remote_url: str | None = None
+    audit_remote_token: str | None = None
+    audit_remote_timeout: float = 5.0
+    audit_remote_batch_size: int = 50
+    audit_remote_max_queue: int = 1000
+    audit_remote_flush_interval: float = 5.0
     # ---- 安全 ----
     protect_gate_dir: bool = True
     # 允许 Agent 直接写入“其他”类型文件（如 README.md、docs），默认不限

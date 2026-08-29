@@ -92,3 +92,11 @@ flowchart LR
 - **状态签名（v0.8.0）**：为 sidecar 注入 `PHASE_BARRIER_HMAC_KEY`（Secret → env，见
   `gate-sidecar.yaml` 注释），state.json 即带 HMAC-SHA256 签名；Agent 篡改状态后
   sidecar 拒绝加载并明确报错。
+
+- **审计远程推送（v0.9.0）**：sidecar 支持 `--audit-remote-url` / `--audit-remote-token`，
+  也可用环境变量 `AUDIT_REMOTE_URL` / `AUDIT_REMOTE_TOKEN`（Secret 注入即可，无需改 args），
+  审计事件异步批量转发到 SIEM / webhook，失败只计数、不影响门禁。
+- **证据签名（v0.9.0）**：sidecar 推进阶段时写入 `evidence_manifest.json`；CI 可用
+  `python -m anti_shortcut verify-evidence --workspace /workspace` 校验证据未被事后篡改。
+- **密钥轮换（v0.9.0）**：`python -m anti_shortcut rotate-key --workspace /workspace --from <旧> --to <新> [--keep-old]`
+  无中断轮换 HMAC 密钥（宽限期双密钥）。

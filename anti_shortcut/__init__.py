@@ -11,7 +11,14 @@
 from importlib.metadata import PackageNotFoundError, version as _distribution_version
 
 from .config import STAGES, GateConfig, load_config
+from .evidence import (
+    EVIDENCE_MANIFEST_NAME,
+    EvidenceManifest,
+    EvidenceManifestError,
+    EvidenceTamperedError,
+)
 from .integration import bootstrap, install_into, load_plugins, register_integration
+from .remote_audit import RemoteAuditSink
 from .languages import (
     LANGUAGE_REGISTRY,
     JavaScriptAdapter,
@@ -31,6 +38,11 @@ except PackageNotFoundError:  # 直接从源码运行（未安装）时的占位
 __all__ = [
     "AntiShortcutSkill",
     "StateManager",
+    "EvidenceManifest",
+    "EvidenceManifestError",
+    "EvidenceTamperedError",
+    "EVIDENCE_MANIFEST_NAME",
+    "RemoteAuditSink",
     "GateConfig",
     "STAGES",
     "load_config",

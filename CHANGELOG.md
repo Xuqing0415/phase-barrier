@@ -2,7 +2,29 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
-版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.9.0] - 2026-08-29
+
+- 审计日志远程推送（SIEM）：
+  - 新增 `anti_shortcut.remote_audit.RemoteAuditSink`：零依赖（stdlib `urllib` + `threading` + `queue`），
+    后台线程异步批量 POST JSON 审计事件（单事件为对象，多事件为数组）。
+  - 配置新增 `audit_remote_url` / `audit_remote_token` / `audit_remote_timeout` /
+    `audit_remote_batch_size` / `audit_remote_max_queue` / `audit_remote_flush_interval`；
+    队列有界（drop-oldest）、网络失败只计数，绝不阻塞门禁主流程。
+  - `get_audit_logger` 支持 `remote` 参数（structlog processor / stdlib handler 双路径）；
+    sidecar 新增 `--audit-remote-url` / `--audit-remote-token`，关闭时自动冲刷队列。
+- 证据签名：
+  - 新增 `anti_shortcut.evidence.EvidenceManifest`：每次阶段推进时把证据文件 SHA-256 写入
+    `.agent_gate/evidence_manifest.json`（可选 HMAC 签名，独立于 state.json）。
+  - 新增 CLI `verify-evidence`：对照工作区校验证据清单，检测文件缺失 / 事后篡改
+    （配置 `state_hmac_key` 后清单带 `sig` 字段，篡改清单本身也会被拒绝）。
+- 密钥轮换（HMAC）：
+  - `StateManager` 新增 `hmac_keys` 参数与环境变量 `PHASE_BARRIER_HMAC_KEYS`（逗号 / 空白分隔）：
+    轮换期接受多个旧密钥用于验证，任何写入自动改用主密钥重新签名。
+  - 新增 `StateManager.rotate_key(new_key, keep_old=False)`：校验现有签名后以新密钥重签名；
+    未签名状态视为“启用签名”迁移。配置新增 `state_hmac_keys`。
+  - 新增 CLI `rotate-key --to <new> [--from <old>] [--keep-old]`。
+- 测试：新增远程审计、证据清单、密钥轮换用例 29 个（234 → 263）。
+- 文档：README 特性 / CLI / 配置 / 安全 / 模块结构 / Roadmap、示例配置与 K8s 模板同步更新。
 
 ## [0.8.0] - 2026-08-29
 

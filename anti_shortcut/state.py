@@ -1,9 +1,13 @@
 """状态机管理：以 JSON 文件持久化阶段状态与证据，采用原子写入防止损坏。
-
 - 状态文件位于 ``<workspace>/.agent_gate/state.json``（门禁目录）。
 - 所有修改必须经过 ``StateManager``，Agent 侧工具被拦截器禁止写入该目录。
 - 记录每个阶段的完成历史、证据摘要（文件哈希）、最近一次测试运行结果，
   为“修复后必须重新测试”等校验提供依据。
+
+v0.8.0：HMAC-SHA256 状态签名（``hmac_key`` 或环境变量 ``PHASE_BARRIER_HMAC_KEY``）。
+v0.9.0：密钥轮换——``hmac_keys`` 指定轮换期仍接受的旧密钥（验证用），
+``rotate_key()`` 用新密钥重新签名；环境变量 ``PHASE_BARRIER_HMAC_KEYS`` 支持
+逗号 / 空白分隔的多个旧密钥。未配置密钥时行为与旧版本完全一致。
 """
 from __future__ import annotations
 
@@ -11,6 +15,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,6 +37,13 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def _parse_rotation_keys(value: str | None) -> list[str]:
+    """解析逗号 / 空白分隔的旧密钥列表（去空）。"""
+    if not value:
+        return []
+    return [k for k in re.split(r"[\s,]+", value) if k]
+
+
 class StateManager:
     """阶段状态机：负责状态的初始化、原子持久化与阶段推进。"""
 
@@ -42,17 +54,22 @@ class StateManager:
         user_request: str = "",
         initial_stage: int = 1,
         hmac_key: str | None = None,
+        hmac_keys: list[str] | None = None,
     ) -> None:
         self.state_file = Path(state_file)
-        # HMAC-SHA256 状态签名（v0.8.0）：显式密钥优先，其次环境变量
+        # HMAC-SHA256 状态签名：显式密钥优先，其次环境变量 PHASE_BARRIER_HMAC_KEY
         self._hmac_key = hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY")
+        if hmac_keys is None:
+            hmac_keys = _parse_rotation_keys(os.environ.get("PHASE_BARRIER_HMAC_KEYS"))
+        # 轮换期接受的旧密钥（仅用于验证；签名始终使用 _hmac_key）
+        self._rotation_keys = [k for k in (hmac_keys or []) if k]
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         if self.state_file.exists():
             self._data = self._load()
         else:
             self._data = self._bootstrap(user_request, initial_stage)
             self._atomic_write()
-        # 初次启动时确保阶段 0（需求接收）已被记录
+        # 初始启动时确保阶段 0（需求接收）已被记录
         if user_request and not self.get_evidence("user_request"):
             self.record_user_request(user_request)
 
@@ -98,7 +115,7 @@ class StateManager:
             raise CorruptedStateError(
                 f"状态文件版本不兼容: {data.get('version')} != {STATE_VERSION}"
             )
-        if self._hmac_key:
+        if self._hmac_key or self._rotation_keys:
             self._verify_signature(data)
         return data
 
@@ -109,23 +126,30 @@ class StateManager:
             payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
         ).encode("utf-8")
 
-    def _sign(self, data: dict) -> str:
+    def _sign(self, data: dict, key: str | None = None) -> str:
+        key = key or self._hmac_key
         return hmac.new(
-            self._hmac_key.encode("utf-8"), self._canonical(data), hashlib.sha256
+            key.encode("utf-8"), self._canonical(data), hashlib.sha256
         ).hexdigest()
 
     def _verify_signature(self, data: dict) -> None:
-        if "signature" not in data:
+        actual = data.get("signature")
+        if not isinstance(actual, str):
             raise TamperedStateError(
                 "状态文件未签名：配置了 HMAC 密钥但文件中缺少 signature 字段"
                 "（文件可能被篡改，或由未启用签名的旧版本生成）"
             )
-        expected = "v1:" + self._sign(data)
-        actual = data.get("signature")
-        if not isinstance(actual, str) or not hmac.compare_digest(actual, expected):
-            raise TamperedStateError(
-                "状态文件签名校验失败：文件可能被篡改，或 HMAC 密钥不匹配"
-            )
+        candidates: list[str] = []
+        if self._hmac_key:
+            candidates.append(self._hmac_key)
+        candidates.extend(self._rotation_keys)
+        for key in candidates:
+            expected = "v1:" + self._sign(data, key)
+            if hmac.compare_digest(actual, expected):
+                return
+        raise TamperedStateError(
+            "状态文件签名校验失败：文件可能被篡改，或 HMAC 密钥不匹配"
+        )
 
     def _atomic_write(self) -> None:
         if self._hmac_key:
@@ -201,6 +225,40 @@ class StateManager:
         result.setdefault("at_epoch", time.time())
         result.setdefault("at", _now_iso())
         self._data["evidence"]["last_test_run"] = result
+        self._atomic_write()
+
+    # ---------- 密钥轮换（v0.9.0） ----------
+
+    def rotate_key(self, new_key: str, *, keep_old: bool = False) -> None:
+        """轮换签名密钥：先校验现有签名，再以新密钥重新签名。
+
+        - 状态文件已有签名：必须能被当前密钥集（主密钥 + 轮换密钥）验证，
+          否则视为被篡改 / 密钥不匹配，抛出 :class:`TamperedStateError`。
+        - 状态文件未签名：视为“启用签名”迁移，直接用新密钥签名。
+        - ``keep_old=True`` 时把旧主密钥保留为轮换期验证密钥（宽限期双密钥）。
+
+        :param new_key: 新签名密钥（非空）
+        :param keep_old: 是否保留旧密钥进入轮换期
+        """
+        if not new_key:
+            raise ValueError("新密钥不能为空")
+        has_signature = isinstance(self._data.get("signature"), str)
+        if has_signature:
+            if not (self._hmac_key or self._rotation_keys):
+                raise TamperedStateError(
+                    "状态文件已签名，但未提供任何验证密钥（--from / state_hmac_key / 环境变量）"
+                )
+            self._verify_signature(self._data)
+        if keep_old:
+            old = self._hmac_key or ""
+            if old and old != new_key:
+                self._rotation_keys = [
+                    old,
+                    *[k for k in self._rotation_keys if k != old],
+                ]
+        else:
+            self._rotation_keys = []
+        self._hmac_key = new_key
         self._atomic_write()
 
     # ---------- 审计辅助 ----------

@@ -14,9 +14,11 @@ from typing import Any
 
 from ..config import GateConfig
 from .base import LanguageAdapter, analyze_js_style_tests, validate_test_collection
+from .go import GoAdapter
 from .java import JavaAdapter
 from .javascript import JavaScriptAdapter
 from .python import PythonAdapter
+from .rust import RustAdapter
 
 __all__ = [
     "LANGUAGE_REGISTRY",
@@ -24,6 +26,8 @@ __all__ = [
     "PythonAdapter",
     "JavaScriptAdapter",
     "JavaAdapter",
+    "GoAdapter",
+    "RustAdapter",
     "detect_language",
     "get_adapter",
     "load_entry_point_adapters",
@@ -36,6 +40,8 @@ LANGUAGE_REGISTRY: dict[str, type[LanguageAdapter]] = {
     "python": PythonAdapter,
     "javascript": JavaScriptAdapter,
     "java": JavaAdapter,
+    "go": GoAdapter,
+    "rust": RustAdapter,
 }
 
 # 标志文件 → 语言（顺序即优先级；同语言内按可依赖程度排序）

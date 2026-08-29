@@ -1,10 +1,22 @@
-"""JavaScript / TypeScript 语言适配器（示例实现）。
+"""JavaScript / TypeScript 语言适配器（v0.5.0 增强）。
 
-语法检查依赖外部工具（Node.js / tsc）；工具缺失时返回明确错误信息，
-不会静默失败。核心包不依赖 Node，适配器按需调用。
+- 文件识别：``*.test.js`` / ``*.spec.ts`` / ``__tests__/`` 为测试，
+  ``src/**`` 与 ``*.js|ts|jsx|tsx`` 为实现
+- 语法检查：JS 用 ``node --check``；TS 优先按项目 ``tsconfig.json`` 整体检查
+  （``tsc -p <tsconfig> --noEmit``），无 tsconfig 时回退单文件
+  ``tsc --noEmit``，单文件模式下无法解析的模块依赖（TS2307 / TS2688 /
+  TS7016）降级为“通过（需完整项目验证）”，真正的语法错误仍会被拒绝
+- 测试校验：默认轻量启发式（``test`` / ``it`` / ``describe`` 声明 + 断言关键字，
+  支持 ``it.each`` / ``test.skip`` / ``describe.each``，并剥离注释与字符串字面量）；
+  可选 ``jest --listTests`` 动态发现模式（``adapter_options.test_discovery: jest``
+  或自动探测到项目内 jest 时启用），jest 不可用时返回明确错误
+- 测试命令：``npm test`` / ``npx jest`` / ``yarn test`` / ``npx tsc --noEmit`` 等
+
+语法检查依赖外部工具（Node.js / tsc）；工具缺失时校验失败并提示安装，不会静默放行。
 """
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -17,9 +29,26 @@ __all__ = ["JavaScriptAdapter"]
 _JS_SUFFIXES = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"}
 _TS_SUFFIXES = {".ts", ".tsx"}
 
+# tsc 对“单文件无法解析依赖”的典型报错：这些不算语法错误
+_TS_DEPENDENCY_MARKERS = (
+    "TS2307",  # Cannot find module 'x' or its corresponding type declarations
+    "TS2688",  # Cannot find type definition file for 'x'
+    "TS7016",  # Could not find a declaration file for module 'x'
+)
+
+
+def _extract_ts_errors(output: str) -> list[str]:
+    """提取 tsc 输出中的 error 行（去掉行号前缀，保留可读信息）。"""
+    out = []
+    for ln in (output or "").splitlines():
+        stripped = ln.strip()
+        if re.search(r"\berror\s+TS\d+", stripped):
+            out.append(stripped)
+    return out
+
 
 class JavaScriptAdapter(LanguageAdapter):
-    """JavaScript / TypeScript：``node --check`` / ``tsc --noEmit`` + 正则测试启发式。"""
+    """JavaScript / TypeScript：``node --check`` / ``tsc --noEmit`` + 启发式 / jest 测试校验。"""
 
     name = "javascript"
     file_extensions = sorted(_JS_SUFFIXES)
@@ -54,6 +83,24 @@ class JavaScriptAdapter(LanguageAdapter):
         r"^\s*npx\s+tsc\s+--noEmit\b",
     ]
 
+    def __init__(self) -> None:
+        super().__init__()
+        self._options: dict[str, Any] = {}
+        self._test_discovery = "auto"
+        self._jest_files: list[str] | None = None  # jest --listTests 结果缓存
+
+    def configure(self, options: dict[str, Any]) -> None:
+        """``adapter_options``：
+
+        - ``test_discovery``：``jest``（强制 jest --listTests）/ ``off``（强制启发式）/
+          其他值或缺失（自动探测项目内 jest）
+        """
+        self._options = dict(options or {})
+        self._test_discovery = str(self._options.get("test_discovery", "auto")).lower()
+        self._jest_files = None
+
+    # ---------- 语法检查 ----------
+
     def check_syntax(self, path: Path) -> tuple[bool, str]:
         if path.stat().st_size == 0:
             return False, f"实现文件 {path.name} 为空文件，请补充实现内容"
@@ -68,34 +115,178 @@ class JavaScriptAdapter(LanguageAdapter):
                 f"未检测到 Node.js（node），无法对 {path.name} 做语法检查；"
                 "请安装 Node.js，或在配置中改用其他语言适配器"
             )
-        proc = subprocess.run([node, "--check", str(path)], capture_output=True, text=True)
+        proc = subprocess.run(
+            [node, "--check", str(path)],
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+        )
         if proc.returncode == 0:
             return True, "语法检查通过（node --check）"
         return False, f"JavaScript 语法错误: {(proc.stderr or proc.stdout).strip()[:500]}"
 
-    def _check_ts(self, path: Path) -> tuple[bool, str]:
+    def _tsc_command(self) -> tuple[list[str] | None, str]:
+        """返回 (tsc 命令行前缀, 来源说明)；找不到编译器时返回 (None, 错误信息)。"""
         tsc = shutil.which("tsc")
         if tsc:
-            proc = subprocess.run(
-                [tsc, "--noEmit", "--pretty", "false", str(path)],
-                capture_output=True,
-                text=True,
-            )
+            return [tsc], "tsc"
+        npx = shutil.which("npx")
+        if npx:
+            return [npx, "--no-install", "tsc"], "npx tsc"
+        return None, (
+            "未检测到 TypeScript 编译器（tsc / npx tsc），无法对文件做语法检查；"
+            "请安装 typescript 依赖后重试"
+        )
+
+    def _find_tsconfig(self, path: Path) -> Path | None:
+        """从源文件所在目录向上查找最近的 tsconfig.json（含项目根）。"""
+        cur = path if path.is_absolute() else Path(path).resolve()
+        for d in (cur.parent, *cur.parents):
+            candidate = d / "tsconfig.json"
+            if candidate.is_file():
+                return candidate
+        return None
+
+    def _check_ts(self, path: Path) -> tuple[bool, str]:
+        cmd, source = self._tsc_command()
+        if cmd is None:
+            return False, source
+        tsconfig = self._find_tsconfig(path)
+        if tsconfig is not None:
+            # 项目整体检查：模块解析由 tsconfig 负责
+            args = [*cmd, "-p", str(tsconfig), "--noEmit", "--pretty", "false"]
         else:
-            npx = shutil.which("npx")
-            if not npx:
-                return False, (
-                    f"未检测到 TypeScript 编译器（tsc / npx tsc），无法对 {path.name} 做语法检查；"
-                    "请安装 typescript 依赖后重试"
-                )
-            proc = subprocess.run(
-                [npx, "--no-install", "tsc", "--noEmit", "--pretty", "false", str(path)],
-                capture_output=True,
-                text=True,
-            )
+            # 单文件检查：无法解析跨文件模块依赖
+            args = [*cmd, "--noEmit", "--pretty", "false", str(path)]
+        proc = subprocess.run(
+            args,
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+        )
         if proc.returncode == 0:
             return True, "语法检查通过（tsc --noEmit）"
-        return False, f"TypeScript 语法错误: {(proc.stderr or proc.stdout).strip()[:500]}"
+        errors = _extract_ts_errors(proc.stderr or proc.stdout)
+        if (
+            tsconfig is None
+            and errors
+            and all(
+                any(marker in err for marker in _TS_DEPENDENCY_MARKERS) for err in errors
+            )
+        ):
+            return True, (
+                "语法检查通过（tsc --noEmit，仅存在未解析的模块依赖，"
+                "需在完整项目中验证）"
+            )
+        first = errors[0] if errors else (proc.stderr or proc.stdout).strip()[:500]
+        return False, f"TypeScript 语法错误: {first[:500]}"
+
+    # ---------- 测试统计 ----------
+
+    def _find_project_root(self, path: Path) -> Path | None:
+        """从文件所在目录向上查找包含 package.json 或 node_modules 的项目根。"""
+        cur = path if path.is_absolute() else Path(path).resolve()
+        for d in (cur.parent, *cur.parents):
+            if (d / "package.json").is_file() or (d / "node_modules").is_dir():
+                return d
+        return None
+
+    def _use_jest_discovery(self, path: Path) -> bool:
+        mode = self._test_discovery
+        if mode == "jest":
+            return True
+        if mode == "off":
+            return False
+        root = self._find_project_root(path)
+        if root is None:
+            return False
+        return (
+            (root / "node_modules" / "jest").is_dir()
+            or (root / "node_modules" / ".bin" / "jest").exists()
+            or (root / "node_modules" / ".bin" / "jest.cmd").exists()
+        )
+
+    def _jest_list_files(self, root: Path) -> list[str] | None:
+        """运行 ``jest --listTests`` 返回相对项目根的测试文件列表。
+
+        ``None`` 表示 jest 不可用（命令失败或缺少 npx）；空列表表示可用但未发现测试。
+        """
+        if self._jest_files is not None:
+            return self._jest_files
+        npx = shutil.which("npx")
+        if not npx:
+            self._jest_files = []
+            return None
+        proc = subprocess.run(
+            [npx, "--no-install", "jest", "--listTests"],
+            cwd=str(root),
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if proc.returncode != 0:
+            self._jest_files = []
+            return None
+        norm: list[str] = []
+        for line in proc.stdout.splitlines():
+            raw = line.strip()
+            if not raw:
+                continue
+            p = Path(raw)
+            if p.is_absolute():
+                try:
+                    p = p.relative_to(root)
+                except ValueError:
+                    continue
+            norm.append(p.as_posix().lstrip("./"))
+        self._jest_files = norm
+        return norm
 
     def analyze_tests(self, path: Path) -> dict[str, Any]:
+        if self._use_jest_discovery(path):
+            result = self._jest_analyze(path)
+            if result is not None:
+                return result
+            # jest 不可用或该文件未被 jest 发现：回退启发式
         return analyze_js_style_tests(path.read_text(encoding="utf-8", errors="replace"))
+
+    def _jest_analyze(self, path: Path) -> dict[str, Any] | None:
+        root = self._find_project_root(path)
+        if root is None:
+            return None
+        files = self._jest_list_files(root)
+        if files is None:
+            return {
+                "file": str(path),
+                "test_functions": [],
+                "heuristic": True,
+                "dynamic": True,
+                "assertions_total": 0,
+                "error": (
+                    f"已启用 jest --listTests 动态发现，但未找到 jest（node_modules/.bin/jest）："
+                    "请先安装依赖（npm install），或将 adapter_options.test_discovery 设为 off 改用启发式校验"
+                ),
+            }
+        rel = path.resolve().relative_to(root).as_posix()
+        if rel in files or path.name in files:
+            heuristic = analyze_js_style_tests(
+                path.read_text(encoding="utf-8", errors="replace")
+            )
+            # 优先用启发式统计出的测试声明数（更贴近真实用例数），
+            # 无法识别声明时回退为“该文件被 jest 发现”的合成计数
+            tests = heuristic["test_functions"] or [
+                {
+                    "name": f"<jest:{path.name}>",
+                    "assertions": heuristic["assertions_total"],
+                    "dynamic": True,
+                }
+            ]
+            return {
+                "file": str(path),
+                "test_functions": tests,
+                "heuristic": True,
+                "dynamic": True,
+                "assertions_total": heuristic["assertions_total"],
+                "jest_discovered": len(files),
+            }
+        return None

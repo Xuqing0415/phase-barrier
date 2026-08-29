@@ -2,6 +2,21 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+
+## [0.5.0] - 2026-08-29
+
+- 新增 `GoAdapter`（`anti_shortcut/languages/go.py`）：`gofmt -e` 语法检查（纯语法解析，不触发模块下载 / Go 遥测；Go 工具链缺失返回明确错误）、`func TestXxx(t *testing.T)` + `t.Error` / `t.Fatal` / `assert` / `require` 断言启发式测试统计、`go test` / `go vet` 测试命令识别、`ok pkg` / `FAIL` / `--- FAIL:` 输出解析；自动检测标志文件已覆盖 `go.mod`。
+- 新增 `RustAdapter`（`anti_shortcut/languages/rust.py`）：有 `Cargo.toml` 时 `cargo check --message-format short`（不检查 test target，避免阶段 2 测试引用未实现函数导致误拦），无项目时回退 `rustc --edition 2021 --crate-type lib` 单文件检查；`#[test]` / `#[tokio::test]` + `assert!` / `assert_eq!` / `assert_ne!` 启发式测试统计；`cargo test` / `cargo nextest` 命令识别与 `test result: ok / FAILED` 输出解析；自动检测标志文件已覆盖 `Cargo.toml`。
+- JavaScript 适配器增强：
+  - TypeScript 语法检查优先按项目 `tsconfig.json` 整体检查（`tsc -p <tsconfig> --noEmit`），无 tsconfig 时回退单文件检查，单文件模式下未解析的模块依赖（TS2307 / TS2688 / TS7016）降级为“通过（需完整项目验证）”。
+  - 新增 `jest --listTests` 动态发现模式：`adapter_options.test_discovery: jest` 强制启用，或自动探测到项目内 jest（`node_modules/jest` / `node_modules/.bin/jest`）时启用；jest 不可用时返回明确错误，可设 `off` 回退启发式。
+  - 启发式升级：支持 `it.each` / `test.skip` / `describe.each` 等声明，匹配前剥离注释与字符串字面量，降低 `console.log('test(...)')` 误判。
+- `validate_test_collection` 支持适配器级 `error` 字段（jest 缺失等场景直接返回明确原因）；工作区证据扫描跳过 `target/`（cargo 产物目录）。
+- 注册表 / 入口点：内置 `go` / `rust` 适配器，`phase_barrier.languages` 入口点补齐 java / go / rust。
+- 测试：新增 JS 增强、Go、Rust 适配器用例 39 个（147 → 186；Rust 真实工具用例在未安装 cargo / rustc 时自动跳过）。
+- 示例：`examples/anti_shortcut_js_config.yaml` 增加 `test_discovery` 说明（README 多语言章节同步更新）。
+
 ## [0.4.0] - 2026-08-29
 
 - 新增 `JavaAdapter`（`anti_shortcut/languages/java.py`）：`javac -proc:none` 语法检查（JDK 缺失返回明确错误；跨文件依赖未解析时降级为“通过，需完整项目编译验证”）、`@Test` 注解 + JUnit/Hamcrest 断言启发式测试统计、`mvn` / `gradle` / `mvnw` / `gradlew` / JUnit Console 测试命令识别、Maven/Gradle `Tests run: N, Failures: M` 输出解析；自动检测标志文件已覆盖 `pom.xml` / `build.gradle*`。

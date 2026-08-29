@@ -21,17 +21,63 @@ from ..paths import path_matches
 __all__ = ["LanguageAdapter", "analyze_js_style_tests", "validate_test_collection"]
 
 # 常见 JS/TS 测试声明与断言关键字（启发式）
-_JS_TEST_DECL_RE = re.compile(r"\b(function\s+)?(test|it|describe)\s*[:()]", re.M)
-_JS_ASSERT_RE = re.compile(r"\b(assert|expect|should\.)\b|\.toBe\b|\.toEqual\b|\.toStrictEqual\b", re.M)
+_JS_TEST_DECL_RE = re.compile(
+    r"\b(function\s+)?(test|it|describe)(\.(skip|only|todo|each|concurrent|failing|skipIf|retry))?\s*[:()]",
+    re.M,
+)
+_JS_ASSERT_RE = re.compile(
+    r"\b(assert|expect|should\.)\b|\.toBe(?:CloseTo)?\b|\.toEqual\b|\.toStrictEqual\b|"
+    r"\.toBeTruthy\b|\.toBeFalsy\b|\.toContain(?:Equal)?\b|\.toHaveLength\b|\.toMatch(?:Object)?\b|"
+    r"\.toBeNull\b|\.toBeDefined\b|\.toBeUndefined\b|\.rejects\.|\.resolves\.",
+    re.M,
+)
+
+
+def _strip_js_comments_strings(text: str) -> str:
+    """移除 JS/TS 注释与字符串字面量，避免把注释 / 日志中的 ``test(`` 误判为测试声明。"""
+    out: list[str] = []
+    i, n = 0, len(text)
+    while i < n:
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < n else ""
+        if ch == "/" and nxt == "/":  # 行注释
+            j = text.find("\n", i)
+            i = n if j < 0 else j
+            out.append(" ")
+            continue
+        if ch == "/" and nxt == "*":  # 块注释
+            j = text.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+            out.append(" ")
+            continue
+        if ch in ("'", '"', "`"):  # 字符串字面量
+            quote = ch
+            j = i + 1
+            while j < n:
+                if text[j] == "\\":
+                    j += 2
+                    continue
+                if text[j] == quote:
+                    break
+                j += 1
+            i = j + 1 if j < n else n
+            out.append(" ")
+            continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
 
 
 def analyze_js_style_tests(text: str) -> dict[str, Any]:
     """启发式分析 JS/TS 风格测试文本：统计测试声明数与断言关键字总数。
 
-    初版不引入 acorn 等解析依赖；后续可在适配器中替换为真实解析器。
+    先剥离注释与字符串字面量，再匹配声明 / 断言关键字，降低把
+    ``console.log('test(...)')`` 或注释误判为测试声明的概率；
+    不引入 acorn 等解析依赖，后续可在适配器中替换为真实解析器。
     """
-    declarations = [m.group(0).strip() for m in _JS_TEST_DECL_RE.finditer(text)]
-    assertions_total = len(_JS_ASSERT_RE.findall(text))
+    cleaned = _strip_js_comments_strings(text)
+    declarations = [m.group(0).strip() for m in _JS_TEST_DECL_RE.finditer(cleaned)]
+    assertions_total = len(_JS_ASSERT_RE.findall(cleaned))
     tests = [
         {"name": f"<{i + 1}:{decl[:40]}>", "assertions": 0, "heuristic": True}
         for i, decl in enumerate(declarations)
@@ -49,6 +95,12 @@ def validate_test_collection(config: GateConfig, parsed: list[dict[str, Any]]) -
     :param parsed: ``analyze_tests`` 的结果列表（每个元素含 ``file`` 键时用于报错定位）
     :return: (是否通过, 失败原因, 附加证据)
     """
+    # 适配器级错误（如 jest 不可用）优先返回，避免误报“空壳 / 数量不足”
+    for item in parsed:
+        if item.get("error"):
+            loc = item.get("file", "")
+            return False, item["error"], {"file": loc, "error": item["error"]}
+
     # 非 Python 测试文件（启发式）：要求断言关键字总量不低于阈值，防止空壳文件
     for item in parsed:
         if item.get("heuristic") and item.get("assertions_total", 0) < config.min_test_functions:

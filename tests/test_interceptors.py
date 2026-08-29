@@ -61,3 +61,41 @@ def test_summarize_test_output():
 
     rec4 = summarize_test_output("5 passed", None)
     assert rec4["passed"] is True
+
+def test_is_test_command_edge_cases():
+    cfg = GateConfig()
+    assert is_test_command("npm test -- --runInBand", cfg)
+    assert is_test_command("python -m pytest tests/test_x.py -q", cfg)
+    assert is_test_command("NPM TEST", cfg)  # 忽略大小写
+    assert not is_test_command("npm run build", cfg)
+    assert not is_test_command("python fib.py", cfg)
+    assert not is_test_command(None, cfg)
+
+
+def test_extract_written_paths_edge_cases():
+    assert extract_written_paths('echo hi > "my file.py"') == ["my file.py"]
+    assert extract_written_paths("printf 'x' > out.ts") == ["out.ts"]
+    assert extract_written_paths("tee logs.txt") == ["logs.txt"]
+    assert extract_written_paths("cp src/a.py tests/b.py") == ["tests/b.py"]
+    assert extract_written_paths("install -m 644 a.py b.py") == ["b.py"]
+    assert extract_written_paths("cat > x.py <<EOF") == ["x.py"]
+    assert extract_written_paths("ls -la") == []
+
+
+def test_touches_gate_dir_edge_cases():
+    gate = Path("ws/.agent_gate")
+    assert touches_gate_dir('rm -rf ".agent_gate"', gate)
+    assert touches_gate_dir("type .agent_gate/state.json", gate)
+    assert not touches_gate_dir(".agent_gate_extra", gate)
+    assert not touches_gate_dir("", gate)
+
+
+def test_summarize_test_output_edge_cases():
+    rec = summarize_test_output("1 failed, 3 passed in 0.1s", None)
+    assert rec["passed"] is False and "1 failed" in rec["summary"]
+    rec2 = summarize_test_output("", 0)
+    assert rec2["passed"] is True and rec2["summary"] == ""
+    rec3 = summarize_test_output("All tests passed", None)
+    assert rec3["passed"] is True
+    rec4 = summarize_test_output("ERROR: cannot import fib", 1)
+    assert rec4["passed"] is False

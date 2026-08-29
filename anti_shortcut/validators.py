@@ -16,6 +16,33 @@ from typing import Any
 from .config import GateConfig
 
 
+# Python 语法相关文件后缀（AST / compile 只对这些后缀执行）
+PYTHON_SUFFIXES = {".py", ".pyw"}
+
+# 非 Python（如 JS/TS）测试文件的轻量启发式：识别常见测试声明与断言关键字
+_NON_PY_TEST_DECL_RE = re.compile(r"\b(function\s+)?(test|it|describe)\s*[:()]", re.M)
+_NON_PY_ASSERT_RE = re.compile(r"\b(assert|expect|should\.)\b|\.toBe\b|\.toEqual\b|\.toStrictEqual\b", re.M)
+
+
+def _analyze_non_python_test(text: str) -> dict[str, Any]:
+    """启发式分析非 Python 测试文件：按常见 JS/TS 声明统计测试与断言。
+
+    完整的多语言适配（acorn / tsc 解析）在 Roadmap 的 v0.3.0 中规划；
+    这里提供“非空壳”级别的检查：测试声明数 + 断言关键字总数。
+    """
+    declarations = [m.group(0).strip() for m in _NON_PY_TEST_DECL_RE.finditer(text)]
+    assertions_total = len(_NON_PY_ASSERT_RE.findall(text))
+    tests = [
+        {"name": f"<{i + 1}:{decl[:40]}>", "assertions": 0, "heuristic": True}
+        for i, decl in enumerate(declarations)
+    ]
+    return {
+        "test_functions": tests,
+        "heuristic": True,
+        "assertions_total": assertions_total,
+    }
+
+
 # ---------- 通用工具 ----------
 
 def sha256_file(path: Path) -> str:
@@ -64,15 +91,18 @@ def _pattern_to_regex(pattern: str) -> re.Pattern:
 def path_matches(path: Path, patterns: list[str]) -> bool:
     """判断路径是否匹配任意 glob 模式（支持 ``**`` 递归目录）。
 
-    同时匹配完整相对路径与文件名：``test_*.py`` 可命中任意目录下的测试文件，
-    而 ``tests/**/test_*.py`` 这类带目录的模式按完整路径匹配。
+    匹配候选包括：完整路径、文件名、以及路径的每个尾缀（目录级模式在
+    绝对路径 / 相对路径下都能命中，例如 ``src/**/*.ts`` 可匹配
+    ``D:/ws/src/fib.ts`` 的尾缀 ``src/fib.ts``）。
     """
     posix = path.as_posix()
-    name = path.name
+    parts = posix.split("/")
+    candidates = {posix, path.name, *( "/".join(parts[i:]) for i in range(len(parts)) )}
     for pattern in patterns:
         regex = _pattern_to_regex(pattern)
-        if regex.match(posix) or regex.match(name):
-            return True
+        for candidate in candidates:
+            if regex.match(candidate):
+                return True
     return False
 
 
@@ -101,8 +131,10 @@ def iter_workspace_files(workspace: Path, config: GateConfig) -> list[Path]:
 
 
 def analyze_test_file(path: Path) -> dict[str, Any] | None:
-    """AST 解析测试文件：返回测试函数列表与断言统计；语法错误时返回 None。"""
+    """分析测试文件：Python 用 AST（函数数 + 断言），其他语言用轻量启发式。"""
     text = path.read_text(encoding="utf-8", errors="replace")
+    if path.suffix.lower() not in PYTHON_SUFFIXES:
+        return _analyze_non_python_test(text)
     try:
         tree = ast.parse(text, filename=str(path))
     except SyntaxError:
@@ -168,6 +200,14 @@ def validate_tests(workspace: Path, config: GateConfig, state) -> tuple[bool, st
             return False, f"测试文件 {tf.name} 存在语法错误，无法通过校验", {}
         parsed.append({"file": str(tf.relative_to(workspace)), **info})
 
+    # 非 Python 测试文件（启发式）：要求断言关键字总量不低于阈值，防止空壳文件
+    for item in parsed:
+        if item.get("heuristic") and item["assertions_total"] < config.min_test_functions:
+            return False, (
+                f"测试文件 {item['file']} 为启发式校验（非 Python），"
+                f"断言关键字不足（{item['assertions_total']} < {config.min_test_functions}），疑似空壳测试"
+            ), {"file": item["file"], "assertions_total": item["assertions_total"]}
+
     all_tests = [t for item in parsed for t in item["test_functions"]]
     if len(all_tests) < config.min_test_functions:
         return False, (
@@ -175,7 +215,7 @@ def validate_tests(workspace: Path, config: GateConfig, state) -> tuple[bool, st
         ), {"test_count": len(all_tests)}
 
     if config.require_assert_per_test:
-        empty = [t["name"] for t in all_tests if t["assertions"] == 0]
+        empty = [t["name"] for t in all_tests if not t.get("heuristic") and t["assertions"] == 0]
         if empty:
             return False, (
                 f"以下测试函数不包含任何断言（assert / pytest.raises），疑似空壳测试: {', '.join(empty)}"
@@ -202,11 +242,14 @@ def validate_implementation(workspace: Path, config: GateConfig, state) -> tuple
         return False, "未找到实现代码文件（非测试的 *.py），请先编写实现", {}
 
     for sf in source_files:
-        text = sf.read_text(encoding="utf-8", errors="replace")
-        try:
-            compile(text, str(sf), "exec")
-        except SyntaxError as exc:
-            return False, f"实现文件 {sf.name} 存在语法错误: {exc}", {}
+        if sf.suffix.lower() in PYTHON_SUFFIXES:
+            text = sf.read_text(encoding="utf-8", errors="replace")
+            try:
+                compile(text, str(sf), "exec")
+            except SyntaxError as exc:
+                return False, f"实现文件 {sf.name} 存在语法错误: {exc}", {}
+        elif sf.stat().st_size == 0:
+            return False, f"实现文件 {sf.name} 为空文件，请补充实现内容", {}
 
     evidence = {
         "files": [str(sf.relative_to(workspace)) for sf in source_files],

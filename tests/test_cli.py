@@ -63,3 +63,44 @@ def test_advance_json(capsys, tmp_path):
     payload = json.loads(out)
     assert payload["success"] is True
     assert payload["stage"] == 2
+
+def test_version_flag(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--version"])
+    assert exc_info.value.code == 0
+    assert "anti_shortcut" in capsys.readouterr().out
+
+
+def test_unknown_command_exits_2():
+    with pytest.raises(SystemExit) as exc_info:
+        main(["frobnicate"])
+    assert exc_info.value.code == 2
+
+
+def test_advance_requires_to():
+    with pytest.raises(SystemExit) as exc_info:
+        main(["advance", "--workspace", "."])
+    assert exc_info.value.code == 2
+
+
+def test_advance_invalid_to_exits_2():
+    with pytest.raises(SystemExit) as exc_info:
+        main(["advance", "--to", "abc", "--workspace", "."])
+    assert exc_info.value.code == 2
+
+
+def test_inspect_missing_config_graceful(capsys, tmp_path):
+    missing = tmp_path / "nope.yaml"
+    rc = main(["inspect", "--workspace", str(tmp_path), "--config", str(missing)])
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "ERROR" in err and "nope.yaml" in err
+
+
+def test_inspect_invalid_config_graceful(capsys, tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text("min_test_functions: [oops\n", encoding="utf-8")
+    rc = main(["inspect", "--workspace", str(tmp_path), "--config", str(bad)])
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "ERROR" in err

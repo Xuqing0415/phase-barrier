@@ -15,6 +15,7 @@ env/
 
 # 演示与临时产物
 examples/demo_workspace/
+examples/minimal_workspace/
 .agent_gate/
 _tmp_site/
 _pytest_final/

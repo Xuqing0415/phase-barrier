@@ -16,6 +16,8 @@ import json
 import sys
 from pathlib import Path
 
+import yaml
+
 from . import __version__
 from .config import STAGES
 from .skill import AntiShortcutSkill
@@ -100,7 +102,17 @@ def main(argv: list[str] | None = None) -> int:
         pass
     parser = build_parser()
     args = parser.parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except FileNotFoundError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    except (ValueError, yaml.YAMLError) as exc:
+        print(f"ERROR: 配置无效: {exc}", file=sys.stderr)
+        return 1
+    except OSError as exc:
+        print(f"ERROR: 无法访问工作区或门禁目录: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

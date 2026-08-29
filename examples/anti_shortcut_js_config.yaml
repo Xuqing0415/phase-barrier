@@ -1,0 +1,38 @@
+# JavaScript / TypeScript 项目门禁配置示例
+#
+# 用法：
+#   AntiShortcutSkill(workspace=".", config="anti_shortcut_js_config.yaml", user_request="...")
+#
+# 说明：默认校验器面向 Python（AST 解析 / compile 语法检查）。
+# 对非 Python 测试文件采用“轻量启发式”（测试声明数 + 断言关键字总数），
+# 实现文件跳过 compile 但要求非空；完整的语言适配层在 v0.3.0 规划中。
+
+spec_file: spec.md
+spec_min_chars: 120
+
+# 测试文件路径模式（JS/TS 常见命名）
+test_file_patterns:
+  - "*.test.js"
+  - "*.spec.js"
+  - "*.test.ts"
+  - "*.spec.ts"
+  - "tests/**/*.test.js"
+  - "tests/**/*.test.ts"
+  - "tests/**/*.spec.ts"
+
+min_test_functions: 2
+require_assert_per_test: true
+
+# 实现代码路径模式
+source_file_patterns:
+  - "src/**/*.ts"
+  - "src/**/*.js"
+  - "*.ts"
+  - "*.js"
+
+# 测试/校验命令（运行测试或类型检查同样受“阶段 >= 3”门禁约束）
+test_commands:
+  - '^\s*npm\s+test\b'
+  - '^\s*npx\s+(jest|vitest|mocha|playwright)\b'
+  - '^\s*npx\s+tsc\s+--noEmit\b'
+  - '^\s*(tsc|ts-node)\s+--noEmit\b'

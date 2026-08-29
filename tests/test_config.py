@@ -41,3 +41,39 @@ def test_stage_names():
     assert STAGES[0] == "\u9700\u6c42\u63a5\u6536"
     assert STAGES[6] == "\u4ea4\u4ed8"
     assert len(STAGES) == 7
+
+def test_invalid_yaml_raises(tmp_path):
+    import yaml
+
+    p = tmp_path / "bad.yaml"
+    p.write_text("min_test_functions: [unclosed\n  - x", encoding="utf-8")
+    with pytest.raises(yaml.YAMLError):
+        load_config(p)
+
+
+def test_top_level_non_dict_raises(tmp_path):
+    p = tmp_path / "list.yaml"
+    p.write_text("- a\n- b\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="\u9876\u5c42\u5fc5\u987b\u662f\u6620\u5c04"):
+        load_config(p)
+
+
+def test_wrong_field_type_raises(tmp_path):
+    p = tmp_path / "type.yaml"
+    p.write_text("min_test_functions: many\n", encoding="utf-8")
+    with pytest.raises(ValueError):  # pydantic.ValidationError
+        load_config(p)
+
+
+def test_unknown_keys_ignored(tmp_path):
+    p = tmp_path / "extra.yaml"
+    p.write_text("foo: bar\nmin_test_functions: 4\n", encoding="utf-8")
+    cfg = load_config(p)
+    assert cfg.min_test_functions == 4
+
+
+def test_empty_yaml_uses_defaults(tmp_path):
+    p = tmp_path / "empty.yaml"
+    p.write_text("", encoding="utf-8")
+    cfg = load_config(p)
+    assert cfg.min_test_functions == 2

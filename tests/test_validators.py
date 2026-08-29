@@ -188,3 +188,59 @@ def test_retest_passed_after_change(tmp_path, cfg):
     ok, msg, ev = validate_retest(tmp_path, cfg, s)
     assert ok
     assert ev["after_last_change"] is True
+
+def test_non_python_test_heuristic(tmp_path):
+    from anti_shortcut.validators import analyze_test_file
+
+    js = tmp_path / "fib.test.ts"
+    js.write_text(
+        "import { fib } from './fib'\n"
+        "test('fib(3) is 2', () => { expect(fib(3)).toBe(2); })\n"
+        "it('fib(10) is 55', () => { expect(fib(10)).toBe(55); })\n",
+        encoding="utf-8",
+    )
+    info = analyze_test_file(js)
+    assert info is not None and info["heuristic"] is True
+    assert len(info["test_functions"]) == 2
+    assert info["assertions_total"] >= 2
+
+
+def test_empty_non_python_test_rejected(tmp_path):
+    from anti_shortcut import load_config
+    from anti_shortcut.state import StateManager
+    from anti_shortcut.validators import validate_tests
+
+    (tmp_path / "empty.test.ts").write_text("// nothing here\n", encoding="utf-8")
+    cfg = load_config({"test_file_patterns": ["*.test.ts"]})
+    state = StateManager(tmp_path / ".agent_gate" / "state.json")
+    ok, msg, _ = validate_tests(tmp_path, cfg, state)
+    assert ok is False and "\u7a7a\u58f3" in msg
+
+
+def test_non_python_implementation_skips_compile(tmp_path):
+    from anti_shortcut import load_config
+    from anti_shortcut.state import StateManager
+    from anti_shortcut.validators import validate_implementation
+
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "fib.ts").write_text(
+        "export function fib(n: number): number { return n; }\n", encoding="utf-8"
+    )
+    cfg = load_config({"source_file_patterns": ["src/**/*.ts"]})
+    state = StateManager(tmp_path / ".agent_gate" / "state.json")
+    ok, msg, ev = validate_implementation(tmp_path, cfg, state)
+    assert ok is True
+    assert any(f.replace("\\", "/") == "src/fib.ts" for f in ev["files"])
+
+
+def test_empty_non_python_implementation_rejected(tmp_path):
+    from anti_shortcut import load_config
+    from anti_shortcut.state import StateManager
+    from anti_shortcut.validators import validate_implementation
+
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "fib.ts").write_text("", encoding="utf-8")
+    cfg = load_config({"source_file_patterns": ["src/**/*.ts"]})
+    state = StateManager(tmp_path / ".agent_gate" / "state.json")
+    ok, msg, _ = validate_implementation(tmp_path, cfg, state)
+    assert ok is False and "\u4e3a\u7a7a" in msg

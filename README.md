@@ -32,6 +32,20 @@ Alpha-SWE Agent Core（思考 / 规划 / 调用工具）
 执行环境（文件系统 / Shell）
 ```
 
+Mermaid 版本（GitHub 上渲染）：
+
+```mermaid
+flowchart TD
+    A[Agent Core 思考 / 规划 / 调用工具] -->|write_file / execute_command| B{反捷径校验 Skill 中间件}
+    B --> C[工具拦截器<br/>check_write_permission<br/>check_exec_permission]
+    C -- 违规 --> X[拒绝并返回错误提示<br/>BLOCKED / REJECTED]
+    C -- 合法 --> D[执行环境<br/>文件系统 / Shell]
+    B --> S[状态机 state.json<br/>当前阶段 / 证据 / 历史]
+    B --> V[证据校验 validators<br/>spec / 测试 AST / 语法 / 测试结果]
+    S -->|advance_stage| V
+    V -- 通过 --> S
+```
+
 ## 快速开始
 
 ```bash
@@ -42,8 +56,9 @@ pip install phase-barrier        # 从 PyPI 安装（发行名与仓库同名）
 #   pip install dist/phase_barrier-*.whl
 
 pip install -e .            # 开发模式安装（依赖 pydantic / pyyaml / structlog）
-python examples/demo.py     # 观看完整演示（含违规尝试被拦截）
-python -m pytest            # 运行测试套件
+python examples/minimal_agent.py   # 最小可运行的 Agent 接入示例（拦截 + 正常流程）
+python examples/demo.py            # 完整演示（含违规尝试被拦截）
+python -m pytest                   # 运行测试套件
 ```
 
 ### 集成到 Agent（Alpha-SWE 等基于工具调用的 Agent）
@@ -63,6 +78,9 @@ tools = skill.install(agent.tools)
 
 # 3. Agent 后续只能调用 tools["write_file"] / tools["execute_command"] / tools["advance_stage"]
 ```
+
+最小可运行示例见 [`examples/minimal_agent.py`](examples/minimal_agent.py)：一个模拟 Agent 循环
+先尝试跳步（被拦截），再按 spec → 测试 → 实现 → 运行测试推进到交付，可直接 `python examples/minimal_agent.py` 运行。
 
 ### 一键接入 + 插件加载
 
@@ -205,7 +223,9 @@ anti_shortcut/
 └── __main__.py        # CLI：python -m anti_shortcut inspect / advance
 examples/
 ├── demo.py                        # 模拟 Agent 完整演示（含违规拦截）
-└── anti_shortcut_config.yaml      # 示例配置
+├── minimal_agent.py               # 最小可运行 Agent 接入示例
+├── anti_shortcut_config.yaml      # Python 项目示例配置
+└── anti_shortcut_js_config.yaml   # JavaScript / TypeScript 项目示例配置
 deploy/
 ├── Dockerfile                     # 打包镜像（含 CLI）
 ├── docker-compose.yml             # gate-keeper（可写）+ agent（.agent_gate 只读）
@@ -228,6 +248,85 @@ tests/                             # pytest 测试套件（64 个用例）
 - 依赖：`pydantic>=2`、`PyYAML>=6`、`structlog>=23`（可选 `pytest` 用于测试）
 - 跨平台：Windows / Linux / macOS（门禁目录权限建议在 Linux 容器 + 只读卷场景使用）
 
+## 多语言支持（JavaScript / TypeScript 等）
+
+门禁逻辑与语言无关：默认规则面向 Python，但通过三个配置项即可适配其他语言：
+
+- `test_file_patterns`：测试文件路径模式（如 `*.test.ts`）
+- `source_file_patterns`：实现代码路径模式（如 `src/**/*.ts`）
+- `test_commands`：测试 / 类型检查命令正则（如 `npx vitest`、`npx tsc --noEmit`）
+
+```yaml
+# 在 JS/TS 项目中使用（完整文件见 examples/anti_shortcut_js_config.yaml）：
+#   AntiShortcutSkill(workspace=".", config="anti_shortcut_js_config.yaml", user_request="...")
+spec_file: spec.md
+spec_min_chars: 120
+test_file_patterns:
+  - "*.test.js"
+  - "*.spec.js"
+  - "*.test.ts"
+  - "*.spec.ts"
+  - "tests/**/*.test.ts"
+min_test_functions: 2
+require_assert_per_test: true
+source_file_patterns:
+  - "src/**/*.ts"
+  - "src/**/*.js"
+  - "*.ts"
+  - "*.js"
+test_commands:
+  - '^\s*npm\s+test\b'
+  - '^\s*npx\s+(jest|vitest|mocha|playwright)\b'
+  - '^\s*npx\s+tsc\s+--noEmit\b'
+```
+
+**当前多语言支持程度**：非 Python 测试文件走“轻量启发式”校验（统计 `test/it/describe` 声明数与
+`expect/assert/.toBe/.toEqual` 断言关键字，拒绝空壳文件）；非 Python 实现文件跳过 `compile` 语法检查、
+但要求非空。基于 acorn / `tsc --noEmit` 的完整语言适配层在 Roadmap（v0.3.0）中规划。
+
+## 常见问题（FAQ）
+
+**如何自定义阶段或证据要求？**
+通过 YAML 配置覆盖即可，无需改代码：
+
+```yaml
+spec_file: design.md
+spec_sections: ["## 需求", "## 方案", "## 接口"]
+spec_min_chars: 80
+min_test_functions: 3
+```
+
+把配置路径传给 `AntiShortcutSkill(..., config="my_gate.yaml")` 或 CLI 的 `--config`。
+
+**如何关闭某道门禁？**
+每个校验器都有开关或阈值可调，例如：
+
+- 不强制实现代码：`require_implementation: false`
+- 允许任意阶段写“其他”文件：`allow_other_files_any_stage: true`（默认已开启）
+- 调低 spec 长度门槛：`spec_min_chars: 0`
+- 关闭门禁目录 shell 保护（不推荐）：`protect_gate_dir: false`
+
+彻底“一键关闭全部门禁”与设计目标相悖，不支持。
+
+**如何适配非 Python 项目？**
+见「多语言支持」：改 `test_file_patterns` / `source_file_patterns` / `test_commands` 三项即可，
+门禁逻辑（阶段状态机 + 证据校验 + 工具拦截）保持不变。
+
+**Agent 被拦截后如何继续？**
+拦截只返回错误提示，不破坏任何状态。Agent 补齐当前阶段证据（如写完 `spec.md`）后重新调用
+`advance_stage` 即可；也可以由编排器用 CLI `python -m anti_shortcut advance --workspace . --to N` 人工复核后推进。
+
+## Roadmap（规划）
+
+- **v0.3.0 多语言适配层**：抽象语言校验器接口，接入 JavaScript/TypeScript（acorn / `tsc --noEmit`）、Java（`javac`）等语法与测试证据校验。
+- **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有集成插件入口点 `anti_shortcut.integrations`）。
+- **CI 门禁集成**：提供 GitHub Action，让 phase-barrier 直接在 CI 中作为阶段闸门使用。
+- **Kubernetes sidecar**：以 sidecar 容器承载门禁状态，与主 Agent 容器共享工作区、状态目录只读挂载。
+- **安全增强**：状态文件与证据签名（不可信环境防篡改）；审计日志远程推送（SIEM）。
+- **供应链**：接入 sigstore 签名与 trusted publishing，提升包可信度。
+
+版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
+
 ## 构建与发布（PyPI）
 
 构建并检查发行包：
@@ -248,4 +347,4 @@ twine upload dist/*      # 正式发布到 PyPI
 - 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建即为 `X.Y.Z`，无需再手工同步 `pyproject.toml` 与 `__init__.py`。发布流程：`git tag v0.1.1 && git push --tags`。
 - CI（`.github/workflows/ci.yml`）：push / PR 时在 Python 3.10–3.14 矩阵上运行 `pytest` + `examples/demo.py`；`package` job 构建 sdist/wheel 并执行 `twine check` 后上传为 artifact。
 - 自动发布（`.github/workflows/release.yml`）：打 `v*` tag 时自动构建并发布到 PyPI，使用仓库 Secret `PYPI_API_TOKEN`。
-- 发行名说明：本项目发行名为 `phase-barrier`（与仓库同名），import 包名仍为 `anti_shortcut`，CLI 命令仍为 `anti-shortcut`。早期 0.1.0 曾以 `anti-shortcut-skill` 发布，该旧项目已从 PyPI 删除；`pip install phase-barrier` 是新版唯一的安装方式。
+- 发行名说明：本项目发行名为 `phase-barrier`（与仓库同名），import 包名仍为 `anti_shortcut`，CLI 命令仍为 `anti-shortcut`。

@@ -1,0 +1,56 @@
+# 反捷径校验 Skill 示例配置（可选，缺失时使用默认值）
+# 加载方式：
+#   skill = AntiShortcutSkill(workspace=".", config="anti_shortcut_config.yaml", user_request=...)
+
+# 门禁目录与状态文件
+gate_dir_name: ".agent_gate"
+state_file_name: "state.json"
+audit_log_name: "audit.log"
+
+# ---- 阶段 1：Spec 设计 ----
+spec_file: "spec.md"
+spec_sections:
+  - "## 需求分析"
+  - "## 设计方案"
+  - "## 接口定义"
+spec_min_chars: 120
+
+# ---- 阶段 2：测试用例 ----
+test_file_patterns:
+  - "test_*.py"
+  - "*_test.py"
+  - "tests/**/test_*.py"
+  - "tests/**/*_test.py"
+min_test_functions: 2
+require_assert_per_test: true
+
+# ---- 阶段 3：实现代码 ----
+source_file_patterns:
+  - "*.py"
+require_implementation: true
+
+# ---- 阶段 4/5：测试运行 ----
+# 测试命令正则（匹配命令前缀），可按语言扩展
+test_commands:
+  - '^\s*python3?\s+(-m\s+)?pytest\b'
+  - '^\s*pytest\b'
+  - '^\s*python3?\s+-m\s+unittest\b'
+  - '^\s*npm\s+test\b'
+  - '^\s*npx\s+(jest|vitest|mocha|playwright)\b'
+  - '^\s*(go|rust)\s+test\b'
+  - '^\s*cargo\s+test\b'
+  - '^\s*gradle\s+test\b'
+  - '^\s*mvn\s+test\b'
+  - '^\s*tox\b'
+max_test_output_tail: 4000
+
+# ---- 安全 ----
+# 是否启用门禁目录防护提示（生产环境请配合只读卷挂载）
+protect_gate_dir: true
+# 是否允许 Agent 在任意阶段写入“其他”类型文件（README、docs 等）
+allow_other_files_any_stage: true
+
+# 更严格的项目还可以这样配：
+#   min_test_functions: 5
+#   spec_sections: ["## 需求分析", "## 设计方案", "## 接口定义", "## 验收标准"]
+#   require_assert_per_test: true

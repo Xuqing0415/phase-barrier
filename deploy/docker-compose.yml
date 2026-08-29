@@ -1,0 +1,18 @@
+services:
+  # 门禁守护：以可写方式挂载 .agent_gate，负责初始化状态并执行完整流程
+  gate-keeper:
+    build: .
+    volumes:
+      - ./workspace:/workspace
+      - ./gate_data:/workspace/.agent_gate
+    command: ["python", "deploy/seed_gate.py"]
+
+  # 编码 Agent：工作区可写，但 .agent_gate 只读挂载（即使绕过工具包装也无法篡改状态）
+  agent:
+    build: .
+    depends_on:
+      - gate-keeper
+    volumes:
+      - ./workspace:/workspace
+      - ./gate_data:/workspace/.agent_gate:ro
+    command: ["python", "deploy/probe.py"]

@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=77"]  # PEP 639 license-files 需要 setuptools>=77
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anti-shortcut-skill"
+version = "0.1.0"
+description = "阶段门禁反捷径校验 Skill：强制编码 Agent 遵循标准工程师 SOP（需求→spec→测试→实现→测试→修复→交付）"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Anti-Shortcut Team" }]
+keywords = ["agent", "code-agent", "stage-gate", "sop", "validation", "alpha-swe"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "PyYAML>=6.0",
+    "structlog>=23.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+anti-shortcut = "anti_shortcut.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/Xuqing0415/phase-barrier"
+Repository = "https://github.com/Xuqing0415/phase-barrier"
+Issues = "https://github.com/Xuqing0415/phase-barrier/issues"
+
+[tool.setuptools.packages.find]
+include = ["anti_shortcut*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

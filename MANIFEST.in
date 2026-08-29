@@ -1,0 +1,5 @@
+include README.md
+include LICENSE
+recursive-include deploy *.py *.yml *.md Dockerfile
+recursive-include examples *.py *.yaml
+prune examples/demo_workspace

@@ -248,4 +248,4 @@ twine upload dist/*      # 正式发布到 PyPI
 - 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建即为 `X.Y.Z`，无需再手工同步 `pyproject.toml` 与 `__init__.py`。发布流程：`git tag v0.1.1 && git push --tags`。
 - CI（`.github/workflows/ci.yml`）：push / PR 时在 Python 3.10–3.14 矩阵上运行 `pytest` + `examples/demo.py`；`package` job 构建 sdist/wheel 并执行 `twine check` 后上传为 artifact。
 - 自动发布（`.github/workflows/release.yml`）：打 `v*` tag 时自动构建并发布到 PyPI，使用仓库 Secret `PYPI_API_TOKEN`。
-- 发行名说明：本项目发行名为 `phase-barrier`（与仓库同名），import 包名仍为 `anti_shortcut`。早期以 `anti-shortcut-skill` 发布过 0.1.0，PyPI 不允许项目改名/删除，旧项目会永久保留；若不想让旧名被误装，可在 PyPI 旧项目页将其 yank。
+- 发行名说明：本项目发行名为 `phase-barrier`（与仓库同名），import 包名仍为 `anti_shortcut`，CLI 命令仍为 `anti-shortcut`。早期 0.1.0 曾以 `anti-shortcut-skill` 发布，该旧项目已从 PyPI 删除；`pip install phase-barrier` 是新版唯一的安装方式。

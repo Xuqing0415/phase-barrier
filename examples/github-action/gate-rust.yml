@@ -18,8 +18,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       # inspect：要求 Agent 产出的工作区至少完成“实现代码”（阶段 3）
-      # 发布版请固定 tag：Xuqing0415/phase-barrier@v0.6.0
-      - uses: Xuqing0415/phase-barrier@v0.6.0
+      # 发布版请固定 tag：Xuqing0415/phase-barrier@v0.8.0
+      - uses: Xuqing0415/phase-barrier@v0.8.0
         with:
           workspace: agent_outputs
           config: anti_shortcut_rust_config.yaml
@@ -27,7 +27,7 @@ jobs:
 
       # 进阶：advance 模式驱动 Agent 工作区走完剩余阶段（每个 action 只推进 1 步，
       # 校验通过才继续；本示例从阶段 3 推进到 4，触发 cargo test 证据校验）
-      - uses: Xuqing0415/phase-barrier@v0.6.0
+      - uses: Xuqing0415/phase-barrier@v0.8.0
         if: always()
         with:
           workspace: agent_outputs

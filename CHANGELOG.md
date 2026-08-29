@@ -4,6 +4,26 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.8.0] - 2026-08-29
+
+- Java 输出解析增强：
+  - Surefire 汇总行支持 `Skipped` 字段；失败时取最后一次出现的最终汇总（`Results:` 之后），
+    避免被首个通过类的统计误导。
+  - 新增 Gradle 风格解析（`3 tests completed, 1 failed`）与 JUnit Platform Console 风格
+    （`[ N tests successful / failed ]`）。
+- 状态签名（HMAC-SHA256）：
+  - 配置新增 `state_hmac_key`（或环境变量 `PHASE_BARRIER_HMAC_KEY`）；启用后 state.json 写入
+    `signature: v1:<hmac-sha256>`，加载时自动校验。
+  - 篡改 / 未签名 / 密钥不匹配 → `TamperedStateError`（继承 `CorruptedStateError`），
+    CLI 明确报错并拒绝运行；未配置密钥时行为与旧版本完全一致（向后兼容）。
+  - sidecar 新增 `--state-key` 参数（等价于 Secret 注入环境变量）。
+- GitHub Action 市场发布：
+  - release 工作流新增「创建 GitHub Release」步骤（从 CHANGELOG 提取摘要 + 附加 sdist/wheel），
+    每次打 `v*` tag 自动生成 Release，Action 在 GitHub Marketplace 自动上架。
+  - README 增加 Marketplace 入口；示例固定 tag 更新到 v0.8.0。
+- 测试：新增 Java 输出解析、状态签名用例 14 个（220 → 234）。
+- 文档：README 特性 / 安全 / 配置 / Roadmap 与 deploy/k8s 模板同步更新。
+
 ## [0.7.0] - 2026-08-29
 
 - JavaScript 输出解析（Vitest / Playwright）：

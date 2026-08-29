@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -133,9 +134,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--workspace", default=".", help="工作区路径（与 Agent 共享的卷）")
     parser.add_argument("--config", default=None, help="phase-barrier YAML 配置路径（可选）")
     parser.add_argument("--user-request", default="", help="用户需求原文（阶段 0 证据）")
+    parser.add_argument(
+        "--state-key",
+        default="",
+        help="状态签名 HMAC 密钥（等价于环境变量 PHASE_BARRIER_HMAC_KEY；生产环境建议用 Secret 注入）",
+    )
     parser.add_argument("--host", default="0.0.0.0", help="监听地址")
     parser.add_argument("--port", type=int, default=8080, help="监听端口")
     args = parser.parse_args(argv)
+    if args.state_key:
+        os.environ["PHASE_BARRIER_HMAC_KEY"] = args.state_key
 
     sidecar = GateSidecar(
         Path(args.workspace),

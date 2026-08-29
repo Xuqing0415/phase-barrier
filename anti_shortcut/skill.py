@@ -59,6 +59,7 @@ class AntiShortcutSkill:
         self.state = StateManager(
             self.gate_dir / self.config.state_file_name,
             user_request=user_request,
+            hmac_key=self.config.state_hmac_key,
         )
         self.logger = get_audit_logger(
             self.gate_dir / self.config.audit_log_name, console=console_log

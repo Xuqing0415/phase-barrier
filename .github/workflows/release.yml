@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 permissions:
-  contents: read
+  contents: write   # 需要创建 GitHub Release（Action Marketplace 自动上架）
 
 jobs:
   publish:
@@ -32,3 +32,25 @@ jobs:
         with:
           packages-dir: dist/
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Extract changelog section for release notes
+        id: changelog
+        shell: bash
+        run: |
+          python - "${{ github.ref_name }}" <<'PY'
+          import re, sys
+          tag = sys.argv[1]
+          ver = tag.lstrip("v")
+          text = open("CHANGELOG.md", encoding="utf-8").read()
+          m = re.search(r"^## \[%s\].*?(?=^## \[|\Z)" % re.escape(ver), text, re.M | re.S)
+          body = m.group(0).strip() if m else "Release %s（详见 CHANGELOG.md）" % tag
+          open("release_body.md", "w", encoding="utf-8").write(body + "\n")
+          print("extracted %d chars" % len(body))
+          PY
+
+      - name: Create GitHub Release (Action Marketplace auto-listing)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          body_path: release_body.md
+          files: dist/*

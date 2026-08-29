@@ -4,15 +4,20 @@
 ``wrap_write_file`` / ``wrap_execute_command`` 包装 Agent 暴露的工具，
 并注入 ``advance_stage`` 专用工具。Agent 只能通过包装后的工具与状态机交互，
 无法通过自然语言指令或直接文件操作绕过门禁。
+
+v0.9.0：审计远程推送（SIEM）、证据签名清单、HMAC 密钥轮换。
 """
 from __future__ import annotations
 
+import atexit
 import functools
+import os
 from pathlib import Path
 from typing import Any, Callable
 
 from .audit import get_audit_logger
 from .config import STAGES, GateConfig, load_config
+from .evidence import EVIDENCE_MANIFEST_NAME, EvidenceManifest
 from .interceptors import (
     extract_written_paths,
     is_language_test_command,
@@ -20,6 +25,7 @@ from .interceptors import (
     touches_gate_dir,
 )
 from .languages import get_adapter
+from .remote_audit import RemoteAuditSink
 from .state import StateManager
 from .validators import (
     validate_implementation,
@@ -60,9 +66,28 @@ class AntiShortcutSkill:
             self.gate_dir / self.config.state_file_name,
             user_request=user_request,
             hmac_key=self.config.state_hmac_key,
+            hmac_keys=self.config.state_hmac_keys,
         )
+        # 审计远程推送（v0.9.0）：配置 audit_remote_url 后异步转发到 SIEM / webhook
+        self.remote_sink: RemoteAuditSink | None = None
+        if self.config.audit_remote_url:
+            self.remote_sink = RemoteAuditSink(
+                self.config.audit_remote_url,
+                token=self.config.audit_remote_token,
+                timeout=self.config.audit_remote_timeout,
+                batch_size=self.config.audit_remote_batch_size,
+                max_queue=self.config.audit_remote_max_queue,
+                flush_interval=self.config.audit_remote_flush_interval,
+            )
         self.logger = get_audit_logger(
-            self.gate_dir / self.config.audit_log_name, console=console_log
+            self.gate_dir / self.config.audit_log_name,
+            console=console_log,
+            remote=self.remote_sink,
+        )
+        # 证据签名清单（v0.9.0）：记录每个阶段推进时的证据文件哈希，独立于 state.json
+        self.evidence_manifest = EvidenceManifest(
+            self.gate_dir / EVIDENCE_MANIFEST_NAME,
+            hmac_key=self.config.state_hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY"),
         )
         self.validators: dict[int, Callable] = {
             1: validate_spec,
@@ -75,6 +100,7 @@ class AntiShortcutSkill:
         if user_request:
             self.state.record_user_request(user_request)
         self.logger.info("skill_initialized", workspace=str(self.workspace), **self._stage_summary())
+        atexit.register(self.close)
 
     # ---------- 状态查询 ----------
 
@@ -109,7 +135,8 @@ class AntiShortcutSkill:
         - 状态文件由 Skill 独占原子写入；
         - Agent 可用的 ``write_file`` / ``execute_command`` 均被包装，
           任何指向门禁目录的写入与 shell 访问都会被拦截；
-        - 证据文件在推进时记录 SHA-256，事后篡改可被检测。
+        - 证据文件在推进时记录 SHA-256（v0.9.0 写入独立签名清单），
+          事后篡改可被检测。
         """
         if self.config.protect_gate_dir:
             self.logger.info(
@@ -242,6 +269,42 @@ class AntiShortcutSkill:
         tools["advance_stage"] = self.advance_stage
         return tools
 
+    # ---------- 证据签名清单（v0.9.0） ----------
+
+    def _record_evidence_signatures(self, stage: int, evidence: dict) -> None:
+        """把校验器收集的 sha256 写入独立证据清单，供交付 / CI 事后比对。"""
+        if not self.config.evidence_signing:
+            return
+        sha = evidence.get("sha256")
+        files: dict[str, str] = {}
+        if isinstance(sha, dict):
+            files.update({str(k): str(v) for k, v in sha.items()})
+        elif isinstance(sha, str) and evidence.get("file"):
+            files[str(evidence["file"])] = sha
+        if files:
+            self.evidence_manifest.record(stage, files)
+            self.logger.info(
+                "evidence_signed",
+                stage=stage,
+                files=sorted(files),
+                **self._stage_summary(),
+            )
+
+    def verify_evidence(self) -> tuple[bool, list[str]]:
+        """对照工作区当前文件校验证据清单，返回 (是否通过, 违规列表)。
+
+        :raises EvidenceManifestError: 清单损坏 / 签名不匹配（加载时抛出）
+        """
+        return self.evidence_manifest.verify(self.workspace)
+
+    # ---------- 生命周期 ----------
+
+    def close(self) -> None:
+        """释放资源：冲刷并关闭远程审计推送（无远程推送时为 no-op，幂等）。"""
+        if self.remote_sink is not None:
+            self.remote_sink.close()
+            self.remote_sink = None
+
     # ---------- 阶段推进 ----------
 
     def advance_stage(self, new_stage: int, evidence: dict | None = None) -> dict:
@@ -292,6 +355,7 @@ class AntiShortcutSkill:
                 msg = "测试未通过或代码在测试后被修改，进入修复与回归阶段"
 
         self.state.advance(new_stage, ev)
+        self._record_evidence_signatures(cur, ev)
         self.logger.info("stage_advanced", from_stage=cur, to_stage=new_stage, message=msg, evidence=ev)
         return {
             "success": True,

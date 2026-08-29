@@ -12,6 +12,9 @@
 - ``POST /api/test-run``             ``{"exit_code": 0, "output": "..."}`` 上报测试运行结果
 - ``POST /api/source-change``        ``{"path": "fib.py"}`` 上报源码/测试变更
 
+v0.9.0：新增 ``--audit-remote-url`` / ``--audit-remote-token``，把审计事件异步
+转发到 SIEM / webhook；关闭时自动冲刷远程审计队列。
+
 部署模板见 ``deploy/k8s/``；本地试运行：:
 
     python -m anti_shortcut.sidecar --workspace . --port 8080
@@ -26,6 +29,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from .config import load_config
 from .interceptors import summarize_test_output
 from .skill import AntiShortcutSkill
 
@@ -129,6 +133,28 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
     return Handler
 
 
+def _merge_config(args: argparse.Namespace) -> Any:
+    """合并配置文件 / 命令行 / 环境变量中的远程审计参数。
+
+    优先级：命令行 > 配置文件 > 环境变量 ``AUDIT_REMOTE_URL`` / ``AUDIT_REMOTE_TOKEN``
+    （K8s 场景用 Secret 注入环境变量即可，无需改 Deployment args）。
+    """
+    cfg = None
+    if args.config:
+        cfg = load_config(args.config)
+    url = args.audit_remote_url or os.environ.get("AUDIT_REMOTE_URL") or ""
+    token = args.audit_remote_token or os.environ.get("AUDIT_REMOTE_TOKEN") or ""
+    if url or token:
+        if cfg is None:
+            cfg = {"audit_remote_url": url or None, "audit_remote_token": token or None}
+        else:
+            if url:
+                cfg.audit_remote_url = url
+            if token:
+                cfg.audit_remote_token = token
+    return cfg
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="phase-barrier K8s sidecar 门禁服务")
     parser.add_argument("--workspace", default=".", help="工作区路径（与 Agent 共享的卷）")
@@ -139,6 +165,16 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help="状态签名 HMAC 密钥（等价于环境变量 PHASE_BARRIER_HMAC_KEY；生产环境建议用 Secret 注入）",
     )
+    parser.add_argument(
+        "--audit-remote-url",
+        default="",
+        help="审计远程推送端点（SIEM / webhook，v0.9.0；也可用环境变量 AUDIT_REMOTE_URL）",
+    )
+    parser.add_argument(
+        "--audit-remote-token",
+        default="",
+        help="审计远程推送 Bearer Token（可选；生产环境建议用 Secret 注入）",
+    )
     parser.add_argument("--host", default="0.0.0.0", help="监听地址")
     parser.add_argument("--port", type=int, default=8080, help="监听端口")
     args = parser.parse_args(argv)
@@ -147,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
 
     sidecar = GateSidecar(
         Path(args.workspace),
-        config=args.config,
+        config=_merge_config(args),
         user_request=args.user_request,
     )
     server = ThreadingHTTPServer((args.host, args.port), make_handler(sidecar))
@@ -162,6 +198,7 @@ def main(argv: list[str] | None = None) -> int:
         pass
     finally:
         server.server_close()
+        sidecar.skill.close()
     return 0
 
 

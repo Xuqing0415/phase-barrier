@@ -4,24 +4,32 @@
 
     python -m anti_shortcut inspect [--workspace .] [--json]
     python -m anti_shortcut advance --to 2 [--workspace .] [--json]
+    python -m anti_shortcut verify-evidence [--workspace .] [--json]
+    python -m anti_shortcut rotate-key --to <new-key> [--from <old-key>] [--workspace .]
     python -m anti_shortcut --version
 
 ``advance`` 与 Agent 内部的 ``advance_stage`` 走同一套证据校验：
 通过返回退出码 0，被拒绝返回退出码 1 并打印原因。
+
+v0.9.0 新增：
+- ``verify-evidence``：对照工作区校验证据签名清单（检测证据文件事后篡改）。
+- ``rotate-key``：轮换状态签名 HMAC 密钥（支持从无签名状态启用签名）。
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 import yaml
 
 from . import __version__
-from .config import STAGES
+from .config import STAGES, load_config
+from .evidence import EVIDENCE_MANIFEST_NAME, EvidenceManifest, EvidenceManifestError
 from .skill import AntiShortcutSkill
-from .state import CorruptedStateError
+from .state import CorruptedStateError, StateManager
 
 
 def _build_skill(args: argparse.Namespace) -> AntiShortcutSkill:
@@ -76,6 +84,64 @@ def _cmd_advance(args: argparse.Namespace) -> int:
     return 0 if result["success"] else 1
 
 
+def _cmd_verify_evidence(args: argparse.Namespace) -> int:
+    """校验证据签名清单：对照工作区当前文件，检测缺失 / 被篡改的证据。"""
+    ws = Path(args.workspace).resolve()
+    if not ws.is_dir():
+        raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
+    cfg = load_config(args.config)
+    manifest = EvidenceManifest(
+        ws / cfg.gate_dir_name / EVIDENCE_MANIFEST_NAME,
+        hmac_key=cfg.state_hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY"),
+    )
+    ok, violations = manifest.verify(ws)
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "ok": ok,
+                    "violations": violations,
+                    "entries": sorted(manifest.entries()),
+                    "signed": manifest.is_signed(),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+    else:
+        entries = sorted(manifest.entries())
+        signed = "已签名" if manifest.is_signed() else "未签名（未配置 HMAC 密钥）"
+        if ok:
+            print(
+                f"OK: 证据清单校验通过（{len(entries)} 个证据文件，{signed}）："
+                + ", ".join(entries)
+            )
+        else:
+            print(f"FAIL: 证据清单校验未通过（{len(entries)} 个证据文件，{signed}）")
+            for v in violations:
+                print(f"VIOLATION: {v}", file=sys.stderr)
+    return 0 if ok else 1
+
+
+def _cmd_rotate_key(args: argparse.Namespace) -> int:
+    """轮换状态签名 HMAC 密钥：校验现有签名后以新密钥重新签名。"""
+    ws = Path(args.workspace).resolve()
+    if not ws.is_dir():
+        raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
+    cfg = load_config(args.config)
+    state_file = ws / cfg.gate_dir_name / cfg.state_file_name
+    old_key = args.from_key or cfg.state_hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY")
+    manager = StateManager(
+        state_file,
+        hmac_key=old_key or None,
+        hmac_keys=cfg.state_hmac_keys,
+    )
+    manager.rotate_key(args.to_key, keep_old=args.keep_old)
+    suffix = "（旧密钥保留为轮换期验证密钥）" if args.keep_old else ""
+    print(f"OK: 状态签名密钥已轮换{suffix}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m anti_shortcut",
@@ -96,6 +162,27 @@ def build_parser() -> argparse.ArgumentParser:
     p_advance.add_argument("--to", type=int, required=True, help="目标阶段（必须等于当前阶段 + 1）")
     p_advance.add_argument("--user-request", type=str, default="", help="用户需求原文（首次初始化时记录）")
     p_advance.set_defaults(func=_cmd_advance)
+
+    p_verify = sub.add_parser(
+        "verify-evidence", parents=[common], help="对照工作区校验证据签名清单"
+    )
+    p_verify.set_defaults(func=_cmd_verify_evidence)
+
+    p_rotate = sub.add_parser(
+        "rotate-key", parents=[common], help="轮换状态签名 HMAC 密钥"
+    )
+    p_rotate.add_argument("--to", dest="to_key", required=True, help="新签名密钥")
+    p_rotate.add_argument(
+        "--from",
+        dest="from_key",
+        default="",
+        help="旧签名密钥（缺省时使用配置 state_hmac_key / 环境变量 PHASE_BARRIER_HMAC_KEY）",
+    )
+    p_rotate.add_argument(
+        "--keep-old", action="store_true", help="把旧密钥保留为轮换期验证密钥（宽限期双密钥）"
+    )
+    p_rotate.set_defaults(func=_cmd_rotate_key)
+
     return parser
 
 
@@ -110,6 +197,9 @@ def main(argv: list[str] | None = None) -> int:
         return args.func(args)
     except CorruptedStateError as exc:
         print(f"ERROR: 门禁状态不可用: {exc}", file=sys.stderr)
+        return 1
+    except EvidenceManifestError as exc:
+        print(f"ERROR: 证据清单不可用: {exc}", file=sys.stderr)
         return 1
     except FileNotFoundError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

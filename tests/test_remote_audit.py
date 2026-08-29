@@ -1,0 +1,179 @@
+"""远程审计推送（SIEM）测试（v0.9.0）。"""
+import json
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import pytest
+
+from anti_shortcut import AntiShortcutSkill
+from anti_shortcut.audit import get_audit_logger
+from anti_shortcut.remote_audit import RemoteAuditSink
+
+
+class _Collector:
+    """内存 HTTP 收集端：记录收到的 body 与请求头。"""
+
+    def __init__(self):
+        self.bodies: list = []
+        self.headers: list[dict] = []
+        self._lock = threading.Lock()
+
+    def add(self, body: bytes, headers) -> None:
+        with self._lock:
+            self.bodies.append(json.loads(body.decode("utf-8")))
+            self.headers.append({k: v for k, v in headers.items()})
+
+    def events(self) -> list:
+        """把收集到的 body 展开为事件列表（数组自动展开）。"""
+        out = []
+        for body in self.bodies:
+            if isinstance(body, list):
+                out.extend(body)
+            else:
+                out.append(body)
+        return out
+
+
+@pytest.fixture
+def collector_server():
+    collector = _Collector()
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+        def do_POST(self):  # noqa: N802
+            length = int(self.headers.get("Content-Length") or 0)
+            body = self.rfile.read(length) if length else b""
+            collector.add(body, self.headers)
+            self.send_response(200)
+            self.send_header("Content-Length", "2")
+            self.end_headers()
+            self.wfile.write(b"ok")
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_address[1]}/audit"
+    try:
+        yield collector, url
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+
+
+def test_sink_single_event(collector_server):
+    collector, url = collector_server
+    sink = RemoteAuditSink(url, token="t0k3n", flush_interval=60)
+    try:
+        sink.enqueue({"event": "stage_advanced", "stage": 2})
+        sink.flush()
+        assert len(collector.bodies) == 1
+        assert collector.bodies[0]["event"] == "stage_advanced"
+        assert collector.headers[0].get("Authorization") == "Bearer t0k3n"
+    finally:
+        sink.close()
+
+
+def test_sink_batch_multiple(collector_server):
+    collector, url = collector_server
+    sink = RemoteAuditSink(url, batch_size=3, flush_interval=60)
+    try:
+        for i in range(3):
+            sink.enqueue({"n": i})
+        sink.flush()
+        assert len(collector.bodies) == 1
+        body = collector.bodies[0]
+        assert isinstance(body, list) and len(body) == 3
+        assert body[2]["n"] == 2
+    finally:
+        sink.close()
+
+
+def test_sink_queue_overflow_drops_oldest(collector_server):
+    collector, url = collector_server
+    sink = RemoteAuditSink(url, max_queue=2, flush_interval=60, start_worker=False)
+    try:
+        sink.enqueue({"n": 1})
+        sink.enqueue({"n": 2})
+        sink.enqueue({"n": 3})  # 触发 drop-oldest：丢弃 n=1
+        stats = sink.stats()
+        assert stats["dropped"] == 1
+        sink.flush()
+        received = collector.events()
+        assert [e["n"] for e in received] == [2, 3]
+    finally:
+        sink.close()
+
+
+def test_sink_close_flushes_remaining(collector_server):
+    collector, url = collector_server
+    sink = RemoteAuditSink(url, flush_interval=60)
+    sink.enqueue({"event": "before-close"})
+    sink.close()  # 关闭时冲刷剩余事件
+    assert collector.events()[0]["event"] == "before-close"
+
+
+def test_sink_failure_never_crashes():
+    sink = RemoteAuditSink("http://127.0.0.1:1/unreachable", timeout=1.0, flush_interval=60)
+    try:
+        sink.enqueue({"event": "a"})
+        sink.flush()  # 连接失败：只计数，不抛出
+        stats = sink.stats()
+        assert stats["failed_batches"] >= 1
+        # 失败后仍可继续入队
+        sink.enqueue({"event": "b"})
+        assert sink.stats()["queued"] == 1
+    finally:
+        sink.close()
+
+
+def test_empty_url_rejected():
+    with pytest.raises(ValueError):
+        RemoteAuditSink("")
+
+
+def test_logger_forwards_structlog(collector_server, tmp_path):
+    collector, url = collector_server
+    sink = RemoteAuditSink(url, flush_interval=60)
+    try:
+        logger = get_audit_logger(tmp_path / "audit.log", remote=sink)
+        logger.info("stage_advanced", stage=2)
+        sink.flush()
+        events = collector.events()
+        assert any(e.get("event") == "stage_advanced" and e.get("stage") == 2 for e in events)
+    finally:
+        sink.close()
+
+
+def test_logger_forwards_stdlib_fallback(collector_server, tmp_path, monkeypatch):
+    import anti_shortcut.audit as audit_mod
+
+    monkeypatch.setattr(audit_mod, "_HAS_STRUCTLOG", False)
+    collector, url = collector_server
+    sink = RemoteAuditSink(url, flush_interval=60)
+    try:
+        logger = get_audit_logger(tmp_path / "audit.log", remote=sink)
+        logger.info("intercepted", extra={"payload": {"reason": "jump"}})
+        sink.flush()
+        events = collector.events()
+        assert any(e.get("event") == "intercepted" and e.get("reason") == "jump" for e in events)
+    finally:
+        sink.close()
+
+
+def test_skill_remote_audit(collector_server, tmp_path):
+    collector, url = collector_server
+    skill = AntiShortcutSkill(
+        tmp_path,
+        config={"audit_remote_url": url, "audit_remote_flush_interval": 60},
+        user_request="r",
+    )
+    skill.logger.info("custom_event", foo="bar")
+    skill.close()
+    events = collector.events()
+    names = [e.get("event") for e in events]
+    assert "skill_initialized" in names
+    assert "gate_dir_policy" in names
+    assert "custom_event" in names

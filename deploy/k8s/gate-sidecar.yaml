@@ -34,7 +34,7 @@ spec:
               mountPath: /workspace
         # ---- 门禁 sidecar ----
         - name: gate-sidecar
-          image: <registry>/phase-barrier:0.7.0
+          image: <registry>/phase-barrier:0.9.0
           command: ["python", "-m", "anti_shortcut.sidecar"]
           args:
             - --workspace
@@ -58,6 +58,14 @@ spec:
             #     secretKeyRef:
             #       name: phase-barrier-gate
             #       key: hmac-key
+            # v0.9.0：审计远程推送（SIEM / webhook），Secret 注入或直接写值
+            # - name: AUDIT_REMOTE_URL
+            #   value: "https://siem.example.com/ingest"
+            # - name: AUDIT_REMOTE_TOKEN
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: phase-barrier-gate
+            #       key: audit-token
           readinessProbe:
             httpGet:
               path: /healthz

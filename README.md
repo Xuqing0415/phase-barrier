@@ -19,6 +19,9 @@
 - **覆盖率门禁（v0.7.0）**：配置 `coverage_threshold` 后，测试阶段要求覆盖率报告存在且达标（pytest-cov / `go test -cover` / istanbul）。
 - **K8s sidecar（v0.7.0）**：`deploy/k8s/` 模板 + `anti_shortcut.sidecar` HTTP 服务，Agent 容器不挂载门禁目录，无法绕过阶段门禁。
 - **状态签名（v0.8.0）**：配置 `state_hmac_key`（或环境变量 `PHASE_BARRIER_HMAC_KEY`）后，state.json 写入 HMAC-SHA256 签名并在加载时校验，篡改即拒绝启动。
+- **证据签名（v0.9.0）**：阶段推进时把证据文件 SHA-256 写入独立清单 `evidence_manifest.json`（可选 HMAC 签名），`verify-evidence` 可对照工作区检测事后篡改。
+- **密钥轮换（v0.9.0）**：`state_hmac_keys` / `rotate-key` 支持无中断轮换 HMAC 密钥（宽限期双密钥，可从无签名状态启用签名）。
+- **审计远程推送（v0.9.0）**：配置 `audit_remote_url` 后，审计事件异步批量转发到 SIEM / webhook，推送失败不影响门禁。
 
 ## 架构
 
@@ -120,6 +123,8 @@ alpha-swe = "alpha_swe_adapter:install"
 python -m anti_shortcut inspect --workspace .            # 查看当前阶段
 python -m anti_shortcut inspect --workspace . --json     # JSON 输出（便于自动化）
 python -m anti_shortcut advance --workspace . --to 2     # 推进阶段（校验证据）
+python -m anti_shortcut verify-evidence --workspace .   # 对照工作区校验证据签名清单（v0.9.0）
+python -m anti_shortcut rotate-key --workspace . --from <旧密钥> --to <新密钥>  # 轮换状态签名密钥（v0.9.0）
 ```
 
 `advance` 与 Agent 内部的 `advance_stage` 走同一套证据校验：通过返回退出码 0，被拒绝返回 1 并打印原因。
@@ -195,6 +200,8 @@ Action 随之自动上架，用户可直接在 Marketplace 搜索 **Phase-Barrie
 
 - 状态文件：`<workspace>/.agent_gate/state.json` —— 当前阶段、阶段历史、证据哈希、最近测试结果。
 - 审计日志：`<workspace>/.agent_gate/audit.log` —— 结构化 JSON，记录阶段变更、拦截事件、校验结果。
+- 证据签名清单：`<workspace>/.agent_gate/evidence_manifest.json` —— 每次阶段推进时记录的证据文件 SHA-256（可选 HMAC 签名），供交付 / CI 用 `verify-evidence` 事后比对（v0.9.0）。
+- 审计远程推送：配置 `audit_remote_url` 后，每条审计事件异步 POST 到 SIEM / webhook（单事件为对象，多事件为 JSON 数组），队列有界、失败只计数（v0.9.0）。
 
 示例状态：
 
@@ -223,6 +230,10 @@ test_commands: ['^\\s*pytest\\b', '^\\s*npm\\s+test\\b', ...]
 protect_gate_dir: true             # 生产环境配合只读卷挂载
 allow_other_files_any_stage: true  # 其他文件类型（README 等）是否不限阶段
 state_hmac_key: ""                 # 可选：状态签名 HMAC 密钥（或用环境变量 PHASE_BARRIER_HMAC_KEY）
+state_hmac_keys: []                # v0.9.0：轮换期接受的旧密钥列表（或用环境变量 PHASE_BARRIER_HMAC_KEYS）
+evidence_signing: true             # v0.9.0：是否把证据文件哈希写入签名清单
+audit_remote_url: ""               # v0.9.0：可选，审计事件异步推送到 SIEM / webhook
+audit_remote_token: ""             # v0.9.0：可选，推送时携带的 Bearer Token
 ```
 
 ### 覆盖率门禁（v0.7.0）
@@ -250,6 +261,9 @@ coverage_threshold: 80          # 0-100 百分比；不配置则不做覆盖率�
 - **空壳防护**：测试文件经 AST 分析，要求测试函数数量 ≥ 阈值且每个函数含断言（`assert` / `pytest.raises`）。
 - **伪造防护**：证据文件在推进时记录 SHA-256；阶段 5 要求测试运行发生在最后一次代码修改之后。
 - **状态签名（v0.8.0）**：配置 HMAC 密钥后，状态文件每次写入都带 `signature` 字段并在加载时校验；篡改 / 未签名 / 密钥不匹配 → `TamperedStateError`，CLI 明确报错并拒绝运行。
+- **证据签名（v0.9.0）**：独立于 state.json 的证据清单记录每个阶段推进时的文件 SHA-256；即使 Agent 伪造状态文件，`verify-evidence` 仍能发现证据被替换 / 缺失。
+- **密钥轮换（v0.9.0）**：`rotate-key` 校验现有签名后以新密钥重新签名；`state_hmac_keys` / `PHASE_BARRIER_HMAC_KEYS` 提供宽限期双密钥，轮换不中断。
+- **审计远程推送（v0.9.0）**：`audit_remote_url` 把审计事件异步转发到 SIEM；队列有界、失败只计数，不影响门禁执行。
 - **日志审计**：所有拦截与阶段变更写入 JSON 审计日志，便于事后分析“哪些请求被拦截”“跳过步骤的频率”。
 
 ## Docker 只读卷部署（进程级防绕过）
@@ -280,6 +294,8 @@ anti_shortcut/
 ├── validators.py      # 各阶段证据校验器（spec / tests / implementation / test_run / retest）
 ├── interceptors.py    # 命令分类、门禁目录检测、shell 写路径提取、测试输出摘要
 ├── audit.py           # 结构化 JSON 审计日志（structlog，按文件独立实例）
+├── remote_audit.py    # v0.9.0：审计事件异步批量推送到 SIEM / webhook（零依赖）
+├── evidence.py        # v0.9.0：证据文件哈希 + HMAC 签名清单（verify-evidence）
 ├── skill.py           # AntiShortcutSkill：工具包装 + advance_stage + 权限检查
 ├── integration.py     # 集成层：bootstrap / 插件注册 / 入口点发现
 ├── paths.py           # 路径工具：glob 匹配 / 文件遍历 / SHA-256
@@ -472,7 +488,8 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.6.0 已完成**：JavaScript 真实解析（acorn / `jest --listTests --json`）、Java 项目级编译（`mvn test-compile` / `gradle compileTestJava`，`mvnw` / `gradlew` 优先 + 指纹缓存）、Go / Rust GitHub Action 门禁示例与项目配置模板。
 - **v0.7.0 已完成**：JS 输出解析覆盖 Vitest / Playwright、覆盖率门禁 `coverage_threshold`（pytest-cov / `go test -cover` / istanbul 表）、K8s sidecar 部署模板与 HTTP 门禁服务（`anti_shortcut.sidecar`）。
 - **v0.8.0 已完成**：Java 输出解析增强（Surefire `Skipped` / Gradle / JUnit Console）、状态签名 HMAC（`state_hmac_key` / `PHASE_BARRIER_HMAC_KEY`）、GitHub Action 市场发布（tag 即 Release）。
-- **v0.9.0（规划）**：审计日志远程推送（SIEM）、更多语言适配器输出解析、密钥轮换与证据签名。
+- **v0.9.0 已完成**：审计日志远程推送（SIEM：`audit_remote_url` + 异步批量 + 队列保护）、证据签名（`evidence_manifest.json` + `verify-evidence`）、HMAC 密钥轮换（`state_hmac_keys` / `rotate-key`，含无签名→启用签名迁移）。
+- **v0.10.0（规划）**：审计远程推送增强（TLS 自定义 CA / 重试退避）、证据清单导出与 sigstore 签名、更多语言适配器输出解析。
 - **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有语言适配器入口点 `phase_barrier.languages` 与集成插件入口点 `anti_shortcut.integrations`）。
 - **供应链**：接入 sigstore 签名与 trusted publishing，提升包可信度。
 

@@ -1,0 +1,41 @@
+# gate-keeper：初始化门禁状态并推进到交付态的独立 Job。
+# 它独占挂载 phase-barrier-gate 卷（可写），把 .agent_gate 写入该卷；
+# 后续 agent + sidecar 的 Deployment 中，只有 sidecar 挂载同一卷。
+#
+# 镜像：用仓库 deploy/Dockerfile 构建并推送到你自己的镜像仓库：
+#   docker build -f deploy/Dockerfile -t <registry>/phase-barrier:<version> .
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: phase-barrier-gate-keeper
+  labels:
+    app: phase-barrier
+    component: gate-keeper
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: phase-barrier
+        component: gate-keeper
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: gate-keeper
+          image: <registry>/phase-barrier:0.7.0
+          command: ["python", "/app/deploy/seed_gate.py"]
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: gate-state
+              mountPath: /workspace/.agent_gate
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: phase-barrier-workspace
+        - name: gate-state
+          persistentVolumeClaim:
+            claimName: phase-barrier-gate

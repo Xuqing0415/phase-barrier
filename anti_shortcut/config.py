@@ -71,6 +71,9 @@ class GateConfig(BaseModel):
     # ---- 阶段 4/5：测试运行 ----
     test_commands: list[str] = Field(default_factory=lambda: list(DEFAULT_TEST_COMMANDS))
     max_test_output_tail: int = 4000
+    # 覆盖率门禁（v0.7.0）：设为 0-100 的百分比后，阶段 4/5 要求测试输出包含
+    # 覆盖率报告且不低于该阈值（pytest-cov / go test -cover / jest --coverage / vitest --coverage 等）
+    coverage_threshold: float | None = None
     # ---- 语言适配（v0.3.0）----
     # 显式指定语言（如 "python" / "javascript"），优先级最高；None 时自动检测
     language: str | None = None

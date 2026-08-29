@@ -4,6 +4,24 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.7.0] - 2026-08-29
+
+- JavaScript 输出解析（Vitest / Playwright）：
+  - 测试命令识别新增 `vitest` / `playwright test`（含 `npx playwright test`）。
+  - 新增 `parse_test_output`：提取 Jest / Vitest 风格摘要（`Tests: N passed` / `Test Files: ...`）
+    与 Playwright 风格（`N passed` / `N failed` / `FAIL ...test.js`），退出码非 0 时返回失败摘要。
+- 覆盖率门禁：
+  - 配置新增 `coverage_threshold`（0-100 百分比）；阶段 4/5 推进时要求测试输出包含覆盖率报告且达标。
+  - `summarize_test_output` 自动提取 pytest-cov `TOTAL` 行、`go test -cover` 的 `coverage: N% of statements`、
+    jest / vitest --coverage 的 istanbul `All files` 行；报告缺失或低于阈值则拒绝推进。
+- K8s sidecar：
+  - 新增 `anti_shortcut.sidecar` HTTP 门禁服务（`GET /api/state`、`POST /api/advance`、
+    `POST /api/test-run`、`POST /api/source-change`），标准库实现、零额外依赖、线程安全。
+  - 新增 `deploy/k8s/` 部署模板：`pvc.yaml`、`gate-keeper.yaml`（初始化 Job）、
+    `gate-sidecar.yaml`（agent + sidecar Deployment + Service）与部署说明 README。
+- 测试：新增 JS 输出解析、覆盖率门禁、sidecar 用例 21 个（199 → 220）。
+- 文档：README 适配器表、覆盖率门禁、K8s 部署、模块结构与 Roadmap 同步更新。
+
 ## [0.6.0] - 2026-08-29
 
 - JavaScript 真实解析：

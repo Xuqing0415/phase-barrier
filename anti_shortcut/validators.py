@@ -152,6 +152,22 @@ def validate_implementation(
     return True, f"实现代码校验通过（{len(source_files)} 个文件，语法检查 OK）", evidence
 
 
+def _check_coverage(config: GateConfig, tr: dict) -> tuple[bool, str]:
+    """覆盖率门禁：``config.coverage_threshold`` 配置后，要求测试记录含覆盖率且达标。"""
+    threshold = config.coverage_threshold
+    if threshold is None:
+        return True, ""
+    cov = tr.get("coverage")
+    if cov is None:
+        return False, (
+            f"配置了覆盖率门禁（coverage_threshold={threshold}%），"
+            "但测试输出中未检测到覆盖率报告（pytest-cov / go test -cover / jest --coverage）"
+        )
+    if float(cov) < threshold:
+        return False, f"覆盖率不足：{cov}% < {threshold}%（coverage_threshold）"
+    return True, ""
+
+
 # ---------- 阶段 4：运行测试 ----------
 
 def validate_test_run(
@@ -165,6 +181,9 @@ def validate_test_run(
     if not tr or "exit_code" not in tr:
         return False, "未检测到测试运行记录：请先运行测试命令（如 pytest）", {}
     outcome = "通过" if tr.get("passed") else "未通过"
+    cov_ok, cov_msg = _check_coverage(config, tr)
+    if not cov_ok:
+        return False, cov_msg, {**tr, "coverage": tr.get("coverage")}
     return True, f"测试运行记录存在（exit_code={tr.get('exit_code')}，结果：{outcome}）", tr
 
 
@@ -189,4 +208,7 @@ def validate_retest(
             "检测到代码/测试文件在最近一次测试运行之后被修改：请重新运行测试确认回归通过"
         ), {**tr, "after_last_change": False}
 
-    return True, "回归测试全部通过", {**tr, "after_last_change": True}
+    cov_ok, cov_msg = _check_coverage(config, tr)
+    if not cov_ok:
+        return False, cov_msg, {**tr, "after_last_change": True, "coverage": tr.get("coverage")}
+    return True, "回归测试全部通过", {**tr, "after_last_change": True, "coverage": tr.get("coverage")}

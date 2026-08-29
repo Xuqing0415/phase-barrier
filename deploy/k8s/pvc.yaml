@@ -1,0 +1,22 @@
+# phase-barrier K8s 示例：两个 PVC。
+#   phase-barrier-workspace : 编码 Agent 的工作区（spec / 测试 / 实现代码），Agent 与 sidecar 共享
+#   phase-barrier-gate      : 门禁状态卷（.agent_gate），只有 sidecar / gate-keeper 挂载，Agent 容器不可见
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: phase-barrier-workspace
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: phase-barrier-gate
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 10Mi

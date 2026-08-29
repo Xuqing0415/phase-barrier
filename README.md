@@ -16,6 +16,8 @@
 - **证据明确**：每个阶段要求具体可验证的产物（文件、AST 统计、测试退出码与摘要）。
 - **自动校验**：spec 章节检查、测试 AST 分析（函数数量 + 断言）、实现语法检查、测试结果解析，全部自动完成。
 - **可配置**：YAML + Pydantic 配置，可自定义阶段要求、文件模式、测试命令，或关闭某些严格校验。
+- **覆盖率门禁（v0.7.0）**：配置 `coverage_threshold` 后，测试阶段要求覆盖率报告存在且达标（pytest-cov / `go test -cover` / istanbul）。
+- **K8s sidecar（v0.7.0）**：`deploy/k8s/` 模板 + `anti_shortcut.sidecar` HTTP 服务，Agent 容器不挂载门禁目录，无法绕过阶段门禁。
 
 ## 架构
 
@@ -128,11 +130,11 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 
 ```yaml
 # 示例：PR 时要求工作区至少完成“实现代码”（阶段 3）
-- uses: Xuqing0415/phase-barrier@v0.4.1
+- uses: Xuqing0415/phase-barrier@v0.6.0
   with:
     workspace: .          # 工作区路径（相对仓库根）
     expected_stage: 3     # 0-6；当前阶段 < 期望阶段则失败
-    # config: gate.yaml   # 可选：phase-barrier YAML 配置
+    # config: gate.yaml   # 可选：phase-barrier YAML 配置（含 coverage_threshold 等）
 ```
 
 | 输入 | 默认 | 说明 |
@@ -217,6 +219,24 @@ protect_gate_dir: true             # 生产环境配合只读卷挂载
 allow_other_files_any_stage: true  # 其他文件类型（README 等）是否不限阶段
 ```
 
+### 覆盖率门禁（v0.7.0）
+
+配置 `coverage_threshold` 后，阶段 4（运行测试）与阶段 5（修复回归）推进时，
+要求测试输出包含覆盖率报告且不低于阈值，防止“测试全过但几乎没测到代码”：
+
+```yaml
+coverage_threshold: 80          # 0-100 百分比；不配置则不做覆盖率要求
+```
+
+运行测试命令需带覆盖率报告（phase-barrier 自动提取，无需额外配置）：
+
+- Python：`pytest --cov --cov-report=term-missing`（解析 `TOTAL` 行）
+- Go：`go test -cover ./...`（解析 `coverage: N% of statements`）
+- JavaScript：`npm test -- --coverage` 或 `npx vitest --coverage`（解析 istanbul `All files` 行）
+
+覆盖率报告缺失或低于阈值时，`advance_stage` 返回明确拒绝原因（如
+“覆盖率不足：60.0% < 80.0%”），Agent 需补跑带覆盖率的测试后才能推进。
+
 ## 安全与防绕过
 
 - **状态文件保护**：Agent 可用的工具全部被包装；`.agent_gate` 的任何写入 / shell 访问都被拦截。
@@ -238,6 +258,10 @@ docker compose -f deploy/docker-compose.yml up --build
 - `agent` 侧探针验证：读状态正常、写门禁目录被拒绝（`PermissionError`）、写工作区源码正常。
 
 详见 [`deploy/README.md`](deploy/README.md)。
+Kubernetes 版（v0.7.0）见 [`deploy/k8s/README.md`](deploy/k8s/README.md)：
+Job `gate-keeper` 初始化门禁状态卷，`agent + gate-sidecar` 共享工作区卷，
+sidecar 独占挂载门禁目录并暴露 HTTP API（`anti_shortcut.sidecar`），
+Agent 只能通过 sidecar 查询 / 推进阶段。
 
 ## 模块结构
 
@@ -260,7 +284,8 @@ anti_shortcut/
 │   ├── go.py          #   GoAdapter（gofmt + go test 解析）
 │   ├── rust.py        #   RustAdapter（cargo check / rustc + cargo test 解析）
 │   └── __init__.py    #   注册表 / detect_language / get_adapter / 入口点加载
-└── __main__.py        # CLI：python -m anti_shortcut inspect / advance
+├── __main__.py        # CLI：python -m anti_shortcut inspect / advance
+├── sidecar.py         # K8s sidecar HTTP 门禁服务（v0.7.0）
 examples/
 ├── demo.py                        # 模拟 Agent 完整演示（含违规拦截）
 ├── minimal_agent.py               # 最小可运行 Agent 接入示例
@@ -271,8 +296,13 @@ deploy/
 ├── docker-compose.yml             # gate-keeper（可写）+ agent（.agent_gate 只读）
 ├── seed_gate.py                   # gate-keeper：初始化并跑完整门禁流程
 ├── probe.py                       # agent 探针：验证只读挂载生效
+├── k8s/                           # Kubernetes 部署模板（v0.7.0）
+│   ├── pvc.yaml                   #   workspace / gate 两个 PVC
+│   ├── gate-keeper.yaml           #   初始化门禁状态的 Job
+│   ├── gate-sidecar.yaml          #   agent + sidecar Deployment + Service
+│   └── README.md                  #   kind / minikube 验证步骤
 └── README.md                      # 部署说明
-tests/                             # pytest 测试套件（186 个用例）
+tests/                             # pytest 测试套件（220 个用例）
 ```
 
 ## 设计取舍
@@ -328,7 +358,7 @@ test_commands:
 | 适配器 | 文件识别 | 语法检查 | 测试校验 |
 |--------|----------|----------|----------|
 | `PythonAdapter` | `test_*.py` / `tests/**` 为测试，`*.py` 为实现 | `compile()` | AST 解析：测试函数数 + `assert` / `pytest.raises` |
-| `JavaScriptAdapter` | `*.test.js` / `*.spec.ts` / `__tests__/` 为测试，`src/**` 与 `*.js|ts|jsx|tsx` 为实现 | `node --check` / `tsc --noEmit`（优先 `tsconfig.json` 项目检查；工具缺失返回明确错误） | 项目安装 acorn 时真实解析（`test` / `it` / `describe` 声明 + `expect` / `assert` 断言），否则启发式；可选 `jest --listTests --json` 动态发现 |
+| `JavaScriptAdapter` | `*.test.js` / `*.spec.ts` / `__tests__/` 为测试，`src/**` 与 `*.js|ts|jsx|tsx` 为实现 | `node --check` / `tsc --noEmit`（优先 `tsconfig.json` 项目检查；工具缺失返回明确错误） | 项目安装 acorn 时真实解析（`test` / `it` / `describe` 声明 + `expect` / `assert` 断言），否则启发式；可选 `jest --listTests --json` 动态发现；输出解析：Jest / Vitest（`Tests: N passed`）与 Playwright（`N passed` / `N failed`） |
 | `JavaAdapter` | `*Test.java` / `*Tests.java` / `src/test/**` 为测试，`src/**` 与 `*.java` 为实现 | 项目级 `mvn test-compile` / `gradle compileTestJava`（优先 `mvnw` / `gradlew`，带缓存）；无构建工具时回退 `javac -proc:none` | 启发式：`@Test` 注解数 + JUnit/Hamcrest 断言关键字 |
 | `GoAdapter` | `*_test.go` 为测试，`*.go` / `cmd|internal|pkg/**` 为实现 | `gofmt -e`（Go 工具链缺失返回明确错误） | 启发式：`func TestXxx(t *testing.T)` 函数数 + `t.Error` / `t.Fatal` / `assert` / `require` 断言 |
 | `RustAdapter` | `tests/**` / `*_test.rs` / `src/**/tests.rs` 为测试，`src/**` 与 `*.rs` 为实现 | `cargo check`（有 `Cargo.toml`）/ `rustc` 单文件回退（工具缺失返回明确错误） | 启发式：`#[test]` / `#[tokio::test]` 属性数 + `assert!` / `assert_eq!` / `assert_ne!` |
@@ -433,12 +463,9 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 ## Roadmap（规划）
 
 - **v0.6.0 已完成**：JavaScript 真实解析（acorn / `jest --listTests --json`）、Java 项目级编译（`mvn test-compile` / `gradle compileTestJava`，`mvnw` / `gradlew` 优先 + 指纹缓存）、Go / Rust GitHub Action 门禁示例与项目配置模板。
-- **v0.7.0 Vitest / Playwright 支持**：测试命令与输出解析覆盖 Vitest / Playwright，`jest --listTests --json` 输出按实际 jest 版本再校准。
-- **v0.7.0+ 覆盖率门禁**：把测试覆盖率阈值（如 `--cov-fail-under` / `go test -cover`）纳入阶段 4 证据校验。
-- **CI 模板**：为 Go / Rust 项目提供 K8s sidecar 部署模板与 GitHub Action 市场发布。
+- **v0.7.0 已完成**：JS 输出解析覆盖 Vitest / Playwright、覆盖率门禁 `coverage_threshold`（pytest-cov / `go test -cover` / istanbul 表）、K8s sidecar 部署模板与 HTTP 门禁服务（`anti_shortcut.sidecar`）。
+- **v0.8.0（规划）**：Java 适配器输出解析增强、GitHub Action 市场发布、状态文件签名（HMAC）、审计日志远程推送（SIEM）。
 - **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有语言适配器入口点 `phase_barrier.languages` 与集成插件入口点 `anti_shortcut.integrations`）。
-- **Kubernetes sidecar**：以 sidecar 容器承载门禁状态，与主 Agent 容器共享工作区、状态目录只读挂载。
-- **安全增强**：状态文件与证据签名（不可信环境防篡改）；审计日志远程推送（SIEM）。
 - **供应链**：接入 sigstore 签名与 trusted publishing，提升包可信度。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

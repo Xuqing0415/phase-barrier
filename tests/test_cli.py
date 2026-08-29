@@ -104,3 +104,39 @@ def test_inspect_invalid_config_graceful(capsys, tmp_path):
     err = capsys.readouterr().err
     assert rc == 1
     assert "ERROR" in err
+
+
+# ---------- v0.3.1 新增：CLI 错误处理边界 ----------
+
+def test_inspect_corrupted_state_graceful(capsys, tmp_path):
+    """状态文件损坏（非法 JSON）时应友好报错，不输出堆栈。"""
+    gate = tmp_path / ".agent_gate"
+    gate.mkdir()
+    (gate / "state.json").write_text("{not json", encoding="utf-8")
+    rc = main(["inspect", "--workspace", str(tmp_path)])
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "ERROR" in err and "状态" in err
+    assert "Traceback" not in err
+
+
+def test_inspect_incompatible_state_version_graceful(capsys, tmp_path):
+    """状态文件版本不兼容时应友好报错。"""
+    gate = tmp_path / ".agent_gate"
+    gate.mkdir()
+    (gate / "state.json").write_text('{"version": 999}', encoding="utf-8")
+    rc = main(["inspect", "--workspace", str(tmp_path)])
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "版本" in err
+    assert "Traceback" not in err
+
+
+def test_inspect_missing_workspace_graceful(capsys, tmp_path):
+    """工作区不存在时应报错，且不静默创建目录树。"""
+    missing = tmp_path / "no_such_ws"
+    rc = main(["inspect", "--workspace", str(missing)])
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "ERROR" in err and "工作区" in err
+    assert not missing.exists()

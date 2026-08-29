@@ -212,3 +212,50 @@ def _run_full_flow(tmp_path: Path, tools: dict, impl: str):
     assert tools["advance_stage"](4)["success"]
     tools["execute_command"]("python -m pytest test_fib.py -q -p no:cacheprovider")
     assert tools["advance_stage"](5)["success"]
+
+
+# ---------- v0.3.1 新增：拦截器边界 ----------
+
+def test_shell_dd_write_source_blocked(tmp_path, fake_tools):
+    """阶段 1：dd of= 写实现文件应被拦截。"""
+    skill = make_skill(tmp_path)
+    tools = skill.install(fake_tools)
+    with pytest.raises(PermissionError, match="实现代码"):
+        tools["execute_command"]("dd if=/dev/zero of=fib.py bs=1024 count=1")
+
+
+def test_shell_tee_write_source_blocked(tmp_path, fake_tools):
+    """阶段 1：tee 写实现文件应被拦截。"""
+    skill = make_skill(tmp_path)
+    tools = skill.install(fake_tools)
+    with pytest.raises(PermissionError, match="实现代码"):
+        tools["execute_command"]("tee fib.py")
+
+
+def test_gate_dir_dd_command_blocked(tmp_path, fake_tools):
+    """dd 试图覆写状态文件应被门禁目录保护拦截。"""
+    skill = make_skill(tmp_path)
+    tools = skill.install(fake_tools)
+    with pytest.raises(PermissionError, match="agent_gate"):
+        tools["execute_command"]("dd of=.agent_gate/state.json bs=1024")
+
+
+def test_check_write_permission_special_chars(tmp_path, fake_tools):
+    """路径含空格 / 非 ASCII 字符时仍按源代码规则拦截。"""
+    skill = make_skill(tmp_path)
+    with pytest.raises(PermissionError, match="实现代码"):
+        skill.check_write_permission("my fib.py")
+    with pytest.raises(PermissionError, match="实现代码"):
+        skill.check_write_permission("测试.py")
+    skill.check_write_permission("README.md")  # 其他类型默认放行
+
+
+def test_dd_source_write_allowed_after_impl(tmp_path, fake_tools):
+    """阶段 3 之后 dd 写实现文件不再被拦截（check_exec_permission 不抛异常）。"""
+    skill = make_skill(tmp_path)
+    tools = skill.install(fake_tools)
+    tools["write_file"]("spec.md", SPEC)
+    assert tools["advance_stage"](2)["success"]
+    tools["write_file"]("test_fib.py", GOOD_TESTS)
+    assert tools["advance_stage"](3)["success"]
+    skill.check_exec_permission("dd if=/dev/zero of=fib.py bs=1024 count=1")

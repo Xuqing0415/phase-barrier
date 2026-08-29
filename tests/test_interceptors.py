@@ -4,6 +4,7 @@ from pathlib import Path
 from anti_shortcut.config import GateConfig
 from anti_shortcut.interceptors import (
     extract_written_paths,
+    is_language_test_command,
     is_test_command,
     summarize_test_output,
     touches_gate_dir,
@@ -99,3 +100,58 @@ def test_summarize_test_output_edge_cases():
     assert rec3["passed"] is True
     rec4 = summarize_test_output("ERROR: cannot import fib", 1)
     assert rec4["passed"] is False
+
+
+# ---------- v0.3.1 新增：拦截器边界 ----------
+
+def test_is_language_test_command_injection():
+    """命令注入写法（分号/逻辑符串联）应被识别为测试命令，宁可多拦。"""
+    cfg = GateConfig()
+    assert is_language_test_command("pytest -q; rm -rf /", cfg)
+    assert is_language_test_command("npm test && git push origin main", cfg)
+    assert is_language_test_command("python -m pytest tests/ && echo done", cfg)
+    assert not is_language_test_command("", cfg)
+    assert not is_language_test_command(None, cfg)
+
+
+def test_is_language_test_command_keyword_fallback():
+    """关键词兜底：独立 test 单词（make test / 自定义脚本）也能识别。"""
+    cfg = GateConfig()
+    assert is_language_test_command("make test", cfg)
+    assert is_language_test_command("./test", cfg)  # 自定义测试脚本
+    assert is_language_test_command("npx test", cfg)
+    assert not is_language_test_command("python fib.py", cfg)
+    assert not is_language_test_command("ls test_dir", cfg)  # test 不是独立单词
+
+
+def test_is_language_test_command_config_pattern():
+    """自定义 test_commands 正则可覆盖默认规则。"""
+    cfg = GateConfig(test_commands=[r"^\s*run-my-tests\b"])
+    assert is_language_test_command("run-my-tests -v", cfg)
+    assert not is_language_test_command("pytest", cfg)
+
+
+def test_touches_gate_dir_path_segments():
+    """门禁目录路径段匹配：$HOME / 绝对路径 / 相对路径变体。"""
+    gate = Path("ws/.agent_gate")
+    assert touches_gate_dir("cat $HOME/.agent_gate/state.json", gate)
+    assert touches_gate_dir("rm -rf /tmp/.agent_gate", gate)
+    assert touches_gate_dir("type C:/ws/.agent_gate/state.json", gate)
+    assert touches_gate_dir("./.agent_gate/state.json", gate)
+    assert not touches_gate_dir("cat /var/log/syslog", gate)
+    assert not touches_gate_dir("cat .agent_gate_extra", gate)
+
+
+def test_extract_written_paths_dd():
+    """dd 的 of= 目标应被识别为写路径（如 dd 覆写实现/状态文件）。"""
+    assert extract_written_paths("dd if=/dev/zero of=fib.py bs=1024 count=1") == ["fib.py"]
+    assert extract_written_paths("dd of=out.ts") == ["out.ts"]
+    assert extract_written_paths("dd of=fib.py oflag=append") == ["fib.py"]
+    assert extract_written_paths("dd if=/dev/zero") == []
+
+
+def test_extract_written_paths_tee_and_quotes():
+    """tee / 引号路径的写路径提取。"""
+    assert extract_written_paths('tee -a "my file.txt"') == ["my file.txt"]
+    assert extract_written_paths("echo hi > 'dir/my file.py'") == ["dir/my file.py"]
+    assert extract_written_paths("dd of='out dir/out.ts'") == ["out dir/out.ts"]

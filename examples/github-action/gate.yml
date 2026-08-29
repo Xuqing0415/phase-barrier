@@ -18,8 +18,8 @@ jobs:
       - uses: actions/checkout@v4
 
       # 例如：要求 Agent 产出的工作区至少完成“实现代码”（阶段 3）
-      # 发布版请固定 tag：Xuqing0415/phase-barrier@v0.4.1
-      - uses: Xuqing0415/phase-barrier@v0.4.1
+      # 发布版请固定 tag：Xuqing0415/phase-barrier@v0.6.0
+      - uses: Xuqing0415/phase-barrier@v0.6.0
         with:
           workspace: .
           expected_stage: 3

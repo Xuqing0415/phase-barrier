@@ -1,0 +1,79 @@
+# agent + gate-sidecar：共享工作区卷；sidecar 独占挂载门禁状态卷。
+# Agent 容器不挂载 phase-barrier-gate，只能通过 sidecar 的 HTTP API 查询/推进阶段，
+# 即使 Agent 绕过工具包装直接操作文件系统，也无法篡改状态机。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent
+  labels:
+    app: phase-barrier-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: phase-barrier-agent
+  template:
+    metadata:
+      labels:
+        app: phase-barrier-agent
+    spec:
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: phase-barrier-workspace
+        - name: gate-state
+          persistentVolumeClaim:
+            claimName: phase-barrier-gate
+      containers:
+        # ---- 编码 Agent（替换为你自己的 Agent 镜像）----
+        - name: agent
+          image: <your-agent-image>
+          command: ["sh", "-c", "echo 'agent running'; sleep infinity"]
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+        # ---- 门禁 sidecar ----
+        - name: gate-sidecar
+          image: <registry>/phase-barrier:0.7.0
+          command: ["python", "-m", "anti_shortcut.sidecar"]
+          args:
+            - --workspace
+            - /workspace
+            - --port
+            - "8080"
+            # 需要覆盖率门禁或自定义阶段时，取消下面两行并挂载配置文件：
+            # - --config
+            # - /workspace/gate.yaml
+            # - --user-request
+            # - 实现一个计算斐波那契数列的函数
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: gate-state
+              mountPath: /workspace/.agent_gate
+---
+# 供 Agent 访问 sidecar 的集群内 Service（同 Pod 内也可直接用 localhost:8080）
+apiVersion: v1
+kind: Service
+metadata:
+  name: gate-sidecar
+  labels:
+    app: phase-barrier-agent
+spec:
+  selector:
+    app: phase-barrier-agent
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

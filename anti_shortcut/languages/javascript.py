@@ -11,7 +11,10 @@
   否则回退轻量启发式（剥离注释与字符串字面量后正则匹配）；
   可选 ``jest --listTests --json`` 动态发现模式（``adapter_options.test_discovery: jest``
   或自动探测到项目内 jest 时启用），jest 不可用时返回明确错误
-- 测试命令：``npm test`` / ``npx jest`` / ``yarn test`` / ``npx tsc --noEmit`` 等
+- 测试命令：``npm test`` / ``npx jest`` / ``npx vitest`` / ``npx playwright test`` /
+  ``yarn test`` / ``npx tsc --noEmit`` 等
+- 输出解析：Jest / Vitest 风格（``Tests: N passed`` / ``Test Files: ...``）与
+  Playwright 风格（``N passed`` / ``N failed``），退出码非 0 时优先提取失败摘要
 
 语法检查依赖外部工具（Node.js / tsc）；工具缺失时校验失败并提示安装，不会静默放行。
 """
@@ -30,6 +33,25 @@ __all__ = ["JavaScriptAdapter"]
 
 _JS_SUFFIXES = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"}
 _TS_SUFFIXES = {".ts", ".tsx"}
+
+# Jest / Vitest / Playwright 摘要行（v0.7.0 输出解析）
+_JS_SUMMARY_PATTERNS = [
+    re.compile(r"Tests?:\s+[^\n]+"),
+    re.compile(r"Test Files?:\s+[^\n]+"),
+    re.compile(r"Test Suites?:\s+[^\n]+"),
+    re.compile(r"\b\d+\s+(?:passed|failed)[^\n]*"),
+]
+
+
+def _extract_js_test_summary(text: str) -> str:
+    """从 Jest / Vitest / Playwright 输出中提取最相关的摘要行。"""
+    lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+    for pattern in _JS_SUMMARY_PATTERNS:
+        for ln in reversed(lines):
+            if pattern.search(ln):
+                return ln
+    return ""
+
 
 # tsc 对“单文件无法解析依赖”的典型报错：这些不算语法错误
 _TS_DEPENDENCY_MARKERS = (
@@ -82,6 +104,8 @@ class JavaScriptAdapter(LanguageAdapter):
         r"^\s*npx\s+(jest|vitest|mocha|playwright)\b",
         r"^\s*yarn\s+test\b",
         r"^\s*pnpm\s+test\b",
+        r"^\s*vitest\b",
+        r"^\s*playwright\s+test\b",
         r"^\s*npx\s+tsc\s+--noEmit\b",
     ]
 
@@ -256,6 +280,23 @@ class JavaScriptAdapter(LanguageAdapter):
             norm.append(p.as_posix().lstrip("./"))
         self._jest_files = norm
         return norm
+
+    # ---------- 测试输出解析（Jest / Vitest / Playwright） ----------
+
+    def parse_test_output(self, output: str, exit_code: int | None) -> tuple[bool, str]:
+        """解析 Jest / Vitest / Playwright 风格输出。"""
+        text = output or ""
+        if exit_code == 0:
+            summary = _extract_js_test_summary(text)
+            return True, summary or "所有测试通过"
+        summary = _extract_js_test_summary(text)
+        if summary:
+            return False, summary[:300]
+        if re.search(r"FAIL\s+\S+\.(test|spec)\.", text):
+            return False, "存在失败的测试文件（FAIL）"
+        if re.search(r"\b(\d+)\s+failed\b", text, re.IGNORECASE):
+            return False, "存在失败的测试用例（failed）"
+        return False, f"测试失败，退出码 {exit_code}"
 
     def analyze_tests(self, path: Path) -> dict[str, Any]:
         if self._use_jest_discovery(path):

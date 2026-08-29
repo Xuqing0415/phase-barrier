@@ -307,3 +307,44 @@ def test_js_validate_tests_evidence_parsers(tmp_path, monkeypatch):
     ok, msg, ev = validate_tests(tmp_path, cfg, None)
     assert ok
     assert ev.get("parsers") == ["acorn"]
+
+# ---------- Vitest / Playwright 输出解析与命令识别（v0.7.0） ----------
+
+def test_js_parse_vitest_output():
+    a = JavaScriptAdapter()
+    ok, summary = a.parse_test_output(
+        "Test Files  2 passed (2)\n     Tests  5 passed (5)\n", 0
+    )
+    assert ok and "Tests" in summary
+
+
+def test_js_parse_playwright_failure():
+    a = JavaScriptAdapter()
+    out = (
+        "Running 4 tests using 1 worker\n"
+        "  1 failed\n"
+        "  FAIL test/foo.spec.ts\n"
+        "  1 failed / 3 passed (4)\n"
+    )
+    ok, summary = a.parse_test_output(out, 1)
+    assert not ok and "failed" in summary
+
+
+def test_js_parse_test_output_no_summary_fallback():
+    a = JavaScriptAdapter()
+    ok, summary = a.parse_test_output("", 1)
+    assert not ok and "测试失败" in summary
+
+
+def test_js_parse_test_output_pass_no_summary():
+    a = JavaScriptAdapter()
+    ok, summary = a.parse_test_output("Running 3 tests ... done", 0)
+    assert ok and "所有测试通过" in summary
+
+
+def test_js_identify_vitest_playwright_commands():
+    a = JavaScriptAdapter()
+    assert a.identify_test_command("vitest run")
+    assert a.identify_test_command("playwright test")
+    assert a.identify_test_command("npx playwright test --reporter=line")
+    assert not a.identify_test_command("npm run build")

@@ -143,6 +143,31 @@ def extract_written_paths(command: str) -> list[str]:
 
 # ---------- 测试输出摘要 ----------
 
+def _extract_coverage(text: str) -> float | None:
+    """从测试输出中提取覆盖率百分比（pytest-cov / go test -cover / istanbul 表）。
+
+    支持：
+    - ``coverage: 89.1% of statements``（go test -cover）
+    - ``TOTAL  5  0  100%``（pytest-cov）
+    - ``All files | 100 | 100 | 100 | 100 |``（jest / vitest --coverage，istanbul 表）
+    """
+    text = text or ""
+    m = re.search(r"coverage:\s*([\d.]+)%", text, re.IGNORECASE)
+    if m:
+        return float(m.group(1))
+    for ln in text.splitlines():
+        if re.match(r"\s*TOTAL\s", ln):
+            m = re.search(r"([\d.]+)%", ln)
+            if m:
+                return float(m.group(1))
+    for ln in text.splitlines():
+        if "All files" in ln:
+            m = re.search(r"All files[^|]*\|\s*([\d.]+)", ln)
+            if m:
+                return float(m.group(1))
+    return None
+
+
 def summarize_test_output(
     output: str,
     exit_code: int | None = None,
@@ -183,4 +208,5 @@ def summarize_test_output(
         "passed": passed,
         "summary": summary,
         "output_tail": tail_text,
+        "coverage": _extract_coverage(text),
     }

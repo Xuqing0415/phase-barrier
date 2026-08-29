@@ -1,0 +1,89 @@
+name: "Phase-Barrier Gate"
+description: "阶段门禁检查：强制编码 Agent 的产出按 需求→spec→测试→实现→测试→交付 推进；未达到期望阶段则 CI 失败"
+author: "Anti-Shortcut Team"
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  workspace:
+    description: "工作区路径（相对仓库根）"
+    required: false
+    default: "."
+  config:
+    description: "phase-barrier YAML 配置文件路径（可选）"
+    required: false
+    default: ""
+  mode:
+    description: "inspect：检查当前阶段（低于 expected_stage 则失败）；advance：推进到 --to 指定阶段"
+    required: false
+    default: "inspect"
+  expected_stage:
+    description: "inspect 模式期望达到的阶段号（0-6）"
+    required: false
+    default: "6"
+  to:
+    description: "advance 模式的目标阶段（必须等于当前阶段 + 1）"
+    required: false
+    default: ""
+  user_request:
+    description: "advance 首次初始化时记录的用户需求原文（可选）"
+    required: false
+    default: ""
+  version:
+    description: "安装的 phase-barrier 版本（留空表示最新版）"
+    required: false
+    default: ""
+  local:
+    description: "安装本地仓库代码而非 PyPI（CI 自测用）"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install phase-barrier
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -m pip install --upgrade pip
+        if [ "${{ inputs.local }}" == "true" ]; then
+          pip install .
+        elif [ -n "${{ inputs.version }}" ]; then
+          pip install "phase-barrier==${{ inputs.version }}"
+        else
+          pip install --upgrade phase-barrier
+        fi
+
+    - name: Run phase-barrier gate
+      shell: bash
+      run: |
+        set -euo pipefail
+        WS="${{ inputs.workspace }}"
+        CONFIG_ARGS=()
+        if [ -n "${{ inputs.config }}" ]; then
+          CONFIG_ARGS+=(--config "${{ inputs.config }}")
+        fi
+
+        if [ "${{ inputs.mode }}" == "advance" ]; then
+          USER_ARGS=()
+          if [ -n "${{ inputs.user_request }}" ]; then
+            USER_ARGS+=(--user-request "${{ inputs.user_request }}")
+          fi
+          python -m anti_shortcut advance --workspace "$WS" --to "${{ inputs.to }}" "${CONFIG_ARGS[@]}" "${USER_ARGS[@]}"
+        else
+          python -m anti_shortcut inspect --workspace "$WS" --json "${CONFIG_ARGS[@]}" > /tmp/phase-barrier-gate.json
+          STAGE=$(python -c "import json; print(json.load(open('/tmp/phase-barrier-gate.json'))['current_stage'])")
+          EXPECTED="${{ inputs.expected_stage }}"
+          if [ "$STAGE" -lt "$EXPECTED" ]; then
+            echo "::error::phase-barrier 门禁未通过：当前阶段 $STAGE < 期望阶段 $EXPECTED（Agent 产出未按 SOP 完成）"
+            cat /tmp/phase-barrier-gate.json
+            exit 1
+          fi
+          echo "phase-barrier 门禁通过：当前阶段 $STAGE >= 期望阶段 $EXPECTED"
+        fi

@@ -1,0 +1,26 @@
+# 示例：把 phase-barrier 作为 PR 门禁。
+# 复制本文件到目标仓库的 .github/workflows/gate.yml 即可生效。
+#
+# 用法（inputs 说明见仓库 README「GitHub Action 门禁」）：
+#   workspace      - 工作区路径（相对仓库根）
+#   expected_stage - 期望阶段（0-6）；当前阶段低于该值则 CI 失败
+#   config         - 可选：phase-barrier YAML 配置
+#   mode           - inspect（默认，检查阶段）或 advance（推进阶段）
+name: Gate
+
+on:
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 例如：要求 Agent 产出的工作区至少完成“实现代码”（阶段 3）
+      # 发布版请固定 tag：Xuqing0415/phase-barrier@v0.4.0
+      - uses: Xuqing0415/phase-barrier@v0.4.0
+        with:
+          workspace: .
+          expected_stage: 3
+          # config: anti_shortcut_config.yaml   # 可选

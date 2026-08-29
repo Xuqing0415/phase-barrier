@@ -163,11 +163,18 @@ def summarize_test_output(
     tail_text = "\n".join(tail)[-max_tail:]
 
     # 尝试提取 pytest / unittest 风格摘要行
+    # 两遍扫描：优先 pytest/统计行（passed / Tests run / Failures），
+    # 再退而求其次找 BUILD SUCCESS/FAILURE、OK、FAILED（Maven/Gradle 风格）
     summary = ""
     for ln in reversed(tail):
-        if re.search(r"\b\d+ (passed|failed|error|skipped|warning)\b|tests? (passed|ok|failed)\b|OK|FAILED", ln, re.IGNORECASE):
+        if re.search(r"\b\d+ (passed|failed|error|skipped|warning)\b|tests? (passed|ok|failed)\b|Tests? run:\s*\d+|Failures?:\s*\d+|Errors?:\s*\d+", ln, re.IGNORECASE):
             summary = ln.strip()
             break
+    if not summary:
+        for ln in reversed(tail):
+            if re.search(r"BUILD (SUCCESS|FAILURE)|OK|FAILED", ln, re.IGNORECASE):
+                summary = ln.strip()
+                break
     if not summary and tail:
         summary = tail[-1][:300]
 

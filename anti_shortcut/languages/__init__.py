@@ -14,6 +14,7 @@ from typing import Any
 
 from ..config import GateConfig
 from .base import LanguageAdapter, analyze_js_style_tests, validate_test_collection
+from .java import JavaAdapter
 from .javascript import JavaScriptAdapter
 from .python import PythonAdapter
 
@@ -22,6 +23,7 @@ __all__ = [
     "LanguageAdapter",
     "PythonAdapter",
     "JavaScriptAdapter",
+    "JavaAdapter",
     "detect_language",
     "get_adapter",
     "load_entry_point_adapters",
@@ -33,6 +35,7 @@ __all__ = [
 LANGUAGE_REGISTRY: dict[str, type[LanguageAdapter]] = {
     "python": PythonAdapter,
     "javascript": JavaScriptAdapter,
+    "java": JavaAdapter,
 }
 
 # 标志文件 → 语言（顺序即优先级；同语言内按可依赖程度排序）

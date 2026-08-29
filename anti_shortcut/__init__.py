@@ -8,12 +8,17 @@
     tools = skill.install({"write_file": my_write, "execute_command": my_exec})
     result = tools["advance_stage"](2)  # 完成 spec 后推进
 """
+from importlib.metadata import PackageNotFoundError, version as _distribution_version
+
 from .config import STAGES, GateConfig, load_config
 from .integration import bootstrap, install_into, load_plugins, register_integration
 from .skill import AntiShortcutSkill
 from .state import StateManager
 
-__version__ = "0.1.0"
+try:
+    __version__ = _distribution_version("phase-barrier")
+except PackageNotFoundError:  # 直接从源码运行（未安装）时的占位版本
+    __version__ = "0.0.0.dev0"
 
 __all__ = [
     "AntiShortcutSkill",

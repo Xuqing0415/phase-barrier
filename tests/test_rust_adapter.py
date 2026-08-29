@@ -225,3 +225,43 @@ def test_skill_rust_full_flow(tmp_path, monkeypatch, fake_tools):
     r = tools["advance_stage"](5)
     assert r["success"] and r["stage"] == 6
     assert skill.is_complete
+
+
+# ---------- v0.10.0：输出解析增强 ----------
+
+def test_rust_adapter_parse_failure_names():
+    a = RustAdapter()
+    out = (
+        "running 2 tests\n"
+        "test test_basic ... ok\n"
+        "test test_negative ... FAILED\n"
+        "\n"
+        "failures:\n"
+        "\n"
+        "failures:\n"
+        "    test_negative\n"
+        "\n"
+        "test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out\n"
+    )
+    ok, summary = a.parse_test_output(out, 1)
+    assert not ok
+    assert "test_negative" in summary
+    assert "FAILED" in summary
+
+
+def test_rust_adapter_parse_ok_detail():
+    a = RustAdapter()
+    ok, summary = a.parse_test_output(
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out\n", 0
+    )
+    assert ok and "3 passed" in summary
+
+
+def test_summarize_test_output_prefers_rust_adapter():
+    from anti_shortcut.interceptors import summarize_test_output
+
+    rec = summarize_test_output(
+        "test result: ok. 3 passed; 0 failed\n", 0, adapter=RustAdapter()
+    )
+    assert rec["passed"] is True
+    assert "3 passed" in rec["summary"]

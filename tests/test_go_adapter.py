@@ -199,3 +199,43 @@ def test_skill_go_full_flow(tmp_path, monkeypatch, fake_tools):
     r = tools["advance_stage"](5)
     assert r["success"] and r["stage"] == 6
     assert skill.is_complete
+
+
+# ---------- v0.10.0：输出解析增强 ----------
+
+def test_go_adapter_parse_failure_names():
+    a = GoAdapter()
+    out = (
+        "=== RUN   TestFibBasic\n"
+        "--- FAIL: TestFibBasic (0.00s)\n"
+        "    fib_test.go:10: fib(3) = 1, want 2\n"
+        "=== RUN   TestFibNegative\n"
+        "--- FAIL: TestFibNegative (0.00s)\n"
+        "    fib_test.go:20: fib(-1) = 99, want 0\n"
+        "FAIL\nFAIL\texample.com/fib\t0.123s\n"
+    )
+    ok, summary = a.parse_test_output(out, 1)
+    assert not ok
+    assert "TestFibBasic" in summary and "TestFibNegative" in summary
+    assert "2 个" in summary
+
+
+def test_go_adapter_parse_verbose_pass_count():
+    a = GoAdapter()
+    out = (
+        "=== RUN   TestFibBasic\n"
+        "--- PASS: TestFibBasic (0.00s)\n"
+        "=== RUN   TestFibNegative\n"
+        "--- PASS: TestFibNegative (0.00s)\n"
+        "PASS\n"
+    )
+    ok, summary = a.parse_test_output(out, 0)
+    assert ok and "2 个用例通过" in summary
+
+
+def test_summarize_test_output_prefers_go_adapter():
+    from anti_shortcut.interceptors import summarize_test_output
+
+    rec = summarize_test_output("ok  \texample.com/fib\t0.123s\n", 0, adapter=GoAdapter())
+    assert rec["passed"] is True
+    assert "example.com/fib" in rec["summary"]

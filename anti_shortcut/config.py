@@ -101,6 +101,11 @@ class GateConfig(BaseModel):
     audit_remote_batch_size: int = 50
     audit_remote_max_queue: int = 1000
     audit_remote_flush_interval: float = 5.0
+    # v0.10.0：自定义 CA 证书（PEM 文件路径），用于自建 SIEM 的 HTTPS 端点
+    audit_remote_ca_bundle: str | None = None
+    # v0.10.0：发送失败时的重试次数（指数退避 backoff * 2**attempt 秒）
+    audit_remote_retries: int = 2
+    audit_remote_backoff_factor: float = 0.5
     # ---- 安全 ----
     protect_gate_dir: bool = True
     # 允许 Agent 直接写入“其他”类型文件（如 README.md、docs），默认不限

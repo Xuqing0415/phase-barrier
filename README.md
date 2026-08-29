@@ -121,7 +121,36 @@ python -m anti_shortcut advance --workspace . --to 2     # 推进阶段（校验
 
 `advance` 与 Agent 内部的 `advance_stage` 走同一套证据校验：通过返回退出码 0，被拒绝返回 1 并打印原因。
 
+## GitHub Action 门禁（CI 集成）
+
+仓库根目录提供复合 Action（`action.yml`），可直接把 phase-barrier 作为 CI 阶段闸门：
+Agent 产出的工作区未达到期望阶段时，CI 直接失败。
+
+```yaml
+# 示例：PR 时要求工作区至少完成“实现代码”（阶段 3）
+- uses: Xuqing0415/phase-barrier@v0.4.0
+  with:
+    workspace: .          # 工作区路径（相对仓库根）
+    expected_stage: 3     # 0-6；当前阶段 < 期望阶段则失败
+    # config: gate.yaml   # 可选：phase-barrier YAML 配置
+```
+
+| 输入 | 默认 | 说明 |
+|------|------|------|
+| `workspace` | `.` | 工作区路径（相对仓库根） |
+| `config` | 空 | YAML 配置文件路径 |
+| `mode` | `inspect` | `inspect` 检查当前阶段；`advance` 推进到 `--to` 指定阶段 |
+| `expected_stage` | `6` | inspect 模式：当前阶段低于该值则失败 |
+| `to` | 空 | advance 模式的目标阶段（必须等于当前阶段 + 1） |
+| `user_request` | 空 | advance 首次初始化时记录的用户需求原文 |
+| `version` | 空 | 安装的 phase-barrier 版本（留空取最新版） |
+| `local` | `false` | 安装本地仓库代码而非 PyPI（CI 自测用） |
+
+完整示例见 `examples/github-action/gate.yml`；本项目 CI 自带 `gate-action` 自测 job，
+验证“达到期望阶段通过 / 未达到失败”两条路径。
+
 ## 阶段定义与证据要求
+
 
 | 阶段 | 名称 | 必需证据 | 校验方式 |
 |------|------|----------|----------|
@@ -257,7 +286,7 @@ tests/                             # pytest 测试套件（117 个用例）
 ## 多语言支持（v0.3.0 语言适配层）
 
 v0.3.0 起，语言相关逻辑（文件识别、语法检查、测试统计、测试命令识别）抽象为
-**语言适配器（Language Adapter）**。核心包内置 Python 与 JavaScript/TypeScript 适配器，
+**语言适配器（Language Adapter）**。核心包内置 Python、JavaScript/TypeScript 与 Java 适配器，
 第三方可注册自定义适配器；未显式指定时按工作区标志文件自动检测。
 
 ### 快速启用
@@ -294,6 +323,7 @@ test_commands:
 |--------|----------|----------|----------|
 | `PythonAdapter` | `test_*.py` / `tests/**` 为测试，`*.py` 为实现 | `compile()` | AST 解析：测试函数数 + `assert` / `pytest.raises` |
 | `JavaScriptAdapter` | `*.test.js` / `*.spec.ts` / `__tests__/` 为测试，`src/**` 与 `*.js|ts|jsx|tsx` 为实现 | `node --check` / `tsc --noEmit`（工具缺失时返回明确错误） | 轻量启发式：`test` / `it` / `describe` 声明数 + `expect` / `assert` / `.toBe` 等断言关键字 |
+| `JavaAdapter` | `*Test.java` / `*Tests.java` / `src/test/**` 为测试，`src/**` 与 `*.java` 为实现 | `javac -proc:none`（JDK 缺失返回明确错误；跨文件依赖未解析时降级提示） | 启发式：`@Test` 注解数 + JUnit/Hamcrest 断言关键字 |
 
 ### 自定义适配器
 
@@ -394,9 +424,8 @@ v0.3.0 起推荐使用语言适配层：`language: javascript`（内置 Python /
 
 ## Roadmap（规划）
 
-- **v0.4.0 更多语言适配器**：在 v0.3.0 语言适配层基础上接入 Java（`javac`）、Go、Rust 等；JavaScript 测试校验从启发式升级为真实解析（acorn / `jest --listTests`）。
-- **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有集成插件入口点 `anti_shortcut.integrations`）。
-- **CI 门禁集成**：提供 GitHub Action，让 phase-barrier 直接在 CI 中作为阶段闸门使用。
+- **v0.5.0+ 更多语言适配器**：在 v0.4.0 Java 基础上接入 Go、Rust 等；JavaScript 测试校验从启发式升级为真实解析（acorn / `jest --listTests`）。
+- **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有语言适配器入口点 `phase_barrier.languages` 与集成插件入口点 `anti_shortcut.integrations`）。
 - **Kubernetes sidecar**：以 sidecar 容器承载门禁状态，与主 Agent 容器共享工作区、状态目录只读挂载。
 - **安全增强**：状态文件与证据签名（不可信环境防篡改）；审计日志远程推送（SIEM）。
 - **供应链**：接入 sigstore 签名与 trusted publishing，提升包可信度。

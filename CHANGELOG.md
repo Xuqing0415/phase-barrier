@@ -2,6 +2,14 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.4.0] - 2026-08-29
+
+- 新增 `JavaAdapter`（`anti_shortcut/languages/java.py`）：`javac -proc:none` 语法检查（JDK 缺失返回明确错误；跨文件依赖未解析时降级为“通过，需完整项目编译验证”）、`@Test` 注解 + JUnit/Hamcrest 断言启发式测试统计、`mvn` / `gradle` / `mvnw` / `gradlew` / JUnit Console 测试命令识别、Maven/Gradle `Tests run: N, Failures: M` 输出解析；自动检测标志文件已覆盖 `pom.xml` / `build.gradle*`。
+- Java 语法检查：javac 输出目录优先使用源文件旁的隐藏目录 `.phase-barrier-javac`（规避 Windows 系统 Temp 的 ACL 限制），该目录加入证据扫描跳过名单；javac 输出按 UTF-8 / GBK / cp1252 多编码解码，兼容中文 Windows。
+- 测试输出摘要：`summarize_test_output` 支持 Maven/Gradle 风格（`Tests run: N, Failures: M`、`BUILD SUCCESS/FAILURE`），摘要优先取统计行。
+- 新增 GitHub Action 门禁（仓库根 `action.yml`）：`inspect`（低于 `expected_stage` 则失败）/ `advance` 两种模式，支持 `workspace` / `config` / `version` / `local` 等输入；示例见 `examples/github-action/gate.yml`；CI 增加 `gate-action` 自测 job 验证通过/拦截两条路径。
+- 测试：新增 Java 适配器用例 14 个（133 → 147）。
+
 ## [0.3.1] - 2026-08-29
 
 - 拦截器：新增 `dd of=...` 写路径识别；门禁目录保护扩展到路径段匹配（`$HOME/.agent_gate/...`、`/tmp/.agent_gate`、Windows 反斜杠路径）；测试命令关键词兜底支持 `./test` 脚本路径。

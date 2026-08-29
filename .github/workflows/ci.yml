@@ -44,6 +44,48 @@ jobs:
           anti-shortcut --version
           anti-shortcut inspect --json
 
+  gate-action:
+    name: GitHub Action gate self-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare demo workspace (fresh -> stage 1)
+        shell: bash
+        run: |
+          mkdir -p ci_gate_ws
+          cat > ci_gate_ws/spec.md <<'EOF'
+          # Demo
+          ## 需求分析
+          实现一个加法函数 add(a, b)，返回两数之和。
+          ## 设计方案
+          纯函数实现，参数校验非空。
+          ## 接口定义
+          int add(int a, int b)
+          EOF
+
+      - name: Gate passes at expected_stage=1
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          expected_stage: 1
+          local: "true"
+
+      - name: Gate should fail at expected_stage=6
+        id: gate_fail
+        continue-on-error: true
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          expected_stage: 6
+          local: "true"
+
+      - name: Assert gate failed as expected
+        if: steps.gate_fail.outcome == 'success'
+        run: |
+          echo "::error::phase-barrier 门禁应失败但通过了"
+          exit 1
+
   package:
     name: Build sdist and wheel
     runs-on: ubuntu-latest

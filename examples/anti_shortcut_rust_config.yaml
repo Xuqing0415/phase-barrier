@@ -1,0 +1,36 @@
+# Rust 项目门禁配置示例
+#
+# 用法：
+#   AntiShortcutSkill(workspace=".", config="anti_shortcut_rust_config.yaml", user_request="...")
+#
+# 说明：language: rust 会启用 RustAdapter：
+#   - 测试文件：tests/** / *_test.rs / src/**/tests.rs（与下方 test_file_patterns 自动合并）
+#   - 实现文件：src/** 与 *.rs（与下方 source_file_patterns 自动合并）
+#   - 语法检查：有 Cargo.toml 时 cargo check，无项目时 rustc 单文件回退
+#   - 测试校验：#[test] / #[tokio::test] 属性数 + assert! / assert_eq! / assert_ne! 断言
+#   - 测试命令：cargo test / cargo nextest
+# 内联单元测试（#[cfg(test)] mod tests）默认随源文件一起语法检查，不单独计为测试文件；
+# 如需把内联测试纳入阶段 2 计数，可追加 test_file_patterns（如 "src/**/tests.rs"）。
+
+language: rust
+
+spec_file: spec.md
+spec_min_chars: 120
+
+test_file_patterns:
+  - "tests/**/*.rs"
+  - "**/*_test.rs"
+  - "src/**/tests.rs"
+  - "src/**/tests/**/*.rs"
+
+min_test_functions: 2
+require_assert_per_test: true
+
+source_file_patterns:
+  - "src/**/*.rs"
+  - "*.rs"
+
+# 运行测试同样受“阶段 >= 3”门禁约束
+test_commands:
+  - '^\s*cargo\s+test\b'
+  - '^\s*cargo\s+nextest\b'

@@ -4,6 +4,38 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.6.0] - 2026-08-29
+
+- JavaScript 真实解析：
+  - 新增 `js_count_tests.cjs` 辅助脚本：用项目内 acorn 解析测试文件，统计 `test` / `it` / `describe` 声明（含 `it.each` / `test.skip` / `describe.each` 等修饰符）与 `expect` / `assert` 断言；acorn 缺失或解析失败（如 TS 语法）时自动回退启发式。
+  - `jest --listTests` 升级为 `--json`：解析 `testResults[].name`，兼容含 `undefined` 的宽松 JSON 与旧版按行输出。
+  - `validate_tests` 证据新增 `parsers` 字段，记录测试统计来源（acorn / 启发式）。
+- Java 项目级编译：
+  - 有 `pom.xml` / `build.gradle*` 时改用 `mvn test-compile` / `gradle compileTestJava`（优先 `mvnw` / `gradlew` 包装器），以真实项目编译结果为准；结果按（项目根 + `.java` 指纹）缓存，文件变化自动失效，避免逐文件重复编译。
+  - 无构建文件或构建工具缺失时回退单文件 `javac -proc:none`（v0.4.0 行为不变）。
+- 示例：新增 `examples/anti_shortcut_go_config.yaml`、`anti_shortcut_rust_config.yaml`（Go / Rust 项目门禁配置模板）与 `examples/github-action/gate-go.yml`、`gate-rust.yml`（安装 `setup-go` / `rust-toolchain` 的 PR 门禁示例，`advance` 模式用真实 `gofmt` / `cargo check` 校验）。
+- 打包：`anti_shortcut/languages/js_count_tests.cjs` 纳入 wheel / sdist（`setuptools` package-data）。
+- 测试：新增 JS acorn / jest-json、Java 项目级编译用例 13 个（186 → 199）。
+- 文档：README 适配器表格、GitHub Action 门禁、多语言章节与 Roadmap 同步更新。
+
+版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+
+版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+
+## [0.6.0] - 2026-08-29
+
+- JavaScript 真实解析：
+  - 新增 `js_count_tests.cjs` 辅助脚本：用项目内 acorn 解析测试文件，统计 `test` / `it` / `describe` 声明（含 `it.each` / `test.skip` / `describe.each` 等修饰符）与 `expect` / `assert` 断言；acorn 缺失或解析失败（如 TS 语法）时自动回退启发式。
+  - `jest --listTests` 升级为 `--json`：解析 `testResults[].name`，兼容含 `undefined` 的宽松 JSON 与旧版按行输出。
+  - `validate_tests` 证据新增 `parsers` 字段，记录测试统计来源（acorn / 启发式）。
+- Java 项目级编译：
+  - 有 `pom.xml` / `build.gradle*` 时改用 `mvn test-compile` / `gradle compileTestJava`（优先 `mvnw` / `gradlew` 包装器），以真实项目编译结果为准；结果按（项目根 + `.java` 指纹）缓存，文件变化自动失效，避免逐文件重复编译。
+  - 无构建文件或构建工具缺失时回退单文件 `javac -proc:none`（v0.4.0 行为不变）。
+- 示例：新增 `examples/anti_shortcut_go_config.yaml`、`anti_shortcut_rust_config.yaml`（Go / Rust 项目门禁配置模板）与 `examples/github-action/gate-go.yml`、`gate-rust.yml`（安装 `setup-go` / `rust-toolchain` 的 PR 门禁示例，`advance` 模式用真实 `gofmt` / `cargo check` 校验）。
+- 打包：`anti_shortcut/languages/js_count_tests.cjs` 纳入 wheel / sdist（`setuptools` package-data）。
+- 测试：新增 JS acorn / jest-json、Java 项目级编译用例 13 个（186 → 199）。
+- 文档：README 适配器表格、GitHub Action 门禁、多语言章节与 Roadmap 同步更新。
+
 ## [0.5.0] - 2026-08-29
 
 - 新增 `GoAdapter`（`anti_shortcut/languages/go.py`）：`gofmt -e` 语法检查（纯语法解析，不触发模块下载 / Go 遥测；Go 工具链缺失返回明确错误）、`func TestXxx(t *testing.T)` + `t.Error` / `t.Fatal` / `assert` / `require` 断言启发式测试统计、`go test` / `go vet` 测试命令识别、`ok pkg` / `FAIL` / `--- FAIL:` 输出解析；自动检测标志文件已覆盖 `go.mod`。

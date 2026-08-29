@@ -1,0 +1,34 @@
+# Go 项目门禁配置示例
+#
+# 用法：
+#   AntiShortcutSkill(workspace=".", config="anti_shortcut_go_config.yaml", user_request="...")
+#
+# 说明：language: go 会启用 GoAdapter：
+#   - 测试文件：*_test.go（与下方 test_file_patterns 自动合并）
+#   - 实现文件：*.go / cmd|internal|pkg/**（与下方 source_file_patterns 自动合并）
+#   - 语法检查：gofmt -e（Go 工具链缺失时返回明确错误）
+#   - 测试校验：func TestXxx(t *testing.T) 函数数 + t.Error / t.Fatal / assert / require 断言
+#   - 测试命令：go test / go vet
+
+language: go
+
+spec_file: spec.md
+spec_min_chars: 120
+
+test_file_patterns:
+  - "*_test.go"
+  - "**/*_test.go"
+
+min_test_functions: 2
+require_assert_per_test: true
+
+source_file_patterns:
+  - "*.go"
+  - "cmd/**/*.go"
+  - "internal/**/*.go"
+  - "pkg/**/*.go"
+
+# 运行测试或静态检查同样受“阶段 >= 3”门禁约束
+test_commands:
+  - '^\s*go\s+test\b'
+  - '^\s*go\s+vet\b'

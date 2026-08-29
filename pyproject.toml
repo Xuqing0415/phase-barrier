@@ -56,6 +56,9 @@ local_scheme = "no-local-version"
 [tool.setuptools.packages.find]
 include = ["anti_shortcut*"]
 
+[tool.setuptools.package-data]
+anti_shortcut = ["languages/js_count_tests.cjs"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"

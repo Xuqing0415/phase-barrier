@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write   # 需要创建 GitHub Release（Action Marketplace 自动上架）
+  id-token: write   # sigstore 签名需要 GitHub OIDC token
 
 jobs:
   publish:
@@ -33,7 +34,7 @@ jobs:
         #   cosign verify-blob --bundle <pkg>.whl.bundle \
         #     --certificate-identity-regexp 'https://github.com/Xuqing0415/phase-barrier/.github/workflows/release.yml@refs/tags/v' \
         #     --certificate-oidc-issuer https://token.actions.githubusercontent.com <pkg>.whl
-        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        uses: sigstore/gh-action-sigstore-python@v3.5.0
         with:
           inputs: dist/*.whl dist/*.tar.gz
 

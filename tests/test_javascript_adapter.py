@@ -194,3 +194,116 @@ def test_js_validate_test_collection_error_propagated():
     ]
     ok, msg, _ = validate_test_collection(cfg, parsed)
     assert not ok and "jest" in msg
+# ---------- jest --listTests --json 输出解析 ----------
+
+def test_js_jest_list_tests_json_output(tmp_path, monkeypatch):
+    (tmp_path / "package.json").write_text("{}\n", encoding="utf-8")
+    tf = tmp_path / "fib.test.js"
+    tf.write_text("test('a', () => { expect(1).toBe(1); });\n", encoding="utf-8")
+    _patch_which(monkeypatch, {"npx": "npx"})
+    import json
+
+    payload = json.dumps({"success": True, "testResults": [{"name": str(tf)}]})
+    monkeypatch.setattr(
+        "anti_shortcut.languages.javascript.subprocess.run",
+        _fake_run_factory(rc=0, stdout=payload),
+    )
+    adapter = JavaScriptAdapter()
+    adapter.configure({"test_discovery": "jest"})
+    info = adapter.analyze_tests(tf)
+    assert info["dynamic"] is True
+    assert info["jest_discovered"] == 1
+
+
+def test_js_jest_list_tests_json_with_undefined(tmp_path, monkeypatch):
+    """部分 jest 版本的 --json 输出含 undefined（非严格 JSON），应宽松解析。"""
+    (tmp_path / "package.json").write_text("{}\n", encoding="utf-8")
+    tf = tmp_path / "fib.test.js"
+    tf.write_text("test('a', () => { expect(1).toBe(1); });\n", encoding="utf-8")
+    _patch_which(monkeypatch, {"npx": "npx"})
+    payload = '{"success":true,"testResults":[{"name":"%s","coverage":undefined}]}' % str(tf).replace("\\", "\\\\")
+    monkeypatch.setattr(
+        "anti_shortcut.languages.javascript.subprocess.run",
+        _fake_run_factory(rc=0, stdout=payload),
+    )
+    adapter = JavaScriptAdapter()
+    adapter.configure({"test_discovery": "jest"})
+    info = adapter.analyze_tests(tf)
+    assert info["dynamic"] is True
+    assert info["jest_discovered"] == 1
+
+
+def test_js_jest_list_tests_plain_lines_fallback(tmp_path, monkeypatch):
+    """旧版 jest 按行输出时仍可解析（--json 兼容回退）。"""
+    (tmp_path / "package.json").write_text("{}\n", encoding="utf-8")
+    tf = tmp_path / "fib.test.js"
+    tf.write_text("test('a', () => { expect(1).toBe(1); });\n", encoding="utf-8")
+    _patch_which(monkeypatch, {"npx": "npx"})
+    monkeypatch.setattr(
+        "anti_shortcut.languages.javascript.subprocess.run",
+        _fake_run_factory(rc=0, stdout=f"{tf}\n"),
+    )
+    adapter = JavaScriptAdapter()
+    adapter.configure({"test_discovery": "jest"})
+    info = adapter.analyze_tests(tf)
+    assert info["dynamic"] is True
+    assert info["jest_discovered"] == 1
+
+
+# ---------- acorn 真实解析 ----------
+
+def test_js_acorn_parsing(tmp_path, monkeypatch):
+    f = tmp_path / "fib.test.js"
+    f.write_text("test('a', () => { expect(1).toBe(1); });\n", encoding="utf-8")
+    _patch_which(monkeypatch, {"node": "node"})
+    payload = '{"acorn":true,"files":[{"path":"fib.test.js","declarations":3,"test_cases":2,"suites":1,"assertions":4}]}'
+    monkeypatch.setattr(
+        "anti_shortcut.languages.javascript.subprocess.run",
+        _fake_run_factory(rc=0, stdout=payload),
+    )
+    info = JavaScriptAdapter().analyze_tests(f)
+    assert info["parser"] == "acorn"
+    assert len(info["test_functions"]) == 3
+    assert info["assertions_total"] == 4
+
+
+def test_js_acorn_parse_error_falls_back(tmp_path, monkeypatch):
+    f = tmp_path / "fib.test.js"
+    f.write_text("test('a', () => { expect(1).toBe(1); });\n", encoding="utf-8")
+    _patch_which(monkeypatch, {"node": "node"})
+    payload = '{"acorn":true,"files":[{"path":"fib.test.js","error":"Unexpected token"}]}'
+    monkeypatch.setattr(
+        "anti_shortcut.languages.javascript.subprocess.run",
+        _fake_run_factory(rc=0, stdout=payload),
+    )
+    info = JavaScriptAdapter().analyze_tests(f)
+    assert info.get("parser") is None  # 回退启发式
+    assert len(info["test_functions"]) == 1
+
+
+def test_js_acorn_missing_falls_back(tmp_path, monkeypatch):
+    f = tmp_path / "fib.test.js"
+    f.write_text("test('a', () => { expect(1).toBe(1); });\n", encoding="utf-8")
+    _patch_which(monkeypatch, {"node": "node"})
+    monkeypatch.setattr(
+        "anti_shortcut.languages.javascript.subprocess.run",
+        _fake_run_factory(rc=0, stdout='{"acorn":false,"files":[]}'),
+    )
+    info = JavaScriptAdapter().analyze_tests(f)
+    assert info.get("parser") is None
+    assert len(info["test_functions"]) == 1
+
+
+def test_js_validate_tests_evidence_parsers(tmp_path, monkeypatch):
+    """validate_tests 证据中记录真实解析器来源（parsers）。"""
+    (tmp_path / "fib.test.js").write_text("test('a', () => { expect(1).toBe(1); });\n", encoding="utf-8")
+    _patch_which(monkeypatch, {"node": "node"})
+    payload = '{"acorn":true,"files":[{"path":"fib.test.js","declarations":2,"test_cases":2,"suites":0,"assertions":2}]}'
+    monkeypatch.setattr(
+        "anti_shortcut.languages.javascript.subprocess.run",
+        _fake_run_factory(rc=0, stdout=payload),
+    )
+    cfg = load_config({"language": "javascript"})
+    ok, msg, ev = validate_tests(tmp_path, cfg, None)
+    assert ok
+    assert ev.get("parsers") == ["acorn"]

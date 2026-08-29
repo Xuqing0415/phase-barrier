@@ -112,11 +112,13 @@ def validate_tests(
         return False, msg, extra
 
     all_tests = [t for item in parsed for t in item.get("test_functions", [])]
+    parsers = sorted({item.get("parser") for item in parsed if item.get("parser")})
     evidence = {
         "files": [item["file"] for item in parsed],
         "sha256": {item["file"]: sha256_file(workspace / item["file"]) for item in parsed},
         "test_functions": [t["name"] for t in all_tests],
         "test_count": len(all_tests),
+        "parsers": parsers,
     }
     return True, f"测试用例校验通过（{len(parsed)} 个文件，{len(all_tests)} 个测试函数）", evidence
 

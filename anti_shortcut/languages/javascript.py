@@ -6,9 +6,10 @@
   （``tsc -p <tsconfig> --noEmit``），无 tsconfig 时回退单文件
   ``tsc --noEmit``，单文件模式下无法解析的模块依赖（TS2307 / TS2688 /
   TS7016）降级为“通过（需完整项目验证）”，真正的语法错误仍会被拒绝
-- 测试校验：默认轻量启发式（``test`` / ``it`` / ``describe`` 声明 + 断言关键字，
-  支持 ``it.each`` / ``test.skip`` / ``describe.each``，并剥离注释与字符串字面量）；
-  可选 ``jest --listTests`` 动态发现模式（``adapter_options.test_discovery: jest``
+- 测试校验：项目安装 acorn 时用真实解析器统计（``test`` / ``it`` / ``describe``
+  声明与 ``expect`` / ``assert`` 断言，支持 ``it.each`` / ``test.skip`` 等修饰符），
+  否则回退轻量启发式（剥离注释与字符串字面量后正则匹配）；
+  可选 ``jest --listTests --json`` 动态发现模式（``adapter_options.test_discovery: jest``
   或自动探测到项目内 jest 时启用），jest 不可用时返回明确错误
 - 测试命令：``npm test`` / ``npx jest`` / ``yarn test`` / ``npx tsc --noEmit`` 等
 
@@ -16,6 +17,7 @@
 """
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import subprocess
@@ -207,8 +209,10 @@ class JavaScriptAdapter(LanguageAdapter):
         )
 
     def _jest_list_files(self, root: Path) -> list[str] | None:
-        """运行 ``jest --listTests`` 返回相对项目根的测试文件列表。
+        """运行 ``jest --listTests --json`` 返回相对项目根的测试文件列表。
 
+        ``--json`` 输出为 ``{"success": true, "testResults": [{"name": ...}]}``；
+        某些 jest 版本输出含 ``undefined`` 或直接按行输出，均做兼容回退。
         ``None`` 表示 jest 不可用（命令失败或缺少 npx）；空列表表示可用但未发现测试。
         """
         if self._jest_files is not None:
@@ -218,7 +222,7 @@ class JavaScriptAdapter(LanguageAdapter):
             self._jest_files = []
             return None
         proc = subprocess.run(
-            [npx, "--no-install", "jest", "--listTests"],
+            [npx, "--no-install", "jest", "--listTests", "--json"],
             cwd=str(root),
             capture_output=True,
             encoding="utf-8",
@@ -227,9 +231,20 @@ class JavaScriptAdapter(LanguageAdapter):
         if proc.returncode != 0:
             self._jest_files = []
             return None
+        names: list[str] = []
+        try:
+            # jest 的 --json 输出可能含非法的 undefined，先做宽松清理
+            data = json.loads(proc.stdout.replace("undefined", "null"))
+        except ValueError:
+            data = None
+        if isinstance(data, dict) and isinstance(data.get("testResults"), list):
+            for tr in data["testResults"]:
+                if isinstance(tr, dict) and tr.get("name"):
+                    names.append(str(tr["name"]))
+        else:
+            names = [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
         norm: list[str] = []
-        for line in proc.stdout.splitlines():
-            raw = line.strip()
+        for raw in names:
             if not raw:
                 continue
             p = Path(raw)
@@ -247,8 +262,56 @@ class JavaScriptAdapter(LanguageAdapter):
             result = self._jest_analyze(path)
             if result is not None:
                 return result
-            # jest 不可用或该文件未被 jest 发现：回退启发式
+            # jest 不可用或该文件未被 jest 发现：回退单文件解析
+        return self._parse_test_file(path)
+
+    def _parse_test_file(self, path: Path) -> dict[str, Any]:
+        """单文件测试统计：优先 acorn 真实解析（项目有 acorn 时），否则启发式。"""
+        info = self._acorn_analyze(path)
+        if info is not None:
+            return info
         return analyze_js_style_tests(path.read_text(encoding="utf-8", errors="replace"))
+
+    def _acorn_analyze(self, path: Path) -> dict[str, Any] | None:
+        """用项目 acorn 真实解析测试文件；acorn 不可用 / 解析失败时返回 None。"""
+        node = shutil.which("node")
+        helper = Path(__file__).resolve().parent / "js_count_tests.cjs"
+        if not node or not helper.is_file():
+            return None
+        abs_path = path if path.is_absolute() else path.resolve()
+        root = self._find_project_root(path)
+        proc = subprocess.run(
+            [node, str(helper), str(abs_path)],
+            cwd=str(root) if root is not None else str(abs_path.parent),
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if proc.returncode != 0:
+            return None
+        try:
+            data = json.loads(proc.stdout)
+        except ValueError:
+            return None
+        if not data.get("acorn"):
+            return None
+        file_info = (data.get("files") or [{}])[0]
+        if not file_info or file_info.get("error"):
+            return None  # 解析失败（如 TS 语法）→ 回退启发式
+        declarations = int(file_info.get("declarations", 0))
+        tests = [
+            {"name": f"<{i + 1}:acorn>", "assertions": 0, "heuristic": True}
+            for i in range(declarations)
+        ]
+        return {
+            "file": str(path),
+            "test_functions": tests,
+            "heuristic": True,
+            "parser": "acorn",
+            "assertions_total": int(file_info.get("assertions", 0)),
+            "test_cases": int(file_info.get("test_cases", 0)),
+            "suites": int(file_info.get("suites", 0)),
+        }
 
     def _jest_analyze(self, path: Path) -> dict[str, Any] | None:
         root = self._find_project_root(path)
@@ -269,15 +332,13 @@ class JavaScriptAdapter(LanguageAdapter):
             }
         rel = path.resolve().relative_to(root).as_posix()
         if rel in files or path.name in files:
-            heuristic = analyze_js_style_tests(
-                path.read_text(encoding="utf-8", errors="replace")
-            )
-            # 优先用启发式统计出的测试声明数（更贴近真实用例数），
+            parsed = self._parse_test_file(path)
+            # 优先用真实解析 / 启发式统计出的测试声明数（更贴近真实用例数），
             # 无法识别声明时回退为“该文件被 jest 发现”的合成计数
-            tests = heuristic["test_functions"] or [
+            tests = parsed["test_functions"] or [
                 {
                     "name": f"<jest:{path.name}>",
-                    "assertions": heuristic["assertions_total"],
+                    "assertions": parsed["assertions_total"],
                     "dynamic": True,
                 }
             ]
@@ -285,8 +346,9 @@ class JavaScriptAdapter(LanguageAdapter):
                 "file": str(path),
                 "test_functions": tests,
                 "heuristic": True,
+                "parser": parsed.get("parser"),
                 "dynamic": True,
-                "assertions_total": heuristic["assertions_total"],
+                "assertions_total": parsed["assertions_total"],
                 "jest_discovered": len(files),
             }
         return None

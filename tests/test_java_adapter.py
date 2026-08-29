@@ -1,4 +1,5 @@
 """Java 语言适配器测试：文件识别 / javac 语法检查 / JUnit 启发式统计 / 输出解析。"""
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -200,3 +201,152 @@ def test_skill_java_full_flow(tmp_path, monkeypatch, fake_tools):
     r = tools["advance_stage"](5)
     assert r["success"] and r["stage"] == 6
     assert skill.is_complete
+# ---------- 项目级编译（mvn test-compile / gradle compileTestJava） ----------
+
+POM_XML = """<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>fib</artifactId>
+  <version>0.1.0</version>
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+  </properties>
+</project>
+"""
+
+
+def _make_maven_project(tmp_path):
+    (tmp_path / "pom.xml").write_text(POM_XML, encoding="utf-8")
+    src = tmp_path / "src" / "main" / "java"
+    src.mkdir(parents=True)
+    (src / "Calc.java").write_text(JAVA_IMPL, encoding="utf-8")
+    tst = tmp_path / "src" / "test" / "java"
+    tst.mkdir(parents=True)
+    (tst / "CalcTest.java").write_text(JAVA_TESTS, encoding="utf-8")
+    return src / "Calc.java"
+
+
+def test_java_adapter_project_compile_maven_ok(tmp_path, monkeypatch):
+    f = _make_maven_project(tmp_path)
+    monkeypatch.setattr(
+        "anti_shortcut.languages.java.shutil.which",
+        lambda name: {"mvn": "mvn", "javac": "javac"}.get(name),
+    )
+    seen = {}
+
+    def fake_run(cmd, **kwargs):
+        seen["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr("anti_shortcut.languages.java.subprocess.run", fake_run)
+    ok, msg = JavaAdapter().check_syntax(f)
+    assert ok and "test-compile" in msg
+    assert "mvn" in seen["cmd"][0]
+    assert "-q" in seen["cmd"] and "test-compile" in seen["cmd"]
+
+
+def test_java_adapter_project_compile_maven_error(tmp_path, monkeypatch):
+    f = _make_maven_project(tmp_path)
+    monkeypatch.setattr(
+        "anti_shortcut.languages.java.shutil.which",
+        lambda name: {"mvn": "mvn"}.get(name),
+    )
+    monkeypatch.setattr(
+        "anti_shortcut.languages.java.subprocess.run",
+        lambda cmd, **kw: subprocess.CompletedProcess(
+            cmd, 1, stdout="", stderr="[ERROR] /x/Calc.java:[5,10] cannot find symbol\n[ERROR] -> [Help 1]\n"
+        ),
+    )
+    ok, msg = JavaAdapter().check_syntax(f)
+    assert not ok and "项目编译错误" in msg
+
+
+def test_java_adapter_project_compile_cached(tmp_path, monkeypatch):
+    f = _make_maven_project(tmp_path)
+    f2 = tmp_path / "src" / "main" / "java" / "Calc2.java"
+    f2.write_text("class Calc2 {}\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "anti_shortcut.languages.java.shutil.which",
+        lambda name: {"mvn": "mvn"}.get(name),
+    )
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr("anti_shortcut.languages.java.subprocess.run", fake_run)
+    adapter = JavaAdapter()
+    assert adapter.check_syntax(f)[0]
+    assert adapter.check_syntax(f2)[0]
+    assert len(calls) == 1  # 同一次指纹命中缓存
+
+
+def test_java_adapter_project_compile_cache_invalidated(tmp_path, monkeypatch):
+    f = _make_maven_project(tmp_path)
+    monkeypatch.setattr(
+        "anti_shortcut.languages.java.shutil.which",
+        lambda name: {"mvn": "mvn"}.get(name),
+    )
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr("anti_shortcut.languages.java.subprocess.run", fake_run)
+    adapter = JavaAdapter()
+    assert adapter.check_syntax(f)[0]
+    st = f.stat()
+    os.utime(f, ns=(st.st_atime_ns, st.st_mtime_ns + 10**9))
+    assert adapter.check_syntax(f)[0]
+    assert len(calls) == 2  # 文件变化后缓存失效
+
+
+def test_java_adapter_project_compile_gradle(tmp_path, monkeypatch):
+    (tmp_path / "build.gradle").write_text("apply plugin: 'java'\n", encoding="utf-8")
+    src = tmp_path / "src" / "main" / "java"
+    src.mkdir(parents=True)
+    f = src / "Calc.java"
+    f.write_text(JAVA_IMPL, encoding="utf-8")
+    monkeypatch.setattr(
+        "anti_shortcut.languages.java.shutil.which",
+        lambda name: {"gradle": "gradle"}.get(name),
+    )
+    seen = {}
+
+    def fake_run(cmd, **kwargs):
+        seen["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr("anti_shortcut.languages.java.subprocess.run", fake_run)
+    ok, msg = JavaAdapter().check_syntax(f)
+    assert ok and "gradle" in msg
+    assert "compileTestJava" in seen["cmd"]
+
+
+def test_java_adapter_project_compile_mvnw_preferred(tmp_path, monkeypatch):
+    (tmp_path / "pom.xml").write_text(POM_XML, encoding="utf-8")
+    mvnw = tmp_path / ("mvnw.cmd" if os.name == "nt" else "mvnw")
+    mvnw.write_text("", encoding="utf-8")
+    if os.name != "nt":
+        mvnw.chmod(0o755)
+    src = tmp_path / "src" / "main" / "java"
+    src.mkdir(parents=True)
+    f = src / "Calc.java"
+    f.write_text(JAVA_IMPL, encoding="utf-8")
+    monkeypatch.setattr(
+        "anti_shortcut.languages.java.shutil.which",
+        lambda name: {"mvn": "mvn"}.get(name),
+    )
+    seen = {}
+
+    def fake_run(cmd, **kwargs):
+        seen["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr("anti_shortcut.languages.java.subprocess.run", fake_run)
+    ok, msg = JavaAdapter().check_syntax(f)
+    assert ok
+    assert str(mvnw) in seen["cmd"][0]

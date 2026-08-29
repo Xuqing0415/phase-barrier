@@ -146,8 +146,10 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 | `version` | 空 | 安装的 phase-barrier 版本（留空取最新版） |
 | `local` | `false` | 安装本地仓库代码而非 PyPI（CI 自测用） |
 
-完整示例见 `examples/github-action/gate.yml`；本项目 CI 自带 `gate-action` 自测 job，
-验证“达到期望阶段通过 / 未达到失败”两条路径。
+完整示例见 `examples/github-action/gate.yml`（通用）、`gate-go.yml`（Go）、
+`gate-rust.yml`（Rust）；Go / Rust 示例额外安装 `setup-go` / `rust-toolchain`，
+让 `advance` 模式能用真实 `gofmt` / `cargo check` 校验实现。本项目 CI 自带
+`gate-action` 自测 job，验证“达到期望阶段通过 / 未达到失败”两条路径。
 
 ## 阶段定义与证据要求
 
@@ -318,15 +320,16 @@ test_commands:
 不写 `language` 时自动检测标志文件：`package.json` → `javascript`，`pom.xml` → `java`，
 `go.mod` → `go`，`Cargo.toml` → `rust`，`requirements.txt` / `setup.py` / `pyproject.toml` → `python`；
 未识别时默认 Python。适配器默认文件模式与 YAML 中的 `test_file_patterns` / `source_file_patterns`
-自动合并（配置只增不减）。
+自动合并（配置只增不减）。项目配置示例：`examples/anti_shortcut_js_config.yaml`、
+`anti_shortcut_go_config.yaml`、`anti_shortcut_rust_config.yaml`。
 
 ### 内置适配器
 
 | 适配器 | 文件识别 | 语法检查 | 测试校验 |
 |--------|----------|----------|----------|
 | `PythonAdapter` | `test_*.py` / `tests/**` 为测试，`*.py` 为实现 | `compile()` | AST 解析：测试函数数 + `assert` / `pytest.raises` |
-| `JavaScriptAdapter` | `*.test.js` / `*.spec.ts` / `__tests__/` 为测试，`src/**` 与 `*.js|ts|jsx|tsx` 为实现 | `node --check` / `tsc --noEmit`（优先 `tsconfig.json` 项目检查；工具缺失返回明确错误） | 轻量启发式（`test` / `it` / `describe` + `it.each` / `test.skip` 等，剥离注释与字符串）；可选 `jest --listTests` 动态发现 |
-| `JavaAdapter` | `*Test.java` / `*Tests.java` / `src/test/**` 为测试，`src/**` 与 `*.java` 为实现 | `javac -proc:none`（JDK 缺失返回明确错误；跨文件依赖未解析时降级提示） | 启发式：`@Test` 注解数 + JUnit/Hamcrest 断言关键字 |
+| `JavaScriptAdapter` | `*.test.js` / `*.spec.ts` / `__tests__/` 为测试，`src/**` 与 `*.js|ts|jsx|tsx` 为实现 | `node --check` / `tsc --noEmit`（优先 `tsconfig.json` 项目检查；工具缺失返回明确错误） | 项目安装 acorn 时真实解析（`test` / `it` / `describe` 声明 + `expect` / `assert` 断言），否则启发式；可选 `jest --listTests --json` 动态发现 |
+| `JavaAdapter` | `*Test.java` / `*Tests.java` / `src/test/**` 为测试，`src/**` 与 `*.java` 为实现 | 项目级 `mvn test-compile` / `gradle compileTestJava`（优先 `mvnw` / `gradlew`，带缓存）；无构建工具时回退 `javac -proc:none` | 启发式：`@Test` 注解数 + JUnit/Hamcrest 断言关键字 |
 | `GoAdapter` | `*_test.go` 为测试，`*.go` / `cmd|internal|pkg/**` 为实现 | `gofmt -e`（Go 工具链缺失返回明确错误） | 启发式：`func TestXxx(t *testing.T)` 函数数 + `t.Error` / `t.Fatal` / `assert` / `require` 断言 |
 | `RustAdapter` | `tests/**` / `*_test.rs` / `src/**/tests.rs` 为测试，`src/**` 与 `*.rs` 为实现 | `cargo check`（有 `Cargo.toml`）/ `rustc` 单文件回退（工具缺失返回明确错误） | 启发式：`#[test]` / `#[tokio::test]` 属性数 + `assert!` / `assert_eq!` / `assert_ne!` |
 
@@ -429,9 +432,10 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 
 ## Roadmap（规划）
 
-- **v0.6.0 JavaScript 深度校验**：用真实解析器（acorn / `jest --listTests --json`）替代启发式，支持 Vitest / Playwright 输出解析。
-- **v0.6.0+ Java 项目级编译**：`mvn test-compile` / `gradle compileTestJava` 完整项目编译校验，替代单文件 javac。
-- **CI 模板**：为 Go / Rust 项目提供 GitHub Action 门禁示例与 K8s sidecar 部署模板。
+- **v0.6.0 已完成**：JavaScript 真实解析（acorn / `jest --listTests --json`）、Java 项目级编译（`mvn test-compile` / `gradle compileTestJava`，`mvnw` / `gradlew` 优先 + 指纹缓存）、Go / Rust GitHub Action 门禁示例与项目配置模板。
+- **v0.7.0 Vitest / Playwright 支持**：测试命令与输出解析覆盖 Vitest / Playwright，`jest --listTests --json` 输出按实际 jest 版本再校准。
+- **v0.7.0+ 覆盖率门禁**：把测试覆盖率阈值（如 `--cov-fail-under` / `go test -cover`）纳入阶段 4 证据校验。
+- **CI 模板**：为 Go / Rust 项目提供 K8s sidecar 部署模板与 GitHub Action 市场发布。
 - **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有语言适配器入口点 `phase_barrier.languages` 与集成插件入口点 `anti_shortcut.integrations`）。
 - **Kubernetes sidecar**：以 sidecar 容器承载门禁状态，与主 Agent 容器共享工作区、状态目录只读挂载。
 - **安全增强**：状态文件与证据签名（不可信环境防篡改）；审计日志远程推送（SIEM）。

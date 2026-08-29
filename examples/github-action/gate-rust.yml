@@ -1,0 +1,36 @@
+# 示例：Rust 项目的 phase-barrier PR 门禁。
+# 复制本文件到目标仓库的 .github/workflows/gate-rust.yml 即可生效。
+#
+# 与 examples/github-action/gate.yml 的区别：Rust 项目需要安装 Rust 工具链，
+# 这样门禁的 advance 模式（推进阶段）才能用真实 cargo check 校验实现语法。
+# 若只用 inspect 模式（检查阶段），rust-toolchain 步骤可省略。
+name: Gate (Rust)
+
+on:
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # inspect：要求 Agent 产出的工作区至少完成“实现代码”（阶段 3）
+      # 发布版请固定 tag：Xuqing0415/phase-barrier@v0.6.0
+      - uses: Xuqing0415/phase-barrier@v0.6.0
+        with:
+          workspace: agent_outputs
+          config: anti_shortcut_rust_config.yaml
+          expected_stage: 3
+
+      # 进阶：advance 模式驱动 Agent 工作区走完剩余阶段（每个 action 只推进 1 步，
+      # 校验通过才继续；本示例从阶段 3 推进到 4，触发 cargo test 证据校验）
+      - uses: Xuqing0415/phase-barrier@v0.6.0
+        if: always()
+        with:
+          workspace: agent_outputs
+          config: anti_shortcut_rust_config.yaml
+          mode: advance
+          to: 4

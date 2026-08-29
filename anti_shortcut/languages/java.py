@@ -1,10 +1,12 @@
 """Java 语言适配器（v0.4.0）：javac 语法检查 + JUnit 注解启发式测试统计。
 
 - 文件识别：``*.java`` 为实现；``*Test.java`` / ``*Tests.java`` / ``src/test/**`` 为测试
-- 语法检查：调用 JDK ``javac -proc:none -d <tmp>``；工具缺失时返回明确错误
+- 语法检查：优先项目级编译（``mvn test-compile`` / ``gradle compileTestJava``，
+  优先 ``mvnw`` / ``gradlew`` 包装器，带指纹缓存避免重复编译）；无构建文件或
+  构建工具缺失时回退单文件 ``javac -proc:none -d <tmp>``
 - 依赖容错：单文件检查无法解析跨文件依赖，``cannot find symbol`` /
   ``package does not exist`` 等仅降级为“通过（需完整项目编译验证）”，
-  真正的语法错误（``';' expected`` 等）仍会被拒绝
+  真正的语法错误（``';' expected`` 等）仍会被拒绝；项目级编译以真实结果为准
 - 测试统计：按 ``@Test`` 注解数量 + JUnit/Hamcrest 断言关键字（启发式）
 - 测试命令：``mvn test`` / ``gradle test`` / ``./mvnw test`` / ``./gradlew test`` 等
 - 输出解析：Maven/Gradle 风格 ``Tests run: N, Failures: M`` / ``BUILD SUCCESS``
@@ -13,6 +15,7 @@
 """
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -73,7 +76,7 @@ def _extract_javac_errors(output: str) -> list[str]:
 
 
 class JavaAdapter(LanguageAdapter):
-    """Java：``javac`` 语法检查 + ``@Test`` 注解启发式测试统计。"""
+    """Java：项目级编译 / ``javac`` 语法检查 + ``@Test`` 注解启发式测试统计。"""
 
     name = "java"
     file_extensions = [".java"]
@@ -87,11 +90,20 @@ class JavaAdapter(LanguageAdapter):
         r"^\s*java\s+-jar\s+.*junit-platform-console-standalone\.jar\b",
     ]
 
+    def __init__(self) -> None:
+        super().__init__()
+        # 项目级编译结果缓存：key = (项目根, 源文件指纹)，文件变化自动失效
+        self._project_check_cache: dict[tuple[Any, ...], tuple[bool, str]] = {}
+
     # ---------- 语法检查 ----------
 
     def check_syntax(self, path: Path) -> tuple[bool, str]:
         if path.stat().st_size == 0:
             return False, f"实现文件 {path.name} 为空文件，请补充实现内容"
+        root = self._find_project_root(path)
+        build_cmd = self._project_compile_command(root) if root is not None else None
+        if build_cmd is not None:
+            return self._check_project(root, build_cmd)
         javac = shutil.which("javac")
         if not javac:
             return False, (
@@ -125,6 +137,84 @@ class JavaAdapter(LanguageAdapter):
             )
         first = errors[0] if errors else stderr.strip()
         return False, f"Java 语法错误: {first[:500]}"
+
+    # ---------- 项目级编译 ----------
+
+    @staticmethod
+    def _find_project_root(path: Path) -> Path | None:
+        """从文件所在目录向上查找包含 pom.xml / build.gradle* 的项目根。"""
+        cur = path if path.is_absolute() else Path(path).resolve()
+        for d in (cur.parent, *cur.parents):
+            if (
+                (d / "pom.xml").is_file()
+                or (d / "build.gradle").is_file()
+                or (d / "build.gradle.kts").is_file()
+            ):
+                return d
+        return None
+
+    @staticmethod
+    def _project_compile_command(root: Path) -> list[str] | None:
+        """返回项目级编译命令；无可用构建工具时返回 None（回退单文件 javac）。
+
+        优先级：``mvnw`` / ``gradlew`` 包装器 > PATH 上的 ``mvn`` / ``gradle``。
+        """
+        if (root / "pom.xml").is_file():
+            mvnw = root / ("mvnw.cmd" if os.name == "nt" else "mvnw")
+            if mvnw.is_file() and (os.name == "nt" or os.access(str(mvnw), os.X_OK)):
+                return [str(mvnw), "-q", "test-compile"]
+            mvn = shutil.which("mvn")
+            if mvn:
+                return [mvn, "-q", "test-compile"]
+            return None
+        gradlew = root / ("gradlew.bat" if os.name == "nt" else "gradlew")
+        if gradlew.is_file() and (os.name == "nt" or os.access(str(gradlew), os.X_OK)):
+            return [str(gradlew), "compileTestJava", "--console=plain", "-q"]
+        gradle = shutil.which("gradle")
+        if gradle:
+            return [gradle, "compileTestJava", "--console=plain", "-q"]
+        return None
+
+    @staticmethod
+    def _project_fingerprint(root: Path) -> tuple[int, int]:
+        """项目 .java 文件的 (最新修改时间, 文件数) 指纹，用于缓存失效。"""
+        max_mtime = 0
+        count = 0
+        for p in root.rglob("*.java"):
+            if any(part in (".agent_gate", ".git", "target", "build") for part in p.parts):
+                continue
+            try:
+                st = p.stat()
+                max_mtime = max(max_mtime, st.st_mtime_ns)
+            except OSError:
+                continue
+            count += 1
+        return (max_mtime, count)
+
+    def _check_project(self, root: Path, cmd: list[str]) -> tuple[bool, str]:
+        """运行项目级编译（带指纹缓存），返回 (是否通过, 错误信息)。"""
+        key = (str(root), self._project_fingerprint(root))
+        if key in self._project_check_cache:
+            return self._project_check_cache[key]
+        proc = subprocess.run(
+            cmd,
+            cwd=str(root),
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if proc.returncode == 0:
+            result = (
+                True,
+                f"语法检查通过（项目级编译：{_command_label(cmd)}）",
+            )
+        else:
+            output = (proc.stderr or "") + (proc.stdout or "")
+            errors = _extract_build_errors(output)
+            first = errors[0] if errors else output.strip()[:500]
+            result = (False, f"项目编译错误: {first[:500]}")
+        self._project_check_cache[key] = result
+        return result
 
     @staticmethod
     def _run_javac(
@@ -174,6 +264,28 @@ class JavaAdapter(LanguageAdapter):
         if "BUILD FAILURE" in text or "BUILD FAILED" in text:
             return False, "BUILD FAILURE"
         return False, f"测试失败，退出码 {exit_code}"
+
+
+def _command_label(cmd: list[str]) -> str:
+    """从编译命令中提取人类可读的标签（mvn test-compile / gradle compileTestJava）。"""
+    joined = " ".join(cmd)
+    if "test-compile" in joined or " mvn" in joined:
+        return "mvn test-compile"
+    if "compileTestJava" in joined:
+        return "gradle compileTestJava"
+    return "build"
+
+
+def _extract_build_errors(output: str) -> list[str]:
+    """提取 Maven / Gradle 编译输出中的 error 行（去掉行号前缀，保留可读信息）。"""
+    out = []
+    for ln in (output or "").splitlines():
+        stripped = ln.strip()
+        if ".java:" in stripped and ("[ERROR]" in stripped or "error:" in stripped or "错误:" in stripped):
+            out.append(stripped)
+        elif "[ERROR]" in stripped and ("COMPILATION" in stripped or "cannot find" in stripped or "does not exist" in stripped):
+            out.append(stripped)
+    return out
 
 
 def _extract_test_summary(text: str) -> str:

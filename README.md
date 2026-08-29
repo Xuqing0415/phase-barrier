@@ -128,7 +128,7 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 
 ```yaml
 # 示例：PR 时要求工作区至少完成“实现代码”（阶段 3）
-- uses: Xuqing0415/phase-barrier@v0.4.0
+- uses: Xuqing0415/phase-barrier@v0.4.1
   with:
     workspace: .          # 工作区路径（相对仓库根）
     expected_stage: 3     # 0-6；当前阶段 < 期望阶段则失败

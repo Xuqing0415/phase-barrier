@@ -89,3 +89,6 @@ flowchart LR
   门禁模式（此时 advance 只读校验证据，不修改状态，需要把推进操作也交给 gate-keeper Job 完成）。
 - **网络**：sidecar Service 仅暴露在集群内；生产环境建议用 NetworkPolicy 限制只有 agent Pod 可访问。
 - **镜像签名**：配合 sigstore / cosign 对 sidecar 镜像签名，防止供应链投毒（见仓库 Roadmap）。
+- **状态签名（v0.8.0）**：为 sidecar 注入 `PHASE_BARRIER_HMAC_KEY`（Secret → env，见
+  `gate-sidecar.yaml` 注释），state.json 即带 HMAC-SHA256 签名；Agent 篡改状态后
+  sidecar 拒绝加载并明确报错。

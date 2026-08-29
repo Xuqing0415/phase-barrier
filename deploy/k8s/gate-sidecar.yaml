@@ -51,6 +51,13 @@ spec:
           env:
             - name: PYTHONUNBUFFERED
               value: "1"
+            # 可选：启用状态签名（HMAC-SHA256），密钥建议用 Secret 注入：
+            #   kubectl create secret generic phase-barrier-gate --from-literal=hmac-key=<key>
+            # - name: PHASE_BARRIER_HMAC_KEY
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: phase-barrier-gate
+            #       key: hmac-key
           readinessProbe:
             httpGet:
               path: /healthz

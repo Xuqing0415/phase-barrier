@@ -9,7 +9,9 @@
   真正的语法错误（``';' expected`` 等）仍会被拒绝；项目级编译以真实结果为准
 - 测试统计：按 ``@Test`` 注解数量 + JUnit/Hamcrest 断言关键字（启发式）
 - 测试命令：``mvn test`` / ``gradle test`` / ``./mvnw test`` / ``./gradlew test`` 等
-- 输出解析：Maven/Gradle 风格 ``Tests run: N, Failures: M`` / ``BUILD SUCCESS``
+- 输出解析：Maven Surefire（``Tests run: N, Failures: M, Errors: K, Skipped: S``）、
+  Gradle（``N tests completed, M failed``）、JUnit Platform Console
+  （``[ N tests successful / failed ]``）与 ``BUILD SUCCESS / FAILURE``
 
 语法检查依赖外部工具（JDK）；缺失时校验失败并提示安装，不会静默放行。
 """
@@ -48,8 +50,20 @@ _DEPENDENCY_MARKERS = (
 
 _JAVAC_OUT_DIR = ".phase-barrier-javac"
 
-_TEST_RUN_RE = re.compile(
-    r"Tests run:\s*\d+(?:,\s*Failures:\s*\d+)?(?:,\s*Errors:\s*\d+)?"
+# Maven Surefire 汇总行（含 Skipped；失败时取最后一次出现的 Results 汇总）
+_TEST_RUN_AGG_RE = re.compile(
+    r"Tests run:\s*(?P<run>\d+)(?:,\s*Failures:\s*(?P<fail>\d+))?"
+    r"(?:,\s*Errors:\s*(?P<err>\d+))?(?:,\s*Skipped:\s*(?P<skip>\d+))?"
+)
+# Gradle：``3 tests completed, 1 failed``
+_GRADLE_AGG_RE = re.compile(
+    r"\b(?P<n>\d+)\s+tests?\s+completed(?:,\s*(?P<fail>\d+)\s+failed)?",
+    re.IGNORECASE,
+)
+# JUnit Platform Console：``[ 3 tests successful ]`` / ``[ 1 tests failed ]``
+_JUNIT_CONSOLE_AGG_RE = re.compile(
+    r"\[\s*(?P<n>\d+)\s+tests?\s+(?P<status>successful|failed|skipped|aborted)\s*\]",
+    re.IGNORECASE,
 )
 
 
@@ -246,24 +260,31 @@ class JavaAdapter(LanguageAdapter):
     # ---------- 测试输出解析（Maven / Gradle） ----------
 
     def parse_test_output(self, output: str, exit_code: int | None) -> tuple[bool, str]:
-        """解析 Maven/Gradle 风格输出：``Tests run: N, Failures: M`` / ``BUILD SUCCESS``。"""
+        """解析 Maven Surefire / Gradle / JUnit Console 风格输出。"""
         text = output or ""
         if exit_code == 0:
             summary = _extract_test_summary(text)
             return True, summary or "所有测试通过"
-        m = re.search(
-            r"Tests run:\s*(\d+)(?:,\s*Failures:\s*(\d+))?(?:,\s*Errors:\s*(\d+))?",
-            text,
-        )
-        if m:
-            failures = int(m.group(2) or 0)
-            errors = int(m.group(3) or 0)
+        summary = _extract_test_summary(text)
+        matches = list(_TEST_RUN_AGG_RE.finditer(text))
+        if matches:
+            m = matches[-1]  # 最终汇总（Results: 之后）
+            failures = int(m.group("fail") or 0)
+            errors = int(m.group("err") or 0)
             ok = failures == 0 and errors == 0
-            summary = f"Tests run: {m.group(1)}, Failures: {failures}, Errors: {errors}"
-            return ok, summary
+            if summary:
+                return ok, summary
+            return ok, f"Tests run: {m.group('run')}, Failures: {failures}, Errors: {errors}"
+        m = _GRADLE_AGG_RE.search(text)
+        if m:
+            failures = int(m.group("fail") or 0)
+            return failures == 0, summary or m.group(0)
+        m = _JUNIT_CONSOLE_AGG_RE.search(text)
+        if m and m.group("status") == "failed":
+            return False, summary or m.group(0)
         if "BUILD FAILURE" in text or "BUILD FAILED" in text:
-            return False, "BUILD FAILURE"
-        return False, f"测试失败，退出码 {exit_code}"
+            return False, summary or "BUILD FAILURE"
+        return False, summary or f"测试失败，退出码 {exit_code}"
 
 
 def _command_label(cmd: list[str]) -> str:
@@ -289,10 +310,22 @@ def _extract_build_errors(output: str) -> list[str]:
 
 
 def _extract_test_summary(text: str) -> str:
-    """从 Maven/Gradle 输出中提取测试统计摘要行。"""
-    m = _TEST_RUN_RE.search(text)
-    if m:
-        return m.group(0)
+    """提取 Maven Surefire / Gradle / JUnit Console 的测试汇总行。"""
+    lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+    # Surefire：取最后一次出现的 ``Tests run:``（通常是 Results: 后的最终汇总）
+    tests_run = [ln for ln in lines if re.match(r"Tests run:\s*\d+", ln)]
+    if tests_run:
+        return tests_run[-1][:300]
+    # Gradle：``3 tests completed, 1 failed``
+    for ln in reversed(lines):
+        if re.search(r"\b\d+\s+tests?\s+(completed|failed)\b", ln, re.IGNORECASE):
+            return ln[:300]
+    # JUnit Console：``tests successful`` / ``tests failed``
+    for ln in reversed(lines):
+        if re.search(r"\[\s*\d+\s+tests?\s+(successful|failed)\s*\]", ln, re.IGNORECASE):
+            return ln[:300]
     if "BUILD SUCCESSFUL" in text or "BUILD SUCCESS" in text:
         return "BUILD SUCCESS"
+    if "BUILD FAILURE" in text or "BUILD FAILED" in text:
+        return "BUILD FAILURE"
     return ""

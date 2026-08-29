@@ -7,6 +7,8 @@
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import os
 import time
@@ -22,6 +24,10 @@ class CorruptedStateError(ValueError):
     """状态文件无法解析 / 顶层结构异常 / 版本不兼容（损坏或被篡改）。"""
 
 
+class TamperedStateError(CorruptedStateError):
+    """状态文件签名校验失败：文件可能被篡改，或 HMAC 密钥不匹配。"""
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -35,8 +41,11 @@ class StateManager:
         *,
         user_request: str = "",
         initial_stage: int = 1,
+        hmac_key: str | None = None,
     ) -> None:
         self.state_file = Path(state_file)
+        # HMAC-SHA256 状态签名（v0.8.0）：显式密钥优先，其次环境变量
+        self._hmac_key = hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY")
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         if self.state_file.exists():
             self._data = self._load()
@@ -89,9 +98,38 @@ class StateManager:
             raise CorruptedStateError(
                 f"状态文件版本不兼容: {data.get('version')} != {STATE_VERSION}"
             )
+        if self._hmac_key:
+            self._verify_signature(data)
         return data
 
+    def _canonical(self, data: dict) -> bytes:
+        """对状态内容做确定性序列化（排除 signature 字段），用于 HMAC 计算。"""
+        payload = {k: v for k, v in data.items() if k != "signature"}
+        return json.dumps(
+            payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+
+    def _sign(self, data: dict) -> str:
+        return hmac.new(
+            self._hmac_key.encode("utf-8"), self._canonical(data), hashlib.sha256
+        ).hexdigest()
+
+    def _verify_signature(self, data: dict) -> None:
+        if "signature" not in data:
+            raise TamperedStateError(
+                "状态文件未签名：配置了 HMAC 密钥但文件中缺少 signature 字段"
+                "（文件可能被篡改，或由未启用签名的旧版本生成）"
+            )
+        expected = "v1:" + self._sign(data)
+        actual = data.get("signature")
+        if not isinstance(actual, str) or not hmac.compare_digest(actual, expected):
+            raise TamperedStateError(
+                "状态文件签名校验失败：文件可能被篡改，或 HMAC 密钥不匹配"
+            )
+
     def _atomic_write(self) -> None:
+        if self._hmac_key:
+            self._data["signature"] = "v1:" + self._sign(self._data)
         tmp = self.state_file.with_suffix(self.state_file.suffix + ".tmp")
         with tmp.open("w", encoding="utf-8") as fh:
             json.dump(self._data, fh, ensure_ascii=False, indent=2)

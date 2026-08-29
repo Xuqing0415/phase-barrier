@@ -18,6 +18,7 @@
 - **可配置**：YAML + Pydantic 配置，可自定义阶段要求、文件模式、测试命令，或关闭某些严格校验。
 - **覆盖率门禁（v0.7.0）**：配置 `coverage_threshold` 后，测试阶段要求覆盖率报告存在且达标（pytest-cov / `go test -cover` / istanbul）。
 - **K8s sidecar（v0.7.0）**：`deploy/k8s/` 模板 + `anti_shortcut.sidecar` HTTP 服务，Agent 容器不挂载门禁目录，无法绕过阶段门禁。
+- **状态签名（v0.8.0）**：配置 `state_hmac_key`（或环境变量 `PHASE_BARRIER_HMAC_KEY`）后，state.json 写入 HMAC-SHA256 签名并在加载时校验，篡改即拒绝启动。
 
 ## 架构
 
@@ -130,7 +131,7 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 
 ```yaml
 # 示例：PR 时要求工作区至少完成“实现代码”（阶段 3）
-- uses: Xuqing0415/phase-barrier@v0.6.0
+- uses: Xuqing0415/phase-barrier@v0.8.0
   with:
     workspace: .          # 工作区路径（相对仓库根）
     expected_stage: 3     # 0-6；当前阶段 < 期望阶段则失败
@@ -152,6 +153,10 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 `gate-rust.yml`（Rust）；Go / Rust 示例额外安装 `setup-go` / `rust-toolchain`，
 让 `advance` 模式能用真实 `gofmt` / `cargo check` 校验实现。本项目 CI 自带
 `gate-action` 自测 job，验证“达到期望阶段通过 / 未达到失败”两条路径。
+
+该 Action 已发布到 [GitHub Marketplace](https://github.com/marketplace/actions/phase-barrier-gate)：
+每次打 `v*` tag 时 release 工作流自动创建 GitHub Release（附 CHANGELOG 摘要与发行包），
+Action 随之自动上架，用户可直接在 Marketplace 搜索 **Phase-Barrier Gate** 使用。
 
 ## 阶段定义与证据要求
 
@@ -217,6 +222,7 @@ test_file_patterns: ["test_*.py", "tests/**/test_*.py"]
 test_commands: ['^\\s*pytest\\b', '^\\s*npm\\s+test\\b', ...]
 protect_gate_dir: true             # 生产环境配合只读卷挂载
 allow_other_files_any_stage: true  # 其他文件类型（README 等）是否不限阶段
+state_hmac_key: ""                 # 可选：状态签名 HMAC 密钥（或用环境变量 PHASE_BARRIER_HMAC_KEY）
 ```
 
 ### 覆盖率门禁（v0.7.0）
@@ -243,6 +249,7 @@ coverage_threshold: 80          # 0-100 百分比；不配置则不做覆盖率�
 - **生产部署**：将 `.agent_gate` 以只读卷挂载给 Agent 执行容器（`-v /host/path:/.agent_gate:ro`），实现进程级隔离——即使 Agent 绕过工具包装也无法篡改状态。
 - **空壳防护**：测试文件经 AST 分析，要求测试函数数量 ≥ 阈值且每个函数含断言（`assert` / `pytest.raises`）。
 - **伪造防护**：证据文件在推进时记录 SHA-256；阶段 5 要求测试运行发生在最后一次代码修改之后。
+- **状态签名（v0.8.0）**：配置 HMAC 密钥后，状态文件每次写入都带 `signature` 字段并在加载时校验；篡改 / 未签名 / 密钥不匹配 → `TamperedStateError`，CLI 明确报错并拒绝运行。
 - **日志审计**：所有拦截与阶段变更写入 JSON 审计日志，便于事后分析“哪些请求被拦截”“跳过步骤的频率”。
 
 ## Docker 只读卷部署（进程级防绕过）
@@ -302,7 +309,7 @@ deploy/
 │   ├── gate-sidecar.yaml          #   agent + sidecar Deployment + Service
 │   └── README.md                  #   kind / minikube 验证步骤
 └── README.md                      # 部署说明
-tests/                             # pytest 测试套件（220 个用例）
+tests/                             # pytest 测试套件（234 个用例）
 ```
 
 ## 设计取舍
@@ -464,7 +471,8 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 
 - **v0.6.0 已完成**：JavaScript 真实解析（acorn / `jest --listTests --json`）、Java 项目级编译（`mvn test-compile` / `gradle compileTestJava`，`mvnw` / `gradlew` 优先 + 指纹缓存）、Go / Rust GitHub Action 门禁示例与项目配置模板。
 - **v0.7.0 已完成**：JS 输出解析覆盖 Vitest / Playwright、覆盖率门禁 `coverage_threshold`（pytest-cov / `go test -cover` / istanbul 表）、K8s sidecar 部署模板与 HTTP 门禁服务（`anti_shortcut.sidecar`）。
-- **v0.8.0（规划）**：Java 适配器输出解析增强、GitHub Action 市场发布、状态文件签名（HMAC）、审计日志远程推送（SIEM）。
+- **v0.8.0 已完成**：Java 输出解析增强（Surefire `Skipped` / Gradle / JUnit Console）、状态签名 HMAC（`state_hmac_key` / `PHASE_BARRIER_HMAC_KEY`）、GitHub Action 市场发布（tag 即 Release）。
+- **v0.9.0（规划）**：审计日志远程推送（SIEM）、更多语言适配器输出解析、密钥轮换与证据签名。
 - **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有语言适配器入口点 `phase_barrier.languages` 与集成插件入口点 `anti_shortcut.integrations`）。
 - **供应链**：接入 sigstore 签名与 trusted publishing，提升包可信度。
 

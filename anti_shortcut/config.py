@@ -81,6 +81,10 @@ class GateConfig(BaseModel):
     language_adapter: str | None = None
     # 传递给语言适配器的额外参数（如最少测试数），由适配器自行解释
     adapter_options: dict[str, Any] = Field(default_factory=dict)
+    # ---- 状态签名（v0.8.0）----
+    # HMAC-SHA256 密钥：设置后 state.json 写入 signature 并在加载时校验，
+    # 防止不可信环境下 Agent 篡改状态；未设置时回退环境变量 PHASE_BARRIER_HMAC_KEY
+    state_hmac_key: str | None = None
     # ---- 安全 ----
     protect_gate_dir: bool = True
     # 允许 Agent 直接写入“其他”类型文件（如 README.md、docs），默认不限

@@ -350,3 +350,61 @@ def test_java_adapter_project_compile_mvnw_preferred(tmp_path, monkeypatch):
     ok, msg = JavaAdapter().check_syntax(f)
     assert ok
     assert str(mvnw) in seen["cmd"][0]
+
+
+# ---------- 输出解析增强（v0.8.0：Surefire Skipped / Gradle / JUnit Console） ----------
+
+def test_java_adapter_parse_test_output_skipped():
+    a = JavaAdapter()
+    ok, summary = a.parse_test_output(
+        "Tests run: 3, Failures: 0, Errors: 0, Skipped: 1\nBUILD SUCCESS", 0
+    )
+    assert ok and "Skipped" in summary
+
+
+def test_java_adapter_parse_gradle_output():
+    a = JavaAdapter()
+    out = (
+        "CalcTest > addBasic() PASSED\n"
+        "CalcTest > addNegative() FAILED\n"
+        "3 tests completed, 1 failed\n"
+    )
+    ok, summary = a.parse_test_output(out, 1)
+    assert not ok and "1 failed" in summary
+    ok2, _ = a.parse_test_output("5 tests completed, 0 failed\nBUILD SUCCESSFUL", 0)
+    assert ok2
+
+
+def test_java_adapter_parse_junit_console():
+    a = JavaAdapter()
+    out = (
+        "[         3 containers found      ]\n"
+        "[         3 tests found           ]\n"
+        "[         3 tests successful      ]\n"
+    )
+    ok, summary = a.parse_test_output(out, 0)
+    assert ok and "successful" in summary
+    out2 = (
+        "[         3 tests found           ]\n"
+        "[         1 tests failed          ]\n"
+    )
+    ok2, summary2 = a.parse_test_output(out2, 1)
+    assert not ok2 and "failed" in summary2
+
+
+def test_java_adapter_parse_maven_failure_final_summary():
+    """失败时取最后一次出现的 Tests run 行（Results: 后的最终汇总）。"""
+    a = JavaAdapter()
+    out = (
+        "Running GoodTest\n"
+        "Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.05 s\n"
+        "Running BadTest\n"
+        "Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.02 s <<< FAILURE!\n"
+        "\n"
+        "Results:\n"
+        "\n"
+        "Tests run: 3, Failures: 1, Errors: 0, Skipped: 0\n"
+    )
+    ok, summary = a.parse_test_output(out, 1)
+    assert not ok and "Failures: 1" in summary
+    assert summary.startswith("Tests run: 3, Failures: 1")  # 最终汇总，而非第一个类

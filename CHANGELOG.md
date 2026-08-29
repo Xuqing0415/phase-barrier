@@ -2,6 +2,15 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.3.0] - 2026-08-29
+
+- 新增语言适配层（Language Adapter）：抽象 `LanguageAdapter` 接口（文件识别 / 语法检查 / 测试统计 / 测试命令识别 / 测试输出解析）。
+- 内置 `PythonAdapter`（AST + compile，行为与 v0.2.x 完全一致）与 `JavaScriptAdapter`（`node --check` / `tsc --noEmit` + 启发式测试校验）。
+- 适配器选择优先级：显式 `language` > 自定义 `language_adapter` > 工作区自动检测（`package.json` / `pom.xml` / `go.mod` / `Cargo.toml` / `pyproject.toml` 等）> 默认 Python。
+- 配置新增 `language` / `language_adapter` / `adapter_options` 字段；适配器默认文件模式与 YAML 文件模式自动合并。
+- 支持通过 `phase_barrier.languages` 入口点注册第三方自定义适配器；顶层包导出语言 API（`get_adapter` / `detect_language` 等）。
+- 测试：新增语言适配层测试 34 个（83 → 117）。
+
 ## [0.2.1] - 2026-08-29
 
 - 文档：README 增加 Mermaid 架构图、多语言支持说明、FAQ、Roadmap；清理历史遗留说明。

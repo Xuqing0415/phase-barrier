@@ -34,6 +34,13 @@ dev = ["pytest>=7.0"]
 [project.scripts]
 anti-shortcut = "anti_shortcut.__main__:main"
 
+# 语言适配器入口点：第三方包可通过此组注册自定义适配器，例如
+#   [project.entry-points."phase_barrier.languages"]
+#   my_language = "my_package.module:MyLanguageAdapter"
+[project.entry-points."phase_barrier.languages"]
+python = "anti_shortcut.languages.python:PythonAdapter"
+javascript = "anti_shortcut.languages.javascript:JavaScriptAdapter"
+
 [project.urls]
 Homepage = "https://github.com/Xuqing0415/phase-barrier"
 Repository = "https://github.com/Xuqing0415/phase-barrier"

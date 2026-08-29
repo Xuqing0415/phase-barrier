@@ -71,6 +71,13 @@ class GateConfig(BaseModel):
     # ---- 阶段 4/5：测试运行 ----
     test_commands: list[str] = Field(default_factory=lambda: list(DEFAULT_TEST_COMMANDS))
     max_test_output_tail: int = 4000
+    # ---- 语言适配（v0.3.0）----
+    # 显式指定语言（如 "python" / "javascript"），优先级最高；None 时自动检测
+    language: str | None = None
+    # 自定义语言适配器导入路径（如 "my_package.module.MyAdapter"），或已注册的适配器名
+    language_adapter: str | None = None
+    # 传递给语言适配器的额外参数（如最少测试数），由适配器自行解释
+    adapter_options: dict[str, Any] = Field(default_factory=dict)
     # ---- 安全 ----
     protect_gate_dir: bool = True
     # 允许 Agent 直接写入“其他”类型文件（如 README.md、docs），默认不限
@@ -86,11 +93,14 @@ def load_config(path: str | Path | dict[str, Any] | None = None) -> GateConfig:
     """从 YAML 文件或字典加载配置，缺失字段使用默认值。
 
     - ``None``：纯默认配置
+    - ``GateConfig``：原样返回（供 Skill 直接复用已加载的配置）
     - ``dict``：字段覆盖
     - ``Path``/``str``：读取 YAML 文件后覆盖
     """
     if path is None:
         data: dict[str, Any] = {}
+    elif isinstance(path, GateConfig):
+        return path
     elif isinstance(path, (str, Path)):
         p = Path(path)
         if not p.exists():

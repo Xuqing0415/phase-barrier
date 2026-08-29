@@ -10,9 +10,12 @@ from __future__ import annotations
 import re
 import shlex
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .config import GateConfig
+
+if TYPE_CHECKING:  # 避免与 languages.base 的互相导入
+    from .languages.base import LanguageAdapter
 
 
 # ---------- 测试命令识别 ----------
@@ -29,6 +32,30 @@ def is_test_command(command: str, config: GateConfig) -> bool:
         except re.error:
             continue
     return False
+
+
+def is_language_test_command(
+    command: str | None,
+    config: GateConfig,
+    adapter: Any = None,
+) -> bool:
+    """判断命令是否为测试运行命令（语言适配器版本）。
+
+    优先级：语言适配器的识别规则 > 配置的通用正则 > 关键词兜底。
+    关键词兜底匹配独立的 ``test`` 单词（如 ``make test``、``./test`` 脚本）。
+    防御优先：宁可多拦一步，也不让测试命令在实现完成前漏网；
+    真正的识别以适配器规则与 ``config.test_commands`` 为准。
+    """
+    cmd = (command or "").strip()
+    if not cmd:
+        return False
+    if adapter is not None:
+        identify = getattr(adapter, "identify_test_command", None)
+        if callable(identify) and identify(cmd):
+            return True
+    if is_test_command(cmd, config):
+        return True
+    return bool(re.search(r"(^|\s)test($|\s)", cmd, flags=re.IGNORECASE))
 
 
 # ---------- 门禁目录保护 ----------

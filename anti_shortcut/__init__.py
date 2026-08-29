@@ -12,6 +12,14 @@ from importlib.metadata import PackageNotFoundError, version as _distribution_ve
 
 from .config import STAGES, GateConfig, load_config
 from .integration import bootstrap, install_into, load_plugins, register_integration
+from .languages import (
+    LANGUAGE_REGISTRY,
+    JavaScriptAdapter,
+    LanguageAdapter,
+    PythonAdapter,
+    detect_language,
+    get_adapter,
+)
 from .skill import AntiShortcutSkill
 from .state import StateManager
 
@@ -30,5 +38,11 @@ __all__ = [
     "install_into",
     "load_plugins",
     "register_integration",
+    "LanguageAdapter",
+    "PythonAdapter",
+    "JavaScriptAdapter",
+    "LANGUAGE_REGISTRY",
+    "detect_language",
+    "get_adapter",
     "__version__",
 ]

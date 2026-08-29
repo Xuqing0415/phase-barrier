@@ -15,13 +15,13 @@ from .audit import get_audit_logger
 from .config import STAGES, GateConfig, load_config
 from .interceptors import (
     extract_written_paths,
-    is_test_command,
+    is_language_test_command,
     summarize_test_output,
     touches_gate_dir,
 )
+from .languages import get_adapter
 from .state import StateManager
 from .validators import (
-    classify_path,
     validate_implementation,
     validate_retest,
     validate_spec,
@@ -47,11 +47,13 @@ class AntiShortcutSkill:
         config: GateConfig | dict | str | Path | None = None,
         user_request: str = "",
         *,
+        adapter: Any | None = None,
         console_log: bool = False,
     ) -> None:
         self.config = load_config(config)
         self.workspace = Path(workspace).resolve()
         self.config.workspace = self.workspace
+        self.adapter = adapter or get_adapter(self.config, self.workspace)
         self.gate_dir = self.workspace / self.config.gate_dir_name
         self.gate_dir.mkdir(parents=True, exist_ok=True)
         self.state = StateManager(
@@ -127,12 +129,21 @@ class AntiShortcutSkill:
         except (ValueError, OSError):
             return False
 
+    def _classify_path(self, path: str | Path) -> str:
+        """按当前语言适配器把路径分类为 test / source / other。"""
+        p = Path(path)
+        if self.adapter.is_test_file(p, self.config):
+            return "test"
+        if self.adapter.is_source_file(p, self.config):
+            return "source"
+        return "other"
+
     def check_write_permission(self, path: str | Path) -> None:
         """检查写入权限；不允许时抛出 PermissionError（作为工具拦截反馈）。"""
         p = Path(path)
         if self._in_gate_dir(p):
             raise PermissionError("禁止写入门禁目录 .agent_gate：状态与证据由 Skill 独占管理")
-        kind = classify_path(p, self.config)
+        kind = self._classify_path(p)
         stage = self.current_stage
         if kind == "test" and stage < 1:
             raise PermissionError(
@@ -150,7 +161,7 @@ class AntiShortcutSkill:
         cmd = command if isinstance(command, str) else " ".join(str(c) for c in command)
         if touches_gate_dir(cmd, self.gate_dir):
             raise PermissionError("禁止通过 shell 访问门禁目录 .agent_gate")
-        if is_test_command(cmd, self.config) and self.current_stage < 3:
+        if is_language_test_command(cmd, self.config, self.adapter) and self.current_stage < 3:
             raise PermissionError(
                 "当前阶段不允许运行测试命令：请先完成实现代码（阶段 3）并通过 advance_stage 校验"
             )
@@ -168,7 +179,7 @@ class AntiShortcutSkill:
         def guarded(path: str | Path, content: Any, **kwargs: Any) -> Any:
             self.check_write_permission(path)
             result = original_write(path, content, **kwargs)
-            kind = classify_path(Path(path), self.config)
+            kind = self._classify_path(Path(path))
             if kind in ("test", "source"):
                 self.state.mark_source_change(str(path))
                 self.logger.info("file_written", path=str(path), kind=kind, **self._stage_summary())
@@ -188,7 +199,7 @@ class AntiShortcutSkill:
             cmd = command if isinstance(command, str) else " ".join(str(c) for c in command)
             self.check_exec_permission(command)
             result = original_exec(command, **kwargs)
-            if is_test_command(cmd, self.config):
+            if is_language_test_command(cmd, self.config, self.adapter):
                 record = self._record_test_run(result)
                 self.state.mark_test_run(record)
                 self.logger.info(
@@ -259,7 +270,7 @@ class AntiShortcutSkill:
             else:
                 return {"success": False, "stage": cur, "error": f"阶段 {cur} 无对应校验器"}
         else:
-            ok, msg, ev = validator(self.workspace, self.config, self.state)
+            ok, msg, ev = validator(self.workspace, self.config, self.state, self.adapter)
         if evidence:
             ev = {**(ev or {}), **evidence}
 

@@ -215,11 +215,17 @@ anti_shortcut/
 ├── __init__.py        # 公共 API
 ├── config.py          # GateConfig（Pydantic）+ YAML 加载
 ├── state.py           # StateManager：JSON 原子持久化、阶段历史、证据
-├── validators.py      # 各阶段证据校验器（spec / tests AST / implementation / test_run / retest）
+├── validators.py      # 各阶段证据校验器（spec / tests / implementation / test_run / retest）
 ├── interceptors.py    # 命令分类、门禁目录检测、shell 写路径提取、测试输出摘要
 ├── audit.py           # 结构化 JSON 审计日志（structlog，按文件独立实例）
 ├── skill.py           # AntiShortcutSkill：工具包装 + advance_stage + 权限检查
 ├── integration.py     # 集成层：bootstrap / 插件注册 / 入口点发现
+├── paths.py           # 路径工具：glob 匹配 / 文件遍历 / SHA-256
+├── languages/         # 语言适配层（v0.3.0）
+│   ├── base.py        #   LanguageAdapter 抽象基类 + 共享校验策略
+│   ├── python.py      #   PythonAdapter（AST + compile）
+│   ├── javascript.py  #   JavaScriptAdapter（node --check / tsc --noEmit + 启发式测试）
+│   └── __init__.py    #   注册表 / detect_language / get_adapter / 入口点加载
 └── __main__.py        # CLI：python -m anti_shortcut inspect / advance
 examples/
 ├── demo.py                        # 模拟 Agent 完整演示（含违规拦截）
@@ -232,7 +238,7 @@ deploy/
 ├── seed_gate.py                   # gate-keeper：初始化并跑完整门禁流程
 ├── probe.py                       # agent 探针：验证只读挂载生效
 └── README.md                      # 部署说明
-tests/                             # pytest 测试套件（64 个用例）
+tests/                             # pytest 测试套件（117 个用例）
 ```
 
 ## 设计取舍
@@ -248,41 +254,78 @@ tests/                             # pytest 测试套件（64 个用例）
 - 依赖：`pydantic>=2`、`PyYAML>=6`、`structlog>=23`（可选 `pytest` 用于测试）
 - 跨平台：Windows / Linux / macOS（门禁目录权限建议在 Linux 容器 + 只读卷场景使用）
 
-## 多语言支持（JavaScript / TypeScript 等）
+## 多语言支持（v0.3.0 语言适配层）
 
-门禁逻辑与语言无关：默认规则面向 Python，但通过三个配置项即可适配其他语言：
+v0.3.0 起，语言相关逻辑（文件识别、语法检查、测试统计、测试命令识别）抽象为
+**语言适配器（Language Adapter）**。核心包内置 Python 与 JavaScript/TypeScript 适配器，
+第三方可注册自定义适配器；未显式指定时按工作区标志文件自动检测。
 
-- `test_file_patterns`：测试文件路径模式（如 `*.test.ts`）
-- `source_file_patterns`：实现代码路径模式（如 `src/**/*.ts`）
-- `test_commands`：测试 / 类型检查命令正则（如 `npx vitest`、`npx tsc --noEmit`）
+### 快速启用
+
+```python
+from anti_shortcut import AntiShortcutSkill
+
+# 显式指定语言（优先级最高），无需再手工配文件模式
+skill = AntiShortcutSkill(
+    workspace=".",
+    config={"language": "javascript"},
+    user_request="实现一个计算斐波那契数列的函数",
+)
+```
 
 ```yaml
-# 在 JS/TS 项目中使用（完整文件见 examples/anti_shortcut_js_config.yaml）：
-#   AntiShortcutSkill(workspace=".", config="anti_shortcut_js_config.yaml", user_request="...")
-spec_file: spec.md
-spec_min_chars: 120
-test_file_patterns:
-  - "*.test.js"
-  - "*.spec.js"
-  - "*.test.ts"
-  - "*.spec.ts"
-  - "tests/**/*.test.ts"
+# 或 YAML（完整示例见 examples/anti_shortcut_js_config.yaml）
+language: javascript
 min_test_functions: 2
-require_assert_per_test: true
-source_file_patterns:
-  - "src/**/*.ts"
-  - "src/**/*.js"
-  - "*.ts"
-  - "*.js"
 test_commands:
   - '^\s*npm\s+test\b'
   - '^\s*npx\s+(jest|vitest|mocha|playwright)\b'
   - '^\s*npx\s+tsc\s+--noEmit\b'
 ```
 
-**当前多语言支持程度**：非 Python 测试文件走“轻量启发式”校验（统计 `test/it/describe` 声明数与
-`expect/assert/.toBe/.toEqual` 断言关键字，拒绝空壳文件）；非 Python 实现文件跳过 `compile` 语法检查、
-但要求非空。基于 acorn / `tsc --noEmit` 的完整语言适配层在 Roadmap（v0.3.0）中规划。
+不写 `language` 时自动检测标志文件：`package.json` → `javascript`，`pom.xml` → `java`，
+`go.mod` → `go`，`Cargo.toml` → `rust`，`requirements.txt` / `setup.py` / `pyproject.toml` → `python`；
+未识别时默认 Python。适配器默认文件模式与 YAML 中的 `test_file_patterns` / `source_file_patterns`
+自动合并（配置只增不减）。
+
+### 内置适配器
+
+| 适配器 | 文件识别 | 语法检查 | 测试校验 |
+|--------|----------|----------|----------|
+| `PythonAdapter` | `test_*.py` / `tests/**` 为测试，`*.py` 为实现 | `compile()` | AST 解析：测试函数数 + `assert` / `pytest.raises` |
+| `JavaScriptAdapter` | `*.test.js` / `*.spec.ts` / `__tests__/` 为测试，`src/**` 与 `*.js|ts|jsx|tsx` 为实现 | `node --check` / `tsc --noEmit`（工具缺失时返回明确错误） | 轻量启发式：`test` / `it` / `describe` 声明数 + `expect` / `assert` / `.toBe` 等断言关键字 |
+
+### 自定义适配器
+
+实现 `anti_shortcut.languages.base.LanguageAdapter`，再通过配置导入：
+
+```python
+# my_adapters.py
+from anti_shortcut.languages import LanguageAdapter
+
+class MyLanguageAdapter(LanguageAdapter):
+    name = "mylang"
+    source_file_patterns = ["*.foo"]
+    test_file_patterns = ["*.test.foo"]
+
+    def check_syntax(self, path):
+        return True, "ok"   # 返回 (是否通过, 错误信息)
+```
+
+```yaml
+language_adapter: "my_adapters.MyLanguageAdapter"
+adapter_options:
+  min_test_functions: 3    # 传给适配器的额外参数（由适配器自行解释）
+```
+
+也可以发布为独立包，通过入口点组 `phase_barrier.languages` 注册：
+
+```toml
+[project.entry-points."phase_barrier.languages"]
+mylang = "my_adapters:MyLanguageAdapter"
+```
+
+适配器选择优先级：显式 `language` > 自定义 `language_adapter` > 自动检测 > 默认 Python。
 
 ## 常见问题（FAQ）
 
@@ -309,7 +352,10 @@ min_test_functions: 3
 彻底“一键关闭全部门禁”与设计目标相悖，不支持。
 
 **如何适配非 Python 项目？**
-见「多语言支持」：改 `test_file_patterns` / `source_file_patterns` / `test_commands` 三项即可，
+v0.3.0 起推荐使用语言适配层：`language: javascript`（内置 Python / JavaScript 适配器，
+并支持按工作区标志文件自动检测）；更特殊的语言可提供自定义 `LanguageAdapter`
+（用 `language_adapter` 配置导入路径）。不引入适配器时，仍可直接配置
+`test_file_patterns` / `source_file_patterns` / `test_commands` 三项，
 门禁逻辑（阶段状态机 + 证据校验 + 工具拦截）保持不变。
 
 **Agent 被拦截后如何继续？**
@@ -318,7 +364,7 @@ min_test_functions: 3
 
 ## Roadmap（规划）
 
-- **v0.3.0 多语言适配层**：抽象语言校验器接口，接入 JavaScript/TypeScript（acorn / `tsc --noEmit`）、Java（`javac`）等语法与测试证据校验。
+- **v0.4.0 更多语言适配器**：在 v0.3.0 语言适配层基础上接入 Java（`javac`）、Go、Rust 等；JavaScript 测试校验从启发式升级为真实解析（acorn / `jest --listTests`）。
 - **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有集成插件入口点 `anti_shortcut.integrations`）。
 - **CI 门禁集成**：提供 GitHub Action，让 phase-barrier 直接在 CI 中作为阶段闸门使用。
 - **Kubernetes sidecar**：以 sidecar 容器承载门禁状态，与主 Agent 容器共享工作区、状态目录只读挂载。

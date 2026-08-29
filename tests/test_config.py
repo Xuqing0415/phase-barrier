@@ -17,6 +17,11 @@ def test_default_config():
     assert cfg.workspace.is_absolute()
 
 
+def test_gate_config_passthrough():
+    cfg = GateConfig(min_test_functions=7)
+    assert load_config(cfg) is cfg
+
+
 def test_dict_override_keeps_defaults():
     cfg = load_config({"min_test_functions": 5, "spec_file": "design.md"})
     assert cfg.min_test_functions == 5

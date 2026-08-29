@@ -27,6 +27,16 @@ jobs:
       - name: Build sdist and wheel
         run: python -m build
 
+      - name: Sign artifacts with Sigstore (v0.10.0)
+        # 用 GitHub OIDC 身份对 sdist / wheel 签名，生成 .sig / .bundle
+        # 附件随 GitHub Release 发布，可用 cosign verify-blob 校验来源：
+        #   cosign verify-blob --bundle <pkg>.whl.bundle \
+        #     --certificate-identity-regexp 'https://github.com/Xuqing0415/phase-barrier/.github/workflows/release.yml@refs/tags/v' \
+        #     --certificate-oidc-issuer https://token.actions.githubusercontent.com <pkg>.whl
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: dist/*.whl dist/*.tar.gz
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

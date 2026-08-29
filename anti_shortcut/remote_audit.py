@@ -1,21 +1,27 @@
 """远程审计推送（SIEM）：把结构化 JSON 审计事件异步批量转发到 HTTP 端点。
 
-设计要点（v0.9.0）：
+设计要点：
 
 - 零额外依赖：仅用标准库 ``urllib.request`` + ``threading`` + ``queue``。
 - 异步批量：后台线程把队列中的事件按“条数上限”攒批后 POST JSON。
-- 绝不阻塞门禁主流程：网络失败 / 端点不可达只计数丢弃，不影响阶段校验。
+- 绝不阻塞门禁主流程：网络失败只计数丢弃，不影响阶段校验。
 - 队列有界：超过 ``max_queue`` 时丢弃最旧事件（drop-oldest），避免内存无限增长。
 - ``flush()`` 是确定性的：同步排空队列，并等待后台线程把手头批次发完。
 - 单事件发送单对象，多事件发送 JSON 数组，方便对接 ELK / Loki 等收集端。
+
+v0.10.0 增强：
+- TLS 自定义 CA：``ca_bundle`` 指定 PEM 证书文件，用于自建 SIEM 的 HTTPS 端点。
+- 失败重试：``retries`` 次指数退避重试（``backoff_factor * 2**attempt`` 秒）。
 """
 from __future__ import annotations
 
 import json
+import ssl
 import threading
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 from queue import Empty, Full, Queue
 from typing import Any
 
@@ -33,6 +39,9 @@ class RemoteAuditSink:
         max_queue: int = 1000,
         flush_interval: float = 5.0,
         start_worker: bool = True,
+        ca_bundle: str | None = None,
+        retries: int = 2,
+        backoff_factor: float = 0.5,
     ) -> None:
         if not url:
             raise ValueError("audit_remote_url 不能为空")
@@ -42,6 +51,11 @@ class RemoteAuditSink:
         self.batch_size = max(1, int(batch_size))
         self.max_queue = max(1, int(max_queue))
         self.flush_interval = max(0.1, float(flush_interval))
+        self.retries = max(0, int(retries))
+        self.backoff_factor = max(0.0, float(backoff_factor))
+        self.ca_bundle = ca_bundle
+        # 自定义 CA：启动时即校验并构建 HTTPS opener（配置错误尽快暴露）
+        self._opener = self._build_opener()
         self._queue: Queue[dict[str, Any]] = Queue(maxsize=self.max_queue)
         self._closed = threading.Event()
         self._lock = threading.Lock()
@@ -57,6 +71,21 @@ class RemoteAuditSink:
                 target=self._run, name="phase-barrier-audit-sink", daemon=True
             )
             self._worker.start()
+
+    def _build_opener(self):
+        """根据 ca_bundle 构建支持自定义 CA 的 HTTPS opener；未配置时返回 None。"""
+        if not self.ca_bundle:
+            return None
+        ca = Path(self.ca_bundle)
+        if not ca.is_file():
+            raise ValueError(f"audit_remote_ca_bundle 文件不存在: {ca}")
+        try:
+            context = ssl.create_default_context(cafile=str(ca))
+        except (ssl.SSLError, OSError, ValueError) as exc:
+            raise ValueError(f"audit_remote_ca_bundle 无法加载: {exc}") from exc
+        return urllib.request.build_opener(
+            urllib.request.HTTPSHandler(context=context)
+        )
 
     # ---------- 统计 ----------
 
@@ -141,6 +170,7 @@ class RemoteAuditSink:
             self._send_batch(batch)
 
     def _send_batch(self, batch: list[dict[str, Any]]) -> None:
+        """发送一个批次；失败时按指数退避重试，仍失败则计数丢弃。"""
         if not batch:
             return
         body = batch[0] if len(batch) == 1 else batch
@@ -149,16 +179,24 @@ class RemoteAuditSink:
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
         request = urllib.request.Request(self.url, data=data, headers=headers, method="POST")
-        try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as resp:
-                resp.read()
-        except (urllib.error.URLError, OSError, ValueError):
+        for attempt in range(self.retries + 1):
+            try:
+                if self._opener is not None:
+                    with self._opener.open(request, timeout=self.timeout) as resp:
+                        resp.read()
+                else:
+                    with urllib.request.urlopen(request, timeout=self.timeout) as resp:
+                        resp.read()
+            except (urllib.error.URLError, OSError, ValueError):
+                if attempt < self.retries and self.backoff_factor > 0:
+                    time.sleep(self.backoff_factor * (2 ** attempt))
+                continue
             with self._lock:
-                self._failed_batches += 1
+                self._sent_batches += 1
+                self._sent_events += len(batch)
             return
         with self._lock:
-            self._sent_batches += 1
-            self._sent_events += len(batch)
+            self._failed_batches += 1
 
     # ---------- 后台工作线程 ----------
 

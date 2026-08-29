@@ -116,7 +116,7 @@ def test_sink_close_flushes_remaining(collector_server):
 
 
 def test_sink_failure_never_crashes():
-    sink = RemoteAuditSink("http://127.0.0.1:1/unreachable", timeout=1.0, flush_interval=60)
+    sink = RemoteAuditSink("http://127.0.0.1:1/unreachable", timeout=1.0, retries=0, flush_interval=60)
     try:
         sink.enqueue({"event": "a"})
         sink.flush()  # 连接失败：只计数，不抛出
@@ -177,3 +177,107 @@ def test_skill_remote_audit(collector_server, tmp_path):
     assert "skill_initialized" in names
     assert "gate_dir_policy" in names
     assert "custom_event" in names
+
+
+# ---------- v0.10.0：重试退避与自定义 CA ----------
+
+@pytest.fixture
+def flaky_collector():
+    """前 N 次 POST 返回 500，之后正常接收的收集端。"""
+    class Box:
+        def __init__(self):
+            self.bodies: list = []
+            self.failures_left = 2
+            self._lock = threading.Lock()
+
+    box = Box()
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+        def do_POST(self):  # noqa: N802
+            length = int(self.headers.get("Content-Length") or 0)
+            body = self.rfile.read(length) if length else b""
+            with box._lock:
+                if box.failures_left > 0:
+                    box.failures_left -= 1
+                    self.send_response(500)
+                    self.send_header("Content-Length", "2")
+                    self.end_headers()
+                    self.wfile.write(b"no")
+                    return
+            box.bodies.append(json.loads(body.decode("utf-8")))
+            self.send_response(200)
+            self.send_header("Content-Length", "2")
+            self.end_headers()
+            self.wfile.write(b"ok")
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f"http://127.0.0.1:{server.server_address[1]}/audit"
+    try:
+        yield box, url
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+
+
+def test_sink_retry_succeeds_after_transient_failures(flaky_collector):
+    box, url = flaky_collector
+    sink = RemoteAuditSink(url, retries=3, backoff_factor=0.01, flush_interval=60)
+    try:
+        sink.enqueue({"event": "retried"})
+        sink.flush()
+        stats = sink.stats()
+        assert stats["sent_batches"] == 1
+        assert stats["failed_batches"] == 0
+        assert box.bodies[0]["event"] == "retried"
+    finally:
+        sink.close()
+
+
+def test_sink_retry_exhausted_counts_failure():
+    sink = RemoteAuditSink(
+        "http://127.0.0.1:1/unreachable", timeout=1.0, retries=2,
+        backoff_factor=0.01, flush_interval=60,
+    )
+    try:
+        sink.enqueue({"event": "a"})
+        sink.flush()
+        stats = sink.stats()
+        assert stats["failed_batches"] == 1
+        assert stats["sent_events"] == 0
+        assert stats["sent_batches"] == 0
+    finally:
+        sink.close()
+
+
+def test_sink_ca_bundle_missing_raises():
+    with pytest.raises(ValueError):
+        RemoteAuditSink("https://example.com/audit", ca_bundle="no-such-ca.pem")
+
+
+def test_sink_ca_bundle_invalid_raises(tmp_path):
+    bad = tmp_path / "bad-ca.pem"
+    bad.write_text("not a pem certificate", encoding="utf-8")
+    with pytest.raises(ValueError):
+        RemoteAuditSink("https://example.com/audit", ca_bundle=str(bad))
+
+
+def test_skill_remote_audit_retry_config(tmp_path):
+    skill = AntiShortcutSkill(
+        tmp_path,
+        config={
+            "audit_remote_url": "http://127.0.0.1:1/x",
+            "audit_remote_retries": 1,
+            "audit_remote_backoff_factor": 0.01,
+        },
+        user_request="r",
+    )
+    assert skill.remote_sink is not None
+    assert skill.remote_sink.retries == 1
+    assert skill.remote_sink.backoff_factor == 0.01
+    skill.close()

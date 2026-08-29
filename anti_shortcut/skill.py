@@ -78,6 +78,9 @@ class AntiShortcutSkill:
                 batch_size=self.config.audit_remote_batch_size,
                 max_queue=self.config.audit_remote_max_queue,
                 flush_interval=self.config.audit_remote_flush_interval,
+                ca_bundle=self.config.audit_remote_ca_bundle,
+                retries=self.config.audit_remote_retries,
+                backoff_factor=self.config.audit_remote_backoff_factor,
             )
         self.logger = get_audit_logger(
             self.gate_dir / self.config.audit_log_name,
@@ -254,7 +257,12 @@ class AntiShortcutSkill:
             output = str(result or "")
         if not isinstance(output, str):
             output = str(output)
-        return summarize_test_output(output, exit_code, max_tail=self.config.max_test_output_tail)
+        return summarize_test_output(
+            output,
+            exit_code,
+            max_tail=self.config.max_test_output_tail,
+            adapter=self.adapter,
+        )
 
     def install(self, tools: dict[str, Callable]) -> dict[str, Callable]:
         """把包装后的工具注入 Agent 的工具表（原地修改并返回）。

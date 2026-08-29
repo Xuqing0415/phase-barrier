@@ -173,8 +173,14 @@ def summarize_test_output(
     exit_code: int | None = None,
     *,
     max_tail: int = 4000,
+    adapter: Any = None,
 ) -> dict[str, Any]:
-    """把测试命令输出规整为结构化记录：退出码、是否通过、摘要、输出尾部。"""
+    """把测试命令输出规整为结构化记录：退出码、是否通过、摘要、输出尾部。
+
+    v0.10.0：传入 ``adapter`` 时优先使用语言适配器的 ``parse_test_output``
+    生成语言专属摘要（如 Go 的 ``ok pkg 0.5s``、Rust 的 ``test result: ok. 2 passed``），
+    失败时包含具体失败用例名；适配器异常不影响主流程。
+    """
     text = output or ""
     if exit_code is None:
         passed = bool(re.search(r"\b\d+ passed\b|tests? (passed|ok)\b|All tests? passed", text, re.IGNORECASE))
@@ -202,6 +208,17 @@ def summarize_test_output(
                 break
     if not summary and tail:
         summary = tail[-1][:300]
+
+    # v0.10.0：语言适配器摘要优先（Go / Rust / Java / JS 专属输出）
+    if adapter is not None:
+        try:
+            a_passed, a_summary = adapter.parse_test_output(text, exit_code)
+        except Exception:  # pragma: no cover（适配器解析异常不影响门禁）
+            a_passed, a_summary = None, ""
+        if a_passed is not None and exit_code is None:
+            passed = a_passed
+        if a_summary:
+            summary = a_summary
 
     return {
         "exit_code": exit_code,

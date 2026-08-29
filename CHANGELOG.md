@@ -2,6 +2,25 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.10.0] - 2026-08-30
+
+- 审计远程推送增强：
+  - `RemoteAuditSink` 新增 `ca_bundle`（PEM 自定义 CA，`ssl.create_default_context` 构建 HTTPS opener，
+    配置错误启动即报错）与 `retries` / `backoff_factor`（指数退避重试：`backoff * 2**attempt` 秒）。
+  - 配置新增 `audit_remote_ca_bundle` / `audit_remote_retries` / `audit_remote_backoff_factor`。
+- 证据清单导出：
+  - 新增 CLI `export-evidence [--out <file>]`：导出清单 + 当前文件 SHA-256 / 大小 + 校验结果的可审计
+    bundle（支持 HMAC 签名状态透传），供第三方审计或 CI 留档。
+- 供应链签名（sigstore）：
+  - release 工作流新增 `sigstore/gh-action-sigstore-python` 步骤，用 GitHub OIDC 身份对 sdist / wheel
+    签名，`.sig` / `.bundle` 随 GitHub Release 发布；README 增加 `cosign verify-blob` 校验说明。
+- 语言适配器输出解析增强：
+  - `summarize_test_output` 新增 `adapter` 参数，优先使用语言适配器生成专属摘要（skill / sidecar 已接入）。
+  - Go：失败时列出具体失败用例名（`--- FAIL: TestX`，多个用例去重计数）；verbose 模式统计 `--- PASS:` 数量。
+  - Rust：失败时从 `failures:` 块提取失败用例名；成功摘要保留 `test result: ok. N passed` 统计。
+- 测试：新增远程审计重试 / CA、证据导出、Go / Rust 解析增强用例 13 个（263 → 276）。
+- 文档：README 特性 / CLI / 配置 / 安全 / 供应链 / Roadmap 与示例配置同步更新。
+
 ## [0.9.0] - 2026-08-29
 
 - 审计日志远程推送（SIEM）：

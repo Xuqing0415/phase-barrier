@@ -146,3 +146,36 @@ def test_cli_verify_evidence_empty_manifest(capsys, tmp_path):
     err = capsys.readouterr().err
     assert rc == 1
     assert "清单为空" in err
+
+
+# ---------- v0.10.0：export-evidence ----------
+
+def test_cli_export_evidence(capsys, tmp_path):
+    (tmp_path / "spec.md").write_text(SPEC, encoding="utf-8")
+    skill = AntiShortcutSkill(tmp_path, user_request=USER_REQUEST)
+    assert skill.advance_stage(2)["success"]
+    out_path = tmp_path / "bundle.json"
+    rc = main(["export-evidence", "--workspace", str(tmp_path), "--out", str(out_path)])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "已导出" in out
+    bundle = json.loads(out_path.read_text(encoding="utf-8"))
+    assert bundle["verified"] is True
+    assert bundle["signed"] is False
+    assert "spec.md" in bundle["files"]
+    assert bundle["files"]["spec.md"]["stage"] == 1
+    assert "sha256" in bundle["files"]["spec.md"]
+
+
+def test_cli_export_evidence_tampered(capsys, tmp_path):
+    spec = tmp_path / "spec.md"
+    spec.write_text(SPEC, encoding="utf-8")
+    skill = AntiShortcutSkill(tmp_path, user_request=USER_REQUEST)
+    assert skill.advance_stage(2)["success"]
+    spec.write_text(SPEC + "\n# 篡改", encoding="utf-8")
+    rc = main(["export-evidence", "--workspace", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert rc == 1
+    bundle = json.loads(out)
+    assert bundle["verified"] is False
+    assert any("被篡改" in v for v in bundle["violations"])

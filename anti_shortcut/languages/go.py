@@ -32,6 +32,10 @@ _GO_ASSERT_RE = re.compile(
 )
 
 _GO_SUMMARY_RE = re.compile(r"^(ok|FAIL|PASS)\s+\S+", re.M)
+_GO_OK_RE = re.compile(r"^ok\s+\S+", re.M)
+_GO_FAIL_HEADER_RE = re.compile(r"^FAIL\s+\S+", re.M)
+_GO_FAIL_TEST_RE = re.compile(r"^---\s+FAIL:\s+(\S+)", re.M)
+_GO_PASS_TEST_RE = re.compile(r"^---\s+PASS:\s+(\S+)", re.M)
 
 
 def _decode_output(raw: bytes | None) -> str:
@@ -129,14 +133,25 @@ class GoAdapter(LanguageAdapter):
     # ---------- 测试输出解析（go test） ----------
 
     def parse_test_output(self, output: str, exit_code: int | None) -> tuple[bool, str]:
-        """解析 go test 输出：``ok pkg`` / ``FAIL`` / ``--- FAIL:`` 行。"""
+        """解析 go test 输出：``ok pkg time`` / ``--- FAIL: TestX`` / ``FAIL pkg`` 行。
+
+        成功时优先返回 ``ok pkg 0.5s`` 汇总（verbose 模式无 ok 行时统计 ``--- PASS:``）；
+        失败时列出具体失败用例名。
+        """
         text = output or ""
         if exit_code == 0:
             summary = _extract_go_summary(text)
+            if not summary:
+                passed_tests = _GO_PASS_TEST_RE.findall(text)
+                if passed_tests:
+                    summary = f"go test 通过：{len(passed_tests)} 个用例通过"
             return True, summary or "所有测试通过（go test）"
-        if re.search(r"^---\s+FAIL:", text, re.M):
-            return False, "go test 存在失败用例（--- FAIL:）"
-        if re.search(r"^FAIL\b", text, re.M):
+        fails = _GO_FAIL_TEST_RE.findall(text)
+        if fails:
+            names = "、".join(dict.fromkeys(fails))[:400]
+            suffix = f"（共 {len(fails)} 个）" if len(fails) > 1 else ""
+            return False, f"go test 存在失败用例（--- FAIL:）: {names}{suffix}"
+        if _GO_FAIL_HEADER_RE.search(text):
             return False, "go test 失败（FAIL）"
         if "no test files" in text or "build failed" in text.lower() or "cannot find package" in text:
             return False, "go test 未能运行：项目缺少可执行测试或编译失败"

@@ -22,6 +22,10 @@
 - **证据签名（v0.9.0）**：阶段推进时把证据文件 SHA-256 写入独立清单 `evidence_manifest.json`（可选 HMAC 签名），`verify-evidence` 可对照工作区检测事后篡改。
 - **密钥轮换（v0.9.0）**：`state_hmac_keys` / `rotate-key` 支持无中断轮换 HMAC 密钥（宽限期双密钥，可从无签名状态启用签名）。
 - **审计远程推送（v0.9.0）**：配置 `audit_remote_url` 后，审计事件异步批量转发到 SIEM / webhook，推送失败不影响门禁。
+- **审计远程推送增强（v0.10.0）**：`audit_remote_ca_bundle` 支持自建 SIEM 的 TLS 自定义 CA；`audit_remote_retries` + 指数退避自动重试瞬时失败。
+- **证据清单导出（v0.10.0）**：`export-evidence` 把证据清单 + 文件哈希导出为可审计 bundle，供外部核对。
+- **供应链签名（v0.10.0）**：发布流程用 sigstore（GitHub OIDC 身份）对 sdist / wheel 签名，可 `cosign verify-blob` 校验来源。
+- **语言输出解析（v0.10.0）**：`summarize_test_output` 接入语言适配器，Go / Rust 测试输出生成专属摘要（含失败用例名）。
 
 ## 架构
 
@@ -125,6 +129,7 @@ python -m anti_shortcut inspect --workspace . --json     # JSON 输出（便于�
 python -m anti_shortcut advance --workspace . --to 2     # 推进阶段（校验证据）
 python -m anti_shortcut verify-evidence --workspace .   # 对照工作区校验证据签名清单（v0.9.0）
 python -m anti_shortcut rotate-key --workspace . --from <旧密钥> --to <新密钥>  # 轮换状态签名密钥（v0.9.0）
+python -m anti_shortcut export-evidence --workspace . --out bundle.json   # 导出证据清单为可审计 bundle（v0.10.0）
 ```
 
 `advance` 与 Agent 内部的 `advance_stage` 走同一套证据校验：通过返回退出码 0，被拒绝返回 1 并打印原因。
@@ -202,6 +207,7 @@ Action 随之自动上架，用户可直接在 Marketplace 搜索 **Phase-Barrie
 - 审计日志：`<workspace>/.agent_gate/audit.log` —— 结构化 JSON，记录阶段变更、拦截事件、校验结果。
 - 证据签名清单：`<workspace>/.agent_gate/evidence_manifest.json` —— 每次阶段推进时记录的证据文件 SHA-256（可选 HMAC 签名），供交付 / CI 用 `verify-evidence` 事后比对（v0.9.0）。
 - 审计远程推送：配置 `audit_remote_url` 后，每条审计事件异步 POST 到 SIEM / webhook（单事件为对象，多事件为 JSON 数组），队列有界、失败只计数（v0.9.0）。
+- 证据清单导出：`export-evidence` 生成包含清单、当前文件哈希与校验结果的 JSON bundle，可发给第三方审计（v0.10.0）。
 
 示例状态：
 
@@ -233,6 +239,9 @@ state_hmac_key: ""                 # 可选：状态签名 HMAC 密钥（或用�
 state_hmac_keys: []                # v0.9.0：轮换期接受的旧密钥列表（或用环境变量 PHASE_BARRIER_HMAC_KEYS）
 evidence_signing: true             # v0.9.0：是否把证据文件哈希写入签名清单
 audit_remote_url: ""               # v0.9.0：可选，审计事件异步推送到 SIEM / webhook
+audit_remote_retries: 2            # v0.10.0：发送失败重试次数（指数退避）
+audit_remote_backoff_factor: 0.5    # v0.10.0：退避基数秒（0.5→1→2…）
+audit_remote_ca_bundle: ""          # v0.10.0：可选，自建 SIEM TLS 的自定义 CA（PEM 路径）
 audit_remote_token: ""             # v0.9.0：可选，推送时携带的 Bearer Token
 ```
 
@@ -264,6 +273,7 @@ coverage_threshold: 80          # 0-100 百分比；不配置则不做覆盖率�
 - **证据签名（v0.9.0）**：独立于 state.json 的证据清单记录每个阶段推进时的文件 SHA-256；即使 Agent 伪造状态文件，`verify-evidence` 仍能发现证据被替换 / 缺失。
 - **密钥轮换（v0.9.0）**：`rotate-key` 校验现有签名后以新密钥重新签名；`state_hmac_keys` / `PHASE_BARRIER_HMAC_KEYS` 提供宽限期双密钥，轮换不中断。
 - **审计远程推送（v0.9.0）**：`audit_remote_url` 把审计事件异步转发到 SIEM；队列有界、失败只计数，不影响门禁执行。
+- **审计可靠性（v0.10.0）**：发送失败按指数退避自动重试；自定义 CA 支持内网 / 自建 SIEM 的 HTTPS 端点。
 - **日志审计**：所有拦截与阶段变更写入 JSON 审计日志，便于事后分析“哪些请求被拦截”“跳过步骤的频率”。
 
 ## Docker 只读卷部署（进程级防绕过）
@@ -489,7 +499,8 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.7.0 已完成**：JS 输出解析覆盖 Vitest / Playwright、覆盖率门禁 `coverage_threshold`（pytest-cov / `go test -cover` / istanbul 表）、K8s sidecar 部署模板与 HTTP 门禁服务（`anti_shortcut.sidecar`）。
 - **v0.8.0 已完成**：Java 输出解析增强（Surefire `Skipped` / Gradle / JUnit Console）、状态签名 HMAC（`state_hmac_key` / `PHASE_BARRIER_HMAC_KEY`）、GitHub Action 市场发布（tag 即 Release）。
 - **v0.9.0 已完成**：审计日志远程推送（SIEM：`audit_remote_url` + 异步批量 + 队列保护）、证据签名（`evidence_manifest.json` + `verify-evidence`）、HMAC 密钥轮换（`state_hmac_keys` / `rotate-key`，含无签名→启用签名迁移）。
-- **v0.10.0（规划）**：审计远程推送增强（TLS 自定义 CA / 重试退避）、证据清单导出与 sigstore 签名、更多语言适配器输出解析。
+- **v0.10.0 已完成**：审计远程推送增强（`audit_remote_ca_bundle` TLS 自定义 CA、`audit_remote_retries` 指数退避重试）、证据清单导出（`export-evidence`）、sigstore 供应链签名（release 工作流 + `cosign verify-blob`）、Go / Rust 测试输出解析增强（失败用例名提取，`summarize_test_output` 接入语言适配器）。
+- **v0.11.0（规划）**：审计远程推送（TLS 客户端证书 / 自定义 header / 持久化重试队列）、证据清单 Git 门禁集成、更多语言适配器输出解析（Ruby / C#）。
 - **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有语言适配器入口点 `phase_barrier.languages` 与集成插件入口点 `anti_shortcut.integrations`）。
 - **供应链**：接入 sigstore 签名与 trusted publishing，提升包可信度。
 
@@ -500,6 +511,19 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - 使用中遇到问题或想提需求：请在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 反馈，最好附上复现步骤（版本、配置、命令输出）。
 - 关注 PyPI 下载量与版本更新：[phase-barrier · PyPI](https://pypi.org/project/phase-barrier/)。
 - 欢迎贡献代码：提交前请运行 `python -m pytest`，并遵循 Conventional Commits 提交规范（`feat:` / `fix:` / `docs:` / `test:`）。
+
+## 供应链安全（sigstore，v0.10.0）
+
+发布流程（`git tag vX.Y.Z` 触发）会用 sigstore 以 GitHub OIDC 身份对 sdist / wheel
+签名，`.sig` / `.bundle` 随 GitHub Release 附件发布。用户可离线校验包来源：
+
+```bash
+# 需要 cosign（https://docs.sigstore.dev/cosign/）
+cosign verify-blob --bundle phase_barrier-0.10.0-py3-none-any.whl.bundle   --certificate-identity-regexp 'https://github.com/Xuqing0415/phase-barrier/.github/workflows/release.yml@refs/tags/v'   --certificate-oidc-issuer https://token.actions.githubusercontent.com   phase_barrier-0.10.0-py3-none-any.whl
+```
+
+信任根：GitHub OIDC issuer（`https://token.actions.githubusercontent.com`）+ 工作流身份，
+确保包确实由本仓库的 release 工作流构建并发布。
 
 ## 构建与发布（PyPI）
 

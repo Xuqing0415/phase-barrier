@@ -5,6 +5,7 @@
     python -m anti_shortcut inspect [--workspace .] [--json]
     python -m anti_shortcut advance --to 2 [--workspace .] [--json]
     python -m anti_shortcut verify-evidence [--workspace .] [--json]
+    python -m anti_shortcut export-evidence [--workspace .] [--out evidence-bundle.json]
     python -m anti_shortcut rotate-key --to <new-key> [--from <old-key>] [--workspace .]
     python -m anti_shortcut --version
 
@@ -13,6 +14,7 @@
 
 v0.9.0 新增：
 - ``verify-evidence``：对照工作区校验证据签名清单（检测证据文件事后篡改）。
+- ``export-evidence``：把证据清单 + 文件哈希导出为可审计 bundle（v0.10.0）。
 - ``rotate-key``：轮换状态签名 HMAC 密钥（支持从无签名状态启用签名）。
 """
 from __future__ import annotations
@@ -27,7 +29,13 @@ import yaml
 
 from . import __version__
 from .config import STAGES, load_config
-from .evidence import EVIDENCE_MANIFEST_NAME, EvidenceManifest, EvidenceManifestError
+from .evidence import (
+    EVIDENCE_MANIFEST_NAME,
+    EVIDENCE_MANIFEST_VERSION,
+    EvidenceManifest,
+    EvidenceManifestError,
+)
+from .paths import sha256_file
 from .skill import AntiShortcutSkill
 from .state import CorruptedStateError, StateManager
 
@@ -123,6 +131,53 @@ def _cmd_verify_evidence(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def _cmd_export_evidence(args: argparse.Namespace) -> int:
+    """导出证据清单为可审计 bundle（清单 + 当前文件哈希 + 校验结果）。"""
+    ws = Path(args.workspace).resolve()
+    if not ws.is_dir():
+        raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
+    cfg = load_config(args.config)
+    manifest = EvidenceManifest(
+        ws / cfg.gate_dir_name / EVIDENCE_MANIFEST_NAME,
+        hmac_key=cfg.state_hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY"),
+    )
+    ok, violations = manifest.verify(ws)
+    entries = manifest.entries()
+    files: dict[str, dict] = {}
+    for rel in sorted(entries):
+        target = ws / rel
+        if target.is_file():
+            try:
+                files[rel] = {
+                    "sha256": sha256_file(target),
+                    "size": target.stat().st_size,
+                    "stage": entries[rel]["stage"],
+                }
+            except OSError:
+                files[rel] = {"error": "不可读", "stage": entries[rel]["stage"]}
+    from datetime import datetime, timezone
+
+    bundle = {
+        "version": 1,
+        "exported_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "manifest_version": EVIDENCE_MANIFEST_VERSION,
+        "signed": manifest.is_signed(),
+        "verified": ok,
+        "violations": violations,
+        "entries": entries,
+        "files": files,
+    }
+    if args.out:
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8")
+        status = "校验通过" if ok else "存在违规"
+        print(f"OK: 证据清单已导出到 {out}（{status}）")
+    else:
+        print(json.dumps(bundle, ensure_ascii=False, indent=2))
+    return 0 if ok else 1
+
+
 def _cmd_rotate_key(args: argparse.Namespace) -> int:
     """轮换状态签名 HMAC 密钥：校验现有签名后以新密钥重新签名。"""
     ws = Path(args.workspace).resolve()
@@ -167,6 +222,14 @@ def build_parser() -> argparse.ArgumentParser:
         "verify-evidence", parents=[common], help="对照工作区校验证据签名清单"
     )
     p_verify.set_defaults(func=_cmd_verify_evidence)
+
+    p_export = sub.add_parser(
+        "export-evidence", parents=[common], help="把证据清单导出为可审计 bundle"
+    )
+    p_export.add_argument(
+        "--out", type=str, default="", help="导出文件路径（缺省输出到 stdout）"
+    )
+    p_export.set_defaults(func=_cmd_export_evidence)
 
     p_rotate = sub.add_parser(
         "rotate-key", parents=[common], help="轮换状态签名 HMAC 密钥"

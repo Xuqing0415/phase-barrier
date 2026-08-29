@@ -59,7 +59,7 @@ class GateSidecar:
             return self.skill.advance_stage(new_stage)
 
     def record_test_run(self, exit_code: int, output: str) -> dict[str, Any]:
-        record = summarize_test_output(output or "", exit_code)
+        record = summarize_test_output(output or "", exit_code, adapter=self.skill.adapter)
         with self._lock:
             self.skill.state.mark_test_run(record)
         visible = {k: v for k, v in record.items() if k != "output_tail"}

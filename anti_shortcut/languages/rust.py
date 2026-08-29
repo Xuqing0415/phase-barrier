@@ -44,6 +44,24 @@ def _decode_output(raw: bytes | None) -> str:
     return raw.decode("latin-1", errors="replace")
 
 
+def _extract_rust_failures(text: str) -> str:
+    """从 cargo test 输出 ``failures:`` 块中提取失败用例名（去重、最多 5 个）。"""
+    lines = (text or "").splitlines()
+    names: list[str] = []
+    for i, ln in enumerate(lines):
+        if ln.strip() != "failures:":
+            continue
+        for nxt in lines[i + 1:]:
+            s = nxt.strip()
+            if not s:
+                break
+            if s.startswith("----") or "stdout ----" in s:
+                break
+            names.append(s)
+    unique = list(dict.fromkeys(names))
+    return "、".join(unique[:5])
+
+
 def _extract_rust_errors(output: str) -> list[str]:
     """提取 cargo / rustc 输出的 error 行（去掉行号前缀，保留可读信息）。"""
     out = []
@@ -148,14 +166,21 @@ class RustAdapter(LanguageAdapter):
     # ---------- 测试输出解析（cargo test） ----------
 
     def parse_test_output(self, output: str, exit_code: int | None) -> tuple[bool, str]:
-        """解析 cargo test 输出：``test result: ok`` / ``test result: FAILED``。"""
+        """解析 cargo test 输出：``test result: ok/FAILED`` + ``failures:`` 块。
+
+        成功时返回 ``test result: ok. 3 passed; 0 failed`` 统计；失败时附带失败用例名。
+        """
         text = output or ""
         if exit_code == 0:
-            m = re.search(r"test result:\s*ok\.\s*[^\n]*", text)
-            return True, m.group(0) if m else "所有测试通过（cargo test）"
-        m = re.search(r"test result:\s*FAILED[^\n]*", text)
+            m = re.search(r"test result:\s*ok\.\s*([^\n]*)", text)
+            detail = m.group(1).strip() if m else ""
+            return True, f"test result: ok. {detail}" if detail else "所有测试通过（cargo test）"
+        m = re.search(r"test result:\s*FAILED\.\s*([^\n]*)", text)
         if m:
-            return False, m.group(0)
+            detail = m.group(1).strip()
+            names = _extract_rust_failures(text)
+            suffix = f"（失败用例: {names}）" if names else ""
+            return False, f"cargo test 失败：test result: FAILED. {detail}{suffix}"
         if "error[" in text or "error:" in text:
             return False, "cargo test 编译失败"
         return False, f"测试失败，退出码 {exit_code}"

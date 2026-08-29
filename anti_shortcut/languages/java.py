@@ -38,7 +38,7 @@ _DEPENDENCY_MARKERS = (
     "cannot find symbol",
     "cannot access",
     "cannot find class",
-    "package does not exist",
+    "does not exist",  # 匹配 "package com.x does not exist" / "module x does not exist"
     "程序包",
     "找不到符号",
 )

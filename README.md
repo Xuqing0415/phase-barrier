@@ -1,6 +1,8 @@
 # 反捷径校验 Skill（Anti-Shortcut Validation Skill）
 
 [![CI](https://github.com/Xuqing0415/phase-barrier/actions/workflows/ci.yml/badge.svg)](https://github.com/Xuqing0415/phase-barrier/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/phase-barrier.svg)](https://pypi.org/project/phase-barrier/)
+[![Python versions](https://img.shields.io/pypi/pyversions/phase-barrier.svg)](https://pypi.org/project/phase-barrier/)
 
 强制编码 Agent（如 Alpha-SWE）遵循标准工程师 SOP 的**阶段门禁（Stage Gate）**组件：
 以“阶段状态机 + 证据校验 + 工具拦截”的组合，阻止 Agent 跳步、偷步或伪造产出。
@@ -33,11 +35,11 @@ Alpha-SWE Agent Core（思考 / 规划 / 调用工具）
 ## 快速开始
 
 ```bash
-pip install anti-shortcut-skill   # 从 PyPI 安装（发布后可用）
+pip install phase-barrier        # 从 PyPI 安装（发行名与仓库同名）
 # 或本地构建后安装：
 #   python -m pip install --upgrade build
 #   python -m build
-#   pip install dist/anti_shortcut_skill-*.whl
+#   pip install dist/phase_barrier-*.whl
 
 pip install -e .            # 开发模式安装（依赖 pydantic / pyyaml / structlog）
 python examples/demo.py     # 观看完整演示（含违规尝试被拦截）
@@ -243,6 +245,7 @@ twine upload dist/*      # 正式发布到 PyPI
 # twine upload --repository testpypi dist/*   # 先发 TestPyPI 验证
 ```
 
-- 版本号统一维护在 `pyproject.toml` 的 `[project] version` 与 `anti_shortcut/__init__.py` 的 `__version__`，发布前需同步。
-- CI（`.github/workflows/ci.yml`）：push / PR 时在 Python 3.10–3.14 矩阵上运行 `pytest` + `examples/demo.py`，并构建 sdist/wheel 上传为 artifact。
-- 可选自动发布（`.github/workflows/release.yml`）：打 `v*` tag 时自动构建并发布到 PyPI，需在仓库 Settings → Secrets 中配置 `PYPI_API_TOKEN`。
+- 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建即为 `X.Y.Z`，无需再手工同步 `pyproject.toml` 与 `__init__.py`。发布流程：`git tag v0.1.1 && git push --tags`。
+- CI（`.github/workflows/ci.yml`）：push / PR 时在 Python 3.10–3.14 矩阵上运行 `pytest` + `examples/demo.py`；`package` job 构建 sdist/wheel 并执行 `twine check` 后上传为 artifact。
+- 自动发布（`.github/workflows/release.yml`）：打 `v*` tag 时自动构建并发布到 PyPI，使用仓库 Secret `PYPI_API_TOKEN`。
+- 发行名说明：本项目发行名为 `phase-barrier`（与仓库同名），import 包名仍为 `anti_shortcut`。早期以 `anti-shortcut-skill` 发布过 0.1.0，PyPI 不允许项目改名/删除，旧项目会永久保留；若不想让旧名被误装，可在 PyPI 旧项目页将其 yank。

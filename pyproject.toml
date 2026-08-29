@@ -40,6 +40,9 @@ anti-shortcut = "anti_shortcut.__main__:main"
 [project.entry-points."phase_barrier.languages"]
 python = "anti_shortcut.languages.python:PythonAdapter"
 javascript = "anti_shortcut.languages.javascript:JavaScriptAdapter"
+java = "anti_shortcut.languages.java:JavaAdapter"
+go = "anti_shortcut.languages.go:GoAdapter"
+rust = "anti_shortcut.languages.rust:RustAdapter"
 
 [project.urls]
 Homepage = "https://github.com/Xuqing0415/phase-barrier"

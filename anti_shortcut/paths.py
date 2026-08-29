@@ -84,7 +84,7 @@ def classify_path(path: str | Path, config: GateConfig) -> str:
 
 def iter_workspace_files(workspace: Path, config: GateConfig) -> list[Path]:
     """遍历工作区文件，跳过门禁目录与常见无关目录。"""
-    skip = {config.gate_dir_name, ".git", "__pycache__", ".venv", "venv", "node_modules", ".phase-barrier-javac"}
+    skip = {config.gate_dir_name, ".git", "__pycache__", ".venv", "venv", "node_modules", "target", ".phase-barrier-javac"}
     out: list[Path] = []
     for p in workspace.rglob("*"):
         if not p.is_file():

@@ -253,7 +253,10 @@ anti_shortcut/
 ├── languages/         # 语言适配层（v0.3.0）
 │   ├── base.py        #   LanguageAdapter 抽象基类 + 共享校验策略
 │   ├── python.py      #   PythonAdapter（AST + compile）
-│   ├── javascript.py  #   JavaScriptAdapter（node --check / tsc --noEmit + 启发式测试）
+│   ├── javascript.py  #   JavaScriptAdapter（node --check / tsc --noEmit + jest --listTests）
+│   ├── java.py        #   JavaAdapter（javac + JUnit 启发式）
+│   ├── go.py          #   GoAdapter（gofmt + go test 解析）
+│   ├── rust.py        #   RustAdapter（cargo check / rustc + cargo test 解析）
 │   └── __init__.py    #   注册表 / detect_language / get_adapter / 入口点加载
 └── __main__.py        # CLI：python -m anti_shortcut inspect / advance
 examples/
@@ -267,7 +270,7 @@ deploy/
 ├── seed_gate.py                   # gate-keeper：初始化并跑完整门禁流程
 ├── probe.py                       # agent 探针：验证只读挂载生效
 └── README.md                      # 部署说明
-tests/                             # pytest 测试套件（117 个用例）
+tests/                             # pytest 测试套件（186 个用例）
 ```
 
 ## 设计取舍
@@ -286,8 +289,8 @@ tests/                             # pytest 测试套件（117 个用例）
 ## 多语言支持（v0.3.0 语言适配层）
 
 v0.3.0 起，语言相关逻辑（文件识别、语法检查、测试统计、测试命令识别）抽象为
-**语言适配器（Language Adapter）**。核心包内置 Python、JavaScript/TypeScript 与 Java 适配器，
-第三方可注册自定义适配器；未显式指定时按工作区标志文件自动检测。
+**语言适配器（Language Adapter）**。核心包内置 Python、JavaScript/TypeScript、Java、Go 与 Rust
+适配器，第三方可注册自定义适配器；未显式指定时按工作区标志文件自动检测。
 
 ### 快速启用
 
@@ -322,8 +325,10 @@ test_commands:
 | 适配器 | 文件识别 | 语法检查 | 测试校验 |
 |--------|----------|----------|----------|
 | `PythonAdapter` | `test_*.py` / `tests/**` 为测试，`*.py` 为实现 | `compile()` | AST 解析：测试函数数 + `assert` / `pytest.raises` |
-| `JavaScriptAdapter` | `*.test.js` / `*.spec.ts` / `__tests__/` 为测试，`src/**` 与 `*.js|ts|jsx|tsx` 为实现 | `node --check` / `tsc --noEmit`（工具缺失时返回明确错误） | 轻量启发式：`test` / `it` / `describe` 声明数 + `expect` / `assert` / `.toBe` 等断言关键字 |
+| `JavaScriptAdapter` | `*.test.js` / `*.spec.ts` / `__tests__/` 为测试，`src/**` 与 `*.js|ts|jsx|tsx` 为实现 | `node --check` / `tsc --noEmit`（优先 `tsconfig.json` 项目检查；工具缺失返回明确错误） | 轻量启发式（`test` / `it` / `describe` + `it.each` / `test.skip` 等，剥离注释与字符串）；可选 `jest --listTests` 动态发现 |
 | `JavaAdapter` | `*Test.java` / `*Tests.java` / `src/test/**` 为测试，`src/**` 与 `*.java` 为实现 | `javac -proc:none`（JDK 缺失返回明确错误；跨文件依赖未解析时降级提示） | 启发式：`@Test` 注解数 + JUnit/Hamcrest 断言关键字 |
+| `GoAdapter` | `*_test.go` 为测试，`*.go` / `cmd|internal|pkg/**` 为实现 | `gofmt -e`（Go 工具链缺失返回明确错误） | 启发式：`func TestXxx(t *testing.T)` 函数数 + `t.Error` / `t.Fatal` / `assert` / `require` 断言 |
+| `RustAdapter` | `tests/**` / `*_test.rs` / `src/**/tests.rs` 为测试，`src/**` 与 `*.rs` 为实现 | `cargo check`（有 `Cargo.toml`）/ `rustc` 单文件回退（工具缺失返回明确错误） | 启发式：`#[test]` / `#[tokio::test]` 属性数 + `assert!` / `assert_eq!` / `assert_ne!` |
 
 ### 自定义适配器
 
@@ -412,8 +417,8 @@ min_test_functions: 3
 彻底“一键关闭全部门禁”与设计目标相悖，不支持。
 
 **如何适配非 Python 项目？**
-v0.3.0 起推荐使用语言适配层：`language: javascript`（内置 Python / JavaScript 适配器，
-并支持按工作区标志文件自动检测）；更特殊的语言可提供自定义 `LanguageAdapter`
+v0.3.0 起推荐使用语言适配层：`language: javascript` / `java` / `go` / `rust`（内置 Python、
+JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志文件自动检测）；更特殊的语言可提供自定义 `LanguageAdapter`
 （用 `language_adapter` 配置导入路径）。不引入适配器时，仍可直接配置
 `test_file_patterns` / `source_file_patterns` / `test_commands` 三项，
 门禁逻辑（阶段状态机 + 证据校验 + 工具拦截）保持不变。
@@ -424,7 +429,9 @@ v0.3.0 起推荐使用语言适配层：`language: javascript`（内置 Python /
 
 ## Roadmap（规划）
 
-- **v0.5.0+ 更多语言适配器**：在 v0.4.0 Java 基础上接入 Go、Rust 等；JavaScript 测试校验从启发式升级为真实解析（acorn / `jest --listTests`）。
+- **v0.6.0 JavaScript 深度校验**：用真实解析器（acorn / `jest --listTests --json`）替代启发式，支持 Vitest / Playwright 输出解析。
+- **v0.6.0+ Java 项目级编译**：`mvn test-compile` / `gradle compileTestJava` 完整项目编译校验，替代单文件 javac。
+- **CI 模板**：为 Go / Rust 项目提供 GitHub Action 门禁示例与 K8s sidecar 部署模板。
 - **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有语言适配器入口点 `phase_barrier.languages` 与集成插件入口点 `anti_shortcut.integrations`）。
 - **Kubernetes sidecar**：以 sidecar 容器承载门禁状态，与主 Agent 容器共享工作区、状态目录只读挂载。
 - **安全增强**：状态文件与证据签名（不可信环境防篡改）；审计日志远程推送（SIEM）。

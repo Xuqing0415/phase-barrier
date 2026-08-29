@@ -6,8 +6,10 @@
 # 说明：v0.3.0 起使用语言适配层。language: javascript 会启用 JavaScriptAdapter：
 #   - 测试文件：*.test.js / *.spec.ts / __tests__/ 等（与下方 test_file_patterns 自动合并）
 #   - 实现文件：src/** 与 *.js|ts|jsx|tsx（与下方 source_file_patterns 自动合并）
-#   - 语法检查：node --check（JS）/ tsc --noEmit（TS），工具缺失时返回明确错误
-#   - 测试校验：轻量启发式（test/it/describe 声明数 + expect/assert 断言关键字）
+#   - 语法检查：node --check（JS）/ tsc --noEmit（TS，优先按项目 tsconfig.json 整体检查），
+#     工具缺失时返回明确错误
+#   - 测试校验：轻量启发式（test/it/describe 声明数 + expect/assert 断言关键字，
+#     支持 it.each / test.skip / describe.each）；可启用 jest --listTests 动态发现
 # 若本机未安装 Node.js / TypeScript，可在 CI 或容器内安装后使用，或省略 language
 # 字段改回“非 Python 启发式 + 跳过 compile 但要求非空”的行为。
 
@@ -35,6 +37,13 @@ source_file_patterns:
   - "src/**/*.js"
   - "*.ts"
   - "*.js"
+
+# 语言适配器额外参数（可选）
+adapter_options:
+  # test_discovery: jest  -> 强制用 `jest --listTests` 动态发现测试文件（jest 未安装时报错）
+  # test_discovery: off   -> 强制启发式校验
+  # 缺省 auto              -> 项目内存在 jest（node_modules/jest 或 .bin/jest）时自动启用
+  test_discovery: auto
 
 # 测试/校验命令（运行测试或类型检查同样受“阶段 >= 3”门禁约束）
 test_commands:

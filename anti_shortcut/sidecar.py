@@ -11,7 +11,8 @@
 - ``POST /api/advance``              ``{"new_stage": N}`` 推进阶段（走完整证据校验）
 - ``POST /api/test-run``             ``{"exit_code": 0, "output": "..."}`` 上报测试运行结果
 - ``POST /api/source-change``        ``{"path": "fib.py"}`` 上报源码/测试变更
-- ``GET  /api/audit``                ``{?limit=50&event=proxy_write_denied}`` 查询本地审计日志（v0.20.0）
+- ``GET  /api/audit``                ``{?limit=50&offset=0&since=...&until=...&event=...}`` 查询审计日志（分页 / 时间过滤，v0.21.0）
+- ``GET  /api/verify-evidence``      校验证据签名清单（v0.21.0）
 
 v0.9.0：新增 ``--audit-remote-url`` / ``--audit-remote-token``，把审计事件异步
 转发到 SIEM / webhook；关闭时自动冲刷远程审计队列。
@@ -29,7 +30,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import threading
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -39,6 +42,30 @@ from .config import load_config
 from .interceptors import summarize_test_output
 from .proxy import ExecDenied, GateProxy, ProxyError, WriteDenied
 from .skill import AntiShortcutSkill
+
+
+def _parse_event_time(value: Any) -> datetime | None:
+    """解析审计日志时间戳（structlog ISO 或 fallback ``%Y-%m-%dT%H:%M:%S%z``）。
+
+    无时区信息时按 UTC 处理，保证与带时区时间戳可比较。
+    """
+    if not isinstance(value, str):
+        return None
+    s = value.strip()
+    if not s:
+        return None
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    m = re.search(r"([+-])(\d{2})(\d{2})$", s)
+    if m:
+        s = s[: m.start(2)] + m.group(2) + ":" + m.group(3)
+    try:
+        dt = datetime.fromisoformat(s)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 class GateSidecar:
@@ -92,13 +119,25 @@ class GateSidecar:
             self.skill.state.mark_source_change(path)
         return {"ok": True, "path": path}
 
-    def audit(self, limit: int = 50, event: str | None = None) -> dict[str, Any]:
-        """读取本地审计日志（``.agent_gate/audit.log``），按时间倒序返回最近事件（v0.20.0）。
+    def audit(
+        self,
+        limit: int = 50,
+        offset: int = 0,
+        since: str | None = None,
+        until: str | None = None,
+        event: str | None = None,
+    ) -> dict[str, Any]:
+        """读取本地审计日志（``.agent_gate/audit.log``），按时间倒序返回事件（v0.20.0+）。
 
         :param limit: 最多返回条数（1-500，默认 50）
+        :param offset: 跳过最近 N 条（分页游标，默认 0，v0.21.0）
+        :param since: 可选 ISO 时间戳（含），只返回不早于该时间的事件（v0.21.0）
+        :param until: 可选 ISO 时间戳（含），只返回不晚于该时间的事件（v0.21.0）
         :param event: 可选事件名精确过滤（如 ``proxy_write_denied``）
-        :return: ``{"ok": True, "count": N, "events": [...]}``，count 为实际返回条数
+        :return: ``{"ok": True, "count": N, "total": M, "offset": O, "events": [...]}``
         """
+        since_dt = _parse_event_time(since) if since is not None else None
+        until_dt = _parse_event_time(until) if until is not None else None
         log_file = self.skill.gate_dir / self.skill.config.audit_log_name
         events: list[dict[str, Any]] = []
         if log_file.exists():
@@ -114,9 +153,41 @@ class GateSidecar:
                     continue
                 if event is not None and record.get("event") != event:
                     continue
+                if since_dt is not None or until_dt is not None:
+                    ts = _parse_event_time(record.get("timestamp") or record.get("ts"))
+                    if ts is None:
+                        continue
+                    if since_dt is not None and ts < since_dt:
+                        continue
+                    if until_dt is not None and ts > until_dt:
+                        continue
                 events.append(record)
         events.reverse()
-        return {"ok": True, "count": len(events[:limit]), "events": events[:limit]}
+        sliced = events[offset : offset + limit]
+        return {
+            "ok": True,
+            "count": len(sliced),
+            "total": len(events),
+            "offset": offset,
+            "events": sliced,
+        }
+
+
+    def verify_evidence(self) -> dict[str, Any]:
+        """校验证据签名清单与当前工作区文件（evidence_manifest.json，v0.21.0）。
+
+        :return: ``{"ok": bool, "violations": [...], "entries": [...], "signed": bool}``
+        """
+        try:
+            ok, violations = self.skill.verify_evidence()
+        except Exception as exc:  # EvidenceManifestError（清单损坏 / 签名不匹配）等
+            return {"ok": False, "violations": [str(exc)], "error": str(exc)}
+        return {
+            "ok": ok,
+            "violations": violations,
+            "entries": sorted(self.skill.evidence_manifest.entries()),
+            "signed": self.skill.evidence_manifest.is_signed(),
+        }
 
 
 def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
@@ -165,8 +236,37 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
                     if isinstance(limit, bool) or not 1 <= limit <= 500:
                         self._send(400, {"error": "limit 必须是 1-500 的整数"})
                         return
+                offset = 0
+                if "offset" in query:
+                    raw = query["offset"][0]
+                    try:
+                        offset = int(raw)
+                    except ValueError:
+                        offset = -1
+                    if isinstance(offset, bool) or offset < 0:
+                        self._send(400, {"error": "offset 必须是非负整数"})
+                        return
+                since = (query.get("since") or [None])[0]
+                until = (query.get("until") or [None])[0]
+                if since is not None and _parse_event_time(since) is None:
+                    self._send(400, {"error": "since 必须是 ISO 时间戳"})
+                    return
+                if until is not None and _parse_event_time(until) is None:
+                    self._send(400, {"error": "until 必须是 ISO 时间戳"})
+                    return
                 event = (query.get("event") or [None])[0] or None
-                self._send(200, sidecar.audit(limit=limit, event=event))
+                self._send(
+                    200,
+                    sidecar.audit(
+                        limit=limit,
+                        offset=offset,
+                        since=since,
+                        until=until,
+                        event=event,
+                    ),
+                )
+            elif self.path == "/api/verify-evidence":
+                self._send(200, sidecar.verify_evidence())
             else:
                 self._send(404, {"error": "not found"})
 
@@ -255,6 +355,29 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
             else:
                 self._send(404, {"error": "not found"})
     return Handler
+
+
+def make_server(
+    sidecar: GateSidecar,
+    host: str = "0.0.0.0",
+    port: int = 8080,
+    tls_cert: str | None = None,
+    tls_key: str | None = None,
+    tls_client_ca: str | None = None,
+) -> ThreadingHTTPServer:
+    """构造 sidecar HTTP 服务器；提供 mTLS 选项时要求客户端证书（v0.21.0）。"""
+    server = ThreadingHTTPServer((host, port), make_handler(sidecar))
+    if tls_cert or tls_key or tls_client_ca:
+        if not (tls_cert and tls_key and tls_client_ca):
+            raise ValueError("启用 mTLS 需要同时提供 tls_cert / tls_key / tls_client_ca")
+        import ssl
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(tls_cert, tls_key)
+        context.load_verify_locations(cafile=tls_client_ca)
+        context.verify_mode = ssl.CERT_REQUIRED
+        server.socket = context.wrap_socket(server.socket, server_side=True)
+    return server
 
 
 def _merge_config(args: argparse.Namespace) -> Any:
@@ -357,6 +480,13 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help="审计远程推送持久化重试队列目录（可选；也可用环境变量 AUDIT_REMOTE_SPOOL_DIR）",
     )
+    parser.add_argument(
+        "--tls-cert", default="", help="mTLS 服务端证书 PEM（v0.21.0，启用后要求客户端证书）"
+    )
+    parser.add_argument("--tls-key", default="", help="mTLS 服务端私钥 PEM")
+    parser.add_argument(
+        "--tls-client-ca", default="", help="客户端证书签发 CA（PEM），启用后强制客户端证书"
+    )
     parser.add_argument("--host", default="0.0.0.0", help="监听地址")
     parser.add_argument("--port", type=int, default=8080, help="监听端口")
     args = parser.parse_args(argv)
@@ -368,9 +498,17 @@ def main(argv: list[str] | None = None) -> int:
         config=_merge_config(args),
         user_request=args.user_request,
     )
-    server = ThreadingHTTPServer((args.host, args.port), make_handler(sidecar))
+    server = make_server(
+        sidecar,
+        host=args.host,
+        port=args.port,
+        tls_cert=args.tls_cert or None,
+        tls_key=args.tls_key or None,
+        tls_client_ca=args.tls_client_ca or None,
+    )
+    scheme = "https" if args.tls_cert else "http"
     print(
-        f"[sidecar] phase-barrier 门禁服务已启动: http://{args.host}:{args.port}"
+        f"[sidecar] phase-barrier 门禁服务已启动: {scheme}://{args.host}:{args.port}"
         f"（工作区 {args.workspace}，阶段 {sidecar.skill.current_stage}）",
         flush=True,
     )

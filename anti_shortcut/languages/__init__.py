@@ -14,10 +14,12 @@ from typing import Any
 
 from ..config import GateConfig
 from .base import LanguageAdapter, analyze_js_style_tests, validate_test_collection
+from .csharp import CSharpAdapter
 from .go import GoAdapter
 from .java import JavaAdapter
 from .javascript import JavaScriptAdapter
 from .python import PythonAdapter
+from .ruby import RubyAdapter
 from .rust import RustAdapter
 
 __all__ = [
@@ -28,6 +30,8 @@ __all__ = [
     "JavaAdapter",
     "GoAdapter",
     "RustAdapter",
+    "RubyAdapter",
+    "CSharpAdapter",
     "detect_language",
     "get_adapter",
     "load_entry_point_adapters",
@@ -42,6 +46,8 @@ LANGUAGE_REGISTRY: dict[str, type[LanguageAdapter]] = {
     "java": JavaAdapter,
     "go": GoAdapter,
     "rust": RustAdapter,
+    "ruby": RubyAdapter,
+    "csharp": CSharpAdapter,
 }
 
 # 标志文件 → 语言（顺序即优先级；同语言内按可依赖程度排序）
@@ -50,8 +56,15 @@ _LANGUAGE_MARKERS: list[tuple[tuple[str, ...], str]] = [
     (("pom.xml", "build.gradle", "build.gradle.kts"), "java"),
     (("go.mod",), "go"),
     (("Cargo.toml",), "rust"),
+    (("Gemfile", "Gemfile.lock", ".ruby-version", "Rakefile"), "ruby"),
     (("requirements.txt", "setup.py", "setup.cfg", "tox.ini"), "python"),
     (("pyproject.toml",), "python"),
+]
+
+# 目录级 glob 标志（如根目录的 *.gemspec / *.csproj / *.sln）
+_LANGUAGE_GLOB_MARKERS: list[tuple[tuple[str, ...], str]] = [
+    (("*.gemspec",), "ruby"),
+    (("*.csproj", "*.sln"), "csharp"),
 ]
 
 
@@ -78,11 +91,18 @@ def load_entry_point_adapters() -> dict[str, type[LanguageAdapter]]:
 
 
 def detect_language(workspace: Path) -> str:
-    """根据工作区根目录的标志文件自动检测语言；未识别时返回 ``python``（默认）。"""
+    """根据工作区根目录的标志文件自动检测语言；未识别时返回 ``python``（默认）。
+
+    v0.11.0：支持目录级 glob 标志（``*.gemspec`` / ``*.csproj`` / ``*.sln``）。
+    """
     root = Path(workspace)
     for markers, lang in _LANGUAGE_MARKERS:
         for marker in markers:
             if (root / marker).exists():
+                return lang
+    for globs, lang in _LANGUAGE_GLOB_MARKERS:
+        for glob in globs:
+            if any(root.glob(glob)):
                 return lang
     return "python"
 

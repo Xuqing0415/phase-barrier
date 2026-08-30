@@ -20,6 +20,7 @@ examples/custom_adapter/foo_workspace/
 .agent_gate/
 _tmp_site/
 _pytest_final/
+.pytest_tmp/
 _build_tmp/
 
 # IDE / OS

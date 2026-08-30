@@ -15,6 +15,10 @@
 v0.9.0：新增 ``--audit-remote-url`` / ``--audit-remote-token``，把审计事件异步
 转发到 SIEM / webhook；关闭时自动冲刷远程审计队列。
 
+v0.11.0：新增 mTLS 客户端证书（``--audit-remote-client-cert`` / ``--audit-remote-client-key``）、
+自定义请求头（``--audit-remote-header NAME=VALUE``，可多次）与持久化重试队列
+（``--audit-remote-spool-dir``，发送失败事件落盘、重启后自动恢复重发）。
+
 部署模板见 ``deploy/k8s/``；本地试运行：:
 
     python -m anti_shortcut.sidecar --workspace . --port 8080
@@ -136,22 +140,57 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
 def _merge_config(args: argparse.Namespace) -> Any:
     """合并配置文件 / 命令行 / 环境变量中的远程审计参数。
 
-    优先级：命令行 > 配置文件 > 环境变量 ``AUDIT_REMOTE_URL`` / ``AUDIT_REMOTE_TOKEN``
-    （K8s 场景用 Secret 注入环境变量即可，无需改 Deployment args）。
+    优先级：命令行 > 配置文件 > 环境变量（``AUDIT_REMOTE_URL`` / ``AUDIT_REMOTE_TOKEN`` /
+    ``AUDIT_REMOTE_CLIENT_CERT`` / ``AUDIT_REMOTE_CLIENT_KEY`` / ``AUDIT_REMOTE_SPOOL_DIR`` /
+    ``AUDIT_REMOTE_HEADERS``；K8s 场景用 Secret 注入环境变量即可，无需改 Deployment args）。
     """
     cfg = None
     if args.config:
         cfg = load_config(args.config)
     url = args.audit_remote_url or os.environ.get("AUDIT_REMOTE_URL") or ""
     token = args.audit_remote_token or os.environ.get("AUDIT_REMOTE_TOKEN") or ""
-    if url or token:
+    client_cert = args.audit_remote_client_cert or os.environ.get("AUDIT_REMOTE_CLIENT_CERT") or ""
+    client_key = args.audit_remote_client_key or os.environ.get("AUDIT_REMOTE_CLIENT_KEY") or ""
+    spool_dir = args.audit_remote_spool_dir or os.environ.get("AUDIT_REMOTE_SPOOL_DIR") or ""
+
+    # 命令行 --audit-remote-header NAME=VALUE 可多次；环境变量 AUDIT_REMOTE_HEADERS 为 JSON 对象
+    headers: dict[str, str] = {}
+    env_headers = os.environ.get("AUDIT_REMOTE_HEADERS")
+    if env_headers:
+        try:
+            parsed = json.loads(env_headers)
+            if isinstance(parsed, dict):
+                headers.update({str(k): str(v) for k, v in parsed.items()})
+        except ValueError:
+            pass
+    for item in getattr(args, "audit_remote_headers", None) or []:
+        name, sep, value = item.partition("=")
+        if sep and name:
+            headers[name] = value
+
+    if url or token or client_cert or client_key or spool_dir or headers:
         if cfg is None:
-            cfg = {"audit_remote_url": url or None, "audit_remote_token": token or None}
+            cfg = {
+                "audit_remote_url": url or None,
+                "audit_remote_token": token or None,
+                "audit_remote_client_cert": client_cert or None,
+                "audit_remote_client_key": client_key or None,
+                "audit_remote_spool_dir": spool_dir or None,
+                "audit_remote_headers": headers,
+            }
         else:
             if url:
                 cfg.audit_remote_url = url
             if token:
                 cfg.audit_remote_token = token
+            if client_cert:
+                cfg.audit_remote_client_cert = client_cert
+            if client_key:
+                cfg.audit_remote_client_key = client_key
+            if spool_dir:
+                cfg.audit_remote_spool_dir = spool_dir
+            if headers:
+                cfg.audit_remote_headers = {**(cfg.audit_remote_headers or {}), **headers}
     return cfg
 
 
@@ -174,6 +213,29 @@ def main(argv: list[str] | None = None) -> int:
         "--audit-remote-token",
         default="",
         help="审计远程推送 Bearer Token（可选；生产环境建议用 Secret 注入）",
+    )
+    parser.add_argument(
+        "--audit-remote-client-cert",
+        default="",
+        help="审计远程推送 mTLS 客户端证书 PEM（可选；也可用环境变量 AUDIT_REMOTE_CLIENT_CERT）",
+    )
+    parser.add_argument(
+        "--audit-remote-client-key",
+        default="",
+        help="审计远程推送 mTLS 客户端私钥 PEM（可选；也可用环境变量 AUDIT_REMOTE_CLIENT_KEY）",
+    )
+    parser.add_argument(
+        "--audit-remote-header",
+        dest="audit_remote_headers",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="审计远程推送自定义请求头（可多次指定；也可用环境变量 AUDIT_REMOTE_HEADERS 传 JSON 对象）",
+    )
+    parser.add_argument(
+        "--audit-remote-spool-dir",
+        default="",
+        help="审计远程推送持久化重试队列目录（可选；也可用环境变量 AUDIT_REMOTE_SPOOL_DIR）",
     )
     parser.add_argument("--host", default="0.0.0.0", help="监听地址")
     parser.add_argument("--port", type=int, default=8080, help="监听端口")

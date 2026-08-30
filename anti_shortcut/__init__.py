@@ -20,10 +20,12 @@ from .evidence import (
 from .integration import bootstrap, install_into, load_plugins, register_integration
 from .remote_audit import RemoteAuditSink
 from .languages import (
+    CSharpAdapter,
     LANGUAGE_REGISTRY,
     JavaScriptAdapter,
     LanguageAdapter,
     PythonAdapter,
+    RubyAdapter,
     detect_language,
     get_adapter,
 )
@@ -53,6 +55,8 @@ __all__ = [
     "LanguageAdapter",
     "PythonAdapter",
     "JavaScriptAdapter",
+    "RubyAdapter",
+    "CSharpAdapter",
     "LANGUAGE_REGISTRY",
     "detect_language",
     "get_adapter",

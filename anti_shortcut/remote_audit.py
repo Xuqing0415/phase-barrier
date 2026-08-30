@@ -12,10 +12,17 @@
 v0.10.0 增强：
 - TLS 自定义 CA：``ca_bundle`` 指定 PEM 证书文件，用于自建 SIEM 的 HTTPS 端点。
 - 失败重试：``retries`` 次指数退避重试（``backoff_factor * 2**attempt`` 秒）。
+
+v0.11.0 增强：
+- mTLS 客户端证书：``client_cert`` / ``client_key`` 指定 PEM 文件，用于双向 TLS 端点。
+- 自定义请求头：``headers`` 合并到每次 POST（token 仍以 ``Authorization`` 优先）。
+- 持久化重试队列：``spool_dir`` 指定目录后，重试耗尽的批次落盘为 JSONL，
+  进程重启时自动恢复重新发送，避免进程崩溃 / 滚动重启丢事件。
 """
 from __future__ import annotations
 
 import json
+import os
 import ssl
 import threading
 import time
@@ -24,6 +31,9 @@ import urllib.request
 from pathlib import Path
 from queue import Empty, Full, Queue
 from typing import Any
+
+# 持久化重试队列文件名（JSON Lines：每行一个审计事件）
+_SPOOL_FILE = "audit_spool.jsonl"
 
 
 class RemoteAuditSink:
@@ -42,6 +52,10 @@ class RemoteAuditSink:
         ca_bundle: str | None = None,
         retries: int = 2,
         backoff_factor: float = 0.5,
+        client_cert: str | None = None,
+        client_key: str | None = None,
+        headers: dict[str, str] | None = None,
+        spool_dir: str | None = None,
     ) -> None:
         if not url:
             raise ValueError("audit_remote_url 不能为空")
@@ -54,7 +68,11 @@ class RemoteAuditSink:
         self.retries = max(0, int(retries))
         self.backoff_factor = max(0.0, float(backoff_factor))
         self.ca_bundle = ca_bundle
-        # 自定义 CA：启动时即校验并构建 HTTPS opener（配置错误尽快暴露）
+        self.client_cert = client_cert
+        self.client_key = client_key
+        self.headers = dict(headers or {})
+        self.spool_dir = spool_dir
+        # 自定义 CA / mTLS 客户端证书：启动时即校验并构建 HTTPS opener（配置错误尽快暴露）
         self._opener = self._build_opener()
         self._queue: Queue[dict[str, Any]] = Queue(maxsize=self.max_queue)
         self._closed = threading.Event()
@@ -65,7 +83,11 @@ class RemoteAuditSink:
         self._sent_events = 0
         self._sent_batches = 0
         self._failed_batches = 0
+        self._spooled_events = 0
+        self._recovered_events = 0
         self._worker: threading.Thread | None = None
+        # 持久化重试队列：字段初始化完成后恢复上次未发送成功的事件
+        self._recover_spool()
         if start_worker:
             self._worker = threading.Thread(
                 target=self._run, name="phase-barrier-audit-sink", daemon=True
@@ -73,19 +95,40 @@ class RemoteAuditSink:
             self._worker.start()
 
     def _build_opener(self):
-        """根据 ca_bundle 构建支持自定义 CA 的 HTTPS opener；未配置时返回 None。"""
-        if not self.ca_bundle:
+        """根据 ca_bundle / 客户端证书构建 HTTPS opener；均未配置时返回 None。"""
+        if not self.ca_bundle and not self.client_cert and not self.client_key:
             return None
-        ca = Path(self.ca_bundle)
-        if not ca.is_file():
-            raise ValueError(f"audit_remote_ca_bundle 文件不存在: {ca}")
-        try:
-            context = ssl.create_default_context(cafile=str(ca))
-        except (ssl.SSLError, OSError, ValueError) as exc:
-            raise ValueError(f"audit_remote_ca_bundle 无法加载: {exc}") from exc
+        if self.ca_bundle:
+            ca = Path(self.ca_bundle)
+            if not ca.is_file():
+                raise ValueError(f"audit_remote_ca_bundle 文件不存在: {ca}")
+            try:
+                context = ssl.create_default_context(cafile=str(ca))
+            except (ssl.SSLError, OSError, ValueError) as exc:
+                raise ValueError(f"audit_remote_ca_bundle 无法加载: {exc}") from exc
+        else:
+            context = ssl.create_default_context()
+        self._load_client_cert(context)
         return urllib.request.build_opener(
             urllib.request.HTTPSHandler(context=context)
         )
+
+    def _load_client_cert(self, context: ssl.SSLContext) -> None:
+        """把 mTLS 客户端证书链加载进 SSLContext（证书 / 私钥成对校验）。"""
+        if not self.client_cert and not self.client_key:
+            return
+        if not self.client_cert or not self.client_key:
+            raise ValueError("audit_remote_client_cert 与 audit_remote_client_key 必须成对配置")
+        cert = Path(self.client_cert)
+        key = Path(self.client_key)
+        if not cert.is_file():
+            raise ValueError(f"audit_remote_client_cert 文件不存在: {cert}")
+        if not key.is_file():
+            raise ValueError(f"audit_remote_client_key 文件不存在: {key}")
+        try:
+            context.load_cert_chain(certfile=str(cert), keyfile=str(key))
+        except (ssl.SSLError, OSError, ValueError) as exc:
+            raise ValueError(f"audit_remote_client_cert 无法加载: {exc}") from exc
 
     # ---------- 统计 ----------
 
@@ -97,6 +140,8 @@ class RemoteAuditSink:
                 "sent_events": self._sent_events,
                 "sent_batches": self._sent_batches,
                 "failed_batches": self._failed_batches,
+                "spooled_events": self._spooled_events,
+                "recovered_events": self._recovered_events,
                 "queued": self._queue.qsize(),
                 "busy": self._busy,
             }
@@ -175,7 +220,7 @@ class RemoteAuditSink:
             return
         body = batch[0] if len(batch) == 1 else batch
         data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", **self.headers}
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
         request = urllib.request.Request(self.url, data=data, headers=headers, method="POST")
@@ -197,6 +242,54 @@ class RemoteAuditSink:
             return
         with self._lock:
             self._failed_batches += 1
+        # v0.11.0：持久化重试队列——重试耗尽后落盘，进程重启时恢复重发
+        self._spool_batch(batch)
+
+    # ---------- 持久化重试队列（spool） ----------
+
+    def _recover_spool(self) -> None:
+        """启动时把上次遗留的 spool 事件重新入队（读后删除，失败则忽略）。"""
+        if not self.spool_dir:
+            return
+        spool = Path(self.spool_dir) / _SPOOL_FILE
+        if not spool.is_file():
+            return
+        recovered = 0
+        try:
+            with spool.open("r", encoding="utf-8") as fh:
+                for ln in fh:
+                    line = ln.strip()
+                    if not line:
+                        continue
+                    try:
+                        event = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if isinstance(event, dict):
+                        self.enqueue(event)
+                        recovered += 1
+            spool.unlink(missing_ok=True)
+        except OSError:
+            return  # spool 不可读时静默跳过，避免启动失败
+        with self._lock:
+            self._recovered_events += recovered
+
+    def _spool_batch(self, batch: list[dict[str, Any]]) -> None:
+        """把一个发送失败的批次追加到 spool（JSONL）；写入失败只丢弃，不抛出。"""
+        if not self.spool_dir or not batch:
+            return
+        spool = Path(self.spool_dir) / _SPOOL_FILE
+        try:
+            spool.parent.mkdir(parents=True, exist_ok=True)
+            with spool.open("a", encoding="utf-8") as fh:
+                for event in batch:
+                    fh.write(json.dumps(event, ensure_ascii=False) + "\n")
+                fh.flush()
+                os.fsync(fh.fileno())
+        except OSError:
+            return
+        with self._lock:
+            self._spooled_events += len(batch)
 
     # ---------- 后台工作线程 ----------
 

@@ -128,6 +128,7 @@ python -m anti_shortcut inspect --workspace .            # 查看当前阶段
 python -m anti_shortcut inspect --workspace . --json     # JSON 输出（便于自动化）
 python -m anti_shortcut advance --workspace . --to 2     # 推进阶段（校验证据）
 python -m anti_shortcut verify-evidence --workspace .   # 对照工作区校验证据签名清单（v0.9.0）
+python -m anti_shortcut verify-evidence --workspace . --git-base origin/main  # Git 门禁：证据文件不可事后篡改（v0.11.0）
 python -m anti_shortcut rotate-key --workspace . --from <旧密钥> --to <新密钥>  # 轮换状态签名密钥（v0.9.0）
 python -m anti_shortcut export-evidence --workspace . --out bundle.json   # 导出证据清单为可审计 bundle（v0.10.0）
 ```
@@ -242,6 +243,10 @@ audit_remote_url: ""               # v0.9.0：可选，审计事件异步推送�
 audit_remote_retries: 2            # v0.10.0：发送失败重试次数（指数退避）
 audit_remote_backoff_factor: 0.5    # v0.10.0：退避基数秒（0.5→1→2…）
 audit_remote_ca_bundle: ""          # v0.10.0：可选，自建 SIEM TLS 的自定义 CA（PEM 路径）
+audit_remote_client_cert: ""       # v0.11.0：可选，mTLS 客户端证书（PEM 路径，与 client_key 成对）
+audit_remote_client_key: ""        # v0.11.0：可选，mTLS 客户端私钥（PEM 路径）
+audit_remote_headers: {}           # v0.11.0：可选，自定义请求头（如 {X-Tenant: acme}）
+audit_remote_spool_dir: ""         # v0.11.0：可选，失败事件持久化重试队列目录
 audit_remote_token: ""             # v0.9.0：可选，推送时携带的 Bearer Token
 ```
 
@@ -274,6 +279,11 @@ coverage_threshold: 80          # 0-100 百分比；不配置则不做覆盖率�
 - **密钥轮换（v0.9.0）**：`rotate-key` 校验现有签名后以新密钥重新签名；`state_hmac_keys` / `PHASE_BARRIER_HMAC_KEYS` 提供宽限期双密钥，轮换不中断。
 - **审计远程推送（v0.9.0）**：`audit_remote_url` 把审计事件异步转发到 SIEM；队列有界、失败只计数，不影响门禁执行。
 - **审计可靠性（v0.10.0）**：发送失败按指数退避自动重试；自定义 CA 支持内网 / 自建 SIEM 的 HTTPS 端点。
+- **审计传输安全（v0.11.0）**：mTLS 客户端证书（`audit_remote_client_cert` / `audit_remote_client_key`）
+  支持双向 TLS；`audit_remote_headers` 携带自定义请求头；`audit_remote_spool_dir` 把重试耗尽的事件
+  落盘为 JSONL，进程重启自动恢复重发（适合 K8s 滚动重启 / 崩溃场景）。
+- **证据 Git 门禁（v0.11.0）**：`verify-evidence --git-base <ref>` 用 `git diff --name-only` 列出本次
+  变更文件，与证据清单条目求交集——证据文件被本次提交修改即失败，供 CI 强制“证据不可事后篡改”。
 - **日志审计**：所有拦截与阶段变更写入 JSON 审计日志，便于事后分析“哪些请求被拦截”“跳过步骤的频率”。
 
 ## Docker 只读卷部署（进程级防绕过）
@@ -316,6 +326,8 @@ anti_shortcut/
 │   ├── java.py        #   JavaAdapter（javac + JUnit 启发式）
 │   ├── go.py          #   GoAdapter（gofmt + go test 解析）
 │   ├── rust.py        #   RustAdapter（cargo check / rustc + cargo test 解析）
+│   ├── ruby.py        #   RubyAdapter（ruby -c + RSpec / Minitest 解析，v0.11.0）
+│   ├── csharp.py      #   CSharpAdapter（dotnet build + xUnit / NUnit / MSTest 解析，v0.11.0）
 │   └── __init__.py    #   注册表 / detect_language / get_adapter / 入口点加载
 ├── __main__.py        # CLI：python -m anti_shortcut inspect / advance
 ├── sidecar.py         # K8s sidecar HTTP 门禁服务（v0.7.0）
@@ -354,8 +366,8 @@ tests/                             # pytest 测试套件（234 个用例）
 ## 多语言支持（v0.3.0 语言适配层）
 
 v0.3.0 起，语言相关逻辑（文件识别、语法检查、测试统计、测试命令识别）抽象为
-**语言适配器（Language Adapter）**。核心包内置 Python、JavaScript/TypeScript、Java、Go 与 Rust
-适配器，第三方可注册自定义适配器；未显式指定时按工作区标志文件自动检测。
+**语言适配器（Language Adapter）**。核心包内置 Python、JavaScript/TypeScript、Java、Go、Rust、Ruby 与 C# 适配器，
+第三方可注册自定义适配器；未显式指定时按工作区标志文件自动检测。
 
 ### 快速启用
 
@@ -381,7 +393,8 @@ test_commands:
 ```
 
 不写 `language` 时自动检测标志文件：`package.json` → `javascript`，`pom.xml` → `java`，
-`go.mod` → `go`，`Cargo.toml` → `rust`，`requirements.txt` / `setup.py` / `pyproject.toml` → `python`；
+`go.mod` → `go`，`Cargo.toml` → `rust`，`Gemfile` / `*.gemspec` → `ruby`，
+`*.csproj` / `*.sln` → `csharp`，`requirements.txt` / `setup.py` / `pyproject.toml` → `python`；
 未识别时默认 Python。适配器默认文件模式与 YAML 中的 `test_file_patterns` / `source_file_patterns`
 自动合并（配置只增不减）。项目配置示例：`examples/anti_shortcut_js_config.yaml`、
 `anti_shortcut_go_config.yaml`、`anti_shortcut_rust_config.yaml`。
@@ -500,7 +513,12 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.8.0 已完成**：Java 输出解析增强（Surefire `Skipped` / Gradle / JUnit Console）、状态签名 HMAC（`state_hmac_key` / `PHASE_BARRIER_HMAC_KEY`）、GitHub Action 市场发布（tag 即 Release）。
 - **v0.9.0 已完成**：审计日志远程推送（SIEM：`audit_remote_url` + 异步批量 + 队列保护）、证据签名（`evidence_manifest.json` + `verify-evidence`）、HMAC 密钥轮换（`state_hmac_keys` / `rotate-key`，含无签名→启用签名迁移）。
 - **v0.10.0 已完成**：审计远程推送增强（`audit_remote_ca_bundle` TLS 自定义 CA、`audit_remote_retries` 指数退避重试）、证据清单导出（`export-evidence`）、sigstore 供应链签名（release 工作流 + `cosign verify-blob`）、Go / Rust 测试输出解析增强（失败用例名提取，`summarize_test_output` 接入语言适配器）。
-- **v0.11.0（规划）**：审计远程推送（TLS 客户端证书 / 自定义 header / 持久化重试队列）、证据清单 Git 门禁集成、更多语言适配器输出解析（Ruby / C#）。
+- **v0.11.0 已完成**：审计远程推送增强（`audit_remote_client_cert` / `audit_remote_client_key` mTLS
+  双向 TLS、`audit_remote_headers` 自定义请求头、`audit_remote_spool_dir` 持久化重试队列）、证据清单
+  Git 门禁（`verify-evidence --git-base <ref>` + `examples/github-action/evidence-gate.yml`）、
+  Ruby / C# 语言适配器（`ruby -c` / `dotnet build` + RSpec / Minitest / xUnit / NUnit 输出解析）。
+- **v0.12.0（规划）**：自定义校验器与拦截规则入口点（`phase_barrier.validators` / `phase_barrier.interceptors`）、
+  审计远程推送 mTLS 端到端集成示例、GitHub Action Marketplace 上架确认。
 - **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有语言适配器入口点 `phase_barrier.languages` 与集成插件入口点 `anti_shortcut.integrations`）。
 - **供应链**：接入 sigstore 签名与 trusted publishing，提升包可信度。
 

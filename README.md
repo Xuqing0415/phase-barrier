@@ -678,6 +678,13 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.22.0 已完成**：编排器钩子 SDK（`PhaseBarrier`，供 Alpha-SWE 等平台在任务启动 / 阶段切换钩子调用：`check` 只读校验放行 / 拦截 / 跳步，`advance` 复用 `advance_stage` 证据校验，`record_test_run` 登记测试结果，`verify_evidence` 统一 `ok=False` 异常处理）；CLI 新增 `check` 子命令；编排器集成示例 `examples/orchestrator_hooks/`；README 交叉引用 alpha-swe；新增 28 个测试（494 → 522）。
 - **v0.23.0 已完成**：Java 适配器输出解析增强——失败用例提取（Surefire `<<< FAILURE!` / Gradle `> FAILED` / JUnit Console `MethodSource`，去重上限 50）与 Gradle `skipped` 统计；GitHub Action 元数据增强——新增 `mode: check` 只读门禁校验（`stage` 输入）、`exec` 模式 `cwd` 工作目录输入；CI 自测新增 check 模式放行 / 拒绝 / 缺参路径；新增 6 个 Java 解析测试（522 → 528）。
 
+**规划中（Next）**
+
+- **v0.24.0（Java 输出解析剩余项）**：补齐 Surefire 参数化用例（displayName 含逗号 / `[N]` 序号）与 `<<< ERROR!` 超时 / 异常细分；Gradle `> SKIPPED`、`BUILD SUCCESSFUL` 汇总与多模块 reactor 输出；JUnit Platform Console `MethodSource` 嵌套格式（`Class.method(ParameterizedTest)`）；测试命令识别补充 Windows wrapper（`mvnw.cmd test` / `gradlew.bat test` / `.\mvnw`）。
+- **v0.25.0（GitHub Action 市场元数据增强）**：`action.yml` 增加 `branding`（icon / color）与 `outputs` 声明；补齐 inputs 描述与参数联动说明；README 增加 Marketplace 长描述、使用徽章与最小示例；提供发布到 GitHub Marketplace 的流程文档（`phase-barrier-action` 独立仓库或 in-tree 发布二选一）；Action 输出 `workspace` / `stage` / `allowed` 供下游步骤复用。
+- **v0.26.0（编排器集成闭环）**：alpha-swe 端到端接入（[alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1) B 组任务：依赖 `phase-barrier>=0.22.0`、任务启动 / 阶段切换钩子、校验失败消息回传、端到端测试）；`PhaseBarrier` SDK 增加 `list_stages()` 与 `stage_of(path)` 辅助查询；编排器钩子示例扩展（多 Agent 并发任务共享门禁状态）。
+
+**长期规划**：K8s sidecar 透明代理（HTTP / gRPC 全量接管文件写与命令执行）；状态文件与证据签名（HMAC，密钥经 Kubernetes Secret 注入）；`sigstore` 签名发布（已用于 release 工件）；Java / Go / Rust 适配器测试命令与输出解析持续打磨；SWE-bench 门禁基准评估。
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 
 ## 反馈与贡献

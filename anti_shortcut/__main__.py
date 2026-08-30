@@ -292,7 +292,9 @@ def _cmd_exec(args: argparse.Namespace) -> int:
         raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
     skill = AntiShortcutSkill(ws, config=args.config)
     try:
-        result = GateProxy(skill).execute_command(args.command, timeout=args.timeout)
+        result = GateProxy(skill).execute_command(
+            args.command, cwd=args.cwd, timeout=args.timeout
+        )
     except ExecDenied as exc:
         payload = {"ok": False, "error": exc.reason, "command": args.command}
         if args.json:
@@ -392,6 +394,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="超时秒数（1-3600，默认 120）",
+    )
+    p_exec.add_argument(
+        "--cwd",
+        type=str,
+        default=None,
+        help="命令工作目录（相对/绝对路径，须在工作区内；默认工作区根）",
     )
     p_exec.set_defaults(func=_cmd_exec)
 

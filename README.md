@@ -39,6 +39,9 @@
 
 - **CLI 门禁命令与 Action exec 模式（v0.18.0）**：`python -m anti_shortcut write --path ... --content/--stdin` 与 `exec --command ... [--timeout]` 把透明代理下沉到命令行——写文件 / 执行命令先过阶段门禁，测试命令自动记录结果，被拦截退出码 2；GitHub Action 新增 `mode: exec` 与 `command` 输入，可在 CI 里经门禁执行测试并驱动阶段推进。
 
+- **代理审计事件与 exec 工作目录（v0.19.0）**：透明代理新增 5 类审计事件（`proxy_write_ok` / `proxy_write_denied` / `proxy_exec_ok` / `proxy_exec_denied` / `proxy_exec_timeout`），每次写入 / 执行 / 拦截均记录阶段摘要并推送到本地 `audit.log` 与远端 SIEM；CLI `exec`、sidecar `/api/exec` 与 `GateClient` 三端新增 `cwd` 参数，支持在工作区子目录内执行命令。
+
+
 ## 架构
 
 ```
@@ -195,8 +198,11 @@ v0.17.0 的透明代理除了 HTTP sidecar，也提供命令行形态，供编�
 python -m anti_shortcut write --workspace . --path spec.md --content "..."
 cat notes.md | python -m anti_shortcut write --workspace . --path notes.md --stdin
 
-# 经门禁执行 shell 命令（测试命令自动记录结果；--timeout 1-3600 秒）
+# 经门禁执行 shell 命令（测试命令自动记录结果；--timeout 1-3600 秒；--cwd 子目录）
 python -m anti_shortcut exec --workspace . --command "pytest -q" --json
+
+# 在工作区子目录执行（--cwd 须解析在工作区内；默认工作区根）
+python -m anti_shortcut exec --workspace . --cwd sub --command "go test ./..." --json
 ```
 
 退出码语义：`write` / `exec` 被阶段门禁拒绝时返回 **2**；参数或环境错误返回 **1**；
@@ -618,6 +624,8 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.17.0 已完成**：K8s sidecar 透明代理——sidecar 新增 `POST /api/write` / `POST /api/exec`，路径限定工作区 / 拒绝 `.agent_gate` / 按阶段拦截写入与测试命令，exec 自动记录测试摘要；超时后终止进程树并立即返回；新增 Agent 侧 `GateClient`（仅标准库 urllib）与 `examples/k8s_proxy/` 最小示例；`deploy/k8s/` 清单更新（镜像 0.17.0）；新增 30 个透明代理测试（415 → 445）。
 
 - **v0.18.0 已完成**：CLI 透明代理命令 `write` / `exec`（经门禁写文件 / 执行命令，测试命令自动记录，被拦截退出码 2，`--json` 结构化输出）；GitHub Action 新增 `mode: exec` 与 `command` 输入，可在 CI 经门禁执行测试命令；新增 16 个 CLI 门禁测试（445 → 461）与 CI action 自测扩展。
+
+- **v0.19.0 已完成**：透明代理审计事件（5 类：写成功 / 写拒绝 / 执行成功 / 执行拒绝 / 执行超时），每条事件携带阶段摘要写入本地 `audit.log` 并推送远端 SIEM（原 `proxy_file_written` 更名为 `proxy_write_ok`）；CLI `exec`、sidecar `/api/exec`、`GateClient` 三端支持 `cwd` 工作目录参数（限定工作区内）；新增 12 个代理审计与 cwd 测试（461 → 473）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 

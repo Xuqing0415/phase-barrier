@@ -104,18 +104,27 @@ class GateProxy:
         try:
             self.skill.check_write_permission(target)
         except PermissionError as exc:
+            self.skill.logger.warning(
+                "proxy_write_denied",
+                path=str(target),
+                reason=str(exc),
+                **self.skill._stage_summary(),
+            )
             raise WriteDenied(str(exc)) from exc
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
         kind = self.skill._classify_path(target)
         if kind in ("test", "source"):
             self.skill.state.mark_source_change(str(target))
-        self.skill.logger.info("proxy_file_written", path=str(target), kind=kind)
+        self.skill.logger.info(
+            "proxy_write_ok",
+            path=str(target),
+            kind=kind,
+            **self.skill._stage_summary(),
+        )
         return {"ok": True, "path": str(target), "kind": kind}
 
     # ---------- 命令执行 ----------
-
-
 
     def execute_command(
         self,
@@ -140,6 +149,12 @@ class GateProxy:
         try:
             self.skill.check_exec_permission(command)
         except PermissionError as exc:
+            self.skill.logger.warning(
+                "proxy_exec_denied",
+                command=command,
+                reason=str(exc),
+                **self.skill._stage_summary(),
+            )
             raise ExecDenied(str(exc)) from exc
         run_dir = self._resolve_cwd(cwd)
         eff_timeout = timeout or DEFAULT_EXEC_TIMEOUT
@@ -163,6 +178,12 @@ class GateProxy:
                 proc.wait(timeout=2)
             except subprocess.TimeoutExpired:
                 pass
+            self.skill.logger.warning(
+                "proxy_exec_timeout",
+                command=command,
+                timeout=eff_timeout,
+                **self.skill._stage_summary(),
+            )
             return {
                 "ok": True,
                 "exit_code": -1,
@@ -177,6 +198,13 @@ class GateProxy:
             visible = {k: v for k, v in record.items() if k != "output_tail"}
             self.skill.state.mark_test_run(visible)
             recorded = True
+        self.skill.logger.info(
+            "proxy_exec_ok",
+            command=command,
+            exit_code=proc.returncode,
+            recorded_test_run=recorded,
+            **self.skill._stage_summary(),
+        )
         return {
             "ok": True,
             "exit_code": proc.returncode,

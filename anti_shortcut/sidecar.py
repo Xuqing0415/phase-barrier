@@ -78,10 +78,12 @@ class GateSidecar:
         with self._lock:
             return self.proxy.write_file(path, content)
 
-    def execute_command(self, command: str, timeout: int | None = None) -> dict:
+    def execute_command(
+        self, command: str, timeout: int | None = None, cwd: str | None = None
+    ) -> dict:
         """经门禁执行 shell 命令并自动记录测试摘要；被拒绝抛 ExecDenied（HTTP 403）。"""
         with self._lock:
-            return self.proxy.execute_command(command, timeout=timeout)
+            return self.proxy.execute_command(command, timeout=timeout, cwd=cwd)
 
     def record_source_change(self, path: str) -> dict[str, Any]:
         with self._lock:
@@ -181,6 +183,7 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
                 data = self._read_json()
                 command = data.get("command")
                 timeout = data.get("timeout")
+                cwd = data.get("cwd")
                 if not isinstance(command, str) or not command.strip():
                     self._send(400, {"error": "command 必须是非空字符串"})
                     return
@@ -191,8 +194,11 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
                 ):
                     self._send(400, {"error": "timeout 必须是 1-3600 的整数秒"})
                     return
+                if cwd is not None and not isinstance(cwd, str):
+                    self._send(400, {"error": "cwd 必须是字符串"})
+                    return
                 try:
-                    result = sidecar.execute_command(command, timeout=timeout)
+                    result = sidecar.execute_command(command, timeout=timeout, cwd=cwd)
                 except ExecDenied as exc:
                     self._send(403, {"ok": False, "error": exc.reason})
                     return

@@ -1,6 +1,18 @@
 # Changelog
 
-版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。## [0.18.0] - 2026-08-30
+版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+
+## [0.19.0] - 2026-08-30
+
+- 透明代理审计事件（v0.19.0）：
+  - `write_file` 成功 / 被拒分别记录 `proxy_write_ok` / `proxy_write_denied`；`execute_command` 成功 / 被拒 / 超时分别记录 `proxy_exec_ok` / `proxy_exec_denied` / `proxy_exec_timeout`。
+  - 每条事件携带阶段摘要（current_stage / stage_name / completed_stages），同时写入本地 `audit.log` 并推送远端 SIEM；原 `proxy_file_written` 更名为 `proxy_write_ok`。
+- 命令工作目录（cwd）三端支持：
+  - CLI `exec --cwd <dir>`；sidecar `/api/exec` 新增可选 `cwd` 字段；`GateClient.execute_command(command, cwd=...)`；路径须解析在工作区内，越界返回 400 / 拒绝执行。
+- 测试：新增 12 个代理审计与 cwd 用例（`tests/test_proxy_audit.py`），全量 461 → 473。
+- 文档：README 特性 / CLI / Roadmap 同步更新。
+
+## [0.18.0] - 2026-08-30
 
 - CLI 透明代理命令（v0.17.0 HTTP sidecar 的命令行形态）：
   - `python -m anti_shortcut write --workspace . --path <file> --content/--stdin`：

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 # 阶段名称（与方案第 5 章保持一致）
 STAGES: dict[int, str] = {
@@ -123,6 +123,14 @@ class GateConfig(BaseModel):
     def _expand_workspace(self) -> "GateConfig":
         self.workspace = Path(self.workspace).expanduser().resolve()
         return self
+
+    @field_validator("coverage_threshold")
+    @classmethod
+    def _validate_coverage_threshold(cls, value: float | None) -> float | None:
+        """v0.16.0：覆盖率阈值必须为 0-100 的百分比，拒绝越界值（如 150 / -10）。"""
+        if value is not None and not (0 <= value <= 100):
+            raise ValueError(f"coverage_threshold 必须是 0-100 的百分比，得到 {value}")
+        return value
 
 
 def load_config(path: str | Path | dict[str, Any] | None = None) -> GateConfig:

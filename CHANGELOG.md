@@ -2,6 +2,32 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.16.0] - 2026-08-30
+
+- CI 真实工具链激活：
+  - test 矩阵与 coverage job 安装 Node.js 20 / Go 1.22 / Rust stable / Ruby 3.3，
+    激活 JS / Go / Rust / Ruby 适配器的真实工具测试（此前按环境跳过，存在“假绿”盲区）。
+  - 新增 3 个真实 node 用例：`node --check` 成功 / 失败、`js_count_tests.cjs` 无 acorn
+    时回退启发式统计（CI 安装 node 后自动执行）。
+- 输出解析与覆盖率门禁边界补强（新增 29 个用例）：
+  - `summarize_test_output` / `_extract_coverage` 剥离 ANSI 颜色码，避免带色输出无法提取
+    摘要与覆盖率；istanbul 表支持千分位（`1,234`）。
+  - Java Surefire `Skipped: 0` / Gradle `N tests completed, M failed` / JUnit Console
+    成功输出；Go 混合 `ok` / `--- FAIL:`；Rust `test result: ok` 无 `failures:` 块 /
+    编译错误；Vitest / Playwright 摘要；空输出按退出码判定。
+  - 覆盖率门禁：阈值恰好相等（通过）、略低于（拒绝并提示数值）、回归阶段缺失报告、
+    非法配置值（`150` / `-1` 拒绝）——新增 `coverage_threshold` 0-100 字段校验。
+  - sidecar CLI：`main()` 启停、`--state-key` 注入 `PHASE_BARRIER_HMAC_KEY`、
+    `_merge_config` 命令行 / 环境变量 / 配置文件优先级。
+  - Ruby / Rust 真实工具路径的 mock 确定性覆盖（不依赖本机工具链即可执行）。
+- 覆盖率门禁（自举）：
+  - `pyproject.toml` 新增 `[tool.coverage]`（source=`anti_shortcut`，branch=true，
+    `fail_under=90`）；CI 新增 coverage job：`coverage run -m pytest` +
+    `coverage report --fail-under=90`，上传 `coverage.json` 报告。
+  - 当前核心包覆盖率 90%（含分支，本地 ruby/rust 真实用例跳过；CI 装齐工具链后更高）。
+- 测试：383 → 415（+32：边界 29 + 真实 node 3）。
+- 文档：README Roadmap / 特性 / CI 与覆盖率章节同步更新。
+
 ## [0.15.0] - 2026-08-30
 
 - 审计远程推送故障告警（v0.15.0）：

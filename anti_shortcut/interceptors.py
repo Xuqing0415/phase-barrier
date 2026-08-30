@@ -260,7 +260,7 @@ def _extract_coverage(text: str) -> float | None:
     - ``TOTAL  5  0  100%``（pytest-cov）
     - ``All files | 100 | 100 | 100 | 100 |``（jest / vitest --coverage，istanbul 表）
     """
-    text = text or ""
+    text = re.sub(r"\x1b\[[0-9;]*m", "", text or "")
     m = re.search(r"coverage:\s*([\d.]+)%", text, re.IGNORECASE)
     if m:
         return float(m.group(1))
@@ -271,9 +271,10 @@ def _extract_coverage(text: str) -> float | None:
                 return float(m.group(1))
     for ln in text.splitlines():
         if "All files" in ln:
-            m = re.search(r"All files[^|]*\|\s*([\d.]+)", ln)
+            # v0.16.0：支持千分位分隔符（如 1,234.56 ）
+            m = re.search(r"All files[^|]*\|\s*([\d,.]+)", ln)
             if m:
-                return float(m.group(1))
+                return float(m.group(1).replace(",", ""))
     return None
 
 
@@ -290,7 +291,7 @@ def summarize_test_output(
     生成语言专属摘要（如 Go 的 ``ok pkg 0.5s``、Rust 的 ``test result: ok. 2 passed``），
     失败时包含具体失败用例名；适配器异常不影响主流程。
     """
-    text = output or ""
+    text = re.sub(r"\x1b\[[0-9;]*m", "", output or "")
     if exit_code is None:
         passed = bool(re.search(r"\b\d+ passed\b|tests? (passed|ok)\b|All tests? passed", text, re.IGNORECASE))
         if re.search(r"\b\d+ failed\b|FAILED|ERRORS?\b", text, re.IGNORECASE):

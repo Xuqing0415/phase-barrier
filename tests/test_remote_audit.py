@@ -412,3 +412,109 @@ def test_skill_remote_audit_v11_config(tmp_path):
     assert skill.remote_sink.headers == {"X-Tenant": "acme"}
     assert skill.remote_sink.spool_dir == str(tmp_path / "spool")
     skill.close()
+
+
+# ---------- v0.15.0锛氭晠闅滃憡璀?on_failure 鍥炶皟 + metrics ----------
+
+def test_sink_on_failure_callback_invoked_on_exhaustion():
+    calls = []
+    sink = RemoteAuditSink(
+        "http://127.0.0.1:1/unreachable", timeout=1.0, retries=2,
+        backoff_factor=0.01, flush_interval=60,
+        on_failure=lambda batch, retries: calls.append((batch, retries)),
+    )
+    try:
+        sink.enqueue({"event": "a"})
+        sink.flush()
+        assert len(calls) == 1
+        batch, retries = calls[0]
+        assert [e["event"] for e in batch] == ["a"]
+        assert retries == 2
+    finally:
+        sink.close()
+
+
+def test_sink_on_failure_callback_exception_swallowed():
+    def boom(batch, retries):
+        raise RuntimeError("callback boom")
+
+    sink = RemoteAuditSink(
+        "http://127.0.0.1:1/unreachable", timeout=1.0, retries=0,
+        flush_interval=60, on_failure=boom,
+    )
+    try:
+        sink.enqueue({"event": "a"})
+        sink.flush()  # 鍥炶皟鎶涘嚭寮傚父涔熶笉褰卞搷闂ㄧ
+        assert sink.stats()["failed_batches"] == 1
+    finally:
+        sink.close()
+
+
+def test_sink_on_failure_not_called_on_success(collector_server):
+    _, url = collector_server
+    calls = []
+    sink = RemoteAuditSink(
+        url, flush_interval=60, on_failure=lambda batch, retries: calls.append(batch)
+    )
+    try:
+        sink.enqueue({"event": "ok"})
+        sink.flush()
+        assert calls == []
+    finally:
+        sink.close()
+
+
+def test_sink_metrics_keys():
+    sink = RemoteAuditSink(
+        "http://127.0.0.1:1/x", timeout=1.0, retries=0, flush_interval=60
+    )
+    try:
+        metrics = sink.metrics()
+        assert set(metrics) == {
+            "enqueued", "dropped", "sent_events", "sent_batches",
+            "failed_batches", "spooled_events", "recovered_events",
+        }
+        assert all(isinstance(v, int) for v in metrics.values())
+    finally:
+        sink.close()
+
+
+def test_skill_wires_failure_alert_callback(tmp_path):
+    skill = AntiShortcutSkill(
+        tmp_path,
+        config={"audit_remote_url": "http://127.0.0.1:1/x", "audit_remote_retries": 0},
+        user_request="r",
+    )
+    try:
+        assert skill.remote_sink is not None
+        assert skill.remote_sink.on_failure == skill._audit_failure_alert
+    finally:
+        skill.close()
+
+
+def test_skill_audit_failure_alert_writes_local_log(tmp_path):
+    """鏁呴殰鍛婅鍐欏叆鏈湴瀹¤鏃ュ織锛屼笖涓嶄骇鐢熻嚜鍠傚惊鐜?涓嶅啀杞彂杩滅▼锛夈€?"""
+    skill = AntiShortcutSkill(
+        tmp_path,
+        config={
+            "audit_remote_url": "http://127.0.0.1:1/x",
+            "audit_remote_retries": 0,
+            "audit_remote_backoff_factor": 0.01,
+        },
+        user_request="r",
+    )
+    skill.logger.info("boom_trigger")
+    skill.remote_sink.flush(timeout=5)
+    stats = skill.remote_sink.stats()
+    assert stats["failed_batches"] >= 1
+    assert stats["queued"] == 0  # 鍛婅涓嶅啀鍥炲叆闃熷垪锛岄槻姝㈡棤闄愬惊鐜?
+    skill.close()
+    raw = (tmp_path / ".agent_gate" / "audit.log").read_text(encoding="utf-8")
+    alerts = [json.loads(ln) for ln in raw.splitlines() if '"audit_remote_failed"' in ln]
+    assert len(alerts) >= 1
+    alert = alerts[0]
+    assert alert["event"] == "audit_remote_failed"
+    assert alert["level"] == "warning"
+    assert alert["events"] >= 1
+    assert alert["retries"] == 0
+    assert alert["current_stage"] == 1

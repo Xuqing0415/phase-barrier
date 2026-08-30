@@ -93,6 +93,15 @@ class AntiShortcutSkill:
             console=console_log,
             remote=self.remote_sink,
         )
+        # v0.15.0：审计远程推送重试耗尽 → 写入审计告警事件（供人工 / SIEM 观察）
+        # 告警事件使用本地专用 logger（不再转发远端），避免“告警 → 失败 → 再告警”的自喂循环
+        self._alert_logger = get_audit_logger(
+            self.gate_dir / self.config.audit_log_name,
+            console=console_log,
+            remote=None,
+        )
+        if self.remote_sink is not None:
+            self.remote_sink.on_failure = self._audit_failure_alert
         # 证据签名清单（v0.9.0）：记录每个阶段推进时的证据文件哈希，独立于 state.json
         self.evidence_manifest = EvidenceManifest(
             self.gate_dir / EVIDENCE_MANIFEST_NAME,
@@ -300,6 +309,21 @@ class AntiShortcutSkill:
             tools["execute_command"] = self.wrap_execute_command(tools["execute_command"])
         tools["advance_stage"] = self.advance_stage
         return tools
+
+    # ---------- 审计远程推送故障告警（v0.15.0） ----------
+
+    def _audit_failure_alert(self, batch: list, retries: int) -> None:
+        """审计远程推送重试耗尽后的告警：记录失败事件数与重试次数（仅写本地审计日志）。"""
+        try:
+            self._alert_logger.warning(
+                "audit_remote_failed",
+                events=len(batch or []),
+                retries=retries,
+                note="审计远程推送重试耗尽：事件已按 spool 策略处理（未配置 spool_dir 则丢弃）",
+                **self._stage_summary(),
+            )
+        except Exception:
+            pass
 
     # ---------- 证据签名清单（v0.9.0） ----------
 

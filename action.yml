@@ -65,12 +65,49 @@ runs:
       run: |
         set -euo pipefail
         WS="${{ inputs.workspace }}"
+        MODE="${{ inputs.mode }}"
+        if [ "$MODE" != "inspect" ] && [ "$MODE" != "advance" ]; then
+          echo "::error::mode 必须是 inspect 或 advance，当前值: $MODE"
+          exit 1
+        fi
+        if [ ! -d "$WS" ]; then
+          echo "::error::workspace 不存在或不是目录: $WS"
+          exit 1
+        fi
+        EXPECTED="${{ inputs.expected_stage }}"
+        case "$EXPECTED" in
+          ''|*[!0-9]*)
+            echo "::error::expected_stage 必须是 0-6 的整数，当前值: $EXPECTED"
+            exit 1 ;;
+        esac
+        EXPECTED=$((10#$EXPECTED))
+        if [ "$EXPECTED" -lt 0 ] || [ "$EXPECTED" -gt 6 ]; then
+          echo "::error::expected_stage 超出范围（0-6），当前值: ${{ inputs.expected_stage }}"
+          exit 1
+        fi
+        if [ "$MODE" == "advance" ]; then
+          TO="${{ inputs.to }}"
+          if [ -z "$TO" ]; then
+            echo "::error::advance 模式必须提供 to（目标阶段）"
+            exit 1
+          fi
+          case "$TO" in
+            ''|*[!0-9]*)
+              echo "::error::to 必须是 0-6 的整数，当前值: $TO"
+              exit 1 ;;
+          esac
+          TO=$((10#$TO))
+          if [ "$TO" -lt 0 ] || [ "$TO" -gt 6 ]; then
+            echo "::error::to 超出范围（0-6），当前值: ${{ inputs.to }}"
+            exit 1
+          fi
+        fi
         CONFIG_ARGS=()
         if [ -n "${{ inputs.config }}" ]; then
           CONFIG_ARGS+=(--config "${{ inputs.config }}")
         fi
 
-        if [ "${{ inputs.mode }}" == "advance" ]; then
+        if [ "$MODE" == "advance" ]; then
           USER_ARGS=()
           if [ -n "${{ inputs.user_request }}" ]; then
             USER_ARGS+=(--user-request "${{ inputs.user_request }}")
@@ -79,7 +116,6 @@ runs:
         else
           python -m anti_shortcut inspect --workspace "$WS" --json "${CONFIG_ARGS[@]}" > /tmp/phase-barrier-gate.json
           STAGE=$(python -c "import json; print(json.load(open('/tmp/phase-barrier-gate.json'))['current_stage'])")
-          EXPECTED="${{ inputs.expected_stage }}"
           if [ "$STAGE" -lt "$EXPECTED" ]; then
             echo "::error::phase-barrier 门禁未通过：当前阶段 $STAGE < 期望阶段 $EXPECTED（Agent 产出未按 SOP 完成）"
             cat /tmp/phase-barrier-gate.json

@@ -31,6 +31,7 @@
 - **审计 mTLS 端到端示例（v0.12.0）**：`examples/mtls_audit/` 提供自签 CA + 服务端 / 客户端证书生成、
   收集端点与一键演示，验证 `audit_remote_client_cert` / `audit_remote_client_key` 双向 TLS 链路。
 - **边界防护补强（v0.13.0）**：拦截器覆盖命令注入变体、`&>` / `&>>` / `>|` 重定向、`dd of=` / 引号包裹等门禁目录写路径；CLI 对损坏状态、越界阶段号、证据缺失 / 语法错误给出明确报错；插件可运行示例 `examples/plugin_rules/`。
+- **脚本写入检测（v0.14.0）**：`extract_written_paths` 识别 `python -c` / `node -e` / `bash -c` 等脚本参数内的 `open(...)` / `Path(...).write_text` / `fs.writeFileSync` / 重定向写入路径，脚本改代码同样受阶段门禁约束；`verify-evidence` / `export-evidence` 的损坏清单 / 缺字段 / 非法参数均有明确报错；GitHub Action 增加输入校验。
 
 ## 架构
 
@@ -164,6 +165,9 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 | `user_request` | 空 | advance 首次初始化时记录的用户需求原文 |
 | `version` | 空 | 安装的 phase-barrier 版本（留空取最新版） |
 | `local` | `false` | 安装本地仓库代码而非 PyPI（CI 自测用） |
+
+
+**输入校验（v0.14.0）**：`mode` 必须是 `inspect` / `advance`；`expected_stage` 与 `advance` 模式的 `to` 必须是 0-6 的整数；`workspace` 必须存在。参数非法时 CI 直接失败并输出 `::error::` 定位信息，避免静默误判。
 
 完整示例见 `examples/github-action/gate.yml`（通用）、`gate-go.yml`（Go）、
 `gate-rust.yml`（Rust）；Go / Rust 示例额外安装 `setup-go` / `rust-toolchain`，
@@ -578,9 +582,12 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
   门禁目录全写路径防护——含 `&>` / `&>>` / `>|` / `dd of=` / 引号包裹路径；CLI 对损坏状态、
   越界阶段号、证据缺失 / 语法错误给出明确报错；新增 16 个边界测试）、
   自定义校验器 / 拦截规则插件文档与可运行示例（`examples/plugin_rules/`）。
-- **v0.14.0（规划）**：拦截器对脚本类写入的启发式检测（`python -c` / `node -e` 的
-  非门禁目录写路径）、`verify-evidence` / `export-evidence` 的 CLI 边界测试补强、
-  GitHub Action 门禁输入校验与文档完善。
+- **v0.14.0 已完成**：脚本类写入检测（`python -c` / `node -e` / `bash -c` 参数内的 `open()` / `Path().write_text` / `fs.writeFileSync` / 重定向写入路径，脚本改代码
+  同样受阶段门禁约束）、`verify-evidence` / `export-evidence` 的 CLI 错误处理补强
+  （损坏 / 缺字段清单、签名密钥不匹配、缺失工作区、嵌套 `--out` 自动建目录）、
+  GitHub Action 门禁输入校验（mode / expected_stage / to / workspace）与 CI 自测扩展。
+- **v0.15.0（规划）**：语言适配器输出解析与覆盖率门禁的边界测试补强、
+  `anti_shortcut.sidecar` HTTP 门禁服务的输入校验与文档、审计远程推送故障告警与示例完善。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 

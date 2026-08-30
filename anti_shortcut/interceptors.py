@@ -101,6 +101,105 @@ def _looks_like_sed_expr(token: str) -> bool:
     return bool(re.match(r"^[0-9$!~,]*[sSdDcCpPaAiI]", token))
 
 
+# ---------- 脚本类写入提取（v0.14.0） ----------
+
+_SCRIPT_INTERPRETERS = {
+    "python", "python3", "py", "node", "nodejs", "perl", "ruby", "php", "deno", "bun",
+    "sh", "bash", "zsh", "ksh", "dash", "pwsh", "powershell",
+}
+_SCRIPT_EVAL_FLAGS = {"-c", "-e", "-E", "-p", "-r", "--eval"}
+
+_SCRIPT_OPEN_WRITE_RE = re.compile(
+    r"""open\(\s*(['"])(?P<path>.+?)\1\s*,\s*(['"])(?P<mode>[rwa+bx]*)\3""",
+    re.IGNORECASE,
+)
+_SCRIPT_PATH_WRITE_RE = re.compile(
+    r"""(?:Path|PosixPath|WindowsPath)\(\s*(['"])(?P<path>.+?)\1\s*\)\s*\.\s*write_(?:text|bytes)\(""",
+    re.IGNORECASE,
+)
+_SCRIPT_FS_WRITE_RE = re.compile(
+    r"""(?:writeFileSync|writeFile|appendFileSync|appendFile|createWriteStream)\s*\(\s*(['"])(?P<path>.+?)\1""",
+    re.IGNORECASE,
+)
+_SCRIPT_REDIRECT_RE = re.compile(
+    r"""(?<![=&\-])>\s*(?:&?\d+)?\s*(?:['"](?P<qpath>[^'"]+)['"]|(?P<ppath>[^\s'"|&;<>]+))"""
+)
+
+
+def _is_script_interpreter(tok: str) -> bool:
+    """判断 token 是否为脚本解释器（python / node / perl / ruby / sh 等）。"""
+    try:
+        name = Path(tok.strip('"\'')).name.lower()
+    except ValueError:
+        return False
+    return name in _SCRIPT_INTERPRETERS
+
+
+def _looks_like_writable_path(path: str) -> bool:
+    """过滤明显不是文件路径的提取结果（空串 / 纯操作符 / 含 shell 元字符）。"""
+    if not path:
+        return False
+    if re.search(r"[;|&<>*\x00\n\r]", path):
+        return False
+    if re.search(r"[{}]", path):
+        return False
+    if path.isdigit() or path.startswith("-") or path in (">", ">>"):
+        return False
+    return True
+
+
+def _mode_is_write(mode: str) -> bool:
+    """open() 的模式是否为写（含 w/a/x/+ ；纯 r/rt/rb 视为读）。"""
+    m = (mode or "").lower()
+    if not m:
+        return False
+    return any(ch in m for ch in "wax+")
+
+
+def _extract_script_write_paths(command: str) -> list[str]:
+    """从脚本解释器（python -c / node -e 等）的代码参数中提取可能被写入的路径。
+
+    覆盖：
+    - ``open('path', 'w'/'a'/'x'/'r+')`` 与 ``Path('path').write_text / write_bytes``；
+    - node ``fs.writeFile(Sync) / appendFile(Sync) / createWriteStream``；
+    - 代码内的重定向（``bash -c "cat > out.txt"`` 风格）。
+    """
+    try:
+        tokens = shlex.split(command, posix=True)
+    except ValueError:
+        tokens = command.split()
+    paths: list[str] = []
+    n = len(tokens)
+    for i, tok in enumerate(tokens):
+        if not _is_script_interpreter(tok):
+            continue
+        if i + 1 >= n or tokens[i + 1] not in _SCRIPT_EVAL_FLAGS:
+            continue
+        if i + 2 >= n:
+            continue
+        code = tokens[i + 2]
+        for m in _SCRIPT_OPEN_WRITE_RE.finditer(code):
+            if _mode_is_write(m.group("mode")) and _looks_like_writable_path(m.group("path")):
+                paths.append(m.group("path"))
+        for m in _SCRIPT_PATH_WRITE_RE.finditer(code):
+            if _looks_like_writable_path(m.group("path")):
+                paths.append(m.group("path"))
+        for m in _SCRIPT_FS_WRITE_RE.finditer(code):
+            if _looks_like_writable_path(m.group("path")):
+                paths.append(m.group("path"))
+        for m in _SCRIPT_REDIRECT_RE.finditer(code):
+            p = m.group("qpath") or m.group("ppath")
+            if p and _looks_like_writable_path(p):
+                paths.append(p)
+    seen: set[str] = set()
+    out: list[str] = []
+    for p in paths:
+        if p not in seen:
+            seen.add(p)
+            out.append(p)
+    return out
+
+
 def extract_written_paths(command: str) -> list[str]:
     """从 shell 命令中提取可能被写入的路径（启发式，用于阶段门禁检查）。"""
     try:
@@ -145,6 +244,9 @@ def extract_written_paths(command: str) -> list[str]:
                     continue
                 paths.append(t)
         i += 1
+    for p in _extract_script_write_paths(command):
+        if p not in paths:
+            paths.append(p)
     return paths
 
 

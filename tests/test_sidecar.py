@@ -142,3 +142,30 @@ def test_sidecar_bad_payloads(tmp_path):
         assert status == 400
     finally:
         _stop(server)
+
+
+def test_sidecar_v015_input_validation(tmp_path):
+    """v0.15.0锛歛dvance 闃舵鐣岋紙bool/瓒婄晫/闈炴暣鏁帮級銆乼est-run output 绫诲瀷銆乻ource-change 闂ㄧ鐩綍闃叉銆?"""
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    server, base = _serve(GateSidecar(ws, user_request="瀹炵幇鏂愭尝閭ｅ鍑芥暟"))
+    try:
+        # bool 鏄?int 瀛愮被锛屽繀椤绘嫆缁?
+        status, _ = _post(base, "/api/advance", {"new_stage": True})
+        assert status == 400
+        # 瓒婄晫闃舵
+        status, _ = _post(base, "/api/advance", {"new_stage": 7})
+        assert status == 400
+        status, _ = _post(base, "/api/advance", {"new_stage": -1})
+        assert status == 400
+        # 闈炴暣鏁
+        status, _ = _post(base, "/api/advance", {"new_stage": 1.5})
+        assert status == 400
+        # test-run output 闈炲瓧绗︿覆
+        status, _ = _post(base, "/api/test-run", {"exit_code": 0, "output": 123})
+        assert status == 400
+        # source-change 鎸囧悜闂ㄧ鐩綍
+        status, _ = _post(base, "/api/source-change", {"path": ".agent_gate/state.json"})
+        assert status == 400
+    finally:
+        _stop(server)

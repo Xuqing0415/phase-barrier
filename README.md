@@ -32,6 +32,7 @@
   收集端点与一键演示，验证 `audit_remote_client_cert` / `audit_remote_client_key` 双向 TLS 链路。
 - **边界防护补强（v0.13.0）**：拦截器覆盖命令注入变体、`&>` / `&>>` / `>|` 重定向、`dd of=` / 引号包裹等门禁目录写路径；CLI 对损坏状态、越界阶段号、证据缺失 / 语法错误给出明确报错；插件可运行示例 `examples/plugin_rules/`。
 - **脚本写入检测（v0.14.0）**：`extract_written_paths` 识别 `python -c` / `node -e` / `bash -c` 等脚本参数内的 `open(...)` / `Path(...).write_text` / `fs.writeFileSync` / 重定向写入路径，脚本改代码同样受阶段门禁约束；`verify-evidence` / `export-evidence` 的损坏清单 / 缺字段 / 非法参数均有明确报错；GitHub Action 增加输入校验。
+- **审计故障告警（v0.15.0）**：`RemoteAuditSink` 新增 `on_failure` 回调与 `metrics()`；`AntiShortcutSkill` 自动把 `audit_remote_failed` 告警写入本地 `audit.log`（本地专用 logger，避免自喂循环）；sidecar `/api/advance` / `/api/test-run` / `/api/source-change` 增加输入校验（bool / 越界阶段号、`output` 类型、`.agent_gate` 路径）。
 
 ## 架构
 
@@ -586,8 +587,7 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
   同样受阶段门禁约束）、`verify-evidence` / `export-evidence` 的 CLI 错误处理补强
   （损坏 / 缺字段清单、签名密钥不匹配、缺失工作区、嵌套 `--out` 自动建目录）、
   GitHub Action 门禁输入校验（mode / expected_stage / to / workspace）与 CI 自测扩展。
-- **v0.15.0（规划）**：语言适配器输出解析与覆盖率门禁的边界测试补强、
-  `anti_shortcut.sidecar` HTTP 门禁服务的输入校验与文档、审计远程推送故障告警与示例完善。
+- **v0.15.0 已完成**：审计远程推送故障告警（`RemoteAuditSink` 新增 `on_failure` 回调与 `metrics()`，`AntiShortcutSkill` 自动把 `audit_remote_failed` 告警写入本地 `audit.log`，避免自喂循环）；`sidecar` HTTP 门禁服务输入校验（bool / 越界阶段号、`output` 类型、`.agent_gate` 路径）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 

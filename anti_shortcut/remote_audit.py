@@ -30,7 +30,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from queue import Empty, Full, Queue
-from typing import Any
+from typing import Any, Callable
 
 # 持久化重试队列文件名（JSON Lines：每行一个审计事件）
 _SPOOL_FILE = "audit_spool.jsonl"
@@ -56,6 +56,7 @@ class RemoteAuditSink:
         client_key: str | None = None,
         headers: dict[str, str] | None = None,
         spool_dir: str | None = None,
+        on_failure: Callable[[list[dict[str, Any]], int], None] | None = None,
     ) -> None:
         if not url:
             raise ValueError("audit_remote_url 不能为空")
@@ -72,6 +73,9 @@ class RemoteAuditSink:
         self.client_key = client_key
         self.headers = dict(headers or {})
         self.spool_dir = spool_dir
+        # v0.15.0：重试耗尽后的故障告警回调（on_failure(batch, retries)），
+        # 由宿主（如 Skill）把失败计数写入审计日志；回调异常不影响门禁。
+        self.on_failure = on_failure
         # 自定义 CA / mTLS 客户端证书：启动时即校验并构建 HTTPS opener（配置错误尽快暴露）
         self._opener = self._build_opener()
         self._queue: Queue[dict[str, Any]] = Queue(maxsize=self.max_queue)
@@ -190,6 +194,19 @@ class RemoteAuditSink:
                 return
             time.sleep(0.005)
 
+    def metrics(self) -> dict[str, int]:
+        """返回推送器累计指标（供宿主暴露给监控 / 故障告警）。"""
+        with self._lock:
+            return {
+                "enqueued": self._enqueued,
+                "dropped": self._dropped,
+                "sent_events": self._sent_events,
+                "sent_batches": self._sent_batches,
+                "failed_batches": self._failed_batches,
+                "spooled_events": self._spooled_events,
+                "recovered_events": self._recovered_events,
+            }
+
     def close(self, timeout: float = 5.0) -> None:
         """关闭推送器：冲刷剩余事件并停止后台线程（幂等）。"""
         if self._closed.is_set():
@@ -244,6 +261,12 @@ class RemoteAuditSink:
             self._failed_batches += 1
         # v0.11.0：持久化重试队列——重试耗尽后落盘，进程重启时恢复重发
         self._spool_batch(batch)
+        # v0.15.0：故障告警——通知宿主重试已耗尽（用于审计告警 / 指标暴露）
+        if self.on_failure is not None:
+            try:
+                self.on_failure(batch, self.retries)
+            except Exception:
+                pass
 
     # ---------- 持久化重试队列（spool） ----------
 

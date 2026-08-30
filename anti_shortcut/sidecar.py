@@ -112,23 +112,36 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
             if self.path == "/api/advance":
                 data = self._read_json()
                 new_stage = data.get("new_stage")
-                if not isinstance(new_stage, int):
-                    self._send(400, {"error": "new_stage 必须是整数"})
+                # v0.15.0：拒绝 bool（Python 中 bool 是 int 子类）与越界阶段号
+                if (
+                    not isinstance(new_stage, int)
+                    or isinstance(new_stage, bool)
+                    or new_stage < 0
+                    or new_stage > 6
+                ):
+                    self._send(400, {"error": "new_stage 必须是 0-6 的整数"})
                     return
                 result = sidecar.advance(new_stage)
                 self._send(200 if result.get("success") else 409, result)
             elif self.path == "/api/test-run":
                 data = self._read_json()
                 exit_code = data.get("exit_code")
-                if not isinstance(exit_code, int):
+                output = data.get("output", "")
+                if not isinstance(exit_code, int) or isinstance(exit_code, bool):
                     self._send(400, {"error": "exit_code 必须是整数"})
                     return
-                self._send(200, sidecar.record_test_run(exit_code, data.get("output", "")))
+                if not isinstance(output, str):
+                    self._send(400, {"error": "output 必须是字符串"})
+                    return
+                self._send(200, sidecar.record_test_run(exit_code, output))
             elif self.path == "/api/source-change":
                 data = self._read_json()
                 path = data.get("path")
                 if not isinstance(path, str) or not path:
                     self._send(400, {"error": "path 必须是字符串"})
+                    return
+                if sidecar.skill._in_gate_dir(path):
+                    self._send(400, {"error": "path 不允许指向门禁目录 .agent_gate"})
                     return
                 self._send(200, sidecar.record_source_change(path))
             else:

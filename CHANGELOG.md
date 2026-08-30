@@ -2,6 +2,21 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.15.0] - 2026-08-30
+
+- 审计远程推送故障告警（v0.15.0）：
+  - `RemoteAuditSink` 新增 `on_failure(batch, retries)` 回调：重试耗尽时通知宿主，回调异常
+    不影响门禁流程；新增 `metrics()` 暴露累计指标（enqueued / dropped / sent_events /
+    sent_batches / failed_batches / spooled_events / recovered_events），供宿主监控与告警。
+  - `AntiShortcutSkill` 自动接线：把 `audit_remote_failed` 告警事件写入本地 `audit.log`
+    （专用本地 logger，不再转发已失败的远端，避免“告警 → 失败 → 再告警”的自喂循环）。
+- sidecar HTTP 门禁输入校验：
+  - `/api/advance` 拒绝 `bool`（Python 中为 `int` 子类）与越界阶段号（须为 0-6 的整数）；
+  - `/api/test-run` 校验 `output` 必须为字符串；
+  - `/api/source-change` 拒绝指向门禁目录 `.agent_gate` 的路径。
+- 测试：新增 7 个用例（376 → 383）：`on_failure` 回调触发/异常吞掉/成功不触发、
+  `metrics()` 键完整性、Skill 告警接线与本地落盘（含防自喂循环断言）、sidecar 输入校验。
+
 ## [0.14.0] - 2026-08-30
 
 - 拦截器：脚本类写入检测（v0.14.0）：

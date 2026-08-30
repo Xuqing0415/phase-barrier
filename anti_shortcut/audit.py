@@ -139,7 +139,8 @@ def get_audit_logger(
         return _TeeLogger(file_logger, console_logger)
 
     # 回退：标准库 logging + JSON Formatter
-    std_logger = logging.getLogger(f"{LOGGER_NAME}:{log_file}")
+    logger_key = f"{LOGGER_NAME}:{log_file}:{'remote' if remote is not None else 'local'}"
+    std_logger = logging.getLogger(logger_key)
     std_logger.setLevel(level)
     if not std_logger.handlers:
         handler = logging.FileHandler(log_file, encoding="utf-8")

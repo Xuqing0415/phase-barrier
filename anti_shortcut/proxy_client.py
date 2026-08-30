@@ -80,8 +80,12 @@ class GateClient:
     def write_file(self, path: str, content: str) -> dict[str, Any]:
         return self._request("POST", "/api/write", {"path": path, "content": content})
 
-    def execute_command(self, command: str, timeout: int | None = None) -> dict[str, Any]:
+    def execute_command(
+        self, command: str, cwd: str | None = None, timeout: int | None = None
+    ) -> dict[str, Any]:
         payload: dict[str, Any] = {"command": command}
+        if cwd is not None:
+            payload["cwd"] = cwd
         if timeout is not None:
             payload["timeout"] = timeout
         return self._request("POST", "/api/exec", payload)

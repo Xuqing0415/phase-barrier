@@ -30,6 +30,7 @@
   进程内注册（`register_validator` / `register_rule`），可覆盖内置阶段校验或追加自定义拦截规则。
 - **审计 mTLS 端到端示例（v0.12.0）**：`examples/mtls_audit/` 提供自签 CA + 服务端 / 客户端证书生成、
   收集端点与一键演示，验证 `audit_remote_client_cert` / `audit_remote_client_key` 双向 TLS 链路。
+- **边界防护补强（v0.13.0）**：拦截器覆盖命令注入变体、`&>` / `&>>` / `>|` 重定向、`dd of=` / 引号包裹等门禁目录写路径；CLI 对损坏状态、越界阶段号、证据缺失 / 语法错误给出明确报错；插件可运行示例 `examples/plugin_rules/`。
 
 ## 架构
 
@@ -229,6 +230,26 @@ strict_tests = "my_plugins:strict_tests_validator"
 deny_vendor = "my_plugins:deny_vendor_rule"
 ```
 
+**可运行示例**：`examples/plugin_rules/` 提供完整插件包（自定义校验器 + 拦截规则 +
+`pyproject.toml` 入口点声明 + demo）：
+
+```bash
+python examples/plugin_rules/demo.py                    # 进程内注册（零安装）
+pip install -e examples/plugin_rules                    # 安装示例插件包
+python examples/plugin_rules/demo.py --via-entry-point  # 经入口点加载
+```
+
+校验器函数声明所属阶段后即可被入口点识别：
+
+```python
+def require_design_review(workspace, config, state, adapter=None):
+    if not (workspace / "design-review.md").exists():
+        return False, "缺少 design-review.md", {}
+    return True, "design-review 已提供", {}
+
+require_design_review.stage = 1   # 注册到阶段 1，覆盖内置 spec 校验
+```
+
 ## 状态与审计
 
 - 状态文件：`<workspace>/.agent_gate/state.json` —— 当前阶段、阶段历史、证据哈希、最近测试结果。
@@ -367,7 +388,8 @@ examples/
 ├── anti_shortcut_rust_config.yaml # Rust 项目示例配置
 ├── custom_adapter/                # 自定义语言适配器插件示例（虚构 .foo 语言）
 ├── github-action/                 # GitHub Action 门禁示例（gate.yml / gate-go.yml / gate-rust.yml / evidence-gate.yml）
-└── mtls_audit/                    # v0.12.0：审计 mTLS 端到端示例（证书生成 + 收集端点 + demo）
+├── mtls_audit/                    # v0.12.0：审计 mTLS 端到端示例（证书生成 + 收集端点 + demo）
+└── plugin_rules/                # v0.13.0：自定义校验器 / 拦截规则插件示例（进程内注册 + 入口点加载）
 deploy/
 ├── Dockerfile                     # 打包镜像（含 CLI）
 ├── docker-compose.yml             # gate-keeper（可写）+ agent（.agent_gate 只读）
@@ -552,9 +574,13 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.12.0 已完成**：自定义校验器与拦截规则入口点（`phase_barrier.validators` / `phase_barrier.interceptors`，
   含进程内 `register_validator` / `register_rule`，可覆盖内置校验 / 追加拦截规则）、审计远程推送 mTLS
   端到端集成示例（`examples/mtls_audit/`）、GitHub Action Marketplace 上架确认（Phase-Barrier Gate）。
-- **v0.13.0（规划）**：拦截器边界与 CLI 错误处理测试补强（命令注入、路径特殊字符、门禁目录全写路径防护、
-  状态文件损坏 / 参数非法处理）、自定义校验器 / 拦截规则插件文档与可运行示例。
-- **供应链**：接入 sigstore 签名与 trusted publishing，提升包可信度。
+- **v0.13.0 已完成**：拦截器边界与 CLI 错误处理补强（命令注入变体、路径特殊字符、
+  门禁目录全写路径防护——含 `&>` / `&>>` / `>|` / `dd of=` / 引号包裹路径；CLI 对损坏状态、
+  越界阶段号、证据缺失 / 语法错误给出明确报错；新增 16 个边界测试）、
+  自定义校验器 / 拦截规则插件文档与可运行示例（`examples/plugin_rules/`）。
+- **v0.14.0（规划）**：拦截器对脚本类写入的启发式检测（`python -c` / `node -e` 的
+  非门禁目录写路径）、`verify-evidence` / `export-evidence` 的 CLI 边界测试补强、
+  GitHub Action 门禁输入校验与文档完善。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 

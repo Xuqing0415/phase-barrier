@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phase-barrier-plugin-example"
+version = "0.1.0"
+description = "Example plugin for phase-barrier: custom validator + interceptor rule"
+requires-python = ">=3.10"
+
+# phase-barrier 插件入口点：安装本包后自动参与门禁
+[project.entry-points."phase_barrier.validators"]
+strict_design = "phase_barrier_plugin:require_design_review"
+
+[project.entry-points."phase_barrier.interceptors"]
+deny_vendor = "phase_barrier_plugin:deny_vendor_writes"
+
+[tool.setuptools]
+packages = ["phase_barrier_plugin"]

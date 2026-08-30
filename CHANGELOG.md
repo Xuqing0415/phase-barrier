@@ -2,6 +2,19 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.13.0] - 2026-08-30
+
+- 拦截器边界与 CLI 错误处理补强：
+  - `touches_gate_dir` 支持 `dd of=` / `--flag=value` 等 `=` 参数形式与引号包裹路径段
+    （边界正则从 `(^|[/\\])` 放宽为 `(^|[^A-Za-z0-9_.-])`，仍排除 `foo.agent_gate/` 误报）；
+  - `extract_written_paths` 新增 `&>` / `&>>` / `>|` 重定向运算符；
+  - CLI：损坏状态（含 `--json`）、缺字段状态、越界阶段号（99 / 0 / 负数）、完成后推进、
+    证据缺失 / 实现语法错误均给出明确退出码与报错信息。
+- 插件文档与可运行示例：`examples/plugin_rules/` 提供自定义校验器 + 拦截规则完整插件包
+  （`phase_barrier.validators` / `phase_barrier.interceptors` 入口点声明 + demo），
+  支持进程内注册与入口点加载两种接入方式；README 补充插件章节、特性与 Roadmap。
+- 测试：新增边界与 CLI 错误处理用例 16 个（343 → 359，另有 6 个按环境跳过）。
+
 ## [0.12.0] - 2026-08-30
 
 - 插件机制（自定义校验器与拦截规则）：

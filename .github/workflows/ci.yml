@@ -57,11 +57,13 @@ jobs:
           cat > ci_gate_ws/spec.md <<'EOF'
           # Demo
           ## 需求分析
-          实现一个加法函数 add(a, b)，返回两数之和。
+          实现一个加法函数 add(a, b)，返回两个整数之和；对负数输入抛出异常，
+          对非整数输入返回类型错误提示。
           ## 设计方案
-          纯函数实现，参数校验非空。
+          采用纯函数实现：先校验参数类型与取值范围，再返回 a + b；
+          不读写外部状态，无任何副作用，便于单元测试覆盖。
           ## 接口定义
-          int add(int a, int b)
+          def add(a: int, b: int) -> int
           EOF
 
       - name: Gate passes at expected_stage=1

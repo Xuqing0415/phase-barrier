@@ -41,9 +41,23 @@ class GateDenied(GateClientError):
 class GateClient:
     """与 ``anti_shortcut.sidecar`` 通信的最小客户端。"""
 
-    def __init__(self, base_url: str, timeout: float = 30.0) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        timeout: float = 30.0,
+        cert: tuple[str, str] | None = None,
+        ca: str | None = None,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self._ssl_context = None
+        if cert or ca:
+            import ssl
+
+            context = ssl.create_default_context(cafile=ca)
+            if cert:
+                context.load_cert_chain(cert[0], cert[1])
+            self._ssl_context = context
 
     def _request(
         self, method: str, path: str, payload: dict[str, Any] | None = None
@@ -56,7 +70,9 @@ class GateClient:
             method=method,
         )
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with urllib.request.urlopen(
+                req, timeout=self.timeout, context=self._ssl_context
+            ) as resp:
                 body = resp.read().decode("utf-8")
                 return json.loads(body) if body else {}
         except urllib.error.HTTPError as exc:
@@ -74,6 +90,8 @@ class GateClient:
             raise GateClientError(f"HTTP {exc.code}: {parsed.get('error') or body}") from exc
         except urllib.error.URLError as exc:
             raise GateClientError(f"无法连接 sidecar: {exc.reason}") from exc
+        except OSError as exc:
+            raise GateClientError(f"无法连接 sidecar: {exc}") from exc
 
     def state(self) -> dict[str, Any]:
         return self._request("GET", "/api/state")
@@ -102,9 +120,24 @@ class GateClient:
     def record_source_change(self, path: str) -> dict[str, Any]:
         return self._request("POST", "/api/source-change", {"path": path})
 
-    def audit(self, limit: int = 50, event: str | None = None) -> dict[str, Any]:
-        """查询 sidecar 本地审计日志（GET /api/audit，v0.20.0）。"""
-        query = f"limit={int(limit)}"
+    def audit(
+        self,
+        limit: int = 50,
+        offset: int = 0,
+        since: str | None = None,
+        until: str | None = None,
+        event: str | None = None,
+    ) -> dict[str, Any]:
+        """查询 sidecar 本地审计日志（GET /api/audit，v0.20.0+；分页 / 时间过滤 v0.21.0）。"""
+        parts = [f"limit={int(limit)}", f"offset={int(offset)}"]
+        if since:
+            parts.append("since=" + urllib.parse.quote(since))
+        if until:
+            parts.append("until=" + urllib.parse.quote(until))
         if event:
-            query += "&event=" + urllib.parse.quote(event)
-        return self._request("GET", f"/api/audit?{query}")
+            parts.append("event=" + urllib.parse.quote(event))
+        return self._request("GET", "/api/audit?" + "&".join(parts))
+
+    def verify_evidence(self) -> dict[str, Any]:
+        """远程校验证据签名清单（GET /api/verify-evidence，v0.21.0）。"""
+        return self._request("GET", "/api/verify-evidence")

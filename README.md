@@ -43,6 +43,8 @@
 
 - **sidecar 审计查询与统一 CLI（v0.20.0）**：`GET /api/audit` 按时间倒序读取本地审计日志，支持 `limit`（1-500）与 `event` 过滤，配合 v0.19.0 的 5 类代理审计事件可远程核对拦截行为；`GateClient.audit()` 客户端方法；新增 `python -m anti_shortcut sidecar` 统一 CLI 入口（等价 `python -m anti_shortcut.sidecar`），K8s 清单切换为新入口。
 
+- **审计查询增强与 sidecar mTLS（v0.21.0）**：`GET /api/audit` 新增 `offset` 分页与 `since` / `until` 时间范围过滤（响应含 `total` / `offset` 元信息）；新增 `GET /api/verify-evidence` 远程校验证据清单与 `GateClient.verify_evidence()`；sidecar 支持入站 mTLS 访问控制（`--tls-cert` / `--tls-key` / `--tls-client-ca`，`GateClient` 新增 `cert` / `ca` 参数），示例 `examples/mtls_sidecar/`。
+
 
 ## 架构
 
@@ -208,6 +210,9 @@ python -m anti_shortcut exec --workspace . --cwd sub --command "go test ./..." -
 
 # 以 sidecar 模式启动门禁 HTTP 服务（阻塞，Ctrl+C 退出；K8s 可作为容器入口）
 python -m anti_shortcut sidecar --workspace . --host 0.0.0.0 --port 8080
+
+# 以 mTLS 保护 sidecar API（客户端证书由 --tls-client-ca 指定 CA 验证，v0.21.0）
+python -m anti_shortcut sidecar --workspace . --tls-cert server.crt --tls-key server.key --tls-client-ca ca.pem
 ```
 
 退出码语义：`write` / `exec` 被阶段门禁拒绝时返回 **2**；参数或环境错误返回 **1**；
@@ -633,6 +638,8 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.19.0 已完成**：透明代理审计事件（5 类：写成功 / 写拒绝 / 执行成功 / 执行拒绝 / 执行超时），每条事件携带阶段摘要写入本地 `audit.log` 并推送远端 SIEM（原 `proxy_file_written` 更名为 `proxy_write_ok`）；CLI `exec`、sidecar `/api/exec`、`GateClient` 三端支持 `cwd` 工作目录参数（限定工作区内）；新增 12 个代理审计与 cwd 测试（461 → 473）。
 
 - **v0.20.0 已完成**：sidecar 审计查询 API（`GET /api/audit?limit=50&event=...`，按时间倒序 + 数量上限 + 事件过滤）与 `GateClient.audit()`；新增 `python -m anti_shortcut sidecar` 统一 CLI 入口（K8s 清单 / 文档切换，镜像 0.20.0）；端到端审计链测试（HTTP 写拒绝 → 本地 audit.log → /api/audit → 远端 SIEM）；新增 11 个测试（473 → 484）。
+
+- **v0.21.0 已完成**：审计查询分页（`offset`）与时间范围过滤（`since` / `until`，ISO 时间戳，含端点），`GET /api/audit` 响应增加 `total` / `offset` 元信息；`GET /api/verify-evidence` 与 `GateClient.verify_evidence()` 远程校验证据清单；sidecar 入站 mTLS 访问控制（`--tls-cert` / `--tls-key` / `--tls-client-ca`，`GateClient(cert=..., ca=...)`），示例 `examples/mtls_sidecar/`；新增 10 个测试（484 → 494）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 

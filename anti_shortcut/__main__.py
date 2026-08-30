@@ -337,6 +337,12 @@ def _cmd_sidecar(args: argparse.Namespace) -> int:
         argv += ["--user-request", args.user_request]
     if args.state_key:
         argv += ["--state-key", args.state_key]
+    if args.tls_cert:
+        argv += ["--tls-cert", args.tls_cert]
+    if args.tls_key:
+        argv += ["--tls-key", args.tls_key]
+    if args.tls_client_ca:
+        argv += ["--tls-client-ca", args.tls_client_ca]
     return _sidecar_module.main(argv)
 
 
@@ -437,6 +443,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_sidecar.add_argument("--host", type=str, default="0.0.0.0", help="监听地址（默认 0.0.0.0）")
     p_sidecar.add_argument("--port", type=int, default=8080, help="监听端口（默认 8080）")
+    p_sidecar.add_argument(
+        "--tls-cert",
+        type=str,
+        default="",
+        help="mTLS 服务端证书 PEM（与 --tls-key / --tls-client-ca 同时启用，v0.21.0）",
+    )
+    p_sidecar.add_argument("--tls-key", type=str, default="", help="mTLS 服务端私钥 PEM")
+    p_sidecar.add_argument(
+        "--tls-client-ca", type=str, default="", help="客户端证书签发 CA（PEM），启用后强制客户端证书"
+    )
     p_sidecar.set_defaults(func=_cmd_sidecar)
     return parser
 

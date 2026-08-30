@@ -2,6 +2,19 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.21.0] - 2026-08-30
+
+- 审计查询增强（v0.21.0）：
+  - `GET /api/audit` 新增 `offset` 分页与 `since` / `until` 时间范围过滤（ISO 时间戳，含端点），响应增加 `total` / `offset` 分页元信息。
+  - `GateClient.audit(limit=..., offset=..., since=..., until=..., event=...)` 同步支持。
+- 远程证据校验：
+  - `GET /api/verify-evidence` 返回 `{ok, violations, entries, signed}`；`GateClient.verify_evidence()` 客户端方法。
+- sidecar 入站 mTLS 访问控制：
+  - `python -m anti_shortcut sidecar --tls-cert ... --tls-key ... --tls-client-ca ...`（`CERT_REQUIRED`，未携带客户端证书在 TLS 握手即被拒绝）。
+  - `GateClient(base_url, cert=(crt, key), ca=...)` 支持客户端证书；示例 `examples/mtls_sidecar/`（generate_certs.py + demo.py + README）。
+- 测试：新增 10 个用例（`tests/test_sidecar_v21.py`），全量 484 → 494。
+- 文档：README 特性 / CLI / Roadmap、deploy/k8s 安全说明同步更新。
+
 ## [0.20.0] - 2026-08-30
 
 - sidecar 审计查询 API（v0.20.0）：

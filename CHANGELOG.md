@@ -2,6 +2,17 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.20.0] - 2026-08-30
+
+- sidecar 审计查询 API（v0.20.0）：
+  - `GET /api/audit?limit=50&event=proxy_write_denied` 读取本地 `audit.log`，按时间倒序返回最近事件，支持数量上限（1-500）与事件名精确过滤。
+  - `GateClient.audit(limit=..., event=...)` 客户端方法；配合 v0.19.0 的 5 类代理审计事件，可远程核对「拦截是否发生、原因是什么」。
+- CLI `sidecar` 子命令：
+  - `python -m anti_shortcut sidecar --workspace . --host 0.0.0.0 --port 8080` 以统一 CLI 启动门禁 HTTP 服务（等价 `python -m anti_shortcut.sidecar`），K8s 清单与文档切换为新入口。
+- 端到端审计链测试：HTTP 写拒绝 → 本地 audit.log → `/api/audit` 查询 → 远端 SIEM 推送，全链路验证。
+- 测试：新增 11 个审计查询 / 端到端用例（`tests/test_sidecar_audit_api.py`），全量 473 → 484。
+- 文档：README 特性 / CLI / Roadmap、deploy/k8s 清单同步更新。
+
 ## [0.19.0] - 2026-08-30
 
 - 透明代理审计事件（v0.19.0）：

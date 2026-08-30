@@ -322,6 +322,24 @@ def _cmd_exec(args: argparse.Namespace) -> int:
     return result["exit_code"] if result["exit_code"] > 0 else 1
 
 
+def _cmd_sidecar(args: argparse.Namespace) -> int:
+    """运行 sidecar 门禁 HTTP 服务（阻塞，Ctrl+C 退出；v0.20.0）。
+
+    与 ``python -m anti_shortcut.sidecar`` 等价，提供统一的 CLI 入口。
+    远程审计参数（--audit-remote-*）与 HMAC 密钥可通过环境变量或 YAML 配置注入。
+    """
+    from . import sidecar as _sidecar_module
+
+    argv = ["--workspace", args.workspace, "--host", args.host, "--port", str(args.port)]
+    if args.config:
+        argv += ["--config", args.config]
+    if args.user_request:
+        argv += ["--user-request", args.user_request]
+    if args.state_key:
+        argv += ["--state-key", args.state_key]
+    return _sidecar_module.main(argv)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m anti_shortcut",
@@ -403,6 +421,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_exec.set_defaults(func=_cmd_exec)
 
+    p_sidecar = sub.add_parser(
+        "sidecar", help="运行 sidecar 门禁 HTTP 服务（阻塞，Ctrl+C 退出；v0.20.0）"
+    )
+    p_sidecar.add_argument("--workspace", type=str, default=".", help="工作区路径（默认当前目录）")
+    p_sidecar.add_argument("--config", type=str, default=None, help="YAML 配置文件路径（可选）")
+    p_sidecar.add_argument(
+        "--user-request", type=str, default="", help="用户需求原文（阶段 0 证据，可选）"
+    )
+    p_sidecar.add_argument(
+        "--state-key",
+        type=str,
+        default="",
+        help="状态签名 HMAC 密钥（也可用环境变量 PHASE_BARRIER_HMAC_KEY）",
+    )
+    p_sidecar.add_argument("--host", type=str, default="0.0.0.0", help="监听地址（默认 0.0.0.0）")
+    p_sidecar.add_argument("--port", type=int, default=8080, help="监听端口（默认 8080）")
+    p_sidecar.set_defaults(func=_cmd_sidecar)
     return parser
 
 

@@ -41,6 +41,8 @@
 
 - **代理审计事件与 exec 工作目录（v0.19.0）**：透明代理新增 5 类审计事件（`proxy_write_ok` / `proxy_write_denied` / `proxy_exec_ok` / `proxy_exec_denied` / `proxy_exec_timeout`），每次写入 / 执行 / 拦截均记录阶段摘要并推送到本地 `audit.log` 与远端 SIEM；CLI `exec`、sidecar `/api/exec` 与 `GateClient` 三端新增 `cwd` 参数，支持在工作区子目录内执行命令。
 
+- **sidecar 审计查询与统一 CLI（v0.20.0）**：`GET /api/audit` 按时间倒序读取本地审计日志，支持 `limit`（1-500）与 `event` 过滤，配合 v0.19.0 的 5 类代理审计事件可远程核对拦截行为；`GateClient.audit()` 客户端方法；新增 `python -m anti_shortcut sidecar` 统一 CLI 入口（等价 `python -m anti_shortcut.sidecar`），K8s 清单切换为新入口。
+
 
 ## 架构
 
@@ -203,6 +205,9 @@ python -m anti_shortcut exec --workspace . --command "pytest -q" --json
 
 # 在工作区子目录执行（--cwd 须解析在工作区内；默认工作区根）
 python -m anti_shortcut exec --workspace . --cwd sub --command "go test ./..." --json
+
+# 以 sidecar 模式启动门禁 HTTP 服务（阻塞，Ctrl+C 退出；K8s 可作为容器入口）
+python -m anti_shortcut sidecar --workspace . --host 0.0.0.0 --port 8080
 ```
 
 退出码语义：`write` / `exec` 被阶段门禁拒绝时返回 **2**；参数或环境错误返回 **1**；
@@ -626,6 +631,8 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.18.0 已完成**：CLI 透明代理命令 `write` / `exec`（经门禁写文件 / 执行命令，测试命令自动记录，被拦截退出码 2，`--json` 结构化输出）；GitHub Action 新增 `mode: exec` 与 `command` 输入，可在 CI 经门禁执行测试命令；新增 16 个 CLI 门禁测试（445 → 461）与 CI action 自测扩展。
 
 - **v0.19.0 已完成**：透明代理审计事件（5 类：写成功 / 写拒绝 / 执行成功 / 执行拒绝 / 执行超时），每条事件携带阶段摘要写入本地 `audit.log` 并推送远端 SIEM（原 `proxy_file_written` 更名为 `proxy_write_ok`）；CLI `exec`、sidecar `/api/exec`、`GateClient` 三端支持 `cwd` 工作目录参数（限定工作区内）；新增 12 个代理审计与 cwd 测试（461 → 473）。
+
+- **v0.20.0 已完成**：sidecar 审计查询 API（`GET /api/audit?limit=50&event=...`，按时间倒序 + 数量上限 + 事件过滤）与 `GateClient.audit()`；新增 `python -m anti_shortcut sidecar` 统一 CLI 入口（K8s 清单 / 文档切换，镜像 0.20.0）；端到端审计链测试（HTTP 写拒绝 → 本地 audit.log → /api/audit → 远端 SIEM）；新增 11 个测试（473 → 484）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 

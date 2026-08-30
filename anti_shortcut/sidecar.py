@@ -11,6 +11,7 @@
 - ``POST /api/advance``              ``{"new_stage": N}`` 推进阶段（走完整证据校验）
 - ``POST /api/test-run``             ``{"exit_code": 0, "output": "..."}`` 上报测试运行结果
 - ``POST /api/source-change``        ``{"path": "fib.py"}`` 上报源码/测试变更
+- ``GET  /api/audit``                ``{?limit=50&event=proxy_write_denied}`` 查询本地审计日志（v0.20.0）
 
 v0.9.0：新增 ``--audit-remote-url`` / ``--audit-remote-token``，把审计事件异步
 转发到 SIEM / webhook；关闭时自动冲刷远程审计队列。
@@ -32,6 +33,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlsplit
 
 from .config import load_config
 from .interceptors import summarize_test_output
@@ -90,6 +92,32 @@ class GateSidecar:
             self.skill.state.mark_source_change(path)
         return {"ok": True, "path": path}
 
+    def audit(self, limit: int = 50, event: str | None = None) -> dict[str, Any]:
+        """读取本地审计日志（``.agent_gate/audit.log``），按时间倒序返回最近事件（v0.20.0）。
+
+        :param limit: 最多返回条数（1-500，默认 50）
+        :param event: 可选事件名精确过滤（如 ``proxy_write_denied``）
+        :return: ``{"ok": True, "count": N, "events": [...]}``，count 为实际返回条数
+        """
+        log_file = self.skill.gate_dir / self.skill.config.audit_log_name
+        events: list[dict[str, Any]] = []
+        if log_file.exists():
+            for line in log_file.read_text(encoding="utf-8", errors="replace").splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    record = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(record, dict) or "event" not in record:
+                    continue
+                if event is not None and record.get("event") != event:
+                    continue
+                events.append(record)
+        events.reverse()
+        return {"ok": True, "count": len(events[:limit]), "events": events[:limit]}
+
 
 def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
     """为指定 sidecar 构造 HTTP 处理器（关闭默认访问日志）。"""
@@ -121,6 +149,24 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
                 self._send(200, {"status": "ok"})
             elif self.path == "/api/state":
                 self._send(200, sidecar.state())
+            elif self.path.startswith("/api/audit"):
+                parsed = urlsplit(self.path)
+                if parsed.path != "/api/audit":
+                    self._send(404, {"error": "not found"})
+                    return
+                query = parse_qs(parsed.query)
+                limit = 50
+                if "limit" in query:
+                    raw = query["limit"][0]
+                    try:
+                        limit = int(raw)
+                    except ValueError:
+                        limit = -1
+                    if isinstance(limit, bool) or not 1 <= limit <= 500:
+                        self._send(400, {"error": "limit 必须是 1-500 的整数"})
+                        return
+                event = (query.get("event") or [None])[0] or None
+                self._send(200, sidecar.audit(limit=limit, event=event))
             else:
                 self._send(404, {"error": "not found"})
 

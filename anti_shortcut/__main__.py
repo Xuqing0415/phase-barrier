@@ -42,6 +42,7 @@ from .evidence import (
 )
 from .paths import sha256_file
 from .proxy import ExecDenied, GateProxy, ProxyError, WriteDenied
+from .sdk import PhaseBarrier
 from .skill import AntiShortcutSkill
 from .state import CorruptedStateError, StateManager
 
@@ -97,6 +98,31 @@ def _cmd_advance(args: argparse.Namespace) -> int:
         print(f"REJECTED: {result['error']}")
     return 0 if result["success"] else 1
 
+
+
+def _cmd_check(args: argparse.Namespace) -> int:
+    """编排器钩子校验：检查是否放行进入指定阶段（只读，v0.22.0）。
+
+    与 SDK ``PhaseBarrier.check(stage)`` 等价：Agent 声称要进入 / 处于某阶段，
+    校验其前置证据是否满足。退出码：0 = 放行；1 = 拒绝（证据不足 / 参数非法）。
+    """
+    ws = Path(args.workspace).resolve()
+    if not ws.is_dir():
+        raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
+    barrier = PhaseBarrier(workspace=ws, config=args.config)
+    try:
+        result = barrier.check(args.stage)
+    finally:
+        barrier.close()
+    if args.json:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    elif result["allowed"]:
+        print(f"OK: {result['message']}")
+    else:
+        print(f"DENIED: {result['message']}", file=sys.stderr)
+        for v in result["violations"]:
+            print(f"  - {v}", file=sys.stderr)
+    return 0 if result["allowed"] else 1
 
 def _git_changed_files(ws: Path, git_base: str) -> list[str]:
     """返回当前分支相对 git_base 改动的文件（``git diff --name-only <base>...HEAD``）。"""
@@ -366,6 +392,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_advance.add_argument("--to", type=int, required=True, help="目标阶段（必须等于当前阶段 + 1）")
     p_advance.add_argument("--user-request", type=str, default="", help="用户需求原文（首次初始化时记录）")
     p_advance.set_defaults(func=_cmd_advance)
+    p_check = sub.add_parser(
+        "check", parents=[common], help="检查是否放行进入指定阶段（只读，v0.22.0）"
+    )
+    p_check.add_argument("--stage", type=int, required=True, help="Agent 声称的阶段号（0-6）")
+    p_check.set_defaults(func=_cmd_check)
 
     p_verify = sub.add_parser(
         "verify-evidence", parents=[common], help="对照工作区校验证据签名清单"

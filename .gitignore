@@ -19,6 +19,7 @@ env/
 # æ¼”ç¤ºä¸Žä¸´æ—¶äº§ç‰©
 examples/demo_workspace/
 examples/minimal_workspace/
+examples/orchestrator_hooks/demo_workspace/
 examples/custom_adapter/foo_workspace/
 examples/plugin_rules/_demo_ws/
 .agent_gate/
@@ -37,10 +38,10 @@ Thumbs.db
 # æœ¬åœ°å·¥å…·ç¼“å­˜
 .workbuddy/
 
-# K8s Í¸Ã÷´úÀí demo »ØÍË¹¤×÷Çø
+# K8s Í¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ demo ï¿½ï¿½ï¿½Ë¹ï¿½ï¿½ï¿½ï¿½ï¿½
 .k8s_proxy_demo_ws/
 
 
-# ²¢ÐÐ»á»°ÒÅÁôµÄÊµÑéÎÄ¼þ£¨É³ÏäËø¶¨£¬ºöÂÔ£©
+# ï¿½ï¿½ï¿½Ð»á»°ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½É³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô£ï¿½
 identifier.sqlite
 

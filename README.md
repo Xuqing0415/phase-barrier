@@ -35,6 +35,8 @@
 - **审计故障告警（v0.15.0）**：`RemoteAuditSink` 新增 `on_failure` 回调与 `metrics()`；`AntiShortcutSkill` 自动把 `audit_remote_failed` 告警写入本地 `audit.log`（本地专用 logger，避免自喂循环）；sidecar `/api/advance` / `/api/test-run` / `/api/source-change` 增加输入校验（bool / 越界阶段号、`output` 类型、`.agent_gate` 路径）。
 - **CI 真实工具链与覆盖率门禁（v0.16.0）**：CI 矩阵安装 Node.js / Go / Rust / Ruby，激活 JS/Go/Rust/Ruby 适配器真实工具测试；输出解析支持 ANSI 颜色码与 istanbul 千分位；`coverage_threshold` 增加 0-100 校验；CI 新增 `coverage run -m pytest` + `--fail-under=90` 覆盖率门禁（当前核心包 90%）。
 
+- **透明代理（v0.17.0）**：sidecar 新增 `POST /api/write` / `POST /api/exec`，把门禁下沉到文件系统层——路径限定工作区内、拒绝 `.agent_gate`、按阶段拦截写入与测试命令，执行后自动记录测试摘要；新增 Agent 侧 `GateClient`（仅标准库 urllib）与 `examples/k8s_proxy/` 最小示例。
+
 ## 架构
 
 ```
@@ -356,7 +358,7 @@ docker compose -f deploy/docker-compose.yml up --build
 Kubernetes 版（v0.7.0）见 [`deploy/k8s/README.md`](deploy/k8s/README.md)：
 Job `gate-keeper` 初始化门禁状态卷，`agent + gate-sidecar` 共享工作区卷，
 sidecar 独占挂载门禁目录并暴露 HTTP API（`anti_shortcut.sidecar`），
-Agent 只能通过 sidecar 查询 / 推进阶段。
+Agent 只能通过 sidecar 查询 / 推进阶段。 v0.17.0 起可把文件写入与命令执行也交给 sidecar（`POST /api/write`、`POST /api/exec`），门禁下沉到文件系统层。
 
 ## 模块结构
 
@@ -385,6 +387,8 @@ anti_shortcut/
 │   └── __init__.py    #   注册表 / detect_language / get_adapter / 入口点加载
 ├── __main__.py        # CLI：python -m anti_shortcut inspect / advance
 ├── sidecar.py         # K8s sidecar HTTP 门禁服务（v0.7.0）
+├── proxy.py           # 透明代理引擎：write/exec 门禁（v0.17.0）
+├── proxy_client.py    # Agent 侧 GateClient（v0.17.0）
 examples/
 ├── demo.py                        # 模拟 Agent 完整演示（含违规拦截）
 ├── minimal_agent.py               # 最小可运行 Agent 接入示例
@@ -590,6 +594,8 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
   GitHub Action 门禁输入校验（mode / expected_stage / to / workspace）与 CI 自测扩展。
 - **v0.15.0 已完成**：审计远程推送故障告警（`RemoteAuditSink` 新增 `on_failure` 回调与 `metrics()`，`AntiShortcutSkill` 自动把 `audit_remote_failed` 告警写入本地 `audit.log`，避免自喂循环）；`sidecar` HTTP 门禁服务输入校验（bool / 越界阶段号、`output` 类型、`.agent_gate` 路径）。
 - **v0.16.0 已完成**：CI 矩阵安装 Node.js / Go / Rust / Ruby 真实工具链，激活 JS/Go/Rust/Ruby 适配器真实工具测试（消除环境跳过盲区）；输出解析与覆盖率门禁边界补强（ANSI 剥离、istanbul 千分位、阈值临界与非法配置值校验、sidecar CLI、Ruby/Rust 真实路径 mock 覆盖，共 29 个新用例）；CI 新增 coverage job（`--fail-under=90`，核心包覆盖率 90%），项目自身吃自己的狗粮。
+
+- **v0.17.0 已完成**：K8s sidecar 透明代理——sidecar 新增 `POST /api/write` / `POST /api/exec`，路径限定工作区 / 拒绝 `.agent_gate` / 按阶段拦截写入与测试命令，exec 自动记录测试摘要；超时后终止进程树并立即返回；新增 Agent 侧 `GateClient`（仅标准库 urllib）与 `examples/k8s_proxy/` 最小示例；`deploy/k8s/` 清单更新（镜像 0.17.0）；新增 30 个透明代理测试（415 → 445）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 

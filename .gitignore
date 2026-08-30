@@ -36,3 +36,11 @@ Thumbs.db
 
 # 鏈湴宸ュ叿缂撳瓨
 .workbuddy/
+
+# K8s 透明代理 demo 回退工作区
+.k8s_proxy_demo_ws/
+
+
+# 并行会话遗留的实验文件（沙箱锁定，忽略）
+identifier.sqlite
+

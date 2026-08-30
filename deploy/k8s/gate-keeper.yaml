@@ -22,7 +22,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: gate-keeper
-          image: <registry>/phase-barrier:0.7.0
+          image: <registry>/phase-barrier:0.17.0
           command: ["python", "/app/deploy/seed_gate.py"]
           env:
             - name: PYTHONUNBUFFERED

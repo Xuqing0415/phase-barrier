@@ -32,9 +32,12 @@ spec:
           volumeMounts:
             - name: workspace
               mountPath: /workspace
-        # ---- 门禁 sidecar ----
+        # ---- 门禁 sidecar（v0.17.0：透明代理）----
+        # 除原阶段推进 API 外，新增 POST /api/write（门禁写入）与
+        # POST /api/exec（门禁执行，自动记录测试结果）；Agent 的文件写入与
+        # 命令执行都应走这两个端点，而不是直接操作共享卷。
         - name: gate-sidecar
-          image: <registry>/phase-barrier:0.9.0
+          image: <registry>/phase-barrier:0.17.0
           command: ["python", "-m", "anti_shortcut.sidecar"]
           args:
             - --workspace

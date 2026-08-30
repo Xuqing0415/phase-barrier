@@ -37,6 +37,8 @@
 
 - **透明代理（v0.17.0）**：sidecar 新增 `POST /api/write` / `POST /api/exec`，把门禁下沉到文件系统层——路径限定工作区内、拒绝 `.agent_gate`、按阶段拦截写入与测试命令，执行后自动记录测试摘要；新增 Agent 侧 `GateClient`（仅标准库 urllib）与 `examples/k8s_proxy/` 最小示例。
 
+- **CLI 门禁命令与 Action exec 模式（v0.18.0）**：`python -m anti_shortcut write --path ... --content/--stdin` 与 `exec --command ... [--timeout]` 把透明代理下沉到命令行——写文件 / 执行命令先过阶段门禁，测试命令自动记录结果，被拦截退出码 2；GitHub Action 新增 `mode: exec` 与 `command` 输入，可在 CI 里经门禁执行测试并驱动阶段推进。
+
 ## 架构
 
 ```
@@ -163,15 +165,16 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 |------|------|------|
 | `workspace` | `.` | 工作区路径（相对仓库根） |
 | `config` | 空 | YAML 配置文件路径 |
-| `mode` | `inspect` | `inspect` 检查当前阶段；`advance` 推进到 `--to` 指定阶段 |
+| `mode` | `inspect` | `inspect` 检查阶段；`advance` 推进到 `--to`；`exec` 经门禁执行 `command`（v0.18.0） |
 | `expected_stage` | `6` | inspect 模式：当前阶段低于该值则失败 |
 | `to` | 空 | advance 模式的目标阶段（必须等于当前阶段 + 1） |
+| `command` | 空 | exec 模式的测试/校验命令（仅 mode=exec 必填，v0.18.0） |
 | `user_request` | 空 | advance 首次初始化时记录的用户需求原文 |
 | `version` | 空 | 安装的 phase-barrier 版本（留空取最新版） |
 | `local` | `false` | 安装本地仓库代码而非 PyPI（CI 自测用） |
 
 
-**输入校验（v0.14.0）**：`mode` 必须是 `inspect` / `advance`；`expected_stage` 与 `advance` 模式的 `to` 必须是 0-6 的整数；`workspace` 必须存在。参数非法时 CI 直接失败并输出 `::error::` 定位信息，避免静默误判。
+**输入校验（v0.14.0 / v0.18.0）**：`mode` 必须是 `inspect` / `advance` / `exec`；`expected_stage` 与 `advance` 模式的 `to` 必须是 0-6 的整数；`workspace` 必须存在。参数非法时 CI 直接失败并输出 `::error::` 定位信息，避免静默误判。
 
 完整示例见 `examples/github-action/gate.yml`（通用）、`gate-go.yml`（Go）、
 `gate-rust.yml`（Rust）；Go / Rust 示例额外安装 `setup-go` / `rust-toolchain`，
@@ -182,6 +185,23 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 （已确认上架：Marketplace 页面显示 **Phase-Barrier Gate**，Latest 版本与 GitHub Release 同步）：
 每次打 `v*` tag 时 release 工作流自动创建 GitHub Release（附 CHANGELOG 摘要与发行包），
 Action 随之自动上架，用户可直接在 Marketplace 搜索 **Phase-Barrier Gate** 使用。
+
+## CLI 透明代理命令（v0.18.0）
+
+v0.17.0 的透明代理除了 HTTP sidecar，也提供命令行形态，供编排器 / CI / 人工复核使用：
+
+```bash
+# 经门禁写入工作区文件（路径须解析在工作区内；--content 与 --stdin 二选一）
+python -m anti_shortcut write --workspace . --path spec.md --content "..."
+cat notes.md | python -m anti_shortcut write --workspace . --path notes.md --stdin
+
+# 经门禁执行 shell 命令（测试命令自动记录结果；--timeout 1-3600 秒）
+python -m anti_shortcut exec --workspace . --command "pytest -q" --json
+```
+
+退出码语义：`write` / `exec` 被阶段门禁拒绝时返回 **2**；参数或环境错误返回 **1**；
+`exec` 放行后返回命令自身的退出码（0 = 成功）。`--json` 输出结构化结果
+（`write` 返回 `{ok, path, kind}`；`exec` 返回 `{ok, exit_code, output, recorded_test_run}`）。
 
 ## 阶段定义与证据要求
 
@@ -385,7 +405,7 @@ anti_shortcut/
 │   ├── ruby.py        #   RubyAdapter（ruby -c + RSpec / Minitest 解析，v0.11.0）
 │   ├── csharp.py      #   CSharpAdapter（dotnet build + xUnit / NUnit / MSTest 解析，v0.11.0）
 │   └── __init__.py    #   注册表 / detect_language / get_adapter / 入口点加载
-├── __main__.py        # CLI：python -m anti_shortcut inspect / advance
+├── __main__.py        # CLI：inspect / advance / write / exec / verify-evidence ...
 ├── sidecar.py         # K8s sidecar HTTP 门禁服务（v0.7.0）
 ├── proxy.py           # 透明代理引擎：write/exec 门禁（v0.17.0）
 ├── proxy_client.py    # Agent 侧 GateClient（v0.17.0）
@@ -596,6 +616,8 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.16.0 已完成**：CI 矩阵安装 Node.js / Go / Rust / Ruby 真实工具链，激活 JS/Go/Rust/Ruby 适配器真实工具测试（消除环境跳过盲区）；输出解析与覆盖率门禁边界补强（ANSI 剥离、istanbul 千分位、阈值临界与非法配置值校验、sidecar CLI、Ruby/Rust 真实路径 mock 覆盖，共 29 个新用例）；CI 新增 coverage job（`--fail-under=90`，核心包覆盖率 90%），项目自身吃自己的狗粮。
 
 - **v0.17.0 已完成**：K8s sidecar 透明代理——sidecar 新增 `POST /api/write` / `POST /api/exec`，路径限定工作区 / 拒绝 `.agent_gate` / 按阶段拦截写入与测试命令，exec 自动记录测试摘要；超时后终止进程树并立即返回；新增 Agent 侧 `GateClient`（仅标准库 urllib）与 `examples/k8s_proxy/` 最小示例；`deploy/k8s/` 清单更新（镜像 0.17.0）；新增 30 个透明代理测试（415 → 445）。
+
+- **v0.18.0 已完成**：CLI 透明代理命令 `write` / `exec`（经门禁写文件 / 执行命令，测试命令自动记录，被拦截退出码 2，`--json` 结构化输出）；GitHub Action 新增 `mode: exec` 与 `command` 输入，可在 CI 经门禁执行测试命令；新增 16 个 CLI 门禁测试（445 → 461）与 CI action 自测扩展。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 

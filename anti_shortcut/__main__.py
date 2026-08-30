@@ -41,6 +41,7 @@ from .evidence import (
     EvidenceManifestError,
 )
 from .paths import sha256_file
+from .proxy import ExecDenied, GateProxy, ProxyError, WriteDenied
 from .skill import AntiShortcutSkill
 from .state import CorruptedStateError, StateManager
 
@@ -240,6 +241,85 @@ def _cmd_rotate_key(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_write(args: argparse.Namespace) -> int:
+    """经门禁写入工作区文件（v0.18.0，透明代理的 CLI 形态）。
+
+    退出码：0 = 写入成功；2 = 被阶段门禁拒绝；1 = 参数或环境错误。
+    """
+    ws = Path(args.workspace).resolve()
+    if not ws.is_dir():
+        raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
+    if args.content is not None and args.stdin:
+        print("ERROR: --content 与 --stdin 不能同时使用", file=sys.stderr)
+        return 1
+    if args.stdin:
+        content = sys.stdin.read()
+    elif args.content is not None:
+        content = args.content
+    else:
+        print("ERROR: 必须提供 --content 或 --stdin", file=sys.stderr)
+        return 1
+    skill = AntiShortcutSkill(ws, config=args.config)
+    try:
+        result = GateProxy(skill).write_file(args.path, content)
+    except WriteDenied as exc:
+        payload = {"ok": False, "error": exc.reason, "path": args.path}
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"DENIED: {exc.reason}")
+        return 2
+    except ProxyError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        skill.close()
+    if args.json:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        print(f"OK: 已写入 {result['path']}（{result['kind']}）")
+    return 0
+
+
+def _cmd_exec(args: argparse.Namespace) -> int:
+    """经门禁执行 shell 命令（v0.18.0，透明代理的 CLI 形态）。
+
+    退出码语义：0 = 放行且命令退出码为 0；命令自身退出码（1-255）= 放行但失败；
+    2 = 被阶段门禁拒绝；1 = 参数或环境错误。
+    """
+    ws = Path(args.workspace).resolve()
+    if not ws.is_dir():
+        raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
+    skill = AntiShortcutSkill(ws, config=args.config)
+    try:
+        result = GateProxy(skill).execute_command(args.command, timeout=args.timeout)
+    except ExecDenied as exc:
+        payload = {"ok": False, "error": exc.reason, "command": args.command}
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"DENIED: {exc.reason}")
+        return 2
+    except ProxyError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        skill.close()
+    if args.json:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        print(
+            f"exit_code={result['exit_code']} "
+            f"recorded_test_run={result.get('recorded_test_run', False)}"
+        )
+        if result.get("output"):
+            output = result["output"]
+            sys.stdout.write(output if output.endswith("\n") else output + "\n")
+    if result["exit_code"] == 0:
+        return 0
+    return result["exit_code"] if result["exit_code"] > 0 else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m anti_shortcut",
@@ -295,12 +375,33 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_rotate.set_defaults(func=_cmd_rotate_key)
 
+    p_write = sub.add_parser(
+        "write", parents=[common], help="经门禁写入工作区文件（v0.18.0）"
+    )
+    p_write.add_argument("--path", type=str, required=True, help="目标路径（须解析在工作区内）")
+    p_write.add_argument("--content", type=str, default=None, help="文件内容（与 --stdin 二选一）")
+    p_write.add_argument("--stdin", action="store_true", help="从 stdin 读取文件内容")
+    p_write.set_defaults(func=_cmd_write)
+
+    p_exec = sub.add_parser(
+        "exec", parents=[common], help="经门禁执行 shell 命令（v0.18.0）"
+    )
+    p_exec.add_argument("--command", type=str, required=True, help="要执行的 shell 命令")
+    p_exec.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help="超时秒数（1-3600，默认 120）",
+    )
+    p_exec.set_defaults(func=_cmd_exec)
+
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stdin.reconfigure(encoding="utf-8", errors="replace")
     except (AttributeError, ValueError):  # pragma: no cover
         pass
     parser = build_parser()

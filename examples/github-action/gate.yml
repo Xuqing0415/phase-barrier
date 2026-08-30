@@ -5,7 +5,7 @@
 #   workspace      - 工作区路径（相对仓库根）
 #   expected_stage - 期望阶段（0-6）；当前阶段低于该值则 CI 失败
 #   config         - 可选：phase-barrier YAML 配置
-#   mode           - inspect（默认，检查阶段）或 advance（推进阶段）
+#   mode           - inspect（默认，检查阶段）或 advance（推进阶段）或 exec（经门禁执行 command，v0.18.0）
 name: Gate
 
 on:

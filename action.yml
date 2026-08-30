@@ -15,7 +15,7 @@ inputs:
     required: false
     default: ""
   mode:
-    description: "inspect：检查当前阶段（低于 expected_stage 则失败）；advance：推进到 --to 指定阶段"
+    description: "inspect：检查当前阶段（低于 expected_stage 则失败）；advance：推进到 --to 指定阶段；exec：经门禁执行 command 并自动记录测试结果（v0.18.0）"
     required: false
     default: "inspect"
   expected_stage:
@@ -28,6 +28,11 @@ inputs:
     default: ""
   user_request:
     description: "advance 首次初始化时记录的用户需求原文（可选）"
+    required: false
+    default: ""
+
+  command:
+    description: "exec 模式的测试/校验命令（例如 pytest -q；仅 mode=exec 时必填）"
     required: false
     default: ""
   version:
@@ -66,8 +71,8 @@ runs:
         set -euo pipefail
         WS="${{ inputs.workspace }}"
         MODE="${{ inputs.mode }}"
-        if [ "$MODE" != "inspect" ] && [ "$MODE" != "advance" ]; then
-          echo "::error::mode 必须是 inspect 或 advance，当前值: $MODE"
+        if [ "$MODE" != "inspect" ] && [ "$MODE" != "advance" ] && [ "$MODE" != "exec" ]; then
+          echo "::error::mode 必须是 inspect / advance / exec，当前值: $MODE"
           exit 1
         fi
         if [ ! -d "$WS" ]; then
@@ -107,7 +112,16 @@ runs:
           CONFIG_ARGS+=(--config "${{ inputs.config }}")
         fi
 
-        if [ "$MODE" == "advance" ]; then
+        if [ "$MODE" == "exec" ]; then
+          COMMAND="${{ inputs.command }}"
+          if [ -z "$COMMAND" ]; then
+            echo "::error::exec 模式必须提供 command"
+            exit 1
+          fi
+          # CLI exec 退出码：0=放行且命令成功；非 0=命令失败或门禁拒绝，set -e 直接失败
+          python -m anti_shortcut exec --workspace "$WS" --command "$COMMAND" "${CONFIG_ARGS[@]}"
+          echo "phase-barrier 门禁执行通过：$COMMAND"
+        elif [ "$MODE" == "advance" ]; then
           USER_ARGS=()
           if [ -n "${{ inputs.user_request }}" ]; then
             USER_ARGS+=(--user-request "${{ inputs.user_request }}")

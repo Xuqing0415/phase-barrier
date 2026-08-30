@@ -33,6 +33,7 @@
 - **边界防护补强（v0.13.0）**：拦截器覆盖命令注入变体、`&>` / `&>>` / `>|` 重定向、`dd of=` / 引号包裹等门禁目录写路径；CLI 对损坏状态、越界阶段号、证据缺失 / 语法错误给出明确报错；插件可运行示例 `examples/plugin_rules/`。
 - **脚本写入检测（v0.14.0）**：`extract_written_paths` 识别 `python -c` / `node -e` / `bash -c` 等脚本参数内的 `open(...)` / `Path(...).write_text` / `fs.writeFileSync` / 重定向写入路径，脚本改代码同样受阶段门禁约束；`verify-evidence` / `export-evidence` 的损坏清单 / 缺字段 / 非法参数均有明确报错；GitHub Action 增加输入校验。
 - **审计故障告警（v0.15.0）**：`RemoteAuditSink` 新增 `on_failure` 回调与 `metrics()`；`AntiShortcutSkill` 自动把 `audit_remote_failed` 告警写入本地 `audit.log`（本地专用 logger，避免自喂循环）；sidecar `/api/advance` / `/api/test-run` / `/api/source-change` 增加输入校验（bool / 越界阶段号、`output` 类型、`.agent_gate` 路径）。
+- **CI 真实工具链与覆盖率门禁（v0.16.0）**：CI 矩阵安装 Node.js / Go / Rust / Ruby，激活 JS/Go/Rust/Ruby 适配器真实工具测试；输出解析支持 ANSI 颜色码与 istanbul 千分位；`coverage_threshold` 增加 0-100 校验；CI 新增 `coverage run -m pytest` + `--fail-under=90` 覆盖率门禁（当前核心包 90%）。
 
 ## 架构
 
@@ -588,6 +589,7 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
   （损坏 / 缺字段清单、签名密钥不匹配、缺失工作区、嵌套 `--out` 自动建目录）、
   GitHub Action 门禁输入校验（mode / expected_stage / to / workspace）与 CI 自测扩展。
 - **v0.15.0 已完成**：审计远程推送故障告警（`RemoteAuditSink` 新增 `on_failure` 回调与 `metrics()`，`AntiShortcutSkill` 自动把 `audit_remote_failed` 告警写入本地 `audit.log`，避免自喂循环）；`sidecar` HTTP 门禁服务输入校验（bool / 越界阶段号、`output` 类型、`.agent_gate` 路径）。
+- **v0.16.0 已完成**：CI 矩阵安装 Node.js / Go / Rust / Ruby 真实工具链，激活 JS/Go/Rust/Ruby 适配器真实工具测试（消除环境跳过盲区）；输出解析与覆盖率门禁边界补强（ANSI 剥离、istanbul 千分位、阈值临界与非法配置值校验、sidecar CLI、Ruby/Rust 真实路径 mock 覆盖，共 29 个新用例）；CI 新增 coverage job（`--fail-under=90`，核心包覆盖率 90%），项目自身吃自己的狗粮。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 
@@ -628,6 +630,6 @@ twine upload dist/*      # 正式发布到 PyPI
 ```
 
 - 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建即为 `X.Y.Z`，无需再手工同步 `pyproject.toml` 与 `__init__.py`。发布流程：`git tag v0.1.1 && git push --tags`。
-- CI（`.github/workflows/ci.yml`）：push / PR 时在 Python 3.10–3.14 矩阵上运行 `pytest` + `examples/demo.py`；`package` job 构建 sdist/wheel 并执行 `twine check` 后上传为 artifact。
+- CI（`.github/workflows/ci.yml`）：push / PR 时在 Python 3.10–3.14 矩阵上运行 `pytest` + `examples/demo.py`；矩阵安装 Node.js / Go / Rust / Ruby 真实工具链，激活 JS/Go/Rust/Ruby 适配器真实工具测试；`coverage` job 运行 `coverage run -m pytest` + `coverage report --fail-under=90`（核心包 ≥90%）并上传 `coverage.json`；`package` job 构建 sdist/wheel 并执行 `twine check` 后上传为 artifact。
 - 自动发布（`.github/workflows/release.yml`）：打 `v*` tag 时自动构建并发布到 PyPI，使用 **Trusted Publishing（OIDC）**，无需仓库 Secret。首次使用需在 [PyPI 项目设置](https://pypi.org/manage/project/phase-barrier/settings/publishing/) 添加 Trusted Publisher：Provider `GitHub`、Owner `Xuqing0415`、Repository `phase-barrier`、Workflow name `release.yml`；发布时会同时生成 PyPI 侧 PEP 740 attestations。
 - 发行名说明：本项目发行名为 `phase-barrier`（与仓库同名），import 包名仍为 `anti_shortcut`，CLI 命令仍为 `anti-shortcut`。

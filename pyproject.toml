@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "cryptography>=42"]
+dev = ["pytest>=7.0", "cryptography>=42", "coverage>=7.0"]
 
 [project.scripts]
 anti-shortcut = "anti_shortcut.__main__:main"
@@ -65,6 +65,15 @@ include = ["anti_shortcut*"]
 
 [tool.setuptools.package-data]
 anti_shortcut = ["languages/js_count_tests.cjs"]
+
+[tool.coverage.run]
+source = ["anti_shortcut"]
+branch = true
+# 测量范围限定为核心包（不含 tests / examples / deploy），与 CI 门禁保持一致
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

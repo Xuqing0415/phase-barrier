@@ -348,3 +348,41 @@ def test_js_identify_vitest_playwright_commands():
     assert a.identify_test_command("playwright test")
     assert a.identify_test_command("npx playwright test --reporter=line")
     assert not a.identify_test_command("npm run build")
+# -*- coding: utf-8 -*-
+
+
+# ---------- v0.16.0: real Node.js toolchain tests (activated in CI) ----------
+
+needs_node = pytest.mark.skipif(
+    shutil.which("node") is None, reason="Node.js not installed"
+)
+
+
+@needs_node
+def test_js_node_check_syntax_real_ok(tmp_path):
+    f = tmp_path / "fib.js"
+    f.write_text("function fib(n) { return n <= 1 ? n : fib(n - 1) + fib(n - 2); }\n", encoding="utf-8")
+    ok, msg = JavaScriptAdapter().check_syntax(f)
+    assert ok and "node --check" in msg
+
+
+@needs_node
+def test_js_node_check_syntax_real_error(tmp_path):
+    f = tmp_path / "broken.js"
+    f.write_text("const x = ;\n", encoding="utf-8")
+    ok, msg = JavaScriptAdapter().check_syntax(f)
+    assert not ok and ("JS" in msg or "JavaScript" in msg)
+
+
+@needs_node
+def test_js_acorn_helper_real_fallback_heuristic(tmp_path):
+    """Run js_count_tests.cjs without acorn: falls back to heuristic counting."""
+    f = tmp_path / "fib.test.js"
+    f.write_text(
+        "test('basic', () => { expect(1).toBe(1); });\n"
+        "describe('suite', () => { it('neg', () => { expect(-1).toBeLessThan(0); }); });\n",
+        encoding="utf-8",
+    )
+    info = JavaScriptAdapter().analyze_tests(f)
+    assert info["test_functions"]
+    assert info["assertions_total"] >= 2

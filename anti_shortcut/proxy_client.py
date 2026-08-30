@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -100,3 +101,10 @@ class GateClient:
 
     def record_source_change(self, path: str) -> dict[str, Any]:
         return self._request("POST", "/api/source-change", {"path": path})
+
+    def audit(self, limit: int = 50, event: str | None = None) -> dict[str, Any]:
+        """查询 sidecar 本地审计日志（GET /api/audit，v0.20.0）。"""
+        query = f"limit={int(limit)}"
+        if event:
+            query += "&event=" + urllib.parse.quote(event)
+        return self._request("GET", f"/api/audit?{query}")

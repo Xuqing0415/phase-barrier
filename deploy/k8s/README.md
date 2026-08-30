@@ -14,16 +14,16 @@ flowchart LR
     B[Deployment agent<br/>容器1: agent 编码<br/>容器2: gate-sidecar] --> G
     B -.HTTP /api/state /api/advance.-> B
     B -.HTTP /api/test-run /api/source-change.-> B
-    B -.HTTP /api/write /api/exec(v0.17.0).-> B
+    B -.HTTP /api/write /api/exec(v0.17.0) /api/audit(v0.20.0).-> B
 ```
 
 - `phase-barrier-workspace`：spec / 测试 / 实现代码，agent 与 sidecar 共享（sidecar 校验证据文件）。
 - `phase-barrier-gate`：`.agent_gate`（state.json + audit.log），**只有** gate-keeper 与 sidecar 挂载。
 - `gate-keeper` Job：对 gate PVC 可写，运行 `deploy/seed_gate.py` 完成一次完整门禁流程，
   生成可审计的初始交付态；后续真实 Agent 任务可复用同一状态机继续推进（或清空重来）。
-- `gate-sidecar`：`python -m anti_shortcut.sidecar --workspace /workspace --port 8080`，
+- `gate-sidecar`：`python -m anti_shortcut sidecar --workspace /workspace --port 8080`（v0.20.0 统一 CLI 入口），
   提供 `GET /api/state`、`POST /api/advance`、`POST /api/test-run`、`POST /api/source-change`、
-  `POST /api/write`、`POST /api/exec`（v0.17.0 透明代理）。
+  `POST /api/write`、`POST /api/exec`（v0.17.0 透明代理）、`GET /api/audit`（v0.20.0 审计查询）。
 - agent 容器：只挂载 workspace；写代码后通过 localhost 调用 sidecar API 推进阶段。
 
 ## 快速开始（kind / minikube）
@@ -67,7 +67,7 @@ flowchart LR
    ```
 
    > 若 agent 镜像没有 `curl`，可在同一 Pod 内用 `python -c` 调用，或在
-   > `gate-sidecar` 容器内执行 `kubectl exec -it "$POD" -c gate-sidecar -- python -m anti_shortcut.sidecar --help`。
+   > `gate-sidecar` 容器内执行 `kubectl exec -it "$POD" -c gate-sidecar -- python -m anti_shortcut sidecar --help`。
 
 ## 透明代理（v0.17.0）
 

@@ -37,8 +37,8 @@ spec:
         # POST /api/exec（门禁执行，自动记录测试结果）；Agent 的文件写入与
         # 命令执行都应走这两个端点，而不是直接操作共享卷。
         - name: gate-sidecar
-          image: <registry>/phase-barrier:0.17.0
-          command: ["python", "-m", "anti_shortcut.sidecar"]
+          image: <registry>/phase-barrier:0.20.0
+          command: ["python", "-m", "anti_shortcut", "sidecar"]
           args:
             - --workspace
             - /workspace

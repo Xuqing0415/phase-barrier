@@ -1,0 +1,37 @@
+# 示例：证据文件 Git 门禁（v0.11.0）。
+# 复制本文件到目标仓库的 .github/workflows/evidence-gate.yml 即可生效。
+#
+# 作用：Agent 交付后，证据文件（spec.md / 测试 / 实现）与 .agent_gate/evidence_manifest.json
+# 一起提交入库。本工作流在 PR 上做两道校验：
+#   1. 文件级校验：manifest 中记录的每个证据文件当前都存在且 SHA-256 一致（缺失 / 篡改即失败）；
+#   2. Git 门禁：--git-base origin/main 列出本次变更改动的文件，与 manifest 条目求交集，
+#      任何证据文件被本次提交修改都判定为“事后篡改”并失败。
+# 需要：fetch-depth: 0（git 基线对比需要历史）。
+name: Evidence Gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  evidence-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install phase-barrier
+        run: pip install phase-barrier
+
+      - name: Verify evidence manifest + git gate
+        run: |
+          python -m anti_shortcut verify-evidence \
+            --workspace "${{ github.workspace }}" \
+            --git-base origin/main
+        # 证据被篡改 / 缺失 / 本次变更修改了证据文件时，退出码非 0，CI 失败。

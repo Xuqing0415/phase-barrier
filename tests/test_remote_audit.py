@@ -281,3 +281,134 @@ def test_skill_remote_audit_retry_config(tmp_path):
     assert skill.remote_sink.retries == 1
     assert skill.remote_sink.backoff_factor == 0.01
     skill.close()
+# ---------- v0.11.0：自定义 header / mTLS 客户端证书 / 持久化 spool ----------
+
+def test_sink_custom_headers(collector_server):
+    collector, url = collector_server
+    sink = RemoteAuditSink(
+        url, headers={"X-Tenant": "acme", "X-Source": "phase-barrier"}, flush_interval=60
+    )
+    try:
+        sink.enqueue({"event": "with-headers"})
+        sink.flush()
+        assert collector.headers[0]["X-Tenant"] == "acme"
+        assert collector.headers[0]["X-Source"] == "phase-barrier"
+        assert collector.headers[0]["Content-Type"] == "application/json"
+    finally:
+        sink.close()
+
+
+def test_sink_token_overrides_authorization_header(collector_server):
+    collector, url = collector_server
+    sink = RemoteAuditSink(
+        url, token="secret", headers={"Authorization": "Bearer other"}, flush_interval=60
+    )
+    try:
+        sink.enqueue({"event": "auth"})
+        sink.flush()
+        assert collector.headers[0]["Authorization"] == "Bearer secret"
+    finally:
+        sink.close()
+
+
+def test_sink_client_cert_missing_file_raises():
+    with pytest.raises(ValueError):
+        RemoteAuditSink(
+            "https://example.com/audit",
+            client_cert="no-such-cert.pem",
+            client_key="no-such-key.pem",
+        )
+
+
+def test_sink_client_cert_pair_required():
+    with pytest.raises(ValueError):
+        RemoteAuditSink("https://example.com/audit", client_cert="cert.pem")
+
+
+def test_sink_client_cert_invalid_pair_raises(tmp_path):
+    cert = tmp_path / "client.pem"
+    cert.write_text("not a pem", encoding="utf-8")
+    key = tmp_path / "client.key"
+    key.write_text("not a key", encoding="utf-8")
+    with pytest.raises(ValueError):
+        RemoteAuditSink(
+            "https://example.com/audit", client_cert=str(cert), client_key=str(key)
+        )
+
+
+def test_sink_spool_persists_and_recovers(tmp_path):
+    spool = tmp_path / "spool"
+    sink = RemoteAuditSink(
+        "http://127.0.0.1:1/x", timeout=1.0, retries=0,
+        spool_dir=str(spool), flush_interval=60, start_worker=False,
+    )
+    try:
+        sink.enqueue({"event": "lost", "n": 1})
+        sink.enqueue({"event": "lost2", "n": 2})
+        sink.flush()
+        stats = sink.stats()
+        assert stats["failed_batches"] == 1
+        assert stats["spooled_events"] == 2
+    finally:
+        sink.close()
+    spool_file = spool / "audit_spool.jsonl"
+    assert spool_file.is_file()
+    assert len(spool_file.read_text(encoding="utf-8").splitlines()) == 2
+
+    sink2 = RemoteAuditSink(
+        "http://127.0.0.1:1/x", timeout=1.0, retries=0,
+        spool_dir=str(spool), flush_interval=60, start_worker=False,
+    )
+    try:
+        stats2 = sink2.stats()
+        assert stats2["recovered_events"] == 2
+        assert stats2["queued"] == 2
+    finally:
+        sink2.close()
+    assert not spool_file.exists()
+
+
+def test_sink_spool_recovery_respects_max_queue(tmp_path):
+    spool = tmp_path / "spool"
+    sink = RemoteAuditSink(
+        "http://127.0.0.1:1/x", timeout=1.0, retries=0,
+        spool_dir=str(spool), flush_interval=60, start_worker=False,
+    )
+    sink.enqueue({"event": "a"})
+    sink.flush()
+    sink.close()
+    sink2 = RemoteAuditSink(
+        "http://127.0.0.1:1/x", timeout=1.0, retries=0,
+        spool_dir=str(spool), max_queue=1, flush_interval=60, start_worker=False,
+    )
+    try:
+        assert sink2.stats()["recovered_events"] == 1
+        assert sink2.stats()["queued"] == 1
+    finally:
+        sink2.close()
+
+
+def test_sink_spool_untouched_without_spool_dir(tmp_path):
+    sink = RemoteAuditSink(
+        "http://127.0.0.1:1/x", timeout=1.0, retries=0, flush_interval=60, start_worker=False
+    )
+    sink.enqueue({"event": "a"})
+    sink.flush()
+    sink.close()
+    assert not (tmp_path / "audit_spool.jsonl").exists()
+
+
+def test_skill_remote_audit_v11_config(tmp_path):
+    skill = AntiShortcutSkill(
+        tmp_path,
+        config={
+            "audit_remote_url": "http://127.0.0.1:1/x",
+            "audit_remote_headers": {"X-Tenant": "acme"},
+            "audit_remote_spool_dir": str(tmp_path / "spool"),
+        },
+        user_request="r",
+    )
+    assert skill.remote_sink is not None
+    assert skill.remote_sink.headers == {"X-Tenant": "acme"}
+    assert skill.remote_sink.spool_dir == str(tmp_path / "spool")
+    skill.close()

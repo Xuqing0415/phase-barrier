@@ -16,12 +16,17 @@ v0.9.0 新增：
 - ``verify-evidence``：对照工作区校验证据签名清单（检测证据文件事后篡改）。
 - ``export-evidence``：把证据清单 + 文件哈希导出为可审计 bundle（v0.10.0）。
 - ``rotate-key``：轮换状态签名 HMAC 密钥（支持从无签名状态启用签名）。
+
+v0.11.0 新增：
+- ``verify-evidence --git-base <ref>``：Git 门禁——列出当前分支相对基线改动的文件，
+  若与证据清单条目有交集则判定“证据文件被事后篡改”并失败（供 CI / GitHub Action 使用）。
 """
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -92,8 +97,29 @@ def _cmd_advance(args: argparse.Namespace) -> int:
     return 0 if result["success"] else 1
 
 
+def _git_changed_files(ws: Path, git_base: str) -> list[str]:
+    """返回当前分支相对 git_base 改动的文件（``git diff --name-only <base>...HEAD``）。"""
+    proc = subprocess.run(
+        ["git", "-C", str(ws), "diff", "--name-only", f"{git_base}...HEAD"],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if proc.returncode != 0:
+        err = (proc.stderr or proc.stdout or "").strip()[:300]
+        raise ValueError(
+            f"git 门禁检查失败（git diff --name-only {git_base}...HEAD）: "
+            f"{err or 'git 命令返回非零'}；请确认工作区是 git 仓库且基线 ref 存在"
+            "（CI 中可用 fetch-depth: 0 拉全量历史）"
+        )
+    return [ln.strip() for ln in (proc.stdout or "").splitlines() if ln.strip()]
+
+
 def _cmd_verify_evidence(args: argparse.Namespace) -> int:
-    """校验证据签名清单：对照工作区当前文件，检测缺失 / 被篡改的证据。"""
+    """校验证据签名清单：对照工作区当前文件，检测缺失 / 被篡改的证据。
+
+    v0.11.0：``--git-base <ref>`` 开启 Git 门禁——本次变更改动任何证据文件即失败。
+    """
     ws = Path(args.workspace).resolve()
     if not ws.is_dir():
         raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
@@ -103,6 +129,19 @@ def _cmd_verify_evidence(args: argparse.Namespace) -> int:
         hmac_key=cfg.state_hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY"),
     )
     ok, violations = manifest.verify(ws)
+    git_base = getattr(args, "git_base", None)
+    changed: list[str] = []
+    if git_base:
+        try:
+            changed = _git_changed_files(ws, git_base)
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
+        entries = set(manifest.entries())
+        touched = sorted({c for c in changed if c in entries})
+        if touched:
+            ok = False
+            violations.extend(f"证据文件在本次变更中被修改: {c}" for c in touched)
     if args.json:
         print(
             json.dumps(
@@ -111,6 +150,8 @@ def _cmd_verify_evidence(args: argparse.Namespace) -> int:
                     "violations": violations,
                     "entries": sorted(manifest.entries()),
                     "signed": manifest.is_signed(),
+                    "git_base": git_base,
+                    "git_changed_files": changed,
                 },
                 ensure_ascii=False,
                 indent=2,
@@ -128,6 +169,8 @@ def _cmd_verify_evidence(args: argparse.Namespace) -> int:
             print(f"FAIL: 证据清单校验未通过（{len(entries)} 个证据文件，{signed}）")
             for v in violations:
                 print(f"VIOLATION: {v}", file=sys.stderr)
+        if git_base and changed:
+            print(f"git 门禁: 基线 {git_base}，本次变更 {len(changed)} 个文件")
     return 0 if ok else 1
 
 
@@ -220,6 +263,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_verify = sub.add_parser(
         "verify-evidence", parents=[common], help="对照工作区校验证据签名清单"
+    )
+    p_verify.add_argument(
+        "--git-base",
+        type=str,
+        default=None,
+        help="Git 基线 ref（如 origin/main）：检测证据文件是否在本次变更中被修改（CI 门禁，v0.11.0）",
     )
     p_verify.set_defaults(func=_cmd_verify_evidence)
 

@@ -106,6 +106,14 @@ class GateConfig(BaseModel):
     # v0.10.0：发送失败时的重试次数（指数退避 backoff * 2**attempt 秒）
     audit_remote_retries: int = 2
     audit_remote_backoff_factor: float = 0.5
+    # v0.11.0：mTLS 客户端证书 / 私钥（PEM 文件路径），用于双向 TLS 的 SIEM 端点
+    audit_remote_client_cert: str | None = None
+    audit_remote_client_key: str | None = None
+    # v0.11.0：自定义请求头（合并到每次 POST；token 仍以 Authorization 头优先）
+    audit_remote_headers: dict[str, str] = Field(default_factory=dict)
+    # v0.11.0：持久化重试队列目录：发送失败的事件落盘为 JSONL，
+    # 进程重启后自动恢复重发（适合 K8s 滚动重启 / 进程崩溃场景）
+    audit_remote_spool_dir: str | None = None
     # ---- 安全 ----
     protect_gate_dir: bool = True
     # 允许 Agent 直接写入“其他”类型文件（如 README.md、docs），默认不限

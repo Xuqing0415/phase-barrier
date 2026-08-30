@@ -2,6 +2,32 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.11.0] - 2026-08-30
+
+- 审计远程推送增强（v0.11.0）：
+  - mTLS 客户端证书：`audit_remote_client_cert` / `audit_remote_client_key`（PEM 成对配置，
+    证书 / 私钥启动时即校验），支持双向 TLS 的 SIEM / webhook 端点。
+  - 自定义请求头：`audit_remote_headers` 合并到每次 POST（token 仍以 `Authorization` 头优先）。
+  - 持久化重试队列：`audit_remote_spool_dir` 把重试耗尽的事件落盘为 JSONL（`audit_spool.jsonl`），
+    进程重启时自动恢复重新发送，避免崩溃 / 滚动重启丢事件。
+  - sidecar 新增 `--audit-remote-client-cert` / `--audit-remote-client-key` /
+    `--audit-remote-header NAME=VALUE`（可多次）/ `--audit-remote-spool-dir`，并支持对应环境变量。
+- 证据清单 Git 门禁：
+  - `verify-evidence --git-base <ref>` 用 `git diff --name-only <ref>...HEAD` 列出本次变更文件，
+    与证据清单条目求交集——证据文件被本次提交修改即判定“事后篡改”并失败（JSON 输出含 `git_changed_files`）。
+  - 新增 GitHub Action 示例 `examples/github-action/evidence-gate.yml`（checkout fetch-depth: 0 +
+    `pip install phase-barrier` + `verify-evidence --git-base origin/main`）。
+- 语言适配器：
+  - 新增 `RubyAdapter`：`ruby -c` 语法检查 + RSpec（`describe` / `it` / `specify` + `expect`）与
+    Minitest（`def test_*` + `assert_*`）启发式统计；`rspec` / `rake test` / `rails test` /
+    `ruby -Itest` 命令识别；`N examples, M failures` / `N runs, M assertions` 输出解析。
+  - 新增 `CSharpAdapter`：`dotnet build` 项目级语法检查（向上查找 `*.csproj` / `*.sln`，带指纹缓存）；
+    `[Fact]` / `[Theory]` / `[Test]` / `[TestMethod]` 属性统计 + `Assert.*` 断言；`dotnet test` /
+    `nunit3-console` / `dotnet vstest` 命令识别；`Passed! - Failed: F, Passed: P, ...` 输出解析。
+  - 自动检测扩展：`Gemfile` / `Gemfile.lock` / `.ruby-version` / `Rakefile` / `*.gemspec` → `ruby`，
+    `*.csproj` / `*.sln` → `csharp`（新增目录级 glob 标志支持）。
+- 测试：新增审计传输 / spool、Git 门禁、Ruby / C# 适配器用例 46 个（276 → 322）。
+- 文档：README 配置示例 / 安全特性 / 多语言支持 / Roadmap 同步更新。
 ## [0.10.0] - 2026-08-30
 
 - 审计远程推送增强：
@@ -105,10 +131,6 @@
 - 打包：`anti_shortcut/languages/js_count_tests.cjs` 纳入 wheel / sdist（`setuptools` package-data）。
 - 测试：新增 JS acorn / jest-json、Java 项目级编译用例 13 个（186 → 199）。
 - 文档：README 适配器表格、GitHub Action 门禁、多语言章节与 Roadmap 同步更新。
-
-版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
-
-版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
 ## [0.6.0] - 2026-08-29
 

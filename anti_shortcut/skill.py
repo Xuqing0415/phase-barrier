@@ -81,6 +81,10 @@ class AntiShortcutSkill:
                 ca_bundle=self.config.audit_remote_ca_bundle,
                 retries=self.config.audit_remote_retries,
                 backoff_factor=self.config.audit_remote_backoff_factor,
+                client_cert=self.config.audit_remote_client_cert,
+                client_key=self.config.audit_remote_client_key,
+                headers=self.config.audit_remote_headers,
+                spool_dir=self.config.audit_remote_spool_dir,
             )
         self.logger = get_audit_logger(
             self.gate_dir / self.config.audit_log_name,

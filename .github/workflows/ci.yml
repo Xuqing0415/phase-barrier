@@ -152,6 +152,86 @@ jobs:
           to: 2
           local: "true"
 
+      - name: Install pytest for exec mode self-test
+        shell: bash
+        run: python -m pip install pytest
+
+      - name: Prepare tests and implementation for exec mode
+        shell: bash
+        run: |
+          cat > ci_gate_ws/test_add.py <<'EOF'
+          import pytest
+          from add import add
+
+          def test_add():
+              assert add(1, 2) == 3
+
+          def test_add_negative():
+              with pytest.raises(ValueError):
+                  add(-1, 1)
+          EOF
+          cat > ci_gate_ws/add.py <<'EOF'
+          def add(a, b):
+              if a < 0 or b < 0:
+                  raise ValueError("negative")
+              return a + b
+          EOF
+
+      - name: Gate advance to stage 3 (tests)
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: advance
+          to: 3
+          local: "true"
+
+      - name: Gate advance to stage 4 (implementation)
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: advance
+          to: 4
+          local: "true"
+
+      - name: Gate exec mode runs test command (passes)
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: exec
+          command: python -m pytest test_add.py -q
+          local: "true"
+
+      - name: Gate exec mode fails when command fails
+        id: gate_exec_fail
+        continue-on-error: true
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: exec
+          command: python -c "import sys; sys.exit(5)"
+          local: "true"
+
+      - name: Assert failing exec command failed as expected
+        if: steps.gate_exec_fail.outcome == 'success'
+        run: |
+          echo "::error::phase-barrier 应因命令失败而失败但通过了"
+          exit 1
+
+      - name: Gate exec mode rejects missing command
+        id: gate_bad_command
+        continue-on-error: true
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: exec
+          local: "true"
+
+      - name: Assert missing command failed as expected
+        if: steps.gate_bad_command.outcome == 'success'
+        run: |
+          echo "::error::phase-barrier 应拒绝 exec 模式缺 command 但通过了"
+          exit 1
+
       - name: Gate rejects invalid mode
         id: gate_bad_mode
         continue-on-error: true

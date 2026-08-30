@@ -1,6 +1,24 @@
 # Changelog
 
-版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。## [0.18.0] - 2026-08-30
+
+- CLI 透明代理命令（v0.17.0 HTTP sidecar 的命令行形态）：
+  - `python -m anti_shortcut write --workspace . --path <file> --content/--stdin`：
+    经门禁写入工作区文件（路径限定工作区内、拒绝 `.agent_gate`、按阶段拦截），
+    被拒绝退出码 2；`--json` 输出 `{ok, path, kind}`。
+  - `python -m anti_shortcut exec --workspace . --command <cmd> [--timeout N]`：
+    经门禁执行 shell 命令，测试命令自动解析输出并写入状态机；
+    放行后退出码 = 命令自身退出码，被拒绝退出码 2；`--json` 输出
+    `{ok, exit_code, output, recorded_test_run}`。
+- GitHub Action 门禁新增 `mode: exec` 与 `command` 输入：
+  - 在 CI 中经门禁执行测试/校验命令，命令失败或门禁拒绝都会让步骤失败（set -e）；
+  - `mode` 校验扩展为 inspect / advance / exec；CI `gate-action` 自测新增
+    exec 通过 / 命令失败 / 缺 command 三条路径。
+- 测试：新增 16 个 CLI 门禁用例（write 拦截/放行/stdin/参数冲突/路径越界、
+  exec 拦截/输出/非零退出码/JSON/超时/测试结果记录），全量测试 445 → 461。
+- 文档：README 特性 / Action 输入表 / CLI 章节 / 模块结构 / Roadmap 同步更新。
+
+
 ## [0.17.0] - 2026-08-30
 
 - K8s sidecar 透明代理（阶段门禁下沉到文件系统层）：

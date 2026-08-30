@@ -21,6 +21,15 @@
 - 测试：新增远程审计重试 / CA、证据导出、Go / Rust 解析增强用例 13 个（263 → 276）。
 - 文档：README 特性 / CLI / 配置 / 安全 / 供应链 / Roadmap 与示例配置同步更新。
 
+## [0.10.1] - 2026-08-30
+
+- 发布流程切换到 PyPI Trusted Publishing（OIDC）：
+  - `release.yml` 移除 `PYPI_API_TOKEN` 密码认证，改用 GitHub OIDC 身份换取短时发布 token
+    （需在 PyPI 项目设置添加 Trusted Publisher：Owner `Xuqing0415` / Repository `phase-barrier` /
+    Workflow `release.yml`）。
+  - 发布时同时生成 PyPI 侧 PEP 740 attestations（此前因使用密码认证被忽略）。
+- 文档：README 供应链校验命令改为 `.sigstore.json` 签名文件，发布说明更新为 Trusted Publishing。
+
 ## [0.9.0] - 2026-08-29
 
 - 审计日志远程推送（SIEM）：

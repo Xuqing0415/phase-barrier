@@ -408,3 +408,73 @@ def test_java_adapter_parse_maven_failure_final_summary():
     ok, summary = a.parse_test_output(out, 1)
     assert not ok and "Failures: 1" in summary
     assert summary.startswith("Tests run: 3, Failures: 1")  # 最终汇总，而非第一个类
+
+# ---------- 输出解析增强（v0.23.0）：失败用例提取 / Skipped ----------
+
+def test_java_adapter_parse_surefire_failure_names():
+    a = JavaAdapter()
+    output = (
+        "Tests run: 2, Failures: 1, Errors: 0\n"
+        "addBasic(com.example.CalcTest)  Time elapsed: 0.01 s  <<< FAILURE!\n"
+        "java.lang.AssertionError: expected:<3> but was:<2>\n"
+        "addNegative(com.example.CalcTest)  Time elapsed: 0.01 s  <<< ERROR!\n"
+        "[INFO] BUILD FAILURE"
+    )
+    ok, summary = a.parse_test_output(output, 1)
+    assert ok is False
+    assert "Failures: 1" in summary
+    assert "addBasic(com.example.CalcTest)" in summary
+    assert "addNegative(com.example.CalcTest)" in summary
+
+
+def test_java_adapter_parse_surefire_all_skipped_passes():
+    a = JavaAdapter()
+    ok, summary = a.parse_test_output(
+        "Tests run: 3, Failures: 0, Errors: 0, Skipped: 3\nBUILD SUCCESS", 0
+    )
+    assert ok is True
+    assert "Skipped: 3" in summary
+
+
+def test_java_adapter_parse_gradle_failure_names():
+    a = JavaAdapter()
+    output = (
+        "com.example.CalcTest > addBasic FAILED\n"
+        "    org.opentest4j.AssertionFailedError at CalcTest.java:12\n"
+        "3 tests completed, 1 failed"
+    )
+    ok, summary = a.parse_test_output(output, 1)
+    assert ok is False
+    assert "com.example.CalcTest > addBasic" in summary
+
+
+def test_java_adapter_parse_gradle_skipped():
+    a = JavaAdapter()
+    ok, summary = a.parse_test_output("3 tests completed, 0 failed, 1 skipped", 0)
+    assert ok is True
+    assert "0 failed" in summary
+
+
+def test_java_adapter_parse_junit_console_failure_names():
+    a = JavaAdapter()
+    output = (
+        "Failures (1):\n"
+        "  JUnit Jupiter:addBasic(com.example.CalcTest)\n"
+        "    MethodSource [className = 'com.example.CalcTest', methodName = 'addBasic']\n"
+        "[ 1 tests failed ]"
+    )
+    ok, summary = a.parse_test_output(output, 1)
+    assert ok is False
+    assert "addBasic" in summary
+
+
+def test_java_adapter_extract_failures_dedup():
+    from anti_shortcut.languages.java import _extract_java_failures
+
+    output = (
+        "addBasic(com.example.CalcTest)  Time elapsed: 0.01 s  <<< FAILURE!\n"
+        "addBasic(com.example.CalcTest)  Time elapsed: 0.01 s  <<< FAILURE!\n"
+        "com.example.CalcTest > addNegative FAILED"
+    )
+    names = _extract_java_failures(output)
+    assert names == ["addBasic(com.example.CalcTest)", "com.example.CalcTest > addNegative"]

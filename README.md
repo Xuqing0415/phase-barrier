@@ -45,6 +45,7 @@
 
 - **审计查询增强与 sidecar mTLS（v0.21.0）**：`GET /api/audit` 新增 `offset` 分页与 `since` / `until` 时间范围过滤（响应含 `total` / `offset` 元信息）；新增 `GET /api/verify-evidence` 远程校验证据清单与 `GateClient.verify_evidence()`；sidecar 支持入站 mTLS 访问控制（`--tls-cert` / `--tls-key` / `--tls-client-ca`，`GateClient` 新增 `cert` / `ca` 参数），示例 `examples/mtls_sidecar/`。
 - **编排器钩子 SDK（v0.22.0）**：新增 `PhaseBarrier` 轻量 SDK，供 Alpha-SWE 等平台在任务启动 / 阶段切换钩子调用（`check` / `advance` / `record_test_run` / `verify_evidence`），返回结构稳定、JSON 可序列化；CLI 新增 `python -m anti_shortcut check --stage N`；集成示例 `examples/orchestrator_hooks/`。
+- **Java 输出解析增强 + Action 元数据（v0.23.0）**：Java 适配器失败用例提取（Surefire `<<< FAILURE!` / Gradle `> FAILED` / JUnit Console `MethodSource`，去重上限 50）与 Gradle `skipped` 统计；GitHub Action 新增 `mode: check`（只读校验是否放行进入 `--stage` 阶段）与 `mode: exec` 的 `cwd` 工作目录输入，CI 自测覆盖 check 放行 / 拒绝 / 缺参路径。
 
 
 ## 架构
@@ -174,16 +175,18 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 |------|------|------|
 | `workspace` | `.` | 工作区路径（相对仓库根） |
 | `config` | 空 | YAML 配置文件路径 |
-| `mode` | `inspect` | `inspect` 检查阶段；`advance` 推进到 `--to`；`exec` 经门禁执行 `command`（v0.18.0） |
+| `mode` | `inspect` | `inspect` 检查阶段；`advance` 推进到 `--to`；`exec` 经门禁执行 `command`，`check` 只读校验是否放行（v0.22.0） |
 | `expected_stage` | `6` | inspect 模式：当前阶段低于该值则失败 |
 | `to` | 空 | advance 模式的目标阶段（必须等于当前阶段 + 1） |
 | `command` | 空 | exec 模式的测试/校验命令（仅 mode=exec 必填，v0.18.0） |
+| `stage` | 空 | check 模式的阶段号 0-6，校验是否放行进入该阶段（v0.22.0） |
+| `cwd` | 空 | exec 模式的工作目录（相对 workspace，可选；v0.19.0） |
 | `user_request` | 空 | advance 首次初始化时记录的用户需求原文 |
 | `version` | 空 | 安装的 phase-barrier 版本（留空取最新版） |
 | `local` | `false` | 安装本地仓库代码而非 PyPI（CI 自测用） |
 
 
-**输入校验（v0.14.0 / v0.18.0）**：`mode` 必须是 `inspect` / `advance` / `exec`；`expected_stage` 与 `advance` 模式的 `to` 必须是 0-6 的整数；`workspace` 必须存在。参数非法时 CI 直接失败并输出 `::error::` 定位信息，避免静默误判。
+**输入校验（v0.14.0 / v0.18.0 / v0.23.0）**：`mode` 必须是 `inspect` / `advance` / `exec` / `check`；`expected_stage` 与 `advance` 模式的 `to` 与 `check` 模式的 `stage` 必须是 0-6 的整数；`workspace` 必须存在。参数非法时 CI 直接失败并输出 `::error::` 定位信息，避免静默误判。
 
 完整示例见 `examples/github-action/gate.yml`（通用）、`gate-go.yml`（Go）、
 `gate-rust.yml`（Rust）；Go / Rust 示例额外安装 `setup-go` / `rust-toolchain`，
@@ -673,6 +676,7 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.21.0 已完成**：审计查询分页（`offset`）与时间范围过滤（`since` / `until`，ISO 时间戳，含端点），`GET /api/audit` 响应增加 `total` / `offset` 元信息；`GET /api/verify-evidence` 与 `GateClient.verify_evidence()` 远程校验证据清单；sidecar 入站 mTLS 访问控制（`--tls-cert` / `--tls-key` / `--tls-client-ca`，`GateClient(cert=..., ca=...)`），示例 `examples/mtls_sidecar/`；新增 10 个测试（484 → 494）。
 
 - **v0.22.0 已完成**：编排器钩子 SDK（`PhaseBarrier`，供 Alpha-SWE 等平台在任务启动 / 阶段切换钩子调用：`check` 只读校验放行 / 拦截 / 跳步，`advance` 复用 `advance_stage` 证据校验，`record_test_run` 登记测试结果，`verify_evidence` 统一 `ok=False` 异常处理）；CLI 新增 `check` 子命令；编排器集成示例 `examples/orchestrator_hooks/`；README 交叉引用 alpha-swe；新增 28 个测试（494 → 522）。
+- **v0.23.0 已完成**：Java 适配器输出解析增强——失败用例提取（Surefire `<<< FAILURE!` / Gradle `> FAILED` / JUnit Console `MethodSource`，去重上限 50）与 Gradle `skipped` 统计；GitHub Action 元数据增强——新增 `mode: check` 只读门禁校验（`stage` 输入）、`exec` 模式 `cwd` 工作目录输入；CI 自测新增 check 模式放行 / 拒绝 / 缺参路径；新增 6 个 Java 解析测试（522 → 528）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 

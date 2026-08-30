@@ -15,7 +15,7 @@ inputs:
     required: false
     default: ""
   mode:
-    description: "inspect：检查当前阶段（低于 expected_stage 则失败）；advance：推进到 --to 指定阶段；exec：经门禁执行 command 并自动记录测试结果（v0.18.0）"
+    description: "inspect（检查当前阶段，低于 expected_stage 失败）/ advance（推进到 --to 阶段）/ exec（门禁执行 command 并自动记录测试结果）/ check（只读校验是否放行进入 --stage 阶段，v0.22.0）"
     required: false
     default: "inspect"
   expected_stage:
@@ -26,6 +26,10 @@ inputs:
     description: "advance 模式的目标阶段（必须等于当前阶段 + 1）"
     required: false
     default: ""
+  stage:
+    description: "check 模式的阶段号（0-6）：校验是否放行进入该阶段（v0.22.0）"
+    required: false
+    default: ""
   user_request:
     description: "advance 首次初始化时记录的用户需求原文（可选）"
     required: false
@@ -33,6 +37,10 @@ inputs:
 
   command:
     description: "exec 模式的测试/校验命令（例如 pytest -q；仅 mode=exec 时必填）"
+    required: false
+    default: ""
+  cwd:
+    description: "exec 模式的工作目录（相对 workspace，可选；v0.19.0）"
     required: false
     default: ""
   version:
@@ -71,8 +79,8 @@ runs:
         set -euo pipefail
         WS="${{ inputs.workspace }}"
         MODE="${{ inputs.mode }}"
-        if [ "$MODE" != "inspect" ] && [ "$MODE" != "advance" ] && [ "$MODE" != "exec" ]; then
-          echo "::error::mode 必须是 inspect / advance / exec，当前值: $MODE"
+        if [ "$MODE" != "inspect" ] && [ "$MODE" != "advance" ] && [ "$MODE" != "exec" ] && [ "$MODE" != "check" ]; then
+          echo "::error::mode 必须是 inspect / advance / exec / check，当前值: $MODE"
           exit 1
         fi
         if [ ! -d "$WS" ]; then
@@ -119,8 +127,40 @@ runs:
             exit 1
           fi
           # CLI exec 退出码：0=放行且命令成功；非 0=命令失败或门禁拒绝，set -e 直接失败
-          python -m anti_shortcut exec --workspace "$WS" --command "$COMMAND" "${CONFIG_ARGS[@]}"
+          CWD_ARGS=()
+          if [ -n "${{ inputs.cwd }}" ]; then
+            CWD_ARGS+=(--cwd "${{ inputs.cwd }}")
+          fi
+          python -m anti_shortcut exec --workspace "$WS" --command "$COMMAND" "${CONFIG_ARGS[@]}" "${CWD_ARGS[@]}"
           echo "phase-barrier 门禁执行通过：$COMMAND"
+        elif [ "$MODE" == "check" ]; then
+          STAGE="${{ inputs.stage }}"
+          if [ -z "$STAGE" ]; then
+            echo "::error::check 模式必须提供 stage（0-6）"
+            exit 1
+          fi
+          case "$STAGE" in
+            ''|*[!0-9]*)
+              echo "::error::stage 必须是 0-6 的整数，当前值: $STAGE"
+              exit 1 ;;
+          esac
+          STAGE=$((10#$STAGE))
+          if [ "$STAGE" -lt 0 ] || [ "$STAGE" -gt 6 ]; then
+            echo "::error::stage 必须在 0-6 之间，当前值: ${{ inputs.stage }}"
+            exit 1
+          fi
+          python -m anti_shortcut check --workspace "$WS" --stage "${{ inputs.stage }}" --json "${CONFIG_ARGS[@]}" > /tmp/phase-barrier-check.json || {
+            echo "::error::phase-barrier 门禁未通过：不得进入阶段 ${{ inputs.stage }}（前置证据不足）"
+            cat /tmp/phase-barrier-check.json
+            exit 1
+          }
+          ALLOWED=$(python -c "import json; print(json.load(open('/tmp/phase-barrier-check.json'))['allowed'])")
+          if [ "$ALLOWED" != "True" ]; then
+            echo "::error::phase-barrier 门禁未通过：不得进入阶段 ${{ inputs.stage }}（前置证据不足）"
+            cat /tmp/phase-barrier-check.json
+            exit 1
+          fi
+          echo "phase-barrier 门禁通过：放行进入阶段 ${{ inputs.stage }}"
         elif [ "$MODE" == "advance" ]; then
           USER_ARGS=()
           if [ -n "${{ inputs.user_request }}" ]; then

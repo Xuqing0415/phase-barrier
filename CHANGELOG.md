@@ -2,6 +2,18 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.23.0] - 2026-08-30
+
+- Java 适配器输出解析增强（v0.23.0）：
+  - 失败用例提取：Surefire `methodName(Class) <<< FAILURE!/ERROR!`、Gradle `Class > method FAILED`、JUnit Console `MethodSource [methodName=...]`，去重后最多 50 个；
+  - `parse_test_output` 失败分支附带失败用例摘要，Gradle 汇总新增 `skipped` 计数解析；
+  - 新增 6 个解析边界测试（`tests/test_java_adapter.py`），全量 522 → 528。
+- GitHub Action 元数据增强（v0.23.0）：
+  - 新增 `mode: check`：只读校验是否放行进入 `--stage` 阶段（`anti_shortcut check`），拒绝时输出 `::error::` 与明细；
+  - 新增 `stage` 输入（check 模式）与 `cwd` 输入（exec 模式工作目录）；
+  - 参数校验扩展 `check` 模式；CI `gate-action` 自测新增 check 放行 / 拒绝 / 缺参 3 组步骤。
+- 文档：README 特性列表、GitHub Action 章节、Roadmap 同步更新。
+
 ## [0.22.0] - 2026-08-30
 
 - 编排器钩子 SDK（v0.22.0，alpha-swe 集成面）：

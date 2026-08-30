@@ -146,6 +146,45 @@ jobs:
           echo "::error::phase-barrier 门禁应失败但通过了"
           exit 1
 
+      - name: Gate check mode allows entering stage 2 (spec done)
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: check
+          stage: 2
+          local: "true"
+
+      - name: Gate check mode denies entering stage 6 (evidence missing)
+        id: gate_check_fail
+        continue-on-error: true
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: check
+          stage: 6
+          local: "true"
+
+      - name: Assert check mode failed as expected
+        if: steps.gate_check_fail.outcome == 'success'
+        run: |
+          echo "::error::phase-barrier check 门禁应失败但通过了"
+          exit 1
+
+      - name: Gate check mode rejects missing stage
+        id: gate_check_missing_stage
+        continue-on-error: true
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: check
+          local: "true"
+
+      - name: Assert missing stage failed as expected
+        if: steps.gate_check_missing_stage.outcome == 'success'
+        run: |
+          echo "::error::phase-barrier check 缺少 stage 应失败但通过了"
+          exit 1
+
       - name: Gate advance mode advances stage (spec -> 2)
         uses: ./
         with:

@@ -57,7 +57,8 @@ _TEST_RUN_AGG_RE = re.compile(
 )
 # Gradle：``3 tests completed, 1 failed``
 _GRADLE_AGG_RE = re.compile(
-    r"\b(?P<n>\d+)\s+tests?\s+completed(?:,\s*(?P<fail>\d+)\s+failed)?",
+    r"\b(?P<n>\d+)\s+tests?\s+completed(?:,\s*(?P<fail>\d+)\s+failed)?"
+    r"(?:,\s*(?P<skip>\d+)\s+skipped)?",
     re.IGNORECASE,
 )
 # JUnit Platform Console：``[ 3 tests successful ]`` / ``[ 1 tests failed ]``
@@ -65,6 +66,47 @@ _JUNIT_CONSOLE_AGG_RE = re.compile(
     r"\[\s*(?P<n>\d+)\s+tests?\s+(?P<status>successful|failed|skipped|aborted)\s*\]",
     re.IGNORECASE,
 )
+
+
+# 失败用例提取（v0.23.0）：
+# - Surefire：``methodName(ClassName) ... <<< FAILURE!`` / ``<<< ERROR!``
+# - Gradle：``com.example.Class > methodName FAILED``
+# - JUnit Console：``Failures (N):`` 段中的 ``methodName(ClassName)`` / ``MethodSource [...]``
+_JAVA_SUREFIRE_FAILURE_RE = re.compile(
+    r"^\s*(\w+\([^)]*\))\s+.*<<<\s*(?:FAILURE|ERROR)!",
+    re.M,
+)
+_JAVA_GRADLE_FAILURE_RE = re.compile(
+    r"^\s*([\w.$]+\s+>\s+\w+)\s+FAILED\b",
+    re.M,
+)
+_JAVA_CONSOLE_FAILURE_RE = re.compile(
+    r"^\s*[^:]+:\s*(\w+)\(([^)]*)\)\s*$",
+    re.M,
+)
+_JAVA_CONSOLE_METHOD_RE = re.compile(r"methodName\s*=\s*'([^']+)'")
+
+
+def _extract_java_failures(text: str) -> list[str]:
+    """从 Maven Surefire / Gradle / JUnit Console 输出中提取失败用例名（去重，最多 50 个）。"""
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def add(name: str) -> None:
+        if name and name not in seen:
+            seen.add(name)
+            out.append(name)
+
+    for m in _JAVA_SUREFIRE_FAILURE_RE.finditer(text):
+        add(m.group(1))
+    for m in _JAVA_GRADLE_FAILURE_RE.finditer(text):
+        add(m.group(1))
+    for m in _JAVA_CONSOLE_FAILURE_RE.finditer(text):
+        cls = m.group(2).rsplit(".", 1)[-1]
+        add(f"{m.group(1)}({cls})")
+    for m in _JAVA_CONSOLE_METHOD_RE.finditer(text):
+        add(m.group(1))
+    return out[:50]
 
 
 def _decode_output(raw: bytes | None) -> str:
@@ -266,25 +308,30 @@ class JavaAdapter(LanguageAdapter):
             summary = _extract_test_summary(text)
             return True, summary or "所有测试通过"
         summary = _extract_test_summary(text)
+        failed = _extract_java_failures(text)
+        suffix = ""
+        if failed:
+            suffix = f"；失败用例: {'、'.join(failed)}（{len(failed)} 个）"
         matches = list(_TEST_RUN_AGG_RE.finditer(text))
         if matches:
-            m = matches[-1]  # 最终汇总（Results: 之后）
+            m = matches[-1]  # 最后汇总（Results: 之后）
             failures = int(m.group("fail") or 0)
             errors = int(m.group("err") or 0)
             ok = failures == 0 and errors == 0
-            if summary:
-                return ok, summary
-            return ok, f"Tests run: {m.group('run')}, Failures: {failures}, Errors: {errors}"
+            detail = summary or f"Tests run: {m.group('run')}, Failures: {failures}, Errors: {errors}"
+            return ok, detail + ("" if ok else suffix)
         m = _GRADLE_AGG_RE.search(text)
         if m:
             failures = int(m.group("fail") or 0)
-            return failures == 0, summary or m.group(0)
+            ok = failures == 0 and not failed
+            detail = summary or m.group(0)
+            return ok, detail + ("" if ok else suffix)
         m = _JUNIT_CONSOLE_AGG_RE.search(text)
         if m and m.group("status") == "failed":
-            return False, summary or m.group(0)
+            return False, (summary or m.group(0)) + suffix
         if "BUILD FAILURE" in text or "BUILD FAILED" in text:
-            return False, summary or "BUILD FAILURE"
-        return False, summary or f"测试失败，退出码 {exit_code}"
+            return False, (summary or "BUILD FAILURE") + suffix
+        return False, summary or (f"测试失败，退出码 {exit_code}" + suffix)
 
 
 def _command_label(cmd: list[str]) -> str:

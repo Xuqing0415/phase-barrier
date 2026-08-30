@@ -13,8 +13,9 @@ v0.3.0 起，语言相关逻辑（文件识别、语法检查、测试统计）�
 """
 from __future__ import annotations
 
+import importlib.metadata as metadata
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from .config import GateConfig
 from .languages import LanguageAdapter, get_adapter, validate_test_collection
@@ -23,6 +24,8 @@ from .paths import classify_path, iter_workspace_files, path_matches, sha256_fil
 
 __all__ = [
     "PYTHON_SUFFIXES",
+    "BUILTIN_VALIDATORS",
+    "VALIDATOR_ENTRY_POINT_GROUP",
     "analyze_test_file",
     "classify_path",
     "iter_workspace_files",
@@ -33,6 +36,9 @@ __all__ = [
     "validate_implementation",
     "validate_test_run",
     "validate_retest",
+    "register_validator",
+    "load_validator_plugins",
+    "get_validator",
 ]
 
 
@@ -43,14 +49,6 @@ def analyze_test_file(path: Path) -> dict[str, Any] | None:
     """
     return PythonAdapter().analyze_tests(Path(path))
 
-
-def _resolve_adapter(
-    config: GateConfig,
-    workspace: Path,
-    adapter: LanguageAdapter | None,
-) -> LanguageAdapter:
-    """未显式传入适配器时，按配置与工作区自动选择。"""
-    return adapter or get_adapter(config, workspace)
 
 
 # ---------- 阶段 1：Spec 设计 ----------
@@ -212,3 +210,101 @@ def validate_retest(
     if not cov_ok:
         return False, cov_msg, {**tr, "after_last_change": True, "coverage": tr.get("coverage")}
     return True, "回归测试全部通过", {**tr, "after_last_change": True, "coverage": tr.get("coverage")}
+
+# ---------- 自定义校验器（v0.12.0） ----------
+
+# 内置阶段校验器（与 skill.validators 保持一致）
+BUILTIN_VALIDATORS: dict[int, Callable] = {
+    1: validate_spec,
+    2: validate_tests,
+    3: validate_implementation,
+    4: validate_test_run,
+    5: validate_retest,
+}
+
+VALIDATOR_ENTRY_POINT_GROUP = "phase_barrier.validators"
+
+# 进程内自定义校验器注册表：stage -> validator(workspace, config, state, adapter=None)
+_custom_validators: dict[int, Callable] = {}
+
+
+def register_validator(stage: int, fn: Callable) -> None:
+    """进程内注册一个自定义阶段校验器（覆盖同阶段内置校验器）。
+
+    :param stage: 阶段号（0-6）
+    :param fn: ``fn(workspace, config, state, adapter=None) -> (ok, message, evidence)``
+    """
+    if not isinstance(stage, int) or isinstance(stage, bool) or stage < 0:
+        raise ValueError(f"阶段号必须是 >= 0 的整数: {stage!r}")
+    if not callable(fn):
+        raise TypeError("validator 必须可调用（workspace, config, state, adapter=None）")
+    _custom_validators[stage] = fn
+
+
+def _coerce_validator_mapping(obj: Any) -> dict[int, Callable]:
+    """把入口点对象规整为 {stage: validator} 映射。
+
+    支持三种形式：
+    - ``{stage: fn}`` 字典
+    - 可调用且带 ``stage`` 属性的单阶段校验器
+    - 可调用工厂，返回 ``{stage: fn}`` 字典
+    """
+    if isinstance(obj, dict):
+        mapping = obj
+    elif callable(obj):
+        stage = getattr(obj, "stage", None)
+        if isinstance(stage, int):
+            mapping = {stage: obj}
+        else:
+            try:
+                mapping = obj()
+            except TypeError:
+                return {}
+            if not isinstance(mapping, dict):
+                return {}
+    else:
+        mapping = getattr(obj, "validators", None) or {}
+    out: dict[int, Callable] = {}
+    for k, v in (mapping or {}).items():
+        try:
+            out[int(k)] = v
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def load_validator_plugins() -> dict[int, Callable]:
+    """加载 ``phase_barrier.validators`` 入口点注册的自定义校验器。
+
+    入口点对象可以是 ``{stage: fn}`` 映射、带 ``stage`` 属性的校验器，
+    或返回映射的工厂函数；单个入口点加载失败时跳过，不影响其他入口点。
+    进程内 ``register_validator`` 注册的校验器优先级高于入口点。
+    """
+    merged: dict[int, Callable] = dict(_custom_validators)
+    try:
+        eps = metadata.entry_points(group=VALIDATOR_ENTRY_POINT_GROUP)
+    except TypeError:  # Python 3.9- 旧接口（requires-python>=3.10，仅防御）
+        eps = metadata.entry_points().get(VALIDATOR_ENTRY_POINT_GROUP, [])
+    for ep in eps:
+        try:
+            merged.update(_coerce_validator_mapping(ep.load()))
+        except Exception:
+            continue
+    return merged
+
+
+def get_validator(stage: int) -> Callable | None:
+    """返回阶段校验器：自定义（进程内 + 入口点）优先，其次内置；无则 None。"""
+    plugins = load_validator_plugins()
+    if stage in plugins:
+        return plugins[stage]
+    return BUILTIN_VALIDATORS.get(stage)
+
+
+def _resolve_adapter(
+    config: GateConfig,
+    workspace: Path,
+    adapter: LanguageAdapter | None,
+) -> LanguageAdapter:
+    """未显式传入适配器时，按配置与工作区自动选择。"""
+    return adapter or get_adapter(config, workspace)

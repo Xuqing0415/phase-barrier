@@ -1,0 +1,10 @@
+# phase-barrier mTLS 审计推送配置示例（v0.12.0）
+# 完整说明见 examples/mtls_audit/README.md
+# 路径相对本文件所在目录（certs/ 由 generate_certs.py 生成）
+
+audit_remote_url: https://127.0.0.1:8443/audit
+audit_remote_ca_bundle: certs/ca.pem
+audit_remote_client_cert: certs/client.crt
+audit_remote_client_key: certs/client.key
+audit_remote_headers:
+  X-Tenant: acme

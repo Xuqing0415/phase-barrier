@@ -26,6 +26,10 @@
 - **证据清单导出（v0.10.0）**：`export-evidence` 把证据清单 + 文件哈希导出为可审计 bundle，供外部核对。
 - **供应链签名（v0.10.0）**：发布流程用 sigstore（GitHub OIDC 身份）对 sdist / wheel 签名，可 `cosign verify-blob` 校验来源。
 - **语言输出解析（v0.10.0）**：`summarize_test_output` 接入语言适配器，Go / Rust 测试输出生成专属摘要（含失败用例名）。
+- **自定义校验器与拦截规则（v0.12.0）**：`phase_barrier.validators` / `phase_barrier.interceptors` 入口点 + 
+  进程内注册（`register_validator` / `register_rule`），可覆盖内置阶段校验或追加自定义拦截规则。
+- **审计 mTLS 端到端示例（v0.12.0）**：`examples/mtls_audit/` 提供自签 CA + 服务端 / 客户端证书生成、
+  收集端点与一键演示，验证 `audit_remote_client_cert` / `audit_remote_client_key` 双向 TLS 链路。
 
 ## 架构
 
@@ -165,7 +169,8 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 让 `advance` 模式能用真实 `gofmt` / `cargo check` 校验实现。本项目 CI 自带
 `gate-action` 自测 job，验证“达到期望阶段通过 / 未达到失败”两条路径。
 
-该 Action 已发布到 [GitHub Marketplace](https://github.com/marketplace/actions/phase-barrier-gate)：
+该 Action 已发布到 [GitHub Marketplace](https://github.com/marketplace/actions/phase-barrier-gate)
+（已确认上架：Marketplace 页面显示 **Phase-Barrier Gate**，Latest 版本与 GitHub Release 同步）：
 每次打 `v*` tag 时 release 工作流自动创建 GitHub Release（附 CHANGELOG 摘要与发行包），
 Action 随之自动上架，用户可直接在 Marketplace 搜索 **Phase-Barrier Gate** 使用。
 
@@ -201,6 +206,28 @@ Action 随之自动上架，用户可直接在 Marketplace 搜索 **Phase-Barrie
 - `new_stage` 必须等于当前阶段 + 1，否则返回“不允许跳跃阶段”；
 - 推进前运行**当前阶段**的证据校验器，不通过则返回详细失败原因；
 - 通过后写入状态机（原子写：临时文件 + `os.replace`），并记录证据哈希。
+
+### 自定义校验器与拦截规则（v0.12.0）
+
+阶段校验器与工具拦截规则都支持扩展，优先级：自定义（进程内 + 入口点）> 内置：
+
+- **自定义校验器**：`register_validator(stage, fn)` 进程内注册，或通过 `phase_barrier.validators` 入口点组加载
+  （`{stage: fn}` 映射 / 带 `stage` 属性的单校验器 / 返回映射的工厂三种形式），覆盖对应阶段的证据校验；
+  校验器签名 `fn(workspace, config, state, adapter=None) -> (ok, message, evidence)`。
+- **自定义拦截规则**：`register_rule(name, rule)` 进程内注册，或通过 `phase_barrier.interceptors` 入口点组加载
+  （规则函数 / 返回规则列表的工厂 / `{name: rule}` 映射 / 带 `rules` 属性对象四种形式）；
+  规则签名 `rule(kind, target, config, stage) -> (False, reason) 拦截 / (True, reason) 放行 / None 弃权`，
+  在 `write` / `exec` 内置检查之前评估，首个决定性结论生效（异常规则自动跳过）。
+
+第三方包在 `pyproject.toml` 声明入口点即可参与门禁：
+
+```toml
+[project.entry-points."phase_barrier.validators"]
+strict_tests = "my_plugins:strict_tests_validator"
+
+[project.entry-points."phase_barrier.interceptors"]
+deny_vendor = "my_plugins:deny_vendor_rule"
+```
 
 ## 状态与审计
 
@@ -335,7 +362,12 @@ examples/
 ├── demo.py                        # 模拟 Agent 完整演示（含违规拦截）
 ├── minimal_agent.py               # 最小可运行 Agent 接入示例
 ├── anti_shortcut_config.yaml      # Python 项目示例配置
-└── anti_shortcut_js_config.yaml   # JavaScript / TypeScript 项目示例配置
+├── anti_shortcut_js_config.yaml   # JavaScript / TypeScript 项目示例配置
+├── anti_shortcut_go_config.yaml   # Go 项目示例配置
+├── anti_shortcut_rust_config.yaml # Rust 项目示例配置
+├── custom_adapter/                # 自定义语言适配器插件示例（虚构 .foo 语言）
+├── github-action/                 # GitHub Action 门禁示例（gate.yml / gate-go.yml / gate-rust.yml / evidence-gate.yml）
+└── mtls_audit/                    # v0.12.0：审计 mTLS 端到端示例（证书生成 + 收集端点 + demo）
 deploy/
 ├── Dockerfile                     # 打包镜像（含 CLI）
 ├── docker-compose.yml             # gate-keeper（可写）+ agent（.agent_gate 只读）
@@ -347,7 +379,7 @@ deploy/
 │   ├── gate-sidecar.yaml          #   agent + sidecar Deployment + Service
 │   └── README.md                  #   kind / minikube 验证步骤
 └── README.md                      # 部署说明
-tests/                             # pytest 测试套件（234 个用例）
+tests/                             # pytest 测试套件（337 个用例）
 ```
 
 ## 设计取舍
@@ -517,9 +549,11 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
   双向 TLS、`audit_remote_headers` 自定义请求头、`audit_remote_spool_dir` 持久化重试队列）、证据清单
   Git 门禁（`verify-evidence --git-base <ref>` + `examples/github-action/evidence-gate.yml`）、
   Ruby / C# 语言适配器（`ruby -c` / `dotnet build` + RSpec / Minitest / xUnit / NUnit 输出解析）。
-- **v0.12.0（规划）**：自定义校验器与拦截规则入口点（`phase_barrier.validators` / `phase_barrier.interceptors`）、
-  审计远程推送 mTLS 端到端集成示例、GitHub Action Marketplace 上架确认。
-- **插件机制增强**：通过入口点注册自定义校验器与拦截规则（当前已有语言适配器入口点 `phase_barrier.languages` 与集成插件入口点 `anti_shortcut.integrations`）。
+- **v0.12.0 已完成**：自定义校验器与拦截规则入口点（`phase_barrier.validators` / `phase_barrier.interceptors`，
+  含进程内 `register_validator` / `register_rule`，可覆盖内置校验 / 追加拦截规则）、审计远程推送 mTLS
+  端到端集成示例（`examples/mtls_audit/`）、GitHub Action Marketplace 上架确认（Phase-Barrier Gate）。
+- **v0.13.0（规划）**：拦截器边界与 CLI 错误处理测试补强（命令注入、路径特殊字符、门禁目录全写路径防护、
+  状态文件损坏 / 参数非法处理）、自定义校验器 / 拦截规则插件文档与可运行示例。
 - **供应链**：接入 sigstore 签名与 trusted publishing，提升包可信度。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

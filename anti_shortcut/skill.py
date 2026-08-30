@@ -19,6 +19,7 @@ from .audit import get_audit_logger
 from .config import STAGES, GateConfig, load_config
 from .evidence import EVIDENCE_MANIFEST_NAME, EvidenceManifest
 from .interceptors import (
+    evaluate_rules,
     extract_written_paths,
     is_language_test_command,
     summarize_test_output,
@@ -28,6 +29,7 @@ from .languages import get_adapter
 from .remote_audit import RemoteAuditSink
 from .state import StateManager
 from .validators import (
+    get_validator,
     validate_implementation,
     validate_retest,
     validate_spec,
@@ -174,8 +176,17 @@ class AntiShortcutSkill:
         return "other"
 
     def check_write_permission(self, path: str | Path) -> None:
-        """检查写入权限；不允许时抛出 PermissionError（作为工具拦截反馈）。"""
+        """检查写入权限；不允许时抛出 PermissionError（作为工具拦截反馈）。
+
+        v0.12.0：自定义拦截规则（``phase_barrier.interceptors``）优先——
+        (True) 直接放行；(False) 直接拦截；弃权时回落到内置阶段门禁。
+        """
         p = Path(path)
+        decision, reason = evaluate_rules("write", str(p), self.config, self.current_stage)
+        if decision is True:
+            return
+        if decision is False:
+            raise PermissionError(reason or "自定义拦截规则拒绝写入该路径")
         if self._in_gate_dir(p):
             raise PermissionError("禁止写入门禁目录 .agent_gate：状态与证据由 Skill 独占管理")
         kind = self._classify_path(p)
@@ -192,8 +203,17 @@ class AntiShortcutSkill:
             raise PermissionError("当前配置禁止写入其他类型文件")
 
     def check_exec_permission(self, command: str | list[str]) -> None:
-        """检查 shell 命令执行权限；不允许时抛出 PermissionError。"""
+        """检查 shell 命令执行权限；不允许时抛出 PermissionError。
+
+        v0.12.0：自定义拦截规则（``phase_barrier.interceptors``）优先——
+        (True) 直接放行；(False) 直接拦截；弃权时回落到内置阶段门禁。
+        """
         cmd = command if isinstance(command, str) else " ".join(str(c) for c in command)
+        decision, reason = evaluate_rules("exec", cmd, self.config, self.current_stage)
+        if decision is True:
+            return
+        if decision is False:
+            raise PermissionError(reason or "自定义拦截规则拒绝执行该命令")
         if touches_gate_dir(cmd, self.gate_dir):
             raise PermissionError("禁止通过 shell 访问门禁目录 .agent_gate")
         if is_language_test_command(cmd, self.config, self.adapter) and self.current_stage < 3:
@@ -339,7 +359,7 @@ class AntiShortcutSkill:
                 ),
             }
 
-        validator = self.validators.get(cur)
+        validator = get_validator(cur)
         if validator is None:
             if cur == 0:
                 ok, msg, ev = True, "需求已记录", {"user_request": self.state.get_evidence("user_request")}

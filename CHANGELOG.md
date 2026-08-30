@@ -2,6 +2,24 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.12.0] - 2026-08-30
+
+- 插件机制（自定义校验器与拦截规则）：
+  - `phase_barrier.validators` 入口点组 + 进程内 `register_validator(stage, fn)`：支持 `{stage: fn}` 映射 /
+    带 `stage` 属性的单校验器 / 返回映射的工厂三种形式，覆盖内置阶段校验器；
+  - `phase_barrier.interceptors` 入口点组 + 进程内 `register_rule(name, rule)`：规则签名
+    `rule(kind, target, config, stage)`，返回 `(False, reason)` 拦截 / `(True, reason)` 放行 / `None` 弃权，
+    在 `write` / `exec` 内置检查前评估，异常规则自动跳过；
+  - `skill.py` 接线：`check_write_permission` / `check_exec_permission` 先评估自定义规则，
+    `advance_stage` 改用 `get_validator` 解析校验器（自定义优先）。
+- 审计 mTLS 端到端示例：`examples/mtls_audit/` 提供自签 CA + 服务端 / 客户端证书生成
+  （含 SKI / AKI / KeyUsage 扩展）、mTLS 收集端点与一键 demo，验证
+  `audit_remote_client_cert` / `audit_remote_client_key` 双向 TLS 链路。
+- 发布：`pyproject.toml` 补 `ruby` / `csharp` 语言入口点与校验器 / 拦截规则入口点组占位；
+  dev 依赖增加 `cryptography>=42`（仅示例与端到端测试需要）。
+- 测试：新增插件校验器、拦截规则与 mTLS 端到端用例 21 个（322 → 343，另有 6 个按环境跳过）。
+- 文档：README 增加“自定义校验器与拦截规则”章节，模块结构 / 特性 / Roadmap 同步更新，
+  GitHub Action Marketplace 上架状态确认。
 ## [0.11.0] - 2026-08-30
 
 - 审计远程推送增强（v0.11.0）：

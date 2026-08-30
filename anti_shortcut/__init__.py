@@ -18,6 +18,12 @@ from .evidence import (
     EvidenceTamperedError,
 )
 from .integration import bootstrap, install_into, load_plugins, register_integration
+from .interceptors import (
+    INTERCEPTOR_ENTRY_POINT_GROUP,
+    evaluate_rules,
+    load_rule_plugins,
+    register_rule,
+)
 from .remote_audit import RemoteAuditSink
 from .languages import (
     CSharpAdapter,
@@ -31,6 +37,13 @@ from .languages import (
 )
 from .skill import AntiShortcutSkill
 from .state import StateManager
+from .validators import (
+    BUILTIN_VALIDATORS,
+    VALIDATOR_ENTRY_POINT_GROUP,
+    get_validator,
+    load_validator_plugins,
+    register_validator,
+)
 
 try:
     __version__ = _distribution_version("phase-barrier")
@@ -60,5 +73,15 @@ __all__ = [
     "LANGUAGE_REGISTRY",
     "detect_language",
     "get_adapter",
+    # v0.12.0：自定义校验器与拦截规则插件 API
+    "BUILTIN_VALIDATORS",
+    "VALIDATOR_ENTRY_POINT_GROUP",
+    "register_validator",
+    "load_validator_plugins",
+    "get_validator",
+    "INTERCEPTOR_ENTRY_POINT_GROUP",
+    "register_rule",
+    "load_rule_plugins",
+    "evaluate_rules",
     "__version__",
 ]

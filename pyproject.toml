@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0"]
+dev = ["pytest>=7.0", "cryptography>=42"]
 
 [project.scripts]
 anti-shortcut = "anti_shortcut.__main__:main"
@@ -43,6 +43,13 @@ javascript = "anti_shortcut.languages.javascript:JavaScriptAdapter"
 java = "anti_shortcut.languages.java:JavaAdapter"
 go = "anti_shortcut.languages.go:GoAdapter"
 rust = "anti_shortcut.languages.rust:RustAdapter"
+ruby = "anti_shortcut.languages.ruby:RubyAdapter"
+csharp = "anti_shortcut.languages.csharp:CSharpAdapter"
+
+# 自定义校验器 / 拦截规则入口点：第三方包可通过这些组注册自定义阶段校验器与拦截规则
+[project.entry-points."phase_barrier.validators"]
+
+[project.entry-points."phase_barrier.interceptors"]
 
 [project.urls]
 Homepage = "https://github.com/Xuqing0415/phase-barrier"

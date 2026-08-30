@@ -7,10 +7,11 @@
 """
 from __future__ import annotations
 
+import importlib.metadata as metadata
 import re
 import shlex
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 from .config import GateConfig
 
@@ -227,3 +228,98 @@ def summarize_test_output(
         "output_tail": tail_text,
         "coverage": _extract_coverage(text),
     }
+# ---------- 自定义拦截规则（v0.12.0） ----------
+
+INTERCEPTOR_ENTRY_POINT_GROUP = "phase_barrier.interceptors"
+
+# 进程内规则注册表：[(name, rule)]，规则签名：
+#   rule(kind: str, target: str, config: GateConfig, stage: int) -> tuple[bool, str] | None
+#   - kind: "write"（路径）或 "exec"（shell 命令）
+#   - 返回 (False, reason) 拦截；(True, reason) 放行（短路）；None 弃权
+_rule_registry: list[tuple[str, Callable]] = []
+
+
+def register_rule(name: str, rule: Callable) -> None:
+    """进程内注册一条自定义拦截规则。
+
+    :param name: 规则名（重复注册会覆盖同名旧规则）
+    :param rule: ``rule(kind, target, config, stage) -> (bool, str) | None``
+    """
+    if not callable(rule):
+        raise TypeError("rule 必须可调用（kind, target, config, stage）")
+    for i, (existing, _) in enumerate(_rule_registry):
+        if existing == name:
+            _rule_registry[i] = (name, rule)
+            return
+    _rule_registry.append((name, rule))
+
+
+def _coerce_rules(obj: Any) -> list[Callable]:
+    """把入口点对象规整为规则函数列表。
+
+    支持四种形式：
+    - 带 ``rules`` 属性（函数列表 / 元组）
+    - ``{name: rule}`` 字典
+    - 可调用工厂，返回规则函数列表
+    - 本身就是规则函数（单条规则）
+    """
+    rules = getattr(obj, "rules", None)
+    if rules is not None:
+        return [r for r in rules if callable(r)]
+    if isinstance(obj, dict):
+        return [v for v in obj.values() if callable(v)]
+    if callable(obj):
+        try:
+            result = obj()
+        except TypeError:
+            return [obj]
+        if isinstance(result, (list, tuple)):
+            return [r for r in result if callable(r)]
+    return []
+
+
+def load_rule_plugins() -> list[tuple[str, Callable]]:
+    """加载 ``phase_barrier.interceptors`` 入口点注册的拦截规则。
+
+    入口点对象可以是规则函数、返回规则列表的工厂、``{name: rule}`` 映射或
+    带 ``rules`` 属性的对象；单个入口点加载失败时跳过，不影响其他入口点。
+    进程内 ``register_rule`` 注册的规则优先级高于入口点。
+    """
+    rules: list[tuple[str, Callable]] = list(_rule_registry)
+    try:
+        eps = metadata.entry_points(group=INTERCEPTOR_ENTRY_POINT_GROUP)
+    except TypeError:  # Python 3.9- 旧接口（requires-python>=3.10，仅防御）
+        eps = metadata.entry_points().get(INTERCEPTOR_ENTRY_POINT_GROUP, [])
+    for ep in eps:
+        try:
+            for rule in _coerce_rules(ep.load()):
+                rules.append((f"ep:{ep.name}:{len(rules)}", rule))
+        except Exception:
+            continue
+    return rules
+
+
+def evaluate_rules(
+    kind: str,
+    target: str,
+    config: GateConfig,
+    stage: int,
+) -> tuple[bool | None, str]:
+    """按注册顺序评估自定义拦截规则，返回首个决定性结论。
+
+    :param kind: ``"write"`` 或 ``"exec"``
+    :param target: 路径字符串或 shell 命令
+    :return: (None, "") 全部弃权；(False, reason) 拦截；(True, reason) 放行
+    """
+    if kind not in ("write", "exec"):
+        raise ValueError(f"kind 必须是 'write' 或 'exec': {kind!r}")
+    for _, rule in load_rule_plugins():
+        try:
+            result = rule(kind, target, config, stage)
+        except Exception:
+            continue  # 规则异常不阻断门禁
+        if result is None:
+            continue
+        if isinstance(result, tuple) and len(result) == 2 and isinstance(result[0], bool):
+            return result
+    return None, ""

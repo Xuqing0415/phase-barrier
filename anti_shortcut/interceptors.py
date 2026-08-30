@@ -74,15 +74,21 @@ def touches_gate_dir(command: str, gate_dir: Path) -> bool:
         tok = raw.strip('"\'')
         if not tok:
             continue
-        if tok == name or tok == str(gate_dir):
-            return True
-        if tok.startswith(name + "/") or tok.startswith(name + "\\"):
-            return True
-        if tok.startswith(str(gate_dir) + "/") or tok.startswith(str(gate_dir) + "\\"):
-            return True
-        # 路径段匹配：$HOME/.agent_gate/state.json、/tmp/.agent_gate/x、C:\ws\.agent_gate\y 等
-        if re.search(r"(^|[/\\])" + re.escape(name) + r"([/\\]|$)", tok):
-            return True
+        candidates = [tok]
+        if "=" in tok:
+            value = tok.split("=", 1)[1].strip('"\'')
+            if value:
+                candidates.append(value)
+        for tok in candidates:
+            if tok == name or tok == str(gate_dir):
+                return True
+            if tok.startswith(name + "/") or tok.startswith(name + "\\"):
+                return True
+            if tok.startswith(str(gate_dir) + "/") or tok.startswith(str(gate_dir) + "\\"):
+                return True
+            # 路径段匹配：$HOME/.agent_gate/state.json、/tmp/.agent_gate/x、C:\ws\.agent_gate\y 等
+            if re.search(r"(^|[^A-Za-z0-9_.\-])" + re.escape(name) + r"([/\\]|$)", tok):
+                return True
     return False
 
 
@@ -106,7 +112,7 @@ def extract_written_paths(command: str) -> list[str]:
     i = 0
     while i < n:
         tok = tokens[i]
-        if tok in (">", ">>", "2>", "2>>", "1>", "1>>"):
+        if tok in (">", ">>", "2>", "2>>", "1>", "1>>", "&>", "&>>", ">|"):
             if i + 1 < n:
                 nxt = tokens[i + 1]
                 if not nxt.startswith("&"):

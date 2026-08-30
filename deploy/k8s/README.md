@@ -14,6 +14,7 @@ flowchart LR
     B[Deployment agent<br/>容器1: agent 编码<br/>容器2: gate-sidecar] --> G
     B -.HTTP /api/state /api/advance.-> B
     B -.HTTP /api/test-run /api/source-change.-> B
+    B -.HTTP /api/write /api/exec(v0.17.0).-> B
 ```
 
 - `phase-barrier-workspace`：spec / 测试 / 实现代码，agent 与 sidecar 共享（sidecar 校验证据文件）。
@@ -21,7 +22,8 @@ flowchart LR
 - `gate-keeper` Job：对 gate PVC 可写，运行 `deploy/seed_gate.py` 完成一次完整门禁流程，
   生成可审计的初始交付态；后续真实 Agent 任务可复用同一状态机继续推进（或清空重来）。
 - `gate-sidecar`：`python -m anti_shortcut.sidecar --workspace /workspace --port 8080`，
-  提供 `GET /api/state`、`POST /api/advance`、`POST /api/test-run`、`POST /api/source-change`。
+  提供 `GET /api/state`、`POST /api/advance`、`POST /api/test-run`、`POST /api/source-change`、
+  `POST /api/write`、`POST /api/exec`（v0.17.0 透明代理）。
 - agent 容器：只挂载 workspace；写代码后通过 localhost 调用 sidecar API 推进阶段。
 
 ## 快速开始（kind / minikube）
@@ -29,9 +31,9 @@ flowchart LR
 1. 构建并推送镜像（用仓库根 `deploy/Dockerfile`）：
 
    ```bash
-   docker build -f deploy/Dockerfile -t <registry>/phase-barrier:0.7.0 .
-   docker push <registry>/phase-barrier:0.7.0
-   # kind 本地集群可直接 load：kind load docker-image <registry>/phase-barrier:0.7.0
+   docker build -f deploy/Dockerfile -t <registry>/phase-barrier:0.17.0 .
+   docker push <registry>/phase-barrier:0.17.0
+   # kind 本地集群可直接 load：kind load docker-image <registry>/phase-barrier:0.17.0
    ```
 
 2. 把 `gate-keeper.yaml` / `gate-sidecar.yaml` 中的镜像地址替换为你的镜像。
@@ -66,6 +68,25 @@ flowchart LR
 
    > 若 agent 镜像没有 `curl`，可在同一 Pod 内用 `python -c` 调用，或在
    > `gate-sidecar` 容器内执行 `kubectl exec -it "$POD" -c gate-sidecar -- python -m anti_shortcut.sidecar --help`。
+
+## 透明代理（v0.17.0）
+
+v0.16.0 之前，sidecar 只拦截“阶段推进”，Agent 仍需自己写文件 / 跑测试命令，
+只能依赖 Agent 进程内的工具包装。v0.17.0 新增两个透明代理端点，把门禁下沉到
+文件系统层，Agent 容器内即使没有 / 绕开了工具包装，也无法跳过阶段：
+
+- `POST /api/write` `{"path": "fib.py", "content": "..."}`：
+  - 路径必须解析在工作区内（拒绝 `../` 越界与绝对路径逃逸）；
+  - 拒绝写入门禁目录 `.agent_gate`；
+  - 按当前阶段拦截 test / source / other 文件（与 `AntiShortcutSkill.check_write_permission` 同策略）；
+  - 通过后写入文件并记录源码变更时间戳。
+- `POST /api/exec` `{"command": "pytest -q", "timeout": 120}`：
+  - 按阶段拦截测试命令（阶段 < 3 拒绝）与访问门禁目录的 shell 命令；
+  - 通过后在共享工作区执行（`cwd` 限定工作区内，支持超时并终止进程树）；
+  - 若是测试命令，自动解析输出并把测试摘要写入状态机（无需再单独调用 `/api/test-run`）。
+- Agent 侧客户端：`anti_shortcut.proxy_client.GateClient`（仅标准库 urllib），
+  把 `write_file` / `execute_command` 重定向到这两个端点即可，被拦截时抛 `GateDenied`。
+  最小示例见 `examples/k8s_proxy/`。
 
 ## 新任务流程（agent 接入协议）
 

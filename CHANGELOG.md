@@ -1,6 +1,23 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.17.0] - 2026-08-30
+
+- K8s sidecar 透明代理（阶段门禁下沉到文件系统层）：
+  - sidecar 新增 `POST /api/write`（`{"path", "content"}`）与 `POST /api/exec`
+    （`{"command", "timeout"}`）：路径必须解析在工作区内（拒绝 `../` 越界与绝对路径逃逸）、
+    拒绝 `.agent_gate`、按阶段拦截 test / source / other 写入与测试命令
+    （与 `AntiShortcutSkill` 工具包装器同策略）；exec 通过后在共享工作区执行，
+    若是测试命令自动解析输出并写入状态机（无需再单独调 `/api/test-run`）。
+  - 超时处理：`subprocess` 超时后尽力终止整个进程树并立即返回，不等待孤儿进程释放管道
+    （Windows 下 `taskkill /T` 不可用时回退 `kill`，避免孙进程阻塞响应）。
+  - 新增 Agent 侧客户端 `anti_shortcut.proxy_client.GateClient`（仅标准库 urllib），
+    被拦截抛 `GateDenied`；新增最小示例 `examples/k8s_proxy/`（自包含 demo）。
+  - `deploy/k8s/` 清单与文档更新：镜像版本 0.17.0、拓扑图与接入协议补充代理端点。
+- 测试：新增 30 个透明代理用例（GateProxy 单元 / HTTP 端点 / GateClient 全流程），
+  全量测试 415 → 445。
+- 文档：README 特性 / 架构 / 模块结构 / Roadmap 同步更新。
+
 
 ## [0.16.0] - 2026-08-30
 

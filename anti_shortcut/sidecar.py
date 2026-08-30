@@ -35,6 +35,7 @@ from typing import Any
 
 from .config import load_config
 from .interceptors import summarize_test_output
+from .proxy import ExecDenied, GateProxy, ProxyError, WriteDenied
 from .skill import AntiShortcutSkill
 
 
@@ -48,6 +49,7 @@ class GateSidecar:
         user_request: str = "",
     ) -> None:
         self.skill = AntiShortcutSkill(workspace, config=config, user_request=user_request)
+        self.proxy = GateProxy(self.skill)
         self._lock = threading.Lock()
 
     def state(self) -> dict[str, Any]:
@@ -68,6 +70,18 @@ class GateSidecar:
             self.skill.state.mark_test_run(record)
         visible = {k: v for k, v in record.items() if k != "output_tail"}
         return {"ok": True, "record": visible}
+
+    # ---------- 透明代理（v0.17.0） ----------
+
+    def write_file(self, path: str, content: str) -> dict:
+        """经门禁写入工作区文件；被拒绝抛 WriteDenied（HTTP 403）。"""
+        with self._lock:
+            return self.proxy.write_file(path, content)
+
+    def execute_command(self, command: str, timeout: int | None = None) -> dict:
+        """经门禁执行 shell 命令并自动记录测试摘要；被拒绝抛 ExecDenied（HTTP 403）。"""
+        with self._lock:
+            return self.proxy.execute_command(command, timeout=timeout)
 
     def record_source_change(self, path: str) -> dict[str, Any]:
         with self._lock:
@@ -138,15 +152,56 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
                 data = self._read_json()
                 path = data.get("path")
                 if not isinstance(path, str) or not path:
-                    self._send(400, {"error": "path 必须是字符串"})
+                    self._send(400, {"error": "path 必须是非空字符串"})
                     return
                 if sidecar.skill._in_gate_dir(path):
-                    self._send(400, {"error": "path 不允许指向门禁目录 .agent_gate"})
+                    self._send(400, {"error": "path 不允许指向门禁目录.agent_gate"})
                     return
                 self._send(200, sidecar.record_source_change(path))
+            elif self.path == "/api/write":
+                data = self._read_json()
+                path = data.get("path")
+                content = data.get("content", "")
+                if not isinstance(path, str) or not path.strip():
+                    self._send(400, {"error": "path 必须是非空字符串"})
+                    return
+                if not isinstance(content, str):
+                    self._send(400, {"error": "content 必须是字符串"})
+                    return
+                try:
+                    result = sidecar.write_file(path, content)
+                except WriteDenied as exc:
+                    self._send(403, {"ok": False, "error": exc.reason})
+                    return
+                except ProxyError as exc:
+                    self._send(400, {"ok": False, "error": str(exc)})
+                    return
+                self._send(200, result)
+            elif self.path == "/api/exec":
+                data = self._read_json()
+                command = data.get("command")
+                timeout = data.get("timeout")
+                if not isinstance(command, str) or not command.strip():
+                    self._send(400, {"error": "command 必须是非空字符串"})
+                    return
+                if timeout is not None and (
+                    not isinstance(timeout, int)
+                    or isinstance(timeout, bool)
+                    or not 1 <= timeout <= 3600
+                ):
+                    self._send(400, {"error": "timeout 必须是 1-3600 的整数秒"})
+                    return
+                try:
+                    result = sidecar.execute_command(command, timeout=timeout)
+                except ExecDenied as exc:
+                    self._send(403, {"ok": False, "error": exc.reason})
+                    return
+                except ProxyError as exc:
+                    self._send(400, {"ok": False, "error": str(exc)})
+                    return
+                self._send(200, result)
             else:
                 self._send(404, {"error": "not found"})
-
     return Handler
 
 

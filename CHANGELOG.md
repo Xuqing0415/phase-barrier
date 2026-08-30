@@ -2,6 +2,21 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.22.0] - 2026-08-30
+
+- 编排器钩子 SDK（v0.22.0，alpha-swe 集成面）：
+  - 新增 `PhaseBarrier` 轻量 SDK（`anti_shortcut/sdk.py`）：任务启动 / 阶段切换钩子调用，
+    传入项目目录与 Agent 声称的阶段，返回“是否放行 + 约束提示”（全部 JSON 可序列化 dict）；
+  - `check(stage)`：只读校验前置证据，支持放行 / 拦截 / 跳步检测 / 非法参数结构化返回；
+  - `advance(to_stage)`：与 `advance_stage` 同一套证据校验，返回增加稳定 `stage_name` 字段；
+  - `record_test_run(result)`：编排器登记测试运行结果，供阶段 4 推进校验；
+  - `verify_evidence()`：证据清单校验，清单缺失 / 签名不匹配统一捕为 `ok=False`；
+  - `PhaseBarrier()` 无参调用默认当前工作目录，`AntiShortcutSkill` 全部行为向后兼容。
+- CLI 新增 `check` 子命令：`python -m anti_shortcut check --stage N [--json]`（0 = 放行，1 = 拒绝）。
+- 编排器集成示例：`examples/orchestrator_hooks/`（demo.py + README，任务启动 / 阶段切换两钩子全流程演示）。
+- README 新增“编排器集成”章节并交叉引用 alpha-swe；CI demo 步骤同时运行编排器示例。
+- 测试：新增 28 个 SDK / CLI 用例（`tests/test_sdk.py`），全量 494 → 522。
+
 ## [0.21.0] - 2026-08-30
 
 - 审计查询增强（v0.21.0）：

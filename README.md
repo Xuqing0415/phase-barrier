@@ -44,6 +44,7 @@
 - **sidecar 审计查询与统一 CLI（v0.20.0）**：`GET /api/audit` 按时间倒序读取本地审计日志，支持 `limit`（1-500）与 `event` 过滤，配合 v0.19.0 的 5 类代理审计事件可远程核对拦截行为；`GateClient.audit()` 客户端方法；新增 `python -m anti_shortcut sidecar` 统一 CLI 入口（等价 `python -m anti_shortcut.sidecar`），K8s 清单切换为新入口。
 
 - **审计查询增强与 sidecar mTLS（v0.21.0）**：`GET /api/audit` 新增 `offset` 分页与 `since` / `until` 时间范围过滤（响应含 `total` / `offset` 元信息）；新增 `GET /api/verify-evidence` 远程校验证据清单与 `GateClient.verify_evidence()`；sidecar 支持入站 mTLS 访问控制（`--tls-cert` / `--tls-key` / `--tls-client-ca`，`GateClient` 新增 `cert` / `ca` 参数），示例 `examples/mtls_sidecar/`。
+- **编排器钩子 SDK（v0.22.0）**：新增 `PhaseBarrier` 轻量 SDK，供 Alpha-SWE 等平台在任务启动 / 阶段切换钩子调用（`check` / `advance` / `record_test_run` / `verify_evidence`），返回结构稳定、JSON 可序列化；CLI 新增 `python -m anti_shortcut check --stage N`；集成示例 `examples/orchestrator_hooks/`。
 
 
 ## 架构
@@ -145,6 +146,7 @@ alpha-swe = "alpha_swe_adapter:install"
 ```bash
 python -m anti_shortcut inspect --workspace .            # 查看当前阶段
 python -m anti_shortcut inspect --workspace . --json     # JSON 输出（便于自动化）
+python -m anti_shortcut check --workspace . --stage 2 --json  # 钩子校验：是否放行进入阶段 2（v0.22.0）
 python -m anti_shortcut advance --workspace . --to 2     # 推进阶段（校验证据）
 python -m anti_shortcut verify-evidence --workspace .   # 对照工作区校验证据签名清单（v0.9.0）
 python -m anti_shortcut verify-evidence --workspace . --git-base origin/main  # Git 门禁：证据文件不可事后篡改（v0.11.0）
@@ -192,6 +194,35 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 （已确认上架：Marketplace 页面显示 **Phase-Barrier Gate**，Latest 版本与 GitHub Release 同步）：
 每次打 `v*` tag 时 release 工作流自动创建 GitHub Release（附 CHANGELOG 摘要与发行包），
 Action 随之自动上架，用户可直接在 Marketplace 搜索 **Phase-Barrier Gate** 使用。
+
+## 编排器集成（Orchestrator Hooks，v0.22.0）
+
+Alpha-SWE 等 Agent 平台可以“轻量 SDK”方式在 **任务启动 / 阶段切换** 钩子接入阶段门禁：
+校验逻辑留在本包，编排器只做调用，返回结构稳定、JSON 可序列化。
+
+```python
+from anti_shortcut import PhaseBarrier
+
+barrier = PhaseBarrier(workspace=project_dir, user_request=user_request)
+
+# 任务启动钩子：Agent 声称从阶段 1（spec 设计）开始
+gate = barrier.check(1)
+if not gate["allowed"]:
+    prompt = gate["message"]   # 回传给 Agent，强制补全前置证据
+
+# 阶段切换钩子：Agent 声称完成阶段 1，申请进入阶段 2
+result = barrier.advance(2)
+if not result["success"]:
+    prompt = result["error"]
+```
+
+- `check(stage)`：只读校验，返回 `{allowed, stage, stage_name, current_stage, message, violations}`。
+- `advance(to_stage)`：与 `advance_stage` 同一套证据校验，返回 `{success, stage, stage_name, message/error, evidence}`。
+- `record_test_run({exit_code, output})`：登记测试运行结果（阶段 4 推进校验依赖）。
+- `verify_evidence()`：返回 `{ok, violations, signed}`，清单缺失 / 签名不匹配统一 `ok=False`。
+
+CLI 等价调用：`python -m anti_shortcut check --workspace . --stage 2 --json`。
+完整示例见 `examples/orchestrator_hooks/`。
 
 ## CLI 透明代理命令（v0.18.0）
 
@@ -641,11 +672,14 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 
 - **v0.21.0 已完成**：审计查询分页（`offset`）与时间范围过滤（`since` / `until`，ISO 时间戳，含端点），`GET /api/audit` 响应增加 `total` / `offset` 元信息；`GET /api/verify-evidence` 与 `GateClient.verify_evidence()` 远程校验证据清单；sidecar 入站 mTLS 访问控制（`--tls-cert` / `--tls-key` / `--tls-client-ca`，`GateClient(cert=..., ca=...)`），示例 `examples/mtls_sidecar/`；新增 10 个测试（484 → 494）。
 
+- **v0.22.0 已完成**：编排器钩子 SDK（`PhaseBarrier`，供 Alpha-SWE 等平台在任务启动 / 阶段切换钩子调用：`check` 只读校验放行 / 拦截 / 跳步，`advance` 复用 `advance_stage` 证据校验，`record_test_run` 登记测试结果，`verify_evidence` 统一 `ok=False` 异常处理）；CLI 新增 `check` 子命令；编排器集成示例 `examples/orchestrator_hooks/`；README 交叉引用 alpha-swe；新增 28 个测试（494 → 522）。
+
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 
 ## 反馈与贡献
 
 - 使用中遇到问题或想提需求：请在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 反馈，最好附上复现步骤（版本、配置、命令输出）。
+- 与 [alpha-swe](https://github.com/Xuqing0415/alpha-swe) 双向关联：编排器钩子 SDK（v0.22.0）示例见 `examples/orchestrator_hooks/`，alpha-swe 侧集成跟踪 [alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1)。
 - 关注 PyPI 下载量与版本更新：[phase-barrier · PyPI](https://pypi.org/project/phase-barrier/)。
 - 欢迎贡献代码：提交前请运行 `python -m pytest`，并遵循 Conventional Commits 提交规范（`feat:` / `fix:` / `docs:` / `test:`）。
 

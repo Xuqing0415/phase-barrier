@@ -35,6 +35,7 @@ from .languages import (
     detect_language,
     get_adapter,
 )
+from .sdk import PhaseBarrier
 from .skill import AntiShortcutSkill
 from .state import StateManager
 from .validators import (
@@ -52,6 +53,7 @@ except PackageNotFoundError:  # 直接从源码运行（未安装）时的占位
 
 __all__ = [
     "AntiShortcutSkill",
+    "PhaseBarrier",
     "StateManager",
     "EvidenceManifest",
     "EvidenceManifestError",

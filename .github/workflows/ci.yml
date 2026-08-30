@@ -49,7 +49,9 @@ jobs:
         run: python -m pytest
 
       - name: Run end-to-end demo
-        run: python examples/demo.py
+        run: |
+          python examples/demo.py
+          python examples/orchestrator_hooks/demo.py
 
       - name: Smoke-test CLI entry point
         run: |

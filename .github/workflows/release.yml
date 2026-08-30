@@ -28,13 +28,15 @@ jobs:
       - name: Build sdist and wheel
         run: python -m build
 
-      - name: Publish to PyPI
+      - name: Publish to PyPI (Trusted Publishing / OIDC)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          # 无需 PYPI_API_TOKEN：用 GitHub OIDC 身份向 PyPI 换取短时发布 token。
+          # 首次使用需在 PyPI 项目设置中添加 Trusted Publisher（见 README「构建与发布（PyPI）」）。
+          attestations: true   # 生成 PyPI 侧 PEP 740 发布证明（Trusted Publishing 专用）
 
-      - name: Sign artifacts with Sigstore (v0.10.0)
+      - name: Sign artifacts with Sigstore
         # 用 GitHub OIDC 身份对 sdist / wheel 签名，生成 .sigstore.json
         # 附件随 GitHub Release 发布，可用 cosign / sigstore verify 校验来源：
         #   cosign verify-blob --certificate-identity-regexp 'https://github.com/Xuqing0415/phase-barrier/.github/workflows/release.yml@refs/tags/v' \

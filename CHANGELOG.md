@@ -2,6 +2,25 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.14.0] - 2026-08-30
+
+- 拦截器：脚本类写入检测（v0.14.0）：
+  - `extract_written_paths` 新增脚本参数解析：识别 `python -c` / `node -e` / `perl -e` /
+    `bash -c` 等代码内的 `open('x','w'/'a'/'r+')`、`Path('x').write_text / write_bytes`、
+    `fs.writeFile(Sync)` / `appendFile(Sync)` / `createWriteStream` 与重定向写入路径；
+    只读打开（`open('x','r')`）不误报，`=>` / `2>&1` 等操作符被排除；
+  - 脚本写入同样走 `check_write_permission` 阶段门禁：未完成测试用例时
+    `python -c "open('fib.py','w')"` 被拦截，进入实现阶段后放行。
+- CLI：`verify-evidence` / `export-evidence` 错误处理补强：
+  - 损坏清单（非法 JSON）、版本不兼容、配置 HMAC 密钥但清单未签名、缺失工作区
+    均返回退出码 1 与明确中文报错，无堆栈；`--out` 指向不存在子目录时自动创建父目录。
+- GitHub Action 门禁输入校验（`action.yml`）：
+  - `mode` 必须是 `inspect` / `advance`；`expected_stage` 与 `advance` 的 `to`
+    必须是 0-6 整数；`workspace` 必须存在；非法输入输出 `::error::` 并失败；
+  - CI 自测扩展：`advance` 模式推进、非法 `mode` / `expected_stage` / 缺失工作区三条失败路径。
+- 测试：新增脚本写入与 CLI 边界用例 17 个（359 → 376，另有 6 个按环境跳过）。
+- 文档：README 特性 / GitHub Action 章节 / Roadmap 同步更新。
+
 ## [0.13.0] - 2026-08-30
 
 - 拦截器边界与 CLI 错误处理补强：

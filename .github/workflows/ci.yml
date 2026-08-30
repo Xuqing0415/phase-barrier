@@ -86,6 +86,58 @@ jobs:
           echo "::error::phase-barrier 门禁应失败但通过了"
           exit 1
 
+      - name: Gate advance mode advances stage (spec -> 2)
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: advance
+          to: 2
+          local: "true"
+
+      - name: Gate rejects invalid mode
+        id: gate_bad_mode
+        continue-on-error: true
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: bogus
+          local: "true"
+
+      - name: Assert invalid mode failed as expected
+        if: steps.gate_bad_mode.outcome == 'success'
+        run: |
+          echo "::error::phase-barrier 应拒绝非法 mode 但通过了"
+          exit 1
+
+      - name: Gate rejects invalid expected_stage
+        id: gate_bad_stage
+        continue-on-error: true
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          expected_stage: abc
+          local: "true"
+
+      - name: Assert invalid expected_stage failed as expected
+        if: steps.gate_bad_stage.outcome == 'success'
+        run: |
+          echo "::error::phase-barrier 应拒绝非法 expected_stage 但通过了"
+          exit 1
+
+      - name: Gate rejects missing workspace
+        id: gate_bad_ws
+        continue-on-error: true
+        uses: ./
+        with:
+          workspace: no_such_dir
+          local: "true"
+
+      - name: Assert missing workspace failed as expected
+        if: steps.gate_bad_ws.outcome == 'success'
+        run: |
+          echo "::error::phase-barrier 应拒绝缺失工作区但通过了"
+          exit 1
+
   package:
     name: Build sdist and wheel
     runs-on: ubuntu-latest

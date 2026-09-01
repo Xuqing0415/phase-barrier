@@ -169,7 +169,7 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 
 ```yaml
 # 示例：PR 时要求工作区至少完成“实现代码”（阶段 3）
-- uses: Xuqing0415/phase-barrier@v0.25.0
+- uses: Xuqing0415/phase-barrier@v0.25.1
   with:
     workspace: .          # 工作区路径（相对仓库根）
     expected_stage: 3     # 0-6；当前阶段 < 期望阶段则失败
@@ -195,7 +195,7 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 **Action 输出（v0.25.0）**：门禁步骤通过后会输出 `workspace` / `stage` / `allowed`，下游步骤可通过 `steps.gate.outputs.*` 复用：
 
 ```yaml
-- uses: Xuqing0415/phase-barrier@v0.25.0
+- uses: Xuqing0415/phase-barrier@v0.25.1
   id: gate
   with:
     workspace: .
@@ -708,10 +708,11 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
   `MethodSource` 嵌套格式（`Class.method(ParameterizedTest)[N]`）；测试命令识别补充 Windows wrapper
   （`mvnw.cmd test` / `gradlew.bat test` / `.\mvnw`）；新增 10 个 Java 解析边界测试（528 → 538）。
 - **v0.25.0 已完成**：GitHub Action 市场元数据增强——`action.yml` 增加 `outputs` 声明（`workspace` / `stage` / `allowed`），门禁步骤可通过 `steps.gate.outputs.*` 供下游复用；示例更新至 `@v0.25.0` 并补充 outputs 用法与参数联动说明；CI 升级 checkout@v7 / setup-python@v7 / setup-node@v7 / setup-go@v7 / upload-artifact@v7 与 action-gh-release@v3（消除 Node 20 弃用告警）并新增 gate outputs 断言；新增发布到 GitHub Marketplace 的流程文档 `docs/publish-to-marketplace.md` 与 action 元数据测试 `tests/test_action_meta.py`。
+- **v0.25.1 已完成**：composite action `outputs` 修复——三个输出（`workspace` / `stage` / `allowed`）补上 `value: ${{ steps.gate.outputs.* }}` 映射（仅写 `$GITHUB_OUTPUT` 不会传播到调用方，v0.25.0 的 gate-action 自测因此读到空值）；action 内部 `setup-python@v7` 消除 Node 20 弃用告警；README 示例同步至 `@v0.25.1`。
 
 **规划中（Next）**
 
-- **v0.26.0（编排器集成闭环）**：alpha-swe 端到端接入（[alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1) B 组任务：依赖 `phase-barrier>=0.22.0`、任务启动 / 阶段切换钩子、校验失败消息回传、端到端测试）；`PhaseBarrier` SDK 增加 `list_stages()` 与 `stage_of(path)` 辅助查询；编排器钩子示例扩展（多 Agent 并发任务共享门禁状态）。
+- **v0.26.0（编排器集成闭环）**：alpha-swe 端到端接入已完成（[alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1) 已关闭，接入 PR [alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3) 已合并）；剩余项：`PhaseBarrier` SDK 增加 `list_stages()` 与 `stage_of(path)` 辅助查询；编排器钩子示例扩展（多 Agent 并发任务共享门禁状态）。
 
 **长期规划**：K8s sidecar 透明代理（HTTP / gRPC 全量接管文件写与命令执行）；状态文件与证据签名（HMAC，密钥经 Kubernetes Secret 注入）；`sigstore` 签名发布（已用于 release 工件）；Java / Go / Rust 适配器测试命令与输出解析持续打磨；SWE-bench 门禁基准评估。
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
@@ -719,7 +720,7 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 ## 反馈与贡献
 
 - 使用中遇到问题或想提需求：请在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 反馈，最好附上复现步骤（版本、配置、命令输出）。
-- 与 [alpha-swe](https://github.com/Xuqing0415/alpha-swe) 双向关联：编排器钩子 SDK（v0.22.0）示例见 `examples/orchestrator_hooks/`，alpha-swe 侧集成跟踪 [alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1)。
+- 与 [alpha-swe](https://github.com/Xuqing0415/alpha-swe) 双向关联：编排器钩子 SDK（v0.22.0）示例见 `examples/orchestrator_hooks/`，alpha-swe 侧集成已合并（[alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3)）。
 - 关注 PyPI 下载量与版本更新：[phase-barrier · PyPI](https://pypi.org/project/phase-barrier/)。
 - 欢迎贡献代码：提交前请运行 `python -m pytest`，并遵循 Conventional Commits 提交规范（`feat:` / `fix:` / `docs:` / `test:`）。
 

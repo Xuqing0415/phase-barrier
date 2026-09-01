@@ -23,7 +23,6 @@
   - 新增 `docs/publish-to-marketplace.md`（in-tree 上架流程与检查清单）与 `tests/test_action_meta.py`
     （action.yml 元数据测试，新增 10 个，全量 538 → 548）。
 
-
 ## [0.24.0] - 2026-09-01
 
 - Java 适配器输出解析剩余项（v0.24.0）：

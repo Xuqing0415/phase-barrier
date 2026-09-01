@@ -31,6 +31,8 @@ JSON 可序列化的 dict，字段稳定，编排器可直接透传 / 落日志 
 - ``check(stage)``      -> {allowed, stage, stage_name, current_stage, message, violations}
 - ``advance(to_stage)`` -> {success, stage, stage_name, message, error, evidence}
 - ``verify_evidence()`` -> {ok, violations, signed}
+- ``list_stages()``      -> [{stage, name, entry, evidence}, ...]（v0.26.2）
+- ``stage_of(path)``    -> {file, stage, stage_name, kind, requires}（v0.26.2）
 
 向后兼容：``PhaseBarrier`` 包装 ``AntiShortcutSkill``，后者全部行为与历史
 版本一致；``PhaseBarrier()`` 无参调用默认使用当前工作目录。
@@ -40,12 +42,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .config import STAGES, GateConfig
+from .config import STAGES, STAGE_META, GateConfig
 from .evidence import EvidenceManifestError
+from .languages import LanguageAdapter
 from .skill import AntiShortcutSkill
 from .validators import get_validator
 
-__all__ = ["PhaseBarrier"]
+__all__ = ["PhaseBarrier", "classify_stage_path"]
 
 
 class PhaseBarrier:
@@ -75,6 +78,22 @@ class PhaseBarrier:
         self.config = self.skill.config
 
     # ---------- 状态查询 ----------
+
+    def list_stages(self) -> list[dict]:
+        """阶段清单（只读）：编号 / 名称 / 准入门槛 / 必需证据。"""
+        return [
+            {
+                "stage": num,
+                "name": name,
+                "entry": STAGE_META[num]["entry"],
+                "evidence": STAGE_META[num]["evidence"],
+            }
+            for num, name in sorted(STAGES.items())
+        ]
+
+    def stage_of(self, path: str | Path) -> dict:
+        """把文件路径归类到对应阶段的证据（spec -> 1 / test -> 2 / source -> 3 / other -> None）。"""
+        return classify_stage_path(self.skill.adapter, self.config, path)
 
     def inspect(self) -> dict:
         """当前门禁状态快照（只读）。"""
@@ -213,3 +232,50 @@ class PhaseBarrier:
     def close(self) -> None:
         """释放资源（刷新 / 关闭远端审计通道）。"""
         self.skill.close()
+
+
+def classify_stage_path(adapter: LanguageAdapter, config: GateConfig, path: str | Path) -> dict:
+    """把文件路径归类到对应阶段的证据。
+
+    - spec 文件（``config.spec_file``）       -> 阶段 1（Spec 设计）
+    - 测试文件（``adapter.is_test_file``）    -> 阶段 2（测试用例编写）
+    - 源文件（``adapter.is_source_file``）    -> 阶段 3（实现代码）
+    - 其他                                    -> ``stage=None``（无直接门禁影响）
+
+    返回 ``{file, stage, stage_name, kind, requires}``，与
+    ``verify-evidence --git-base`` 的 ``git_impact`` 映射（v0.26.0）分类一致。
+    """
+    rel = str(path).replace("\\", "/")
+    spec_file = config.spec_file
+    if rel == spec_file or rel.endswith("/" + spec_file):
+        return {
+            "file": rel,
+            "stage": 1,
+            "stage_name": STAGES[1],
+            "kind": "spec",
+            "requires": "重新校验阶段 1（Spec 设计），并按变更同步测试用例",
+        }
+    target = Path(path)
+    if adapter.is_test_file(target, config):
+        return {
+            "file": rel,
+            "stage": 2,
+            "stage_name": STAGES[2],
+            "kind": "test",
+            "requires": "重新运行测试（阶段 4/5），确认用例仍通过",
+        }
+    if adapter.is_source_file(target, config):
+        return {
+            "file": rel,
+            "stage": 3,
+            "stage_name": STAGES[3],
+            "kind": "source",
+            "requires": "重新运行测试（阶段 4/5），确认实现变更无回归",
+        }
+    return {
+        "file": rel,
+        "stage": None,
+        "stage_name": None,
+        "kind": "other",
+        "requires": "无直接门禁影响",
+    }

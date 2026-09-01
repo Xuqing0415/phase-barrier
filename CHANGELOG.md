@@ -1,6 +1,34 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.27.0] - 2026-09-01
+
+- **K8s 生产级部署（v0.27.0）**：
+  - 新增 Helm chart `deploy/helm/phase-barrier/`：sidecar + agent 双容器 Deployment、
+    PVC / emptyDir 存储、mTLS / HMAC / 审计推送（ConfigMap + Secret）、
+    gate-keeper 一次性 Job、NOTES / README 说明；`helm lint` 与默认 / 全功能两组渲染验证通过。
+  - 新增 `deploy/k8s/kind-e2e-test.sh` 端到端测试：kind 建集群 → 加载本地镜像 →
+    `helm install` → `kubectl exec` 运行 GateClient 全流程（跳步拦截 ×2 + SOP 推进到交付），
+    并验证 agent 容器无法写入 `.agent_gate`；`e2e-kind` job 纳入 CI（ubuntu + kind + helm）。
+- **Agent 框架集成示例（v0.27.0）**：
+  - LangChain：`examples/langchain_integration/gate_tools.py` 将 GateClient 包装为
+    `Tool.from_function` 可用函数，拦截返回 JSON 而非抛异常，便于 LLM 读取原因。
+  - AutoGPT：`examples/autogpt_integration/gate_command_wrapper.py` 包装
+    write_file / execute_shell 命令，跳步返回 GATE_DENIED。
+  - SWE-agent：`examples/swe_agent_integration/gate_tool.py` 提供 write / exec / advance CLI 工具，
+    支持 `PB_SIDECAR_URL` 环境变量与 `--self-test` 自检。
+  - 汇总文档 `docs/integrations.md`；4 个集成示例测试（进程内 sidecar + GateClient）。
+- **性能基准与回归门禁（v0.27.0）**：
+  - 新增 `benchmarks/bench.py`：多 Agent 并发状态写入（文件锁 + 重载 + 原子写 + HMAC）
+    与 sidecar HTTP 写文件 / 执行命令的延迟（p50 / p95 / p99 / max）与吞吐；
+    支持 `--json` / `--output` / `--fail-fast` 与阈值覆盖参数。
+  - CI 新增 `bench` job：`--fail-fast` 宽松阈值（state p95 < 2s、write p95 < 5s、exec p95 < 10s）
+    防止性能大幅退化。
+- 其他：`proxy.py` 子进程输出解码固定为 UTF-8 + `errors="replace"`，消除 Windows 控制台
+  GBK 线程解码告警；SWE-agent 自测改为调用时读取 `PB_SIDECAR_URL`（避免模块级常量烘焙问题）。
+- 测试：新增集成示例 + 性能基准冒烟测试（`tests/test_integration_examples.py` ×4、
+  `tests/test_benchmarks.py` ×5），全量 633 → 644。
+
 ## [0.26.4] - 2026-09-01
 
 - 修复 CI 覆盖率门禁在 Linux 上 89%（平台分支测量偏差）：`_file_lock` 的

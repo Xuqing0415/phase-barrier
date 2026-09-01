@@ -1,0 +1,17 @@
+phase-barrier（阶段门禁）已部署。
+
+查看状态：
+  kubectl get deployment {{ include "phase-barrier.fullname" . }} -n {{ .Release.Namespace }}
+  kubectl get svc {{ include "phase-barrier.fullname" . }} -n {{ .Release.Namespace }}
+
+Agent 侧接入（sidecar 容器端口 {{ .Values.sidecar.port }}）：
+  from anti_shortcut.proxy_client import GateClient
+  gate = GateClient("http://localhost:{{ .Values.sidecar.port }}")   # 同 Pod 内
+  gate.write_file("spec.md", spec_text)
+  gate.execute_command("python -m pytest -q")
+
+说明：
+- Agent 容器与 sidecar 共享 workspace 卷；门禁状态卷 .agent_gate 由 sidecar 独占挂载，
+  Agent 无法直接读写（透明代理 /api/write、/api/exec 是唯一受信通道）。
+- 生产建议：persistence.type=pvc、启用 state_hmac_key（Secret）、按需开启 mTLS 与审计推送。
+- 完整文档：deploy/helm/phase-barrier/README.md 与 docs/integrations.md

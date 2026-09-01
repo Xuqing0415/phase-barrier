@@ -1,0 +1,46 @@
+{{- if .Values.gatekeeper.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "phase-barrier.fullname" . }}-gatekeeper
+  labels:
+    {{- include "phase-barrier.labels" . | nindent 4 }}
+    component: gate-keeper
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        {{- include "phase-barrier.labels" . | nindent 8 }}
+        component: gate-keeper
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: workspace
+{{- if eq .Values.persistence.type "pvc" }}
+          persistentVolumeClaim:
+            claimName: {{ include "phase-barrier.fullname" . }}-workspace
+{{- else }}
+          emptyDir: {}
+{{- end }}
+        - name: gate-state
+{{- if eq .Values.persistence.type "pvc" }}
+          persistentVolumeClaim:
+            claimName: {{ include "phase-barrier.fullname" . }}-gate
+{{- else }}
+          emptyDir: {}
+{{- end }}
+      containers:
+        - name: gate-keeper
+          image: "{{ .Values.gatekeeper.image.repository }}:{{ .Values.gatekeeper.image.tag }}"
+          imagePullPolicy: {{ .Values.gatekeeper.image.pullPolicy }}
+          command: ["python", "/app/deploy/seed_gate.py"]
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: gate-state
+              mountPath: /workspace/.agent_gate
+{{- end }}

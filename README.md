@@ -62,6 +62,9 @@
   （spec / test / source / other）；GitHub Action 新增 `mode: verify` 与 `git_base` 输入，示例 `examples/github-action/gate-pr.yml`。
 - **内置安全规则包（v0.26.0）**：`no_shell_injection` / `no_path_traversal` / `no_hardcoded_secrets` /
   `require_license_header` 开箱即用，YAML `rules:` 一键启用，写入内容参与规则校验。
+- **K8s Helm 一键部署（v0.27.0）**：新增 `deploy/helm/phase-barrier/` Helm chart，sidecar + agent 双容器、PVC / emptyDir 存储、mTLS / HMAC / 审计推送（ConfigMap + Secret）、gate-keeper 一次性 Job；`helm install` 一行部署，kind 端到端测试 `deploy/k8s/kind-e2e-test.sh` 纳入 CI。
+- **Agent 框架集成示例（v0.27.0）**：LangChain `Tool` 包装（`examples/langchain_integration/`）、AutoGPT 命令包装（`examples/autogpt_integration/`）、SWE-agent 工具脚本（`examples/swe_agent_integration/`），汇总见 `docs/integrations.md`，示例不依赖第三方框架包即可运行。
+- **性能基准与回归门禁（v0.27.0）**：`benchmarks/bench.py` 压测多 Agent 并发状态写入（文件锁 + 原子写 + HMAC）与 sidecar HTTP 写文件 / 执行命令的延迟与吞吐，CI 以 `--fail-fast` 门禁防止性能大幅退化。
 
 
 ## 架构
@@ -756,15 +759,14 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
   新增多 Agent 并发示例 `examples/orchestrator_hooks/multi_agent.py`
   （3 个并发 Agent 协作 + 6 路并发 `record_test_run` 写入压力演示，CI 端到端执行）。
 - **v0.26.2 已完成**：编排器 SDK 辅助查询——`PhaseBarrier.list_stages()`（阶段清单：编号 / 名称 / 准入门槛 / 必需证据，元数据集中定义于 `config.STAGE_META`）与 `PhaseBarrier.stage_of(path)`（spec→1 / test→2 / source→3 / other→None，与 `verify-evidence --git-base` 的 `git_impact` 分类一致）；`docs/plugins.md` 收录第一批官方示例插件索引。
+- **v0.27.0 已完成**：K8s 生产级部署 —— `deploy/helm/phase-barrier/` Helm chart（sidecar + agent 双容器、PVC/emptyDir、mTLS / HMAC / 审计、gate-keeper Job）与 `kind` 端到端测试进 CI；LangChain / AutoGPT / SWE-agent 框架集成示例（`examples/*_integration/` + `docs/integrations.md`）；性能基准 `benchmarks/bench.py`（并发状态写入 + sidecar HTTP 写/执行延迟与吞吐，CI 性能回归门禁）。
 
 **规划中（Next）**
 
-- 编排器集成闭环剩余项已全部完成；alpha-swe 端到端接入已完成
-  （[alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1) 已关闭，
-  接入 PR [alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3) 已合并）。
-  后续按 **长期规划** 推进（K8s sidecar 透明代理 / SWE-bench 门禁基准等）。
-
-**长期规划**：K8s sidecar 透明代理（HTTP / gRPC 全量接管文件写与命令执行）；状态文件与证据签名（HMAC，密钥经 Kubernetes Secret 注入）；`sigstore` 签名发布（已用于 release 工件）；Java / Go / Rust 适配器测试命令与输出解析持续打磨；SWE-bench 门禁基准评估。
+- 集成收尾：alpha-swe 插件接入已合并（[alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3)），编排器集成闭环剩余项已全部完成。
+- **v0.28.0**：PHP（PHPUnit）与 C/C++（GoogleTest/Catch2）适配器，并增强现有适配器的测试框架支持（Java TestNG / Python unittest / JS Cypress）。
+- **v0.29.0**：插件生态自动化（插件索引 + 自动验证）+ 官方文档站点（MkDocs / GitHub Pages）。
+- **长期规划**：K8s sidecar gRPC / 透明代理 HTTP 全链路加固、SWE-bench 门禁基准、性能与安全加固（依赖漏洞扫描 / 模糊测试）。
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 
 ## 反馈与贡献

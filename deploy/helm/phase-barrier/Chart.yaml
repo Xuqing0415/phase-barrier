@@ -1,0 +1,17 @@
+apiVersion: v2
+name: phase-barrier
+description: 阶段门禁反捷径校验（Stage Gate）K8s 部署：sidecar 透明代理 + 编码 Agent 共享工作区，Agent 无法绕过门禁
+type: application
+version: 0.27.0
+appVersion: "0.27.0"
+home: https://github.com/Xuqing0415/phase-barrier
+sources:
+  - https://github.com/Xuqing0415/phase-barrier
+maintainers:
+  - name: Anti-Shortcut Team
+    email: xuqing0415@users.noreply.github.com
+keywords:
+  - agent
+  - stage-gate
+  - sop
+  - validation

@@ -1,0 +1,18 @@
+# SWE-agent 工具配置示例（v0.27.0）
+# 说明：把 gate_tool.py 注册为 SWE-agent 工具，写文件 / 执行命令都经 phase-barrier 门禁。
+# 实际部署时按你使用的 SWE-agent 版本的 tools schema 微调字段。
+tools:
+  - name: gate_write
+    description: "经 phase-barrier 门禁写入文件；跳步会返回 GATE_DENIED 并说明原因"
+    signature: "write_file <path>"
+    env:
+      PB_SIDECAR_URL: "http://localhost:8080"
+    command: ["python", "examples/swe_agent_integration/gate_tool.py", "write"]
+    stdin: "content"
+
+  - name: gate_exec
+    description: "经 phase-barrier 门禁执行 shell 命令；测试命令自动记录结果"
+    signature: "run <command>"
+    env:
+      PB_SIDECAR_URL: "http://localhost:8080"
+    command: ["python", "examples/swe_agent_integration/gate_tool.py", "exec"]

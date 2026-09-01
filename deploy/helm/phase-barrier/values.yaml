@@ -1,0 +1,79 @@
+# phase-barrier Helm chart 默认配置（v0.27.0）
+# 覆盖方式：helm install phase-barrier ./deploy/helm/phase-barrier -f my-values.yaml
+#
+# 默认使用已发布的 demo 镜像（含 phase-barrier + pytest），可开箱即用；
+# 生产环境请把 image / agent.image 换成你自己的镜像仓库。
+
+image:
+  # sidecar 门禁服务镜像（必须包含 phase-barrier 与 `python -m anti_shortcut sidecar`）
+  repository: ghcr.io/xuqing0415/phase-barrier-demo
+  tag: v0.27.0
+  pullPolicy: IfNotPresent
+
+# ---- sidecar 门禁服务 ----
+sidecar:
+  port: 8080
+  host: 0.0.0.0
+  # 阶段 0 需求原文（可选，传入后状态机以“需求已记录”启动）
+  userRequest: ""
+  # 内联 gate 配置（生成 ConfigMap，挂载为 /workspace/gate.yaml 并经 --config 加载）。
+  # 支持 language / stages / coverage_threshold / rules 等，见 docs/configuration.md。
+  configYaml: ""
+  hmac:
+    enabled: false
+    # 已有 Secret 名称（含 hmac-key 字段）；不填则使用 chart 自动创建的 Secret
+    secretName: ""
+    key: hmac-key
+    # 直接以字面值创建 Secret（仅演示/低敏环境；生产建议用已有 Secret 注入）
+    keyValue: ""
+  audit:
+    enabled: false
+    url: ""
+    secretName: ""
+    tokenKey: audit-token
+    tokenValue: ""
+  tls:
+    enabled: false
+    secretName: ""   # 已有 Secret，含 tls.crt / tls.key / ca.crt
+    certKey: tls.crt
+    keyKey: tls.key
+    caKey: ca.crt
+  resources: {}
+  #  limits:
+  #    cpu: 200m
+  #    memory: 256Mi
+
+# ---- 编码 Agent 容器（替换为你自己的 Agent 镜像；enabled=false 时仅部署 sidecar）----
+agent:
+  enabled: true
+  image:
+    repository: ghcr.io/xuqing0415/phase-barrier-demo
+    tag: v0.27.0
+    pullPolicy: IfNotPresent
+  # 默认挂起占位；真实场景替换为你的 Agent 入口命令
+  command: ["sh", "-c", "echo 'agent running'; sleep infinity"]
+  resources: {}
+
+# ---- gate-keeper：可选的一次性 Job，把门禁状态预置到交付态（原 deploy/k8s 演示）----
+gatekeeper:
+  enabled: false
+  image:
+    repository: ghcr.io/xuqing0415/phase-barrier-demo
+    tag: v0.27.0
+    pullPolicy: IfNotPresent
+
+# ---- 存储：emptyDir（本地 / e2e，无需 provisioner）或 pvc（生产）----
+persistence:
+  type: emptyDir        # emptyDir | pvc
+  workspace:
+    size: 1Gi
+    storageClass: ""
+  gate:
+    size: 10Mi
+    storageClass: ""
+
+service:
+  type: ClusterIP
+  port: 8080
+
+replicaCount: 1

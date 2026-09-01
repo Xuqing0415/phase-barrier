@@ -39,12 +39,10 @@ def test_known_value():
 
 
 def test_rejects_negative():
-    try:
+    import pytest
+
+    with pytest.raises(ValueError):
         fib(-1)
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("fib(-1) 应抛 ValueError")
 '''
 
 IMPL = '''def fib(n):

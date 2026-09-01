@@ -478,3 +478,140 @@ def test_java_adapter_extract_failures_dedup():
     )
     names = _extract_java_failures(output)
     assert names == ["addBasic(com.example.CalcTest)", "com.example.CalcTest > addNegative"]
+
+
+# ---------- 输出解析增强（v0.24.0）：参数化 / 超时细分 / Gradle 多模块 / Console 嵌套 / Windows wrapper ----------
+
+def test_java_adapter_identify_test_command_windows_wrappers():
+    a = JavaAdapter()
+    assert a.identify_test_command("mvnw.cmd test")
+    assert a.identify_test_command("gradlew.bat test")
+    assert a.identify_test_command(".\\mvnw test")
+    assert a.identify_test_command(".\\gradlew.bat test --tests CalcTest")
+    assert a.identify_test_command(".\\mvnw.cmd test")
+    assert not a.identify_test_command("mvnw.cmd package")
+
+
+def test_java_adapter_parse_surefire_parameterized():
+    a = JavaAdapter()
+    out = (
+        "[ERROR] testAdd[1](com.example.CalcTest)  Time elapsed: 0.002 s  <<< FAILURE!\n"
+        "[ERROR] testAdd[2](com.example.CalcTest)  Time elapsed: 0.003 s  <<< FAILURE!\n"
+        "[ERROR] testDiv[1, 2](com.example.CalcTest)  Time elapsed: 0.004 s  <<< ERROR!\n"
+        "Tests run: 3, Failures: 2, Errors: 1\n"
+    )
+    ok, summary = a.parse_test_output(out, 1)
+    assert ok is False
+    assert "testAdd[1](com.example.CalcTest)" in summary
+    assert "testAdd[2](com.example.CalcTest)" in summary
+    assert "testDiv[1, 2](com.example.CalcTest)" in summary
+
+
+def test_java_adapter_parse_surefire_timeout_vs_error():
+    a = JavaAdapter()
+    out = (
+        "[ERROR] testSleep(com.example.SlowTest)  Time elapsed: 30.001 s  <<< ERROR!\n"
+        "java.util.concurrent.TimeoutException: testSleep timed out after 30 seconds\n"
+        "[ERROR] testBoom(com.example.SlowTest)  Time elapsed: 0.01 s  <<< ERROR!\n"
+        "java.lang.IllegalStateException: boom\n"
+        "Tests run: 2, Errors: 2\n"
+    )
+    ok, summary = a.parse_test_output(out, 1)
+    assert ok is False
+    assert "testSleep(com.example.SlowTest)（超时）" in summary
+    assert "testBoom(com.example.SlowTest)（异常）" in summary
+
+
+def test_java_adapter_parse_gradle_multimodule_failure():
+    a = JavaAdapter()
+    out = (
+        "> Task :module-a:test\n"
+        "com.example.A > addBasic FAILED\n"
+        "    org.opentest4j.AssertionFailedError at ATest.java:12\n"
+        "module-a: 3 tests completed, 1 failed\n"
+        "> Task :module-b:test\n"
+        "module-b: 5 tests completed, 0 failed, 1 skipped\n"
+        "BUILD FAILED\n"
+    )
+    ok, summary = a.parse_test_output(out, 1)
+    assert ok is False
+    assert "8 tests completed, 1 failed" in summary
+    assert "com.example.A > addBasic" in summary
+
+
+def test_java_adapter_parse_gradle_multimodule_pass():
+    a = JavaAdapter()
+    out = (
+        "> Task :module-a:test\n"
+        "module-a: 3 tests completed, 0 failed\n"
+        "> Task :module-b:test\n"
+        "module-b: 5 tests completed, 0 failed, 1 skipped\n"
+        "BUILD SUCCESSFUL\n"
+    )
+    ok, summary = a.parse_test_output(out, 0)
+    assert ok is True
+    assert "8 tests completed, 0 failed, 1 skipped" in summary
+
+
+def test_java_adapter_parse_gradle_skipped_marker_fallback():
+    a = JavaAdapter()
+    out = (
+        "com.example.CalcTest > testSkippedA SKIPPED\n"
+        "com.example.CalcTest > testSkippedB SKIPPED\n"
+        "com.example.CalcTest > addBasic PASSED\n"
+        "3 tests completed, 0 failed\n"
+        "BUILD SUCCESSFUL\n"
+    )
+    ok, summary = a.parse_test_output(out, 0)
+    assert ok is True
+    assert "2 skipped" in summary
+
+
+def test_java_adapter_parse_junit_console_parameterized():
+    a = JavaAdapter()
+    out = (
+        "Failures (1):\n"
+        "  JUnit Jupiter:testAdd(int, int)[1]\n"
+        "    MethodSource [className = 'com.example.CalcTest', methodName = 'testAdd']\n"
+        "[ 1 tests failed ]\n"
+    )
+    ok, summary = a.parse_test_output(out, 1)
+    assert ok is False
+    assert "testAdd(int, int)" in summary
+    assert "testAdd" in summary
+
+
+def test_java_adapter_parse_junit_console_nested_method_source():
+    a = JavaAdapter()
+    out = (
+        "Failures (1):\n"
+        "  com.example.CalcTest.testDiv(int, int)[2]\n"
+        "    MethodSource [className = 'com.example.CalcTest', methodName = 'testDiv']\n"
+        "[ 1 tests failed ]\n"
+    )
+    ok, summary = a.parse_test_output(out, 1)
+    assert ok is False
+    assert "testDiv(CalcTest)" in summary
+    assert "testDiv" in summary
+
+
+def test_java_adapter_extract_failures_detailed_kinds():
+    from anti_shortcut.languages.java import _extract_java_failures_detailed
+
+    out = (
+        "testSleep(com.example.SlowTest)  Time elapsed: 30.1 s  <<< ERROR!\n"
+        "java.util.concurrent.TimeoutException: testSleep timed out after 30 seconds\n"
+        "testBoom(com.example.SlowTest)  Time elapsed: 0.1 s  <<< ERROR!\n"
+        "java.lang.IllegalStateException: boom\n"
+        "testFail(com.example.CalcTest)  Time elapsed: 0.1 s  <<< FAILURE!\n"
+    )
+    kinds = dict(_extract_java_failures_detailed(out))
+    assert kinds["testSleep(com.example.SlowTest)"] == "timeout"
+    assert kinds["testBoom(com.example.SlowTest)"] == "error"
+    assert kinds["testFail(com.example.CalcTest)"] == "failure"
+
+
+def test_java_adapter_gradle_aggregate_none():
+    from anti_shortcut.languages.java import _gradle_aggregate
+
+    assert _gradle_aggregate("Tests run: 3, Failures: 0, Errors: 0") is None

@@ -487,3 +487,41 @@ class TestPhaseBarrierStageQueries:
             assert info2["stage"] == 1 and info2["kind"] == "spec"
         finally:
             barrier.close()
+
+
+class TestPhaseBarrierRefresh:
+    """多 Agent 共享同一状态文件时刷新缓存（v0.26.3）。"""
+
+    def test_refresh_sees_other_instance_advance(self, tmp_path):
+        _prepare(tmp_path)
+        a = PhaseBarrier(workspace=tmp_path)
+        b = PhaseBarrier(workspace=tmp_path)
+        try:
+            assert a.inspect()["current_stage"] == 1
+            assert b.inspect()["current_stage"] == 1
+            _write_spec(tmp_path)
+            assert a.advance(2)["success"] is True
+            # b 的内存缓存未刷新：仍停留在旧阶段
+            assert b.inspect()["current_stage"] == 1
+            snap = b.refresh()
+            assert snap["current_stage"] == 2
+            assert snap["completed_stages"] == [0, 1]
+            assert snap["stage_name"] == "测试用例编写"
+            # refresh 同时重载证据哈希清单：能看到 a 记录的证据
+            ev = b.verify_evidence()
+            assert ev["ok"] is True and ev["signed"] is True
+            assert ev["violations"] == []
+        finally:
+            a.close()
+            b.close()
+
+    def test_refresh_is_read_only(self, tmp_path):
+        _prepare(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            before = barrier.inspect()
+            barrier.refresh()
+            after = barrier.inspect()
+            assert before == after
+        finally:
+            barrier.close()

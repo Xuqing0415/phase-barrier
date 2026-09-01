@@ -109,6 +109,19 @@ class PhaseBarrier:
             ),
         }
 
+    def refresh(self) -> dict:
+        """从磁盘重新加载状态并返回最新快照（v0.26.3 多 Agent 共享场景）。
+
+        多个 Agent / 进程共享同一 ``.agent_gate/state.json`` 时，本实例内存中的
+        状态缓存可能落后于他人的推进；编排器钩子在轮询“等待某阶段放行”前调用
+        ``refresh()`` 即可读到最新阶段、证据与哈希清单。等价于
+        ``StateManager.reload()`` + ``EvidenceManifest.reload()`` + ``inspect()``，
+        只读操作、不持锁。
+        """
+        self.skill.state.reload()
+        self.skill.evidence_manifest.reload()
+        return self.inspect()
+
     # ---------- 钩子校验 ----------
 
     def check(self, stage: int) -> dict:

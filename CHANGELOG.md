@@ -1,6 +1,22 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.26.3] - 2026-09-01
+
+- 多 Agent 并发任务共享门禁状态（v0.26.3）：
+  - `StateManager` 增加跨进程文件锁（POSIX `fcntl.flock` / Windows `msvcrt.locking`，
+    锁文件 `state.json.lock` 位于门禁目录）+ 写前重载 + 唯一临时文件（`tempfile.mkstemp`）
+    原子替换：多 Agent / 多进程并发“读-改-写”串行化、不丢更新、状态文件不损坏；
+    持锁超时抛 `StateLockTimeoutError`（默认 15s）。
+  - `StateManager.reload()` / `EvidenceManifest.reload()`：从磁盘重新加载最新状态与证据哈希清单；
+    `PhaseBarrier.refresh()` 编排器钩子重载两者并返回最新快照，轮询等待其他 Agent 推进。
+  - `verify_evidence()` 每次调用先重载清单，多 Agent 场景下其他 Agent 记录的证据即时可见。
+  - 编排器示例扩展：`examples/orchestrator_hooks/multi_agent.py`
+    （3 个并发 Agent 协作推进 + 6 路并发 `record_test_run` 写入压力演示），
+    CI 端到端 demo 步骤纳入执行。
+- 测试：新增并发安全用例（并发推进单赢家 / 并发写入不损坏不丢 / 混合变更 / 锁文件复用 /
+  锁超时 / `reload` / `refresh`，全量 627 → 633）。
+
 ## [0.26.2] - 2026-09-01
 
 - 编排器 SDK 辅助查询（v0.26.2）：

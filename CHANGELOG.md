@@ -1,6 +1,14 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.26.1] - 2026-09-01
+
+- CI 修复：coverage 门禁 89% → 90%（新增 10 个边界用例：shlex ValueError / 反斜杠续行、
+  规则弃权分支（无 config / 非 write / 非源码扩展 / 空内容）、C++ 输出解析兜底分支、
+  `_decode_output` 回退、空文件与编译器缺失的语法检查；全量 605 → 615）。
+- release 工作流：docker action 升级到支持 Node 24 的大版本
+  （`setup-buildx-action@v4` / `login-action@v4` / `build-push-action@v7`），消除 Node 20 弃用告警。
+
 ## [0.26.0] - 2026-09-01
 
 - 产品化与生态建设（v0.26.0）：

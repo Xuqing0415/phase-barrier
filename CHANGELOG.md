@@ -1,6 +1,13 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.26.4] - 2026-09-01
+
+- 修复 CI 覆盖率门禁在 Linux 上 89%（平台分支测量偏差）：`_file_lock` 的
+  POSIX `fcntl.flock` / Windows `msvcrt.locking` 两个互斥分支重构为独立辅助函数
+  并标记 `# pragma: no cover`（另一平台不可达），覆盖率测量不再随运行平台漂移；
+  `state.py` 覆盖率 85%（Linux）→ 92%（双平台一致），全量 TOTAL ≥ 90%。
+
 ## [0.26.3] - 2026-09-01
 
 - 多 Agent 并发任务共享门禁状态（v0.26.3）：

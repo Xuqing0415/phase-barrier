@@ -20,12 +20,14 @@ env/
 examples/demo_workspace/
 examples/minimal_workspace/
 examples/orchestrator_hooks/demo_workspace/
+examples/orchestrator_hooks/multi_agent_workspace/
 examples/custom_adapter/foo_workspace/
 examples/plugin_rules/_demo_ws/
 .agent_gate/
 _tmp_site/
 _pytest_final/
 .pytest_tmp/
+pytest-cache-files-*/
 _build_tmp/
 
 # IDE / OS

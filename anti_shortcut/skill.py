@@ -353,8 +353,12 @@ class AntiShortcutSkill:
     def verify_evidence(self) -> tuple[bool, list[str]]:
         """对照工作区当前文件校验证据清单，返回 (是否通过, 违规列表)。
 
+        每次调用先 ``reload()`` 读取磁盘上最新清单（v0.26.3 多 Agent 共享：
+        其他 Agent 记录的证据哈希即时可见）。
+
         :raises EvidenceManifestError: 清单损坏 / 签名不匹配（加载时抛出）
         """
+        self.evidence_manifest.reload()
         return self.evidence_manifest.verify(self.workspace)
 
     # ---------- 生命周期 ----------

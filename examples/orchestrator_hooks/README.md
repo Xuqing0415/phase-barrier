@@ -28,3 +28,22 @@ python examples/orchestrator_hooks/demo.py
 - `PhaseBarrier`（钩子校验）：编排器在任务启动 / 阶段切换时调用，适合平台统一管控。
 - `AntiShortcutSkill.install`（工具级拦截）：包装 `write_file` / `execute_command` 实时拦截，适合 Agent 内部约束。
 - 两者可叠加：钩子保证“阶段切换有据可依”，工具包装保证“过程行为不越权”。
+
+
+## 多 Agent 并发共享门禁状态（v0.26.3）
+
+```bash
+python examples/orchestrator_hooks/multi_agent.py
+```
+
+演示多个 Agent 任务并发协作、共享同一个 `.agent_gate/state.json`：
+
+- 3 个并发 Agent（各自独立 `PhaseBarrier` 实例）按 SOP 推进：A 写 `spec.md` -> 阶段 2，
+  B 写 `test_fib.py` -> 阶段 3，C 写 `fib.py` -> 阶段 4，编排器运行测试 -> 阶段 6（交付）；
+- 并发安全由 `StateManager`（v0.26.3）保证：跨进程文件锁（POSIX `flock` / Windows `msvcrt`）
+  + 写前重载，阶段推进串行化、不丢更新、状态文件不损坏；
+- 轮询读取方每次 `barrier.refresh()` 重载状态与证据哈希清单，即可看到其他 Agent 的推进结果；
+- 结尾的 6 路并发 `record_test_run` 写入压力演示验证“最后写入完整落在某一次写入”。
+
+编排器侧轮询等待某阶段放行的写法：先 `refresh()` 再 `check(stage)`，
+避免内存缓存读到陈旧阶段（详见 `multi_agent.py` 的 `wait_stage`）。

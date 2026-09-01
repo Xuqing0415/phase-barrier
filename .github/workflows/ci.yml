@@ -52,6 +52,7 @@ jobs:
         run: |
           python examples/demo.py
           python examples/orchestrator_hooks/demo.py
+          python examples/orchestrator_hooks/multi_agent.py
 
       - name: Smoke-test CLI entry point
         run: |

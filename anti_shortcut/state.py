@@ -16,7 +16,9 @@ import hmac
 import json
 import os
 import re
+import tempfile
 import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -31,6 +33,78 @@ class CorruptedStateError(ValueError):
 
 class TamperedStateError(CorruptedStateError):
     """状态文件签名校验失败：文件可能被篡改，或 HMAC 密钥不匹配。"""
+
+
+try:  # POSIX
+    import fcntl
+except ImportError:  # Windows
+    fcntl = None
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
+
+LOCK_TIMEOUT = 15.0  # 等待状态文件锁的默认超时（秒）
+
+
+class StateLockTimeoutError(TimeoutError):
+    """等待状态文件锁超时：另一进程持锁过久（可能长时间阻塞或异常退出）。"""
+
+
+@contextmanager
+def _file_lock(lock_path: Path, timeout: float = LOCK_TIMEOUT):
+    """跨进程独占锁：POSIX ``fcntl.flock`` / Windows ``msvcrt.locking``。
+
+    - 锁文件为门禁目录内的 ``state.json.lock``（Agent 无法写入该目录）；
+    - 进程退出或文件句柄关闭时 OS 自动释放锁，不会残留死锁；
+    - 超时抛 :class:`StateLockTimeoutError`，避免无限阻塞。
+    """
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(lock_path), os.O_RDWR | os.O_CREAT, 0o644)
+    acquired = False
+    try:
+        deadline = time.monotonic() + timeout
+        if fcntl is not None:
+            while True:
+                try:
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    acquired = True
+                    break
+                except OSError:
+                    if time.monotonic() >= deadline:
+                        raise StateLockTimeoutError(
+                            f"等待状态文件锁超时（>{timeout:g}s）: {lock_path}"
+                        ) from None
+                    time.sleep(0.02)
+        else:
+            os.lseek(fd, 0, os.SEEK_SET)
+            if os.fstat(fd).st_size == 0:
+                os.write(fd, b"\x00")
+                os.fsync(fd)
+            while True:
+                try:
+                    os.lseek(fd, 0, os.SEEK_SET)
+                    msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                    acquired = True
+                    break
+                except OSError:
+                    if time.monotonic() >= deadline:
+                        raise StateLockTimeoutError(
+                            f"等待状态文件锁超时（>{timeout:g}s）: {lock_path}"
+                        ) from None
+                    time.sleep(0.02)
+        yield
+    finally:
+        if acquired:
+            try:
+                if fcntl is not None:
+                    fcntl.flock(fd, fcntl.LOCK_UN)
+                else:
+                    os.lseek(fd, 0, os.SEEK_SET)
+                    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+            except OSError:
+                pass  # fd 关闭时 OS 自动释放锁，解锁失败可忽略
+        os.close(fd)
 
 
 def _now_iso() -> str:
@@ -154,18 +228,53 @@ class StateManager:
     def _atomic_write(self) -> None:
         if self._hmac_key:
             self._data["signature"] = "v1:" + self._sign(self._data)
-        tmp = self.state_file.with_suffix(self.state_file.suffix + ".tmp")
-        with tmp.open("w", encoding="utf-8") as fh:
-            json.dump(self._data, fh, ensure_ascii=False, indent=2)
-            fh.flush()
-            os.fsync(fh.fileno())
-        os.replace(tmp, self.state_file)
+        fd, tmp_name = tempfile.mkstemp(
+            dir=str(self.state_file.parent),
+            prefix=self.state_file.name + ".",
+            suffix=".tmp",
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                json.dump(self._data, fh, ensure_ascii=False, indent=2)
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(tmp_name, self.state_file)
+        except BaseException:
+            try:
+                os.unlink(tmp_name)
+            except OSError:
+                pass
+            raise
+
+    @contextmanager
+    def _mutate(self, *, reload: bool = True):
+        """跨进程安全地“读-改-写”状态：独占锁 + 写前重载最新状态。
+
+        多 Agent / 多进程共享同一 ``state.json`` 时（v0.26.3）：
+        - 文件锁保证同一时刻只有一个写入者；
+        - 写前重载保证在他人写入的基础上修改（不丢更新）；
+        - 唯一临时文件 + ``os.replace`` 保证磁盘上始终是完整文件。
+        """
+        lock_path = self.state_file.with_name(self.state_file.name + ".lock")
+        with _file_lock(lock_path):
+            if reload and self.state_file.exists():
+                self._data = self._load()
+            yield
 
     def snapshot(self) -> dict:
         """返回状态的只读快照（供校验器 / 审计使用）。"""
         import copy
 
         return copy.deepcopy(self._data)
+
+    def reload(self) -> None:
+        """从磁盘重新加载最新状态（多 Agent / 多进程共享时读取他人写入，v0.26.3）。
+
+        读取不持锁（原子替换保证磁盘上始终是完整文件）；签名密钥配置不变，
+        若文件被篡改仍会在 :meth:`_load` 中抛出 :class:`TamperedStateError`。
+        """
+        if self.state_file.exists():
+            self._data = self._load()
 
     # ---------- 查询 ----------
 
@@ -187,45 +296,50 @@ class StateManager:
     # ---------- 修改 ----------
 
     def record_user_request(self, request: str) -> None:
-        self._data["evidence"]["user_request"] = request
-        if self._data["stage_history"] and self._data["stage_history"][0]["stage"] == 0:
-            self._data["stage_history"][0]["evidence"]["user_request"] = request
-        self._atomic_write()
+        with self._mutate():
+            self._data["evidence"]["user_request"] = request
+            if self._data["stage_history"] and self._data["stage_history"][0]["stage"] == 0:
+                self._data["stage_history"][0]["evidence"]["user_request"] = request
+            self._atomic_write()
 
     def advance(self, new_stage: int, evidence: dict | None = None) -> None:
-        cur = self.current_stage
-        if new_stage != cur + 1 and not (cur == 4 and new_stage in (5, 6)):
-            raise ValueError(f"不允许跳跃阶段: {cur} -> {new_stage}")
-        self._data["current_stage"] = new_stage
-        self._data["completed_stages"].append(cur)
-        now = _now_iso()
-        self._data["stage_history"].append(
-            {
-                "stage": cur,
-                "name": STAGES.get(cur, str(cur)),
-                "timestamp": now,
-                "evidence": evidence or {},
-            }
-        )
-        self._atomic_write()
+        with self._mutate():
+            cur = self.current_stage
+            if new_stage != cur + 1 and not (cur == 4 and new_stage in (5, 6)):
+                raise ValueError(f"不允许跳跃阶段: {cur} -> {new_stage}")
+            self._data["current_stage"] = new_stage
+            self._data["completed_stages"].append(cur)
+            now = _now_iso()
+            self._data["stage_history"].append(
+                {
+                    "stage": cur,
+                    "name": STAGES.get(cur, str(cur)),
+                    "timestamp": now,
+                    "evidence": evidence or {},
+                }
+            )
+            self._atomic_write()
 
     def set_evidence(self, key: str, value) -> None:
-        self._data["evidence"][key] = value
-        self._atomic_write()
+        with self._mutate():
+            self._data["evidence"][key] = value
+            self._atomic_write()
 
     def mark_source_change(self, path: str) -> None:
         """记录代码/测试文件发生变更的时间戳（用于“修复后必须重测”校验）。"""
-        self._data["evidence"]["last_source_change_at_epoch"] = time.time()
-        self._data["evidence"]["last_source_change_path"] = path
-        self._atomic_write()
+        with self._mutate():
+            self._data["evidence"]["last_source_change_at_epoch"] = time.time()
+            self._data["evidence"]["last_source_change_path"] = path
+            self._atomic_write()
 
     def mark_test_run(self, result: dict) -> None:
         """记录最近一次测试运行结果（退出码、是否通过、输出摘要、时间戳）。"""
-        result = dict(result)
-        result.setdefault("at_epoch", time.time())
-        result.setdefault("at", _now_iso())
-        self._data["evidence"]["last_test_run"] = result
-        self._atomic_write()
+        with self._mutate():
+            result = dict(result)
+            result.setdefault("at_epoch", time.time())
+            result.setdefault("at", _now_iso())
+            self._data["evidence"]["last_test_run"] = result
+            self._atomic_write()
 
     # ---------- 密钥轮换（v0.9.0） ----------
 
@@ -240,26 +354,27 @@ class StateManager:
         :param new_key: 新签名密钥（非空）
         :param keep_old: 是否保留旧密钥进入轮换期
         """
-        if not new_key:
-            raise ValueError("新密钥不能为空")
-        has_signature = isinstance(self._data.get("signature"), str)
-        if has_signature:
-            if not (self._hmac_key or self._rotation_keys):
-                raise TamperedStateError(
-                    "状态文件已签名，但未提供任何验证密钥（--from / state_hmac_key / 环境变量）"
-                )
-            self._verify_signature(self._data)
-        if keep_old:
-            old = self._hmac_key or ""
-            if old and old != new_key:
-                self._rotation_keys = [
-                    old,
-                    *[k for k in self._rotation_keys if k != old],
-                ]
-        else:
-            self._rotation_keys = []
-        self._hmac_key = new_key
-        self._atomic_write()
+        with self._mutate(reload=False):
+            if not new_key:
+                raise ValueError("新密钥不能为空")
+            has_signature = isinstance(self._data.get("signature"), str)
+            if has_signature:
+                if not (self._hmac_key or self._rotation_keys):
+                    raise TamperedStateError(
+                        "状态文件已签名，但未提供任何验证密钥（--from / state_hmac_key / 环境变量）"
+                    )
+                self._verify_signature(self._data)
+            if keep_old:
+                old = self._hmac_key or ""
+                if old and old != new_key:
+                    self._rotation_keys = [
+                        old,
+                        *[k for k in self._rotation_keys if k != old],
+                    ]
+            else:
+                self._rotation_keys = []
+            self._hmac_key = new_key
+            self._atomic_write()
 
     # ---------- 审计辅助 ----------
 

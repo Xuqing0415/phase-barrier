@@ -93,6 +93,9 @@ flowchart TD
     V -- 通过 --> S
 ```
 
+- **多 Agent 并发共享门禁状态（v0.26.3）**：`StateManager` 跨进程文件锁（POSIX `flock` / Windows `msvcrt`）
+  + 写前重载 + 唯一临时文件原子替换，多 Agent / 多进程并发推进不丢更新、状态文件不损坏；
+  `PhaseBarrier.refresh()` 重载状态与证据清单，编排器轮询即可读取其他 Agent 的推进结果。
 ## 快速开始
 
 ```bash
@@ -747,12 +750,19 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.25.0 已完成**：GitHub Action 市场元数据增强——`action.yml` 增加 `outputs` 声明（`workspace` / `stage` / `allowed`），门禁步骤可通过 `steps.gate.outputs.*` 供下游复用；示例更新至 `@v0.25.0` 并补充 outputs 用法与参数联动说明；CI 升级 checkout@v7 / setup-python@v7 / setup-node@v7 / setup-go@v7 / upload-artifact@v7 与 action-gh-release@v3（消除 Node 20 弃用告警）并新增 gate outputs 断言；新增发布到 GitHub Marketplace 的流程文档 `docs/publish-to-marketplace.md` 与 action 元数据测试 `tests/test_action_meta.py`。
 - **v0.25.1 已完成**：composite action `outputs` 修复——三个输出（`workspace` / `stage` / `allowed`）补上 `value: ${{ steps.gate.outputs.* }}` 映射（仅写 `$GITHUB_OUTPUT` 不会传播到调用方，v0.25.0 的 gate-action 自测因此读到空值）；action 内部 `setup-python@v7` 消除 Node 20 弃用告警；README 示例同步至 `@v0.25.1`。
 - **v0.26.0 已完成**：产品化与生态建设——`python -m anti_shortcut init` 配置脚手架与全字段配置指南 `docs/configuration.md`；Docker 一键体验镜像（`ghcr.io/xuqing0415/phase-barrier-demo`）；C++ / .NET 适配器（`CppAdapter` / `DotNetAdapter`，含 GoogleTest / VSTest 输出解析与自动检测）；PR 增量校验（`verify-evidence --git-base` 的 `git_impact` 映射 + Action `mode: verify` / `git_base` 输入，示例 `examples/github-action/gate-pr.yml`）；内置安全规则包（`no_shell_injection` / `no_path_traversal` / `no_hardcoded_secrets` / `require_license_header`）；插件索引 `docs/plugins.md`、贡献指南 `CONTRIBUTING.md` 与 Issue 模板。
+- **v0.26.3 已完成**：多 Agent 并发任务共享门禁状态——`StateManager` 跨进程文件锁
+  （POSIX `flock` / Windows `msvcrt`）+ 写前重载 + 唯一临时文件原子替换，并发推进不丢更新、
+  状态文件不损坏；`PhaseBarrier.refresh()` 重载状态与证据清单，编排器轮询可见他人推进结果；
+  新增多 Agent 并发示例 `examples/orchestrator_hooks/multi_agent.py`
+  （3 个并发 Agent 协作 + 6 路并发 `record_test_run` 写入压力演示，CI 端到端执行）。
 - **v0.26.2 已完成**：编排器 SDK 辅助查询——`PhaseBarrier.list_stages()`（阶段清单：编号 / 名称 / 准入门槛 / 必需证据，元数据集中定义于 `config.STAGE_META`）与 `PhaseBarrier.stage_of(path)`（spec→1 / test→2 / source→3 / other→None，与 `verify-evidence --git-base` 的 `git_impact` 分类一致）；`docs/plugins.md` 收录第一批官方示例插件索引。
 
 **规划中（Next）**
 
-- **编排器集成闭环剩余项**：编排器钩子示例扩展（多 Agent 并发任务共享门禁状态）。
-  alpha-swe 端到端接入已完成（[alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1) 已关闭，接入 PR [alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3) 已合并）。
+- 编排器集成闭环剩余项已全部完成；alpha-swe 端到端接入已完成
+  （[alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1) 已关闭，
+  接入 PR [alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3) 已合并）。
+  后续按 **长期规划** 推进（K8s sidecar 透明代理 / SWE-bench 门禁基准等）。
 
 **长期规划**：K8s sidecar 透明代理（HTTP / gRPC 全量接管文件写与命令执行）；状态文件与证据签名（HMAC，密钥经 Kubernetes Secret 注入）；`sigstore` 签名发布（已用于 release 工件）；Java / Go / Rust 适配器测试命令与输出解析持续打磨；SWE-bench 门禁基准评估。
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
@@ -797,6 +807,6 @@ twine upload dist/*      # 正式发布到 PyPI
 ```
 
 - 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建即为 `X.Y.Z`，无需再手工同步 `pyproject.toml` 与 `__init__.py`。发布流程：`git tag v0.1.1 && git push --tags`。
-- CI（`.github/workflows/ci.yml`）：push / PR 时在 Python 3.10–3.14 矩阵上运行 `pytest` + `examples/demo.py`；矩阵安装 Node.js / Go / Rust / Ruby 真实工具链，激活 JS/Go/Rust/Ruby 适配器真实工具测试；`coverage` job 运行 `coverage run -m pytest` + `coverage report --fail-under=90`（核心包 ≥90%）并上传 `coverage.json`；`package` job 构建 sdist/wheel 并执行 `twine check` 后上传为 artifact。
+- CI（`.github/workflows/ci.yml`）：push / PR 时在 Python 3.10–3.14 矩阵上运行 `pytest` + `examples/demo.py` + `examples/orchestrator_hooks/multi_agent.py`（多 Agent 并发）；矩阵安装 Node.js / Go / Rust / Ruby 真实工具链，激活 JS/Go/Rust/Ruby 适配器真实工具测试；`coverage` job 运行 `coverage run -m pytest` + `coverage report --fail-under=90`（核心包 ≥90%）并上传 `coverage.json`；`package` job 构建 sdist/wheel 并执行 `twine check` 后上传为 artifact。
 - 自动发布（`.github/workflows/release.yml`）：打 `v*` tag 时自动构建并发布到 PyPI，使用 **Trusted Publishing（OIDC）**，无需仓库 Secret。首次使用需在 [PyPI 项目设置](https://pypi.org/manage/project/phase-barrier/settings/publishing/) 添加 Trusted Publisher：Provider `GitHub`、Owner `Xuqing0415`、Repository `phase-barrier`、Workflow name `release.yml`；发布时会同时生成 PyPI 侧 PEP 740 attestations。
 - 发行名说明：本项目发行名为 `phase-barrier`（与仓库同名），import 包名仍为 `anti_shortcut`，CLI 命令仍为 `anti-shortcut`。

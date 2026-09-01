@@ -54,6 +54,16 @@ class EvidenceManifest:
     def is_signed(self) -> bool:
         return "sig" in self._data
 
+    def reload(self) -> None:
+        """从磁盘重新加载最新清单（多 Agent 共享时读取他人记录，v0.26.3）。
+
+        读取不持锁（原子替换保证磁盘上始终是完整文件）；文件不存在时保持
+        当前内存数据（首次创建前的空清单）。若文件被篡改仍会抛
+        :class:`EvidenceManifestError`。
+        """
+        if self.manifest_file.exists():
+            self._data = self._load()
+
     # ---------- 记录 ----------
 
     def record(self, stage: int, sha256_map: dict[str, str]) -> None:

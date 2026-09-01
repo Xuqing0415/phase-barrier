@@ -10,7 +10,7 @@
 """
 from importlib.metadata import PackageNotFoundError, version as _distribution_version
 
-from .config import STAGES, GateConfig, load_config
+from .config import STAGES, STAGE_META, GateConfig, load_config
 from .evidence import (
     EVIDENCE_MANIFEST_NAME,
     EvidenceManifest,
@@ -38,7 +38,7 @@ from .languages import (
     detect_language,
     get_adapter,
 )
-from .sdk import PhaseBarrier
+from .sdk import PhaseBarrier, classify_stage_path
 from .skill import AntiShortcutSkill
 from .state import StateManager
 from .validators import (
@@ -65,6 +65,8 @@ __all__ = [
     "RemoteAuditSink",
     "GateConfig",
     "STAGES",
+    "STAGE_META",
+    "classify_stage_path",
     "load_config",
     "bootstrap",
     "install_into",

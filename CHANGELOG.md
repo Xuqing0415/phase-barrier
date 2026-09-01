@@ -1,11 +1,26 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.26.2] - 2026-09-01
+
+- 编排器 SDK 辅助查询（v0.26.2）：
+  - `PhaseBarrier.list_stages()`：返回阶段清单（编号 / 名称 / 准入门槛 / 必需证据，
+    JSON 可序列化），元数据集中定义于 `config.STAGE_META`。
+  - `PhaseBarrier.stage_of(path)`：把文件路径归类到对应阶段的证据
+    （spec→1 / test→2 / source→3 / other→None），与 `verify-evidence --git-base`
+    的 `git_impact` 分类一致。
+  - `verify-evidence --git-base` 的变更影响映射重构为复用 `sdk.classify_stage_path`
+    （输出字段不变，编排器与 CLI 分类口径统一）。
+- 生态：`docs/plugins.md` 收录第一批官方示例插件索引
+  （`phase-barrier-foo-adapter` / `phase-barrier-plugin-example` / 编排器钩子集成），
+  社区第三方插件提交流程保持开放。
+- 测试：新增 7 个 SDK 查询用例（全量 620 → 627）。
+
 ## [0.26.1] - 2026-09-01
 
 - CI 修复：coverage 门禁 89% → 90%（新增 10 个边界用例：shlex ValueError / 反斜杠续行、
   规则弃权分支（无 config / 非 write / 非源码扩展 / 空内容）、C++ 输出解析兜底分支、
-  `_decode_output` 回退、空文件与编译器缺失的语法检查；全量 605 → 615）。
+  `_decode_output` 回退、空文件与编译器缺失的语法检查；全量 605 → 620）。
 - release 工作流：docker action 升级到支持 Node 24 的大版本
   （`setup-buildx-action@v4` / `login-action@v4` / `build-push-action@v7`），消除 Node 20 弃用告警。
 

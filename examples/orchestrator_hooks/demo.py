@@ -10,6 +10,10 @@ Agent 跳步（未写 spec 直接声称进入实现阶段）会在钩子处被�
 （``AntiShortcutSkill.install``）互补，可叠加使用。
 
 运行：python examples/orchestrator_hooks/demo.py
+
+v0.26.2 起附带辅助查询演示：``list_stages()``（阶段清单）与
+``stage_of(path)``（文件 -> 阶段证据归属，与 ``verify-evidence --git-base``
+的 ``git_impact`` 分类一致）。
 """
 from __future__ import annotations
 
@@ -151,6 +155,15 @@ def main() -> int:
     run_result = run_pytest(WORKSPACE)
     hook("record_test_run(exit_code, output) 登记测试结果", barrier.record_test_run(run_result))
     hook("advance(5) 阶段切换：测试通过 -> 交付", barrier.advance(5))
+
+    # ---- 辅助查询（v0.26.2）：阶段清单 + 文件归属 ----
+    print("\n[编排器] 辅助查询 list_stages() / stage_of(path)")
+    stages = barrier.list_stages()
+    print(f"        -> 阶段清单共 {len(stages)} 个："
+          + ", ".join(f"{s['stage']} {s['name']}" for s in stages))
+    for rel in ("spec.md", "test_fib.py", "fib.py", "README.md"):
+        info = barrier.stage_of(rel)
+        print(f"        -> stage_of({rel}) = 阶段 {info['stage']}（{info['kind']}）")
 
     # ---- 收尾：状态快照 + 证据校验 ----
     print("\n" + "=" * 72)

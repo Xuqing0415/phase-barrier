@@ -45,7 +45,7 @@ from .evidence import (
 from .paths import sha256_file
 from .languages import get_adapter
 from .proxy import ExecDenied, GateProxy, ProxyError, WriteDenied
-from .sdk import PhaseBarrier
+from .sdk import PhaseBarrier, classify_stage_path
 from .skill import AntiShortcutSkill
 from .state import CorruptedStateError, StateManager
 
@@ -184,30 +184,16 @@ def _git_changed_files(ws: Path, git_base: str) -> list[str]:
 def _git_change_impact(
     ws: Path, changed: list[str], config: GateConfig
 ) -> list[dict]:
-    """把 git 变更文件映射到受影响的门禁阶段（PR 增量校验提示，v0.26.0）。"""
+    """把 git 变更文件映射到受影响的门禁阶段（PR 增量校验提示，v0.26.0）。
+
+    v0.26.2：分类逻辑复用 ``sdk.classify_stage_path``（与编排器 SDK
+    ``PhaseBarrier.stage_of()`` 保持一致），输出字段不变。
+    """
     adapter = get_adapter(config, ws)
     impact: list[dict] = []
-    spec_file = config.spec_file
     for rel in sorted(changed):
-        target = ws / rel
-        if rel == spec_file or rel.endswith("/" + spec_file):
-            impact.append(
-                {
-                    "file": rel,
-                    "kind": "spec",
-                    "requires": "重新校验阶段 1（Spec 设计），并按变更同步测试用例",
-                }
-            )
-        elif adapter.is_test_file(target, config):
-            impact.append(
-                {"file": rel, "kind": "test", "requires": "重新运行测试（阶段 4/5），确认用例仍通过"}
-            )
-        elif adapter.is_source_file(target, config):
-            impact.append(
-                {"file": rel, "kind": "source", "requires": "重新运行测试（阶段 4/5），确认实现变更无回归"}
-            )
-        else:
-            impact.append({"file": rel, "kind": "other", "requires": "无直接门禁影响"})
+        info = classify_stage_path(adapter, config, rel)
+        impact.append({"file": rel, "kind": info["kind"], "requires": info["requires"]})
     return impact
 
 

@@ -276,6 +276,9 @@ if not result["success"]:
 - `advance(to_stage)`：与 `advance_stage` 同一套证据校验，返回 `{success, stage, stage_name, message/error, evidence}`。
 - `record_test_run({exit_code, output})`：登记测试运行结果（阶段 4 推进校验依赖）。
 - `verify_evidence()`：返回 `{ok, violations, signed}`，清单缺失 / 签名不匹配统一 `ok=False`。
+- `list_stages()`：阶段清单，返回 `[{stage, name, entry, evidence}]`（v0.26.2）。
+- `stage_of(path)`：把文件路径归类到对应阶段证据（spec→1 / test→2 / source→3 / other→None），
+  与 `verify-evidence --git-base` 的 `git_impact` 分类一致（v0.26.2）。
 
 CLI 等价调用：`python -m anti_shortcut check --workspace . --stage 2 --json`。
 完整示例见 `examples/orchestrator_hooks/`。
@@ -744,10 +747,11 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.25.0 已完成**：GitHub Action 市场元数据增强——`action.yml` 增加 `outputs` 声明（`workspace` / `stage` / `allowed`），门禁步骤可通过 `steps.gate.outputs.*` 供下游复用；示例更新至 `@v0.25.0` 并补充 outputs 用法与参数联动说明；CI 升级 checkout@v7 / setup-python@v7 / setup-node@v7 / setup-go@v7 / upload-artifact@v7 与 action-gh-release@v3（消除 Node 20 弃用告警）并新增 gate outputs 断言；新增发布到 GitHub Marketplace 的流程文档 `docs/publish-to-marketplace.md` 与 action 元数据测试 `tests/test_action_meta.py`。
 - **v0.25.1 已完成**：composite action `outputs` 修复——三个输出（`workspace` / `stage` / `allowed`）补上 `value: ${{ steps.gate.outputs.* }}` 映射（仅写 `$GITHUB_OUTPUT` 不会传播到调用方，v0.25.0 的 gate-action 自测因此读到空值）；action 内部 `setup-python@v7` 消除 Node 20 弃用告警；README 示例同步至 `@v0.25.1`。
 - **v0.26.0 已完成**：产品化与生态建设——`python -m anti_shortcut init` 配置脚手架与全字段配置指南 `docs/configuration.md`；Docker 一键体验镜像（`ghcr.io/xuqing0415/phase-barrier-demo`）；C++ / .NET 适配器（`CppAdapter` / `DotNetAdapter`，含 GoogleTest / VSTest 输出解析与自动检测）；PR 增量校验（`verify-evidence --git-base` 的 `git_impact` 映射 + Action `mode: verify` / `git_base` 输入，示例 `examples/github-action/gate-pr.yml`）；内置安全规则包（`no_shell_injection` / `no_path_traversal` / `no_hardcoded_secrets` / `require_license_header`）；插件索引 `docs/plugins.md`、贡献指南 `CONTRIBUTING.md` 与 Issue 模板。
+- **v0.26.2 已完成**：编排器 SDK 辅助查询——`PhaseBarrier.list_stages()`（阶段清单：编号 / 名称 / 准入门槛 / 必需证据，元数据集中定义于 `config.STAGE_META`）与 `PhaseBarrier.stage_of(path)`（spec→1 / test→2 / source→3 / other→None，与 `verify-evidence --git-base` 的 `git_impact` 分类一致）；`docs/plugins.md` 收录第一批官方示例插件索引。
 
 **规划中（Next）**
 
-- **编排器集成闭环剩余项**：`PhaseBarrier` SDK 增加 `list_stages()` 与 `stage_of(path)` 辅助查询；编排器钩子示例扩展（多 Agent 并发任务共享门禁状态）。
+- **编排器集成闭环剩余项**：编排器钩子示例扩展（多 Agent 并发任务共享门禁状态）。
   alpha-swe 端到端接入已完成（[alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1) 已关闭，接入 PR [alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3) 已合并）。
 
 **长期规划**：K8s sidecar 透明代理（HTTP / gRPC 全量接管文件写与命令执行）；状态文件与证据签名（HMAC，密钥经 Kubernetes Secret 注入）；`sigstore` 签名发布（已用于 release 工件）；Java / Go / Rust 适配器测试命令与输出解析持续打磨；SWE-bench 门禁基准评估。

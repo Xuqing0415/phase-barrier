@@ -22,6 +22,18 @@ STAGES: dict[int, str] = {
     6: "交付",
 }
 
+# 阶段元数据：准入门槛与必需证据（与文档「阶段定义与证据要求」一致，v0.26.2）
+# 供编排器 SDK ``PhaseBarrier.list_stages()`` 与 CLI 展示使用。
+STAGE_META: dict[int, dict[str, str]] = {
+    0: {"entry": "无", "evidence": "用户需求原文（由系统传入，自动记录）"},
+    1: {"entry": "阶段 0 完成", "evidence": "spec.md 文件，包含必需章节"},
+    2: {"entry": "阶段 1 完成", "evidence": "测试代码文件（如 test_*.py），至少 N 个测试函数且含断言"},
+    3: {"entry": "阶段 2 完成", "evidence": "源代码文件（非测试文件），通过语法检查"},
+    4: {"entry": "阶段 3 完成", "evidence": "测试执行命令成功（退出码 0）并输出测试结果"},
+    5: {"entry": "阶段 4 测试未通过", "evidence": "修改后的源码 + 再次测试全部通过"},
+    6: {"entry": "阶段 4/5 测试全部通过", "evidence": "交付总结（可选）或用户确认"},
+}
+
 DEFAULT_SPEC_SECTIONS = ["## 需求分析", "## 设计方案", "## 接口定义"]
 
 # 默认测试命令正则（匹配命令前缀），可按语言扩展

@@ -404,3 +404,86 @@ class TestCheckCli:
         assert proc.returncode == 1
         payload = json.loads(proc.stdout)
         assert payload["allowed"] is False
+
+
+# ---------- v0.26.2：阶段清单与文件归属查询 ----------
+
+class TestPhaseBarrierStageQueries:
+    def test_list_stages_structure(self, tmp_path):
+        _prepare(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            stages = barrier.list_stages()
+            assert [s["stage"] for s in stages] == [0, 1, 2, 3, 4, 5, 6]
+            for s in stages:
+                assert s["name"] and s["entry"] and s["evidence"]
+            json.dumps(stages)  # 必须 JSON 可序列化（编排器透传）
+        finally:
+            barrier.close()
+
+    def test_list_stages_names_match_stages(self, tmp_path):
+        _prepare(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            stages = barrier.list_stages()
+            assert {s["stage"]: s["name"] for s in stages} == dict(STAGES)
+        finally:
+            barrier.close()
+
+    def test_stage_of_spec_file(self, tmp_path):
+        _prepare(tmp_path)
+        _write_spec(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            info = barrier.stage_of("spec.md")
+            assert info["stage"] == 1
+            assert info["stage_name"] == "Spec 设计"
+            assert info["kind"] == "spec"
+            assert "阶段 1" in info["requires"]
+        finally:
+            barrier.close()
+
+    def test_stage_of_test_file(self, tmp_path):
+        _prepare(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            info = barrier.stage_of("test_fib.py")
+            assert info["stage"] == 2
+            assert info["kind"] == "test"
+            assert "重新运行测试" in info["requires"]
+        finally:
+            barrier.close()
+
+    def test_stage_of_source_file(self, tmp_path):
+        _prepare(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            info = barrier.stage_of("fib.py")
+            assert info["stage"] == 3
+            assert info["kind"] == "source"
+            assert "重新运行测试" in info["requires"]
+        finally:
+            barrier.close()
+
+    def test_stage_of_other_file(self, tmp_path):
+        _prepare(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            info = barrier.stage_of("README.md")
+            assert info["stage"] is None
+            assert info["stage_name"] is None
+            assert info["kind"] == "other"
+            assert "无直接门禁影响" in info["requires"]
+        finally:
+            barrier.close()
+
+    def test_stage_of_absolute_path(self, tmp_path):
+        _prepare(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            info = barrier.stage_of(tmp_path / "fib.py")
+            assert info["stage"] == 3 and info["kind"] == "source"
+            info2 = barrier.stage_of(tmp_path / "spec.md")
+            assert info2["stage"] == 1 and info2["kind"] == "spec"
+        finally:
+            barrier.close()

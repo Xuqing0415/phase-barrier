@@ -73,7 +73,7 @@ _JUNIT_CONSOLE_AGG_RE = re.compile(
 # - Gradle：``com.example.Class > methodName FAILED``
 # - JUnit Console：``Failures (N):`` 段中的 ``methodName(ClassName)`` / ``MethodSource [...]``
 _JAVA_SUREFIRE_FAILURE_RE = re.compile(
-    r"^\s*(\w+\([^)]*\))\s+.*<<<\s*(?:FAILURE|ERROR)!",
+    r"^\s*(?:\[ERROR\]\s*)?(\w+(?:\[[^\]]*\])?\([^)]*\))\s+.*<<<\s*(?:FAILURE|ERROR)!",
     re.M,
 )
 _JAVA_GRADLE_FAILURE_RE = re.compile(
@@ -81,32 +81,98 @@ _JAVA_GRADLE_FAILURE_RE = re.compile(
     re.M,
 )
 _JAVA_CONSOLE_FAILURE_RE = re.compile(
-    r"^\s*[^:]+:\s*(\w+)\(([^)]*)\)\s*$",
+    r"^\s*[^:]+:\s*(\w+)\(([^)]*)\)(?:\[\d+\])?\s*$",
     re.M,
 )
 _JAVA_CONSOLE_METHOD_RE = re.compile(r"methodName\s*=\s*'([^']+)'")
+# JUnit Console 嵌套格式：`Class.method(ParameterizedTest)[N]`（如 `com.example.CalcTest.testAdd(int, int)[1]`）
+_JAVA_CONSOLE_NESTED_RE = re.compile(
+    r"^\s*([\w.$]+)\.(\w+)\(([^)]*)\)(?:\[\d+\])?\s*$",
+    re.M,
+)
+
+# `<<< ERROR!` 异常块含这些标记时判定为超时（v0.24.0）
+_JAVA_TIMEOUT_MARKERS = (
+    "TimeoutException",
+    "TestTimedOutException",
+    "timed out",
+)
+
+# Gradle 跳过用例行：`com.example.CalcTest > testSkipped SKIPPED`
+_JAVA_GRADLE_SKIPPED_RE = re.compile(
+    r"^\s*([\w.$]+\s+>\s+\w+)\s+SKIPPED\b",
+    re.M,
+)
+
+
+def _gradle_aggregate(text: str) -> tuple[int, int, int] | None:
+    """聚合 Gradle 测试输出（支持多模块 reactor 的多个 ``N tests completed`` 行）。
+
+    返回 (总用例数, 总失败数, 总跳过数)；无 Gradle 汇总行时返回 None。
+    跳过数优先取行内 ``, K skipped`` 字段；缺失时用 ``Class > method SKIPPED`` 行数兜底。
+    """
+    text = text or ""
+    matches = list(_GRADLE_AGG_RE.finditer(text))
+    if not matches:
+        return None
+    total_n = sum(int(m.group("n")) for m in matches)
+    total_fail = sum(int(m.group("fail") or 0) for m in matches)
+    explicit = [m for m in matches if m.group("skip") is not None]
+    if explicit:
+        total_skip = sum(int(m.group("skip")) for m in explicit)
+    else:
+        total_skip = len(_JAVA_GRADLE_SKIPPED_RE.findall(text))
+    return total_n, total_fail, total_skip
+
+
+def _gradle_summary(agg: tuple[int, int, int]) -> str:
+    n, fail, skip = agg
+    parts = [f"{n} tests completed"]
+    parts.append(f"{fail} failed" if fail else "0 failed")
+    if skip:
+        parts.append(f"{skip} skipped")
+    return ", ".join(parts)
+
+
+def _extract_java_failures_detailed(text: str) -> list[tuple[str, str]]:
+    """从 Maven Surefire / Gradle / JUnit Console 输出中提取失败用例，返回 [(名称, 类型)]。
+
+    类型细分（v0.24.0）：
+    - ``failure``：断言失败（``<<< FAILURE!`` / ``FAILED``）
+    - ``error``：``<<< ERROR!`` 异常
+    - ``timeout``：异常块含超时标记（``TimeoutException`` / ``timed out``）
+    """
+    text = text or ""
+    anchors: list[tuple[str, str, int, int]] = []
+    for m in _JAVA_SUREFIRE_FAILURE_RE.finditer(text):
+        kind = "failure" if "<<< FAILURE!" in m.group(0) else "error"
+        anchors.append((m.group(1), kind, m.start(), m.end()))
+    for m in _JAVA_GRADLE_FAILURE_RE.finditer(text):
+        anchors.append((m.group(1), "failure", m.start(), m.end()))
+    for m in _JAVA_CONSOLE_FAILURE_RE.finditer(text):
+        cls = m.group(2).rsplit(".", 1)[-1]
+        anchors.append((f"{m.group(1)}({cls})", "failure", m.start(), m.end()))
+    for m in _JAVA_CONSOLE_NESTED_RE.finditer(text):
+        cls = m.group(1).rsplit(".", 1)[-1]
+        anchors.append((f"{m.group(2)}({cls})", "failure", m.start(), m.end()))
+    for m in _JAVA_CONSOLE_METHOD_RE.finditer(text):
+        anchors.append((m.group(1), "failure", m.start(), m.end()))
+    anchors.sort(key=lambda a: a[2])
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for i, (name, kind, _start, end) in enumerate(anchors):
+        block_end = anchors[i + 1][2] if i + 1 < len(anchors) else len(text)
+        if any(marker in text[end:block_end] for marker in _JAVA_TIMEOUT_MARKERS):
+            kind = "timeout"
+        if name and name not in seen:
+            seen.add(name)
+            out.append((name, kind))
+    return out[:50]
 
 
 def _extract_java_failures(text: str) -> list[str]:
-    """从 Maven Surefire / Gradle / JUnit Console 输出中提取失败用例名（去重，最多 50 个）。"""
-    out: list[str] = []
-    seen: set[str] = set()
-
-    def add(name: str) -> None:
-        if name and name not in seen:
-            seen.add(name)
-            out.append(name)
-
-    for m in _JAVA_SUREFIRE_FAILURE_RE.finditer(text):
-        add(m.group(1))
-    for m in _JAVA_GRADLE_FAILURE_RE.finditer(text):
-        add(m.group(1))
-    for m in _JAVA_CONSOLE_FAILURE_RE.finditer(text):
-        cls = m.group(2).rsplit(".", 1)[-1]
-        add(f"{m.group(1)}({cls})")
-    for m in _JAVA_CONSOLE_METHOD_RE.finditer(text):
-        add(m.group(1))
-    return out[:50]
+    """兼容入口：仅返回失败用例名称（去重，最多 50 个）。"""
+    return [name for name, _ in _extract_java_failures_detailed(text)]
 
 
 def _decode_output(raw: bytes | None) -> str:
@@ -140,9 +206,9 @@ class JavaAdapter(LanguageAdapter):
     test_file_patterns = ["*Test.java", "*Tests.java", "src/test/**/*.java"]
     test_command_patterns = [
         r"^\s*mvn\s+test\b",
-        r"^\s*(\./)?mvnw\s+test\b",
+        r"^\s*(\./|\.\\)?mvnw(?:\.cmd)?\s+test\b",
         r"^\s*gradle\s+test\b",
-        r"^\s*(\./)?gradlew\s+test\b",
+        r"^\s*(\./|\.\\)?gradlew(?:\.bat)?\s+test\b",
         r"^\s*java\s+-jar\s+.*junit-platform-console-standalone\.jar\b",
     ]
 
@@ -308,10 +374,15 @@ class JavaAdapter(LanguageAdapter):
             summary = _extract_test_summary(text)
             return True, summary or "所有测试通过"
         summary = _extract_test_summary(text)
-        failed = _extract_java_failures(text)
+        failed = _extract_java_failures_detailed(text)
         suffix = ""
         if failed:
-            suffix = f"；失败用例: {'、'.join(failed)}（{len(failed)} 个）"
+            labels = {"failure": "", "error": "异常", "timeout": "超时"}
+            parts = [
+                name + (f"（{labels[kind]}）" if labels[kind] else "")
+                for name, kind in failed
+            ]
+            suffix = f"；失败用例: {'、'.join(parts)}（{len(failed)} 个）"
         matches = list(_TEST_RUN_AGG_RE.finditer(text))
         if matches:
             m = matches[-1]  # 最后汇总（Results: 之后）
@@ -320,11 +391,11 @@ class JavaAdapter(LanguageAdapter):
             ok = failures == 0 and errors == 0
             detail = summary or f"Tests run: {m.group('run')}, Failures: {failures}, Errors: {errors}"
             return ok, detail + ("" if ok else suffix)
-        m = _GRADLE_AGG_RE.search(text)
-        if m:
-            failures = int(m.group("fail") or 0)
+        agg = _gradle_aggregate(text)
+        if agg:
+            failures = agg[1]
             ok = failures == 0 and not failed
-            detail = summary or m.group(0)
+            detail = summary or _gradle_summary(agg)
             return ok, detail + ("" if ok else suffix)
         m = _JUNIT_CONSOLE_AGG_RE.search(text)
         if m and m.group("status") == "failed":
@@ -363,10 +434,10 @@ def _extract_test_summary(text: str) -> str:
     tests_run = [ln for ln in lines if re.match(r"Tests run:\s*\d+", ln)]
     if tests_run:
         return tests_run[-1][:300]
-    # Gradle：``3 tests completed, 1 failed``
-    for ln in reversed(lines):
-        if re.search(r"\b\d+\s+tests?\s+(completed|failed)\b", ln, re.IGNORECASE):
-            return ln[:300]
+    # Gradle：`3 tests completed, 1 failed`（多模块 reactor 时聚合汇总）
+    agg = _gradle_aggregate(text)
+    if agg is not None:
+        return _gradle_summary(agg)[:300]
     # JUnit Console：``tests successful`` / ``tests failed``
     for ln in reversed(lines):
         if re.search(r"\[\s*\d+\s+tests?\s+(successful|failed)\s*\]", ln, re.IGNORECASE):

@@ -2,6 +2,19 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.24.0] - 2026-09-01
+
+- Java 适配器输出解析剩余项（v0.24.0）：
+  - Surefire 参数化用例：`methodName[displayName](Class)`（displayName 含逗号 / `[N]` 序号），兼容 `[ERROR]` 前缀；
+  - `<<< ERROR!` 超时 / 异常细分：异常块含 `TimeoutException` / `TestTimedOutException` / `timed out`
+    判定为「超时」，否则「异常」，失败用例摘要附类型标注；
+  - Gradle：`Class > method SKIPPED` 行计数兜底、`BUILD SUCCESSFUL` 汇总、多模块 reactor 输出聚合
+    （多个 `N tests completed, M failed` 行求和）；
+  - JUnit Platform Console：`MethodSource` 嵌套格式 `Class.method(ParameterizedTest)[N]` 与失败条目 `[N]` 序号后缀；
+  - 测试命令识别补充 Windows wrapper：`mvnw.cmd test` / `gradlew.bat test` / `.\mvnw test`；
+  - 新增 10 个解析边界测试（`tests/test_java_adapter.py`），全量 528 → 538。
+
+
 ## [0.23.0] - 2026-08-30
 
 - Java 适配器输出解析增强（v0.23.0）：

@@ -58,6 +58,7 @@ def test_action_inputs_defaults(action_meta):
     assert inputs["mode"]["default"] == "inspect"
     assert inputs["expected_stage"]["default"] == "6"
     assert inputs["local"]["default"] == "false"
+    assert inputs["git_base"]["default"] == "${{ github.event.pull_request.base.sha }}"
     empty_defaults = (
         "to",
         "stage",
@@ -69,6 +70,18 @@ def test_action_inputs_defaults(action_meta):
     )
     for name in empty_defaults:
         assert inputs[name]["default"] == ""
+
+
+def test_action_verify_mode_wired(action_meta):
+    """v0.26.0：verify 模式（PR 增量证据校验）+ git_base 输入接线。"""
+    run = next(
+        s["run"]
+        for s in action_meta["runs"]["steps"]
+        if s.get("name") == "Run phase-barrier gate"
+    )
+    assert '"$MODE" == "verify"' in run
+    assert 'verify-evidence --workspace "$WS" --git-base "$GB"' in run
+    assert "git_base" in action_meta["inputs"]
 
 
 def test_action_composite_runs(action_meta):

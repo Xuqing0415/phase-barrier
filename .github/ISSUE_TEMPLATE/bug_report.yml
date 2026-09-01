@@ -1,0 +1,61 @@
+name: 缺陷报告（Bug Report）
+description: 报告 phase-barrier 的问题（拦截误报 / 漏放 / CLI 报错等）
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢报告问题！请尽量提供可复现信息，便于快速定位。
+  - type: input
+    id: version
+    attributes:
+      label: 版本
+      description: `python -m anti_shortcut --version` 或 pip show phase-barrier
+      placeholder: "0.26.0"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      description: 最小复现脚本 / 命令、工作区结构、配置文件内容
+      placeholder: |
+        1. python -m anti_shortcut init --language python
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 应该发生什么
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 实际发生了什么（附报错输出）
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: 涉及范围
+      options:
+        - 核心 Skill / 校验器
+        - 语言适配器
+        - CLI / 配置
+        - GitHub Action / CI
+        - sidecar / 代理
+        - 文档
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 自查
+      options:
+        - label: 我已阅读贡献指南（CONTRIBUTING.md）
+          required: true

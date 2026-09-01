@@ -8,12 +8,14 @@
 from __future__ import annotations
 
 import importlib.metadata as metadata
+import inspect
 import re
 import shlex
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 
 from .config import GateConfig
+from .rules import get_rule
 
 if TYPE_CHECKING:  # 避免与 languages.base 的互相导入
     from .languages.base import LanguageAdapter
@@ -408,23 +410,67 @@ def load_rule_plugins() -> list[tuple[str, Callable]]:
     return rules
 
 
+def _call_rule(
+    rule: Callable,
+    kind: str,
+    target: str,
+    config: GateConfig | None,
+    stage: int,
+    content: str | None,
+) -> Any:
+    """调用规则：签名接受 ``content`` 时传入，否则按旧签名调用（向后兼容）。"""
+    try:
+        sig = inspect.signature(rule)
+    except (TypeError, ValueError):
+        sig = None
+    if sig is not None and "content" in sig.parameters:
+        try:
+            return rule(kind, target, config, stage, content=content)
+        except TypeError:
+            return None
+    return rule(kind, target, config, stage)
+
+
+def _builtin_rules_for(config: GateConfig | None):
+    """按 ``config.rules`` 启用内置安全规则包（v0.26.0）。"""
+    for name in getattr(config, "rules", None) or []:
+        rule = get_rule(name)
+        if rule is not None:
+            yield name, rule
+
+
 def evaluate_rules(
     kind: str,
     target: str,
-    config: GateConfig,
+    config: GateConfig | None,
     stage: int,
+    content: str | None = None,
 ) -> tuple[bool | None, str]:
-    """按注册顺序评估自定义拦截规则，返回首个决定性结论。
+    """按注册顺序评估拦截规则，返回首个决定性结论。
+
+    v0.26.0：先评估 ``config.rules`` 启用的内置安全规则包，再评估
+    ``phase_barrier.interceptors`` 入口点 / 进程内注册的自定义规则；
+    write 类规则可接收待写内容（规则签名带 ``content`` 参数时才会收到）。
 
     :param kind: ``"write"`` 或 ``"exec"``
     :param target: 路径字符串或 shell 命令
+    :param content: 待写入内容（write 场景可选）
     :return: (None, "") 全部弃权；(False, reason) 拦截；(True, reason) 放行
     """
     if kind not in ("write", "exec"):
         raise ValueError(f"kind 必须是 'write' 或 'exec': {kind!r}")
+    for _, rule in _builtin_rules_for(config):
+        try:
+            result = _call_rule(rule, kind, target, config, stage, content)
+        except Exception:
+            continue  # 规则异常不阻断门禁
+        if result is None:
+            continue
+        if isinstance(result, tuple) and len(result) == 2 and isinstance(result[0], bool):
+            return result
     for _, rule in load_rule_plugins():
         try:
-            result = rule(kind, target, config, stage)
+            result = _call_rule(rule, kind, target, config, stage, content)
         except Exception:
             continue  # 规则异常不阻断门禁
         if result is None:

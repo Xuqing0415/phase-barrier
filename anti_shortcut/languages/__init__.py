@@ -14,7 +14,9 @@ from typing import Any
 
 from ..config import GateConfig
 from .base import LanguageAdapter, analyze_js_style_tests, validate_test_collection
+from .cpp import CppAdapter
 from .csharp import CSharpAdapter
+from .dotnet import DotNetAdapter
 from .go import GoAdapter
 from .java import JavaAdapter
 from .javascript import JavaScriptAdapter
@@ -32,6 +34,8 @@ __all__ = [
     "RustAdapter",
     "RubyAdapter",
     "CSharpAdapter",
+    "CppAdapter",
+    "DotNetAdapter",
     "detect_language",
     "get_adapter",
     "load_entry_point_adapters",
@@ -48,6 +52,8 @@ LANGUAGE_REGISTRY: dict[str, type[LanguageAdapter]] = {
     "rust": RustAdapter,
     "ruby": RubyAdapter,
     "csharp": CSharpAdapter,
+    "cpp": CppAdapter,
+    "dotnet": DotNetAdapter,
 }
 
 # 标志文件 → 语言（顺序即优先级；同语言内按可依赖程度排序）
@@ -59,12 +65,14 @@ _LANGUAGE_MARKERS: list[tuple[tuple[str, ...], str]] = [
     (("Gemfile", "Gemfile.lock", ".ruby-version", "Rakefile"), "ruby"),
     (("requirements.txt", "setup.py", "setup.cfg", "tox.ini"), "python"),
     (("pyproject.toml",), "python"),
+    (("CMakeLists.txt", "Makefile", "*.vcxproj"), "cpp"),
 ]
 
 # 目录级 glob 标志（如根目录的 *.gemspec / *.csproj / *.sln）
 _LANGUAGE_GLOB_MARKERS: list[tuple[tuple[str, ...], str]] = [
     (("*.gemspec",), "ruby"),
     (("*.csproj", "*.sln"), "csharp"),
+    (("*.vcxproj",), "cpp"),
 ]
 
 

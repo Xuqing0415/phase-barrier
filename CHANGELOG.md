@@ -1,6 +1,26 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.26.0] - 2026-09-01
+
+- 产品化与生态建设（v0.26.0）：
+  - 配置脚手架：新增 `python -m anti_shortcut init`，自动检测语言生成带注释的 YAML 模板
+    （可选 `--with-coverage` / `--coverage-threshold` / `--hmac-key` / `--audit-url` / `--rules`）；
+    新增全字段配置指南 `docs/configuration.md`（由 `GateConfig` 自动枚举）。
+  - Docker 一键体验：新增 `docker/demo/`（Dockerfile + 模拟 Agent `agent_demo.py`），
+    release 工作流自动构建并推送 `ghcr.io/xuqing0415/phase-barrier-demo`（tag + latest）。
+  - C++ / .NET 适配器：`CppAdapter`（g++/clang++ `-fsyntax-only`、GoogleTest 宏统计、
+    `ctest` / GoogleTest 输出解析）与 `DotNetAdapter`（复用 C# 项目级 `dotnet build` 与 VSTest
+    输出解析）；自动检测 `CMakeLists.txt` / `Makefile` / `*.vcxproj`，可显式 `language: cpp|dotnet`。
+  - PR 增量校验：`verify-evidence --git-base <ref>` 新增 `git_impact` 变更影响映射
+    （spec / test / source / other）；GitHub Action 新增 `mode: verify` 与 `git_base` 输入，
+    示例 `examples/github-action/gate-pr.yml`；CI gate-action 自测扩展正反用例。
+  - 内置安全规则包：新增 `anti_shortcut/rules/`，含 `no_shell_injection` / `no_path_traversal` /
+    `no_hardcoded_secrets` / `require_license_header` 四条规则，YAML `rules:` 一键启用，
+    `write_file` 内容透传参与规则校验。
+  - 生态：插件索引 `docs/plugins.md`、贡献指南 `CONTRIBUTING.md`、Issue 模板
+    （bug_report / feature_request / plugin_submission）。
+  - 测试：新增 init / 内置规则 / C++ / .NET / Action verify / git_impact 用例，全量约 600。
 
 ## [0.25.1] - 2026-09-01
 

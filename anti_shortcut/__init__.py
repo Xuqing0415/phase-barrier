@@ -25,8 +25,11 @@ from .interceptors import (
     register_rule,
 )
 from .remote_audit import RemoteAuditSink
+from .rules import BUILTIN_RULES, RULE_DESCRIPTIONS
 from .languages import (
+    CppAdapter,
     CSharpAdapter,
+    DotNetAdapter,
     LANGUAGE_REGISTRY,
     JavaScriptAdapter,
     LanguageAdapter,
@@ -72,6 +75,8 @@ __all__ = [
     "JavaScriptAdapter",
     "RubyAdapter",
     "CSharpAdapter",
+    "CppAdapter",
+    "DotNetAdapter",
     "LANGUAGE_REGISTRY",
     "detect_language",
     "get_adapter",
@@ -85,5 +90,8 @@ __all__ = [
     "register_rule",
     "load_rule_plugins",
     "evaluate_rules",
+    # v0.26.0：内置安全规则包
+    "BUILTIN_RULES",
+    "RULE_DESCRIPTIONS",
     "__version__",
 ]

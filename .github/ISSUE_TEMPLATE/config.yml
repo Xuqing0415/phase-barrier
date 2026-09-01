@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 项目仓库
+    url: https://github.com/Xuqing0415/phase-barrier
+    about: 项目主页
+  - name: 文档
+    url: https://github.com/Xuqing0415/phase-barrier/tree/main/docs
+    about: 配置指南 / 插件索引

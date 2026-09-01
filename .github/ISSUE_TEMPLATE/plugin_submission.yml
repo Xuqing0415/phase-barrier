@@ -1,0 +1,39 @@
+name: 插件提交（Plugin Submission）
+description: 把第三方语言适配器 / 拦截规则 / 集成插件加入生态索引（docs/plugins.md）
+title: "[Plugin] "
+labels: [plugin]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请阅读 [docs/plugins.md](../../docs/plugins.md) 的开发模板。
+  - type: input
+    id: name
+    attributes:
+      label: 插件名
+    validations:
+      required: true
+  - type: input
+    id: repo
+    attributes:
+      label: 仓库 / PyPI 地址
+    validations:
+      required: true
+  - type: dropdown
+    id: group
+    attributes:
+      label: 入口点组
+      options:
+        - phase_barrier.languages
+        - phase_barrier.validators
+        - phase_barrier.interceptors
+        - anti_shortcut.integrations
+    validations:
+      required: true
+  - type: textarea
+    id: usage
+    attributes:
+      label: 使用示例
+      description: 安装与启用方式（配置片段）
+    validations:
+      required: true

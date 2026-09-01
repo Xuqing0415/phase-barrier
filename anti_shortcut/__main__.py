@@ -7,6 +7,7 @@
     python -m anti_shortcut verify-evidence [--workspace .] [--json]
     python -m anti_shortcut export-evidence [--workspace .] [--out evidence-bundle.json]
     python -m anti_shortcut rotate-key --to <new-key> [--from <old-key>] [--workspace .]
+    python -m anti_shortcut init [--language auto] [--output config.yaml] [--force]
     python -m anti_shortcut --version
 
 ``advance`` 与 Agent 内部的 ``advance_stage`` 走同一套证据校验：
@@ -33,7 +34,8 @@ from pathlib import Path
 import yaml
 
 from . import __version__
-from .config import STAGES, load_config
+from .config import STAGES, GateConfig, load_config
+from .init import init_config
 from .evidence import (
     EVIDENCE_MANIFEST_NAME,
     EVIDENCE_MANIFEST_VERSION,
@@ -41,6 +43,7 @@ from .evidence import (
     EvidenceManifestError,
 )
 from .paths import sha256_file
+from .languages import get_adapter
 from .proxy import ExecDenied, GateProxy, ProxyError, WriteDenied
 from .sdk import PhaseBarrier
 from .skill import AntiShortcutSkill
@@ -56,6 +59,42 @@ def _build_skill(args: argparse.Namespace) -> AntiShortcutSkill:
         config=args.config,
         user_request=getattr(args, "user_request", "") or "",
     )
+
+
+def _cmd_init(args: argparse.Namespace) -> int:
+    """生成 phase-barrier 配置模板（v0.26.0）。"""
+    ws = Path(args.workspace).resolve()
+    if not ws.is_dir():
+        raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
+    rules = None
+    if args.rules:
+        rules = [r.strip() for r in args.rules.split(",") if r.strip()]
+    coverage = None
+    if args.with_coverage:
+        coverage = args.coverage_threshold
+    out, _text = init_config(
+        ws,
+        language=args.language,
+        output=args.output,
+        force=args.force,
+        coverage_threshold=coverage,
+        hmac_key=args.hmac_key,
+        audit_url=args.audit_url,
+        rules=rules,
+    )
+    if args.json:
+        print(
+            json.dumps(
+                {"ok": True, "output": str(out), "language": args.language or "auto"},
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+    else:
+        print(f"OK: 已生成配置 {out}")
+        print(f"    语言: {args.language or '自动检测'}")
+        print("    下一步：python -m anti_shortcut inspect --workspace . --config " + str(out))
+    return 0
 
 
 def _cmd_inspect(args: argparse.Namespace) -> int:
@@ -142,6 +181,36 @@ def _git_changed_files(ws: Path, git_base: str) -> list[str]:
     return [ln.strip() for ln in (proc.stdout or "").splitlines() if ln.strip()]
 
 
+def _git_change_impact(
+    ws: Path, changed: list[str], config: GateConfig
+) -> list[dict]:
+    """把 git 变更文件映射到受影响的门禁阶段（PR 增量校验提示，v0.26.0）。"""
+    adapter = get_adapter(config, ws)
+    impact: list[dict] = []
+    spec_file = config.spec_file
+    for rel in sorted(changed):
+        target = ws / rel
+        if rel == spec_file or rel.endswith("/" + spec_file):
+            impact.append(
+                {
+                    "file": rel,
+                    "kind": "spec",
+                    "requires": "重新校验阶段 1（Spec 设计），并按变更同步测试用例",
+                }
+            )
+        elif adapter.is_test_file(target, config):
+            impact.append(
+                {"file": rel, "kind": "test", "requires": "重新运行测试（阶段 4/5），确认用例仍通过"}
+            )
+        elif adapter.is_source_file(target, config):
+            impact.append(
+                {"file": rel, "kind": "source", "requires": "重新运行测试（阶段 4/5），确认实现变更无回归"}
+            )
+        else:
+            impact.append({"file": rel, "kind": "other", "requires": "无直接门禁影响"})
+    return impact
+
+
 def _cmd_verify_evidence(args: argparse.Namespace) -> int:
     """校验证据签名清单：对照工作区当前文件，检测缺失 / 被篡改的证据。
 
@@ -169,6 +238,9 @@ def _cmd_verify_evidence(args: argparse.Namespace) -> int:
         if touched:
             ok = False
             violations.extend(f"证据文件在本次变更中被修改: {c}" for c in touched)
+    git_impact: list[dict] = []
+    if git_base and changed:
+        git_impact = _git_change_impact(ws, changed, cfg)
     if args.json:
         print(
             json.dumps(
@@ -179,6 +251,7 @@ def _cmd_verify_evidence(args: argparse.Namespace) -> int:
                     "signed": manifest.is_signed(),
                     "git_base": git_base,
                     "git_changed_files": changed,
+                    "git_impact": git_impact,
                 },
                 ensure_ascii=False,
                 indent=2,
@@ -198,6 +271,8 @@ def _cmd_verify_evidence(args: argparse.Namespace) -> int:
                 print(f"VIOLATION: {v}", file=sys.stderr)
         if git_base and changed:
             print(f"git 门禁: 基线 {git_base}，本次变更 {len(changed)} 个文件")
+            for item in git_impact:
+                print(f"  - {item['file']} [{item['kind']}] {item['requires']}")
     return 0 if ok else 1
 
 
@@ -384,6 +459,19 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument("--workspace", type=str, default=".", help="工作区根目录（默认当前目录）")
     common.add_argument("--config", type=str, default=None, help="YAML 配置文件路径")
     common.add_argument("--json", action="store_true", help="以 JSON 输出")
+
+    p_init = sub.add_parser(
+        "init", parents=[common], help="生成 phase-barrier 配置模板（v0.26.0）"
+    )
+    p_init.add_argument("--language", type=str, default="", help="指定语言（缺省自动检测，如 python / javascript / cpp）")
+    p_init.add_argument("--output", type=str, default="config.yaml", help="输出文件路径（默认 config.yaml）")
+    p_init.add_argument("--force", action="store_true", help="覆盖已存在的配置文件")
+    p_init.add_argument("--with-coverage", action="store_true", help="启用覆盖率门禁")
+    p_init.add_argument("--coverage-threshold", type=float, default=80.0, help="覆盖率阈值百分比（默认 80）")
+    p_init.add_argument("--hmac-key", type=str, default="", help="状态签名 HMAC 密钥（推荐生产启用）")
+    p_init.add_argument("--audit-url", type=str, default="", help="审计远程推送端点（SIEM / webhook）")
+    p_init.add_argument("--rules", type=str, default="", help="内置安全规则，逗号分隔（如 no_path_traversal,no_shell_injection）")
+    p_init.set_defaults(func=_cmd_init)
 
     p_inspect = sub.add_parser("inspect", parents=[common], help="查看当前门禁状态")
     p_inspect.set_defaults(func=_cmd_inspect)

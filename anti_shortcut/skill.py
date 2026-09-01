@@ -184,14 +184,18 @@ class AntiShortcutSkill:
             return "source"
         return "other"
 
-    def check_write_permission(self, path: str | Path) -> None:
+    def check_write_permission(self, path: str | Path, content: Any = None) -> None:
         """检查写入权限；不允许时抛出 PermissionError（作为工具拦截反馈）。
 
         v0.12.0：自定义拦截规则（``phase_barrier.interceptors``）优先——
         (True) 直接放行；(False) 直接拦截；弃权时回落到内置阶段门禁。
+        v0.26.0：把待写内容透传给接受 ``content`` 参数的内置 / 自定义规则
+        （如 no_hardcoded_secrets / require_license_header）。
         """
         p = Path(path)
-        decision, reason = evaluate_rules("write", str(p), self.config, self.current_stage)
+        decision, reason = evaluate_rules(
+            "write", str(p), self.config, self.current_stage, content=content
+        )
         if decision is True:
             return
         if decision is False:
@@ -241,7 +245,7 @@ class AntiShortcutSkill:
 
         @functools.wraps(original_write)
         def guarded(path: str | Path, content: Any, **kwargs: Any) -> Any:
-            self.check_write_permission(path)
+            self.check_write_permission(path, content)
             result = original_write(path, content, **kwargs)
             kind = self._classify_path(Path(path))
             if kind in ("test", "source"):

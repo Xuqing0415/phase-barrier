@@ -51,6 +51,17 @@
   超时 / 异常细分；Gradle `> SKIPPED`、`BUILD SUCCESSFUL` 汇总与多模块 reactor 聚合；JUnit Platform Console
   `MethodSource` 嵌套格式（`Class.method(ParameterizedTest)`）；测试命令识别补充 Windows wrapper
   （`mvnw.cmd test` / `gradlew.bat test` / `.\mvnw`）。
+- **配置脚手架与配置指南（v0.26.0）**：`python -m anti_shortcut init` 自动检测语言并生成带注释的 YAML 模板
+  （可选 `--with-coverage` / `--hmac-key` / `--audit-url` / `--rules`）；新增全字段配置指南 `docs/configuration.md`。
+- **Docker 一键体验（v0.26.0）**：`docker/demo/` 提供模拟 Agent 演示镜像（拦截跳步 + 规范流程全通），
+  无需本地安装即可 `docker run --rm -it ghcr.io/xuqing0415/phase-barrier-demo` 体验。
+- **C++ / .NET 适配器（v0.26.0）**：`CppAdapter`（g++/clang++ `-fsyntax-only`、GoogleTest 宏统计、
+  `ctest` / GoogleTest 输出解析）与 `DotNetAdapter`（复用 C# 项目级 `dotnet build` 与 VSTest 输出解析）；
+  自动检测 `CMakeLists.txt` / `Makefile` / `*.vcxproj`。
+- **PR 增量校验（v0.26.0）**：`verify-evidence --git-base <ref>` 输出 `git_impact` 变更影响映射
+  （spec / test / source / other）；GitHub Action 新增 `mode: verify` 与 `git_base` 输入，示例 `examples/github-action/gate-pr.yml`。
+- **内置安全规则包（v0.26.0）**：`no_shell_injection` / `no_path_traversal` / `no_hardcoded_secrets` /
+  `require_license_header` 开箱即用，YAML `rules:` 一键启用，写入内容参与规则校验。
 
 
 ## 架构
@@ -95,6 +106,21 @@ pip install -e .            # 开发模式安装（依赖 pydantic / pyyaml / st
 python examples/minimal_agent.py   # 最小可运行的 Agent 接入示例（拦截 + 正常流程）
 python examples/demo.py            # 完整演示（含违规尝试被拦截）
 python -m pytest                   # 运行测试套件
+```
+
+**一键生成配置（v0.26.0）**：在项目根目录执行 `python -m anti_shortcut init`，
+自动检测语言并生成带注释的 `config.yaml`（可选 `--with-coverage` / `--hmac-key` /
+`--audit-url` / `--rules`，完整字段见 [配置指南](docs/configuration.md)）：
+
+```bash
+python -m anti_shortcut init --with-coverage --rules no_path_traversal,no_shell_injection
+```
+
+**Docker 一键体验（v0.26.0）**：无需本地安装任何依赖，直接运行模拟 Agent 的
+“跳步被拦截 + 规范流程全通”演示：
+
+```bash
+docker run --rm -it ghcr.io/xuqing0415/phase-barrier-demo
 ```
 
 ### 集成到 Agent（Alpha-SWE 等基于工具调用的 Agent）
@@ -150,12 +176,13 @@ alpha-swe = "alpha_swe_adapter:install"
 ### 命令行门禁检查（编排器 / 人工监督）
 
 ```bash
+python -m anti_shortcut init [--language python] [--output config.yaml]  # 生成带注释的配置模板（v0.26.0）
 python -m anti_shortcut inspect --workspace .            # 查看当前阶段
 python -m anti_shortcut inspect --workspace . --json     # JSON 输出（便于自动化）
 python -m anti_shortcut check --workspace . --stage 2 --json  # 钩子校验：是否放行进入阶段 2（v0.22.0）
 python -m anti_shortcut advance --workspace . --to 2     # 推进阶段（校验证据）
 python -m anti_shortcut verify-evidence --workspace .   # 对照工作区校验证据签名清单（v0.9.0）
-python -m anti_shortcut verify-evidence --workspace . --git-base origin/main  # Git 门禁：证据文件不可事后篡改（v0.11.0）
+python -m anti_shortcut verify-evidence --workspace . --git-base origin/main  # Git 门禁：证据文件不可事后篡改（v0.11.0）；--json 输出 git_impact 变更影响映射（v0.26.0）
 python -m anti_shortcut rotate-key --workspace . --from <旧密钥> --to <新密钥>  # 轮换状态签名密钥（v0.9.0）
 python -m anti_shortcut export-evidence --workspace . --out bundle.json   # 导出证据清单为可审计 bundle（v0.10.0）
 ```
@@ -169,7 +196,7 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 
 ```yaml
 # 示例：PR 时要求工作区至少完成“实现代码”（阶段 3）
-- uses: Xuqing0415/phase-barrier@v0.25.1
+- uses: Xuqing0415/phase-barrier@v0.26.0
   with:
     workspace: .          # 工作区路径（相对仓库根）
     expected_stage: 3     # 0-6；当前阶段 < 期望阶段则失败
@@ -180,12 +207,13 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 |------|------|------|
 | `workspace` | `.` | 工作区路径（相对仓库根） |
 | `config` | 空 | YAML 配置文件路径 |
-| `mode` | `inspect` | `inspect` 检查阶段；`advance` 推进到 `--to`；`exec` 经门禁执行 `command`，`check` 只读校验是否放行（v0.22.0） |
+| `mode` | `inspect` | `inspect` 检查阶段；`advance` 推进到 `--to`；`exec` 经门禁执行 `command`，`check` 只读校验是否放行（v0.22.0）；`verify` 校验本次 PR 变更未篡改证据文件（v0.26.0） |
 | `expected_stage` | `6` | inspect 模式：当前阶段低于该值则失败 |
 | `to` | 空 | advance 模式的目标阶段（必须等于当前阶段 + 1） |
 | `command` | 空 | exec 模式的测试/校验命令（仅 mode=exec 必填，v0.18.0） |
 | `stage` | 空 | check 模式的阶段号 0-6，校验是否放行进入该阶段（v0.22.0） |
 | `cwd` | 空 | exec 模式的工作目录（相对 workspace，可选；v0.19.0） |
+| `git_base` | PR 基线 SHA | verify 模式的 Git 基线 ref，默认 `${{ github.event.pull_request.base.sha }}`（v0.26.0） |
 | `user_request` | 空 | advance 首次初始化时记录的用户需求原文 |
 | `version` | 空 | 安装的 phase-barrier 版本（留空取最新版） |
 | `local` | `false` | 安装本地仓库代码而非 PyPI（CI 自测用） |
@@ -195,7 +223,7 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 **Action 输出（v0.25.0）**：门禁步骤通过后会输出 `workspace` / `stage` / `allowed`，下游步骤可通过 `steps.gate.outputs.*` 复用：
 
 ```yaml
-- uses: Xuqing0415/phase-barrier@v0.25.1
+- uses: Xuqing0415/phase-barrier@v0.26.0
   id: gate
   with:
     workspace: .
@@ -211,10 +239,10 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 
 
 
-**输入校验（v0.14.0 / v0.18.0 / v0.23.0）**：`mode` 必须是 `inspect` / `advance` / `exec` / `check`；`expected_stage` 与 `advance` 模式的 `to` 与 `check` 模式的 `stage` 必须是 0-6 的整数；`workspace` 必须存在。参数非法时 CI 直接失败并输出 `::error::` 定位信息，避免静默误判。
+**输入校验（v0.14.0 / v0.18.0 / v0.23.0 / v0.26.0）**：`mode` 必须是 `inspect` / `advance` / `exec` / `check` / `verify`；`expected_stage` 与 `advance` 模式的 `to` 与 `check` 模式的 `stage` 必须是 0-6 的整数；`workspace` 必须存在。参数非法时 CI 直接失败并输出 `::error::` 定位信息，避免静默误判。
 
 完整示例见 `examples/github-action/gate.yml`（通用）、`gate-go.yml`（Go）、
-`gate-rust.yml`（Rust）；Go / Rust 示例额外安装 `setup-go` / `rust-toolchain`，
+`gate-rust.yml`（Rust）、`gate-pr.yml`（PR 增量校验，v0.26.0）；Go / Rust 示例额外安装 `setup-go` / `rust-toolchain`，
 让 `advance` 模式能用真实 `gofmt` / `cargo check` 校验实现。本项目 CI 自带
 `gate-action` 自测 job，验证“达到期望阶段通过 / 未达到失败”两条路径。
 
@@ -525,8 +553,8 @@ tests/                             # pytest 测试套件（337 个用例）
 ## 多语言支持（v0.3.0 语言适配层）
 
 v0.3.0 起，语言相关逻辑（文件识别、语法检查、测试统计、测试命令识别）抽象为
-**语言适配器（Language Adapter）**。核心包内置 Python、JavaScript/TypeScript、Java、Go、Rust、Ruby 与 C# 适配器，
-第三方可注册自定义适配器；未显式指定时按工作区标志文件自动检测。
+**语言适配器（Language Adapter）**。核心包内置 Python、JavaScript/TypeScript、Java、Go、Rust、Ruby、
+C#、C++ 与 .NET 适配器，第三方可注册自定义适配器；未显式指定时按工作区标志文件自动检测。
 
 ### 快速启用
 
@@ -553,10 +581,13 @@ test_commands:
 
 不写 `language` 时自动检测标志文件：`package.json` → `javascript`，`pom.xml` → `java`，
 `go.mod` → `go`，`Cargo.toml` → `rust`，`Gemfile` / `*.gemspec` → `ruby`，
-`*.csproj` / `*.sln` → `csharp`，`requirements.txt` / `setup.py` / `pyproject.toml` → `python`；
-未识别时默认 Python。适配器默认文件模式与 YAML 中的 `test_file_patterns` / `source_file_patterns`
-自动合并（配置只增不减）。项目配置示例：`examples/anti_shortcut_js_config.yaml`、
-`anti_shortcut_go_config.yaml`、`anti_shortcut_rust_config.yaml`。
+`*.csproj` / `*.sln` → `csharp`，`CMakeLists.txt` / `Makefile` / `*.vcxproj` → `cpp`，
+`requirements.txt` / `setup.py` / `pyproject.toml` → `python`；未识别时默认 Python。
+.NET 项目可显式 `language: dotnet` 启用 `DotNetAdapter`（与 `csharp` 共用实现，便于按生态区分）。
+适配器默认文件模式与 YAML 中的 `test_file_patterns` / `source_file_patterns`
+自动合并（配置只增不减）。完整字段说明见 [配置指南](docs/configuration.md)。
+项目配置示例：`examples/anti_shortcut_js_config.yaml`、`anti_shortcut_go_config.yaml`、
+`anti_shortcut_rust_config.yaml`。
 
 ### 内置适配器
 
@@ -567,6 +598,9 @@ test_commands:
 | `JavaAdapter` | `*Test.java` / `*Tests.java` / `src/test/**` 为测试，`src/**` 与 `*.java` 为实现 | 项目级 `mvn test-compile` / `gradle compileTestJava`（优先 `mvnw` / `gradlew`，带缓存）；无构建工具时回退 `javac -proc:none` | 启发式：`@Test` 注解数 + JUnit/Hamcrest 断言关键字 |
 | `GoAdapter` | `*_test.go` 为测试，`*.go` / `cmd|internal|pkg/**` 为实现 | `gofmt -e`（Go 工具链缺失返回明确错误） | 启发式：`func TestXxx(t *testing.T)` 函数数 + `t.Error` / `t.Fatal` / `assert` / `require` 断言 |
 | `RustAdapter` | `tests/**` / `*_test.rs` / `src/**/tests.rs` 为测试，`src/**` 与 `*.rs` 为实现 | `cargo check`（有 `Cargo.toml`）/ `rustc` 单文件回退（工具缺失返回明确错误） | 启发式：`#[test]` / `#[tokio::test]` 属性数 + `assert!` / `assert_eq!` / `assert_ne!` |
+| `CSharpAdapter` | `*Test.cs` / `*Tests.cs` / `**/Tests/**` 为测试，`*.cs` 为实现 | 项目级 `dotnet build`（查找 `.csproj` / `.sln` 项目根，带指纹缓存；无项目根或工具缺失返回明确错误） | 启发式：`[Fact]` / `[Theory]` / `[Test]` 特性数 + `Assert.*` 断言；输出解析：VSTest `Passed! - Failed: F, Passed: P` / NUnit |
+| `CppAdapter` | `test_*.cpp` / `*_test.cpp` / `tests/**` 为测试，`*.cpp` / `*.cc` / `*.cxx` / `*.h` / `*.hpp` 为实现 | `g++ -fsyntax-only`（`clang++` 回退；编译器缺失返回明确错误） | 启发式：GoogleTest `TEST(` / `TEST_F(` 宏数 + `EXPECT_*` / `ASSERT_*` 断言；输出解析：`[  PASSED  ]` / `[  FAILED  ]` / ctest 摘要 |
+| `DotNetAdapter` | 同 `CSharpAdapter`（`name="dotnet"`） | 同 `CSharpAdapter` | 同 `CSharpAdapter`（显式 `language: dotnet` 启用） |
 
 ### 自定义适配器
 
@@ -709,20 +743,24 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
   （`mvnw.cmd test` / `gradlew.bat test` / `.\mvnw`）；新增 10 个 Java 解析边界测试（528 → 538）。
 - **v0.25.0 已完成**：GitHub Action 市场元数据增强——`action.yml` 增加 `outputs` 声明（`workspace` / `stage` / `allowed`），门禁步骤可通过 `steps.gate.outputs.*` 供下游复用；示例更新至 `@v0.25.0` 并补充 outputs 用法与参数联动说明；CI 升级 checkout@v7 / setup-python@v7 / setup-node@v7 / setup-go@v7 / upload-artifact@v7 与 action-gh-release@v3（消除 Node 20 弃用告警）并新增 gate outputs 断言；新增发布到 GitHub Marketplace 的流程文档 `docs/publish-to-marketplace.md` 与 action 元数据测试 `tests/test_action_meta.py`。
 - **v0.25.1 已完成**：composite action `outputs` 修复——三个输出（`workspace` / `stage` / `allowed`）补上 `value: ${{ steps.gate.outputs.* }}` 映射（仅写 `$GITHUB_OUTPUT` 不会传播到调用方，v0.25.0 的 gate-action 自测因此读到空值）；action 内部 `setup-python@v7` 消除 Node 20 弃用告警；README 示例同步至 `@v0.25.1`。
+- **v0.26.0 已完成**：产品化与生态建设——`python -m anti_shortcut init` 配置脚手架与全字段配置指南 `docs/configuration.md`；Docker 一键体验镜像（`ghcr.io/xuqing0415/phase-barrier-demo`）；C++ / .NET 适配器（`CppAdapter` / `DotNetAdapter`，含 GoogleTest / VSTest 输出解析与自动检测）；PR 增量校验（`verify-evidence --git-base` 的 `git_impact` 映射 + Action `mode: verify` / `git_base` 输入，示例 `examples/github-action/gate-pr.yml`）；内置安全规则包（`no_shell_injection` / `no_path_traversal` / `no_hardcoded_secrets` / `require_license_header`）；插件索引 `docs/plugins.md`、贡献指南 `CONTRIBUTING.md` 与 Issue 模板。
 
 **规划中（Next）**
 
-- **v0.26.0（编排器集成闭环）**：alpha-swe 端到端接入已完成（[alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1) 已关闭，接入 PR [alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3) 已合并）；剩余项：`PhaseBarrier` SDK 增加 `list_stages()` 与 `stage_of(path)` 辅助查询；编排器钩子示例扩展（多 Agent 并发任务共享门禁状态）。
+- **编排器集成闭环剩余项**：`PhaseBarrier` SDK 增加 `list_stages()` 与 `stage_of(path)` 辅助查询；编排器钩子示例扩展（多 Agent 并发任务共享门禁状态）。
+  alpha-swe 端到端接入已完成（[alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1) 已关闭，接入 PR [alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3) 已合并）。
 
 **长期规划**：K8s sidecar 透明代理（HTTP / gRPC 全量接管文件写与命令执行）；状态文件与证据签名（HMAC，密钥经 Kubernetes Secret 注入）；`sigstore` 签名发布（已用于 release 工件）；Java / Go / Rust 适配器测试命令与输出解析持续打磨；SWE-bench 门禁基准评估。
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 
 ## 反馈与贡献
 
-- 使用中遇到问题或想提需求：请在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 反馈，最好附上复现步骤（版本、配置、命令输出）。
+- 使用中遇到问题或想提需求：请在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 反馈，最好附上复现步骤（版本、配置、命令输出）；提交时请使用仓库内置的 Issue 模板（bug / feature / plugin）。
+- 贡献指南见 [CONTRIBUTING.md](CONTRIBUTING.md)（架构、开发环境、新语言适配器 / 新拦截规则步骤、发布流程）；
+  插件与生态索引见 [docs/plugins.md](docs/plugins.md)（语言适配器 / 校验器 / 拦截规则 / 集成插件四类入口点）。
 - 与 [alpha-swe](https://github.com/Xuqing0415/alpha-swe) 双向关联：编排器钩子 SDK（v0.22.0）示例见 `examples/orchestrator_hooks/`，alpha-swe 侧集成已合并（[alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3)）。
 - 关注 PyPI 下载量与版本更新：[phase-barrier · PyPI](https://pypi.org/project/phase-barrier/)。
-- 欢迎贡献代码：提交前请运行 `python -m pytest`，并遵循 Conventional Commits 提交规范（`feat:` / `fix:` / `docs:` / `test:`）。
+- 欢迎贡献代码：提交前请运行 `python -m pytest` 与 `python -m flake8 --jobs=1 <files>`，并遵循 Conventional Commits 提交规范（`feat:` / `fix:` / `docs:` / `test:`）。
 
 ## 供应链安全（sigstore，v0.10.0）
 

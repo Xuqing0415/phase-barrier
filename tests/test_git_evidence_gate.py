@@ -90,3 +90,37 @@ def test_git_gate_json_includes_changed_files(capsys, tmp_path):
     assert payload["git_base"] == "HEAD~1"
     assert "README.md" in payload["git_changed_files"]
     assert payload["ok"] is True
+
+
+
+# ---------- v0.26.0：变更文件 -> 门禁影响映射 ----------
+
+def test_git_gate_impact_classifies_source_change(capsys, tmp_path):
+    ws = make_spec_repo(tmp_path)
+    (ws / "fib.py").write_text("def fib(n): return n\n", encoding="utf-8")
+    git(ws, "add", "-A")
+    git(ws, "commit", "-q", "-m", "add impl")
+    rc = main(["verify-evidence", "--workspace", str(ws), "--git-base", "HEAD~1", "--json"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    payload = json.loads(out)
+    impact = {item["file"]: item for item in payload["git_impact"]}
+    assert "fib.py" in impact
+    assert impact["fib.py"]["kind"] == "source"
+    assert "重新运行测试" in impact["fib.py"]["requires"]
+
+
+def test_git_gate_impact_classifies_spec_change(capsys, tmp_path):
+    ws = make_spec_repo(tmp_path)
+    (ws / "spec.md").write_text(SPEC + "\n# 补充验收标准\n", encoding="utf-8")
+    git(ws, "add", "-A")
+    git(ws, "commit", "-q", "-m", "update spec")
+    # spec 属于证据清单条目 -> 应同时判定“证据文件被修改”（门禁失败）
+    rc = main(["verify-evidence", "--workspace", str(ws), "--git-base", "HEAD~1", "--json"])
+    out = capsys.readouterr().out
+    assert rc == 1
+    payload = json.loads(out)
+    impact = {item["file"]: item for item in payload["git_impact"]}
+    assert impact["spec.md"]["kind"] == "spec"
+    assert "阶段 1" in impact["spec.md"]["requires"]
+    assert any("证据文件在本次变更中被修改" in v for v in payload["violations"])

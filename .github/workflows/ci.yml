@@ -107,6 +107,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # verify 模式需要 git 基线历史
 
       - name: Prepare demo workspace (fresh -> stage 1)
         shell: bash
@@ -240,6 +242,30 @@ jobs:
           mode: advance
           to: 4
           local: "true"
+
+      - name: Gate verify mode passes when evidence untouched
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: verify
+          git_base: HEAD~1
+          local: "true"
+
+      - name: Gate verify mode rejects invalid git_base
+        id: gate_verify_bad
+        continue-on-error: true
+        uses: ./
+        with:
+          workspace: ci_gate_ws
+          mode: verify
+          git_base: no_such_ref_for_gate_self_test
+          local: "true"
+
+      - name: Assert invalid git_base failed as expected
+        if: steps.gate_verify_bad.outcome == 'success'
+        run: |
+          echo "::error::phase-barrier verify 非法 git_base 应失败但通过了"
+          exit 1
 
       - name: Gate exec mode runs test command (passes)
         uses: ./

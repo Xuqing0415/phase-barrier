@@ -54,6 +54,10 @@ inputs:
     description: "exec 模式的工作目录（相对 workspace，可选；v0.19.0）"
     required: false
     default: ""
+  git_base:
+    description: "verify 模式的 Git 基线 ref（如 origin/main 或 github.event.pull_request.base.sha），仅 mode=verify 必填（v0.26.0）"
+    required: false
+    default: "${{ github.event.pull_request.base.sha }}"
   version:
     description: "安装的 phase-barrier 版本（留空表示最新版）"
     required: false
@@ -93,8 +97,8 @@ runs:
         MODE="${{ inputs.mode }}"
         echo "workspace=$WS" >> "$GITHUB_OUTPUT"
         echo "allowed=false" >> "$GITHUB_OUTPUT"
-        if [ "$MODE" != "inspect" ] && [ "$MODE" != "advance" ] && [ "$MODE" != "exec" ] && [ "$MODE" != "check" ]; then
-          echo "::error::mode 必须是 inspect / advance / exec / check，当前值: $MODE"
+        if [ "$MODE" != "inspect" ] && [ "$MODE" != "advance" ] && [ "$MODE" != "exec" ] && [ "$MODE" != "check" ] && [ "$MODE" != "verify" ]; then
+          echo "::error::mode 必须是 inspect / advance / exec / check / verify，当前值: $MODE"
           exit 1
         fi
         if [ ! -d "$WS" ]; then
@@ -178,6 +182,20 @@ runs:
           echo "stage=${{ inputs.stage }}" >> "$GITHUB_OUTPUT"
           echo "allowed=true" >> "$GITHUB_OUTPUT"
           echo "phase-barrier 门禁通过：放行进入阶段 ${{ inputs.stage }}"
+        elif [ "$MODE" == "verify" ]; then
+          GB="${{ inputs.git_base }}"
+          if [ -z "$GB" ]; then
+            echo "::error::verify 模式必须提供 git_base（PR 基线 ref，如 origin/main 或 pull_request.base.sha）"
+            exit 1
+          fi
+          python -m anti_shortcut verify-evidence --workspace "$WS" --git-base "$GB" --json "${CONFIG_ARGS[@]}" > /tmp/phase-barrier-verify.json || {
+            echo "::error::phase-barrier 证据校验未通过（证据文件被修改 / 清单损坏 / git 基线不可用）"
+            cat /tmp/phase-barrier-verify.json
+            exit 1
+          }
+          echo "stage=" >> "$GITHUB_OUTPUT"
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
+          echo "phase-barrier 证据校验通过（git 基线 $GB）"
         elif [ "$MODE" == "advance" ]; then
           USER_ARGS=()
           if [ -n "${{ inputs.user_request }}" ]; then

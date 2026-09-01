@@ -1,0 +1,31 @@
+# PR 增量校验示例（v0.26.0）：
+# 1. inspect：PR 工作区阶段必须达到期望阶段（默认 6 交付）
+# 2. verify：证据文件不允许在本次 PR 中被修改（git_base 自动取 PR 基线）
+name: Phase-Barrier Gate (PR)
+
+on:
+  pull_request:
+
+jobs:
+  gate:
+    name: Phase-Barrier stage gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # verify 模式需要 git 基线历史
+
+      - name: Gate - inspect stage
+        uses: Xuqing0415/phase-barrier@v0.26.0
+        with:
+          workspace: agent_workspace
+          expected_stage: 6
+          local: "false"
+
+      - name: Gate - verify evidence not tampered in this PR
+        uses: Xuqing0415/phase-barrier@v0.26.0
+        with:
+          workspace: agent_workspace
+          mode: verify
+          git_base: ${{ github.event.pull_request.base.sha }}
+          local: "false"

@@ -118,6 +118,12 @@ class GateConfig(BaseModel):
     protect_gate_dir: bool = True
     # 允许 Agent 直接写入“其他”类型文件（如 README.md、docs），默认不限
     allow_other_files_any_stage: bool = True
+    # ---- 内置安全规则包（v0.26.0）----
+    # 按名称启用内置拦截规则（如 no_path_traversal / no_shell_injection /
+    # no_hardcoded_secrets / require_license_header），空列表时不启用
+    rules: list[str] = Field(default_factory=list)
+    # 传递给内置规则的额外选项（如 require_license_header 的 license_header 文本）
+    rules_options: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _expand_workspace(self) -> "GateConfig":

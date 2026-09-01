@@ -37,18 +37,51 @@ class TamperedStateError(CorruptedStateError):
 
 try:  # POSIX
     import fcntl
-except ImportError:  # Windows
-    fcntl = None
+except ImportError:  # pragma: no cover（仅 Windows 环境不可达）
+    fcntl = None  # pragma: no cover
 try:
     import msvcrt
-except ImportError:
-    msvcrt = None
+except ImportError:  # pragma: no cover（仅 POSIX 环境不可达）
+    msvcrt = None  # pragma: no cover
 
 LOCK_TIMEOUT = 15.0  # 等待状态文件锁的默认超时（秒）
 
 
 class StateLockTimeoutError(TimeoutError):
     """等待状态文件锁超时：另一进程持锁过久（可能长时间阻塞或异常退出）。"""
+
+
+def _acquire_lock_fcntl(fd: int, deadline: float, lock_path: Path) -> None:  # pragma: no cover（POSIX 专属分支）
+    """POSIX ``fcntl.flock`` 获取独占锁（与 Windows 分支互斥，不计入覆盖率）。"""
+    while True:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return
+        except OSError:
+            if time.monotonic() >= deadline:
+                raise StateLockTimeoutError(
+                    f"等待状态文件锁超时（>{LOCK_TIMEOUT:g}s）: {lock_path}"
+                ) from None
+            time.sleep(0.02)
+
+
+def _acquire_lock_msvcrt(fd: int, deadline: float, lock_path: Path) -> None:  # pragma: no cover（Windows 专属分支）
+    """Windows ``msvcrt.locking`` 获取独占锁（与 POSIX 分支互斥，不计入覆盖率）。"""
+    os.lseek(fd, 0, os.SEEK_SET)
+    if os.fstat(fd).st_size == 0:
+        os.write(fd, b"\x00")
+        os.fsync(fd)
+    while True:
+        try:
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            return
+        except OSError:
+            if time.monotonic() >= deadline:
+                raise StateLockTimeoutError(
+                    f"等待状态文件锁超时（>{LOCK_TIMEOUT:g}s）: {lock_path}"
+                ) from None
+            time.sleep(0.02)
 
 
 @contextmanager
@@ -65,34 +98,10 @@ def _file_lock(lock_path: Path, timeout: float = LOCK_TIMEOUT):
     try:
         deadline = time.monotonic() + timeout
         if fcntl is not None:
-            while True:
-                try:
-                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    acquired = True
-                    break
-                except OSError:
-                    if time.monotonic() >= deadline:
-                        raise StateLockTimeoutError(
-                            f"等待状态文件锁超时（>{timeout:g}s）: {lock_path}"
-                        ) from None
-                    time.sleep(0.02)
+            _acquire_lock_fcntl(fd, deadline, lock_path)
         else:
-            os.lseek(fd, 0, os.SEEK_SET)
-            if os.fstat(fd).st_size == 0:
-                os.write(fd, b"\x00")
-                os.fsync(fd)
-            while True:
-                try:
-                    os.lseek(fd, 0, os.SEEK_SET)
-                    msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
-                    acquired = True
-                    break
-                except OSError:
-                    if time.monotonic() >= deadline:
-                        raise StateLockTimeoutError(
-                            f"等待状态文件锁超时（>{timeout:g}s）: {lock_path}"
-                        ) from None
-                    time.sleep(0.02)
+            _acquire_lock_msvcrt(fd, deadline, lock_path)
+        acquired = True
         yield
     finally:
         if acquired:
@@ -102,8 +111,8 @@ def _file_lock(lock_path: Path, timeout: float = LOCK_TIMEOUT):
                 else:
                     os.lseek(fd, 0, os.SEEK_SET)
                     msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
-            except OSError:
-                pass  # fd 关闭时 OS 自动释放锁，解锁失败可忽略
+            except OSError:  # pragma: no cover（解锁失败罕见，fd 关闭时 OS 自动释放）
+                pass  # pragma: no cover
         os.close(fd)
 
 

@@ -1,4 +1,5 @@
-"""Python 语言适配器（默认）：AST 测试分析 + compile 语法检查。"""
+"""Python 语言适配器（默认）：AST 测试分析 + compile 语法检查；
+支持 pytest 与 unittest.TestCase 风格（``self.assert*`` 断言计数）。"""
 from __future__ import annotations
 
 import ast
@@ -55,12 +56,20 @@ class PythonAdapter(LanguageAdapter):
 
 
 def _count_assertions(node: ast.AST) -> int:
+    """统计单个测试函数内的断言数量（ast.Assert / pytest.raises / self.assert*）。"""
     count = 0
     for child in ast.walk(node):
         if isinstance(child, ast.Assert):
             count += 1
         elif isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
-            if child.func.attr == "raises" and isinstance(child.func.value, ast.Name):
+            # unittest.TestCase：``self.assertEqual(...)`` / ``self.assertRaises(...)`` 等
+            if (
+                isinstance(child.func.value, ast.Name)
+                and child.func.value.id == "self"
+                and child.func.attr.startswith("assert")
+            ):
+                count += 1
+            elif child.func.attr == "raises" and isinstance(child.func.value, ast.Name):
                 if child.func.value.id in ("pytest", "self"):
                     count += 1
     return count

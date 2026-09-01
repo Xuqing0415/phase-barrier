@@ -142,6 +142,8 @@ def test_java_adapter_identify_test_command():
     assert a.identify_test_command("gradle test")
     assert a.identify_test_command("./gradlew test --tests CalcTest")
     assert a.identify_test_command("java -jar junit-platform-console-standalone.jar --scan-class-path")
+    assert a.identify_test_command("testng testng.xml")
+    assert a.identify_test_command("java -cp lib org.testng.TestNG testng.xml")
     assert not a.identify_test_command("mvn package")
     assert not a.identify_test_command("ls -la")
 
@@ -615,3 +617,36 @@ def test_java_adapter_gradle_aggregate_none():
     from anti_shortcut.languages.java import _gradle_aggregate
 
     assert _gradle_aggregate("Tests run: 3, Failures: 0, Errors: 0") is None
+
+
+# ---------- v0.28.0：TestNG 输出解析 ----------
+
+def test_java_adapter_parse_testng_pass():
+    a = JavaAdapter()
+    out = (
+        "[TestNG] Running: testng.xml\n"
+        "Total tests run: 5, Failures: 0, Skips: 0, Configuration Failures: 0, Skips: 0\n"
+    )
+    ok, summary = a.parse_test_output(out, 0)
+    assert ok is True
+    assert "Total tests run: 5" in summary
+
+
+def test_java_adapter_parse_testng_fail():
+    a = JavaAdapter()
+    out = (
+        "[ERROR] testAdd(com.example.CalcTest)  FAILED\n"
+        "Total tests run: 5, Failures: 1, Skips: 0, Configuration Failures: 0\n"
+    )
+    ok, summary = a.parse_test_output(out, 1)
+    assert ok is False
+    assert "Failures: 1" in summary
+    assert "testAdd(com.example.CalcTest)" in summary
+
+
+def test_java_adapter_parse_testng_configuration_failure():
+    a = JavaAdapter()
+    out = "Total tests run: 5, Failures: 0, Skips: 0, Configuration Failures: 1\n"
+    ok, summary = a.parse_test_output(out, 1)
+    assert ok is False
+    assert "Configuration Failures" in summary

@@ -18,6 +18,7 @@ from .cpp import CppAdapter
 from .csharp import CSharpAdapter
 from .dotnet import DotNetAdapter
 from .go import GoAdapter
+from .php import PhpAdapter
 from .java import JavaAdapter
 from .javascript import JavaScriptAdapter
 from .python import PythonAdapter
@@ -35,6 +36,7 @@ __all__ = [
     "RubyAdapter",
     "CSharpAdapter",
     "CppAdapter",
+    "PhpAdapter",
     "DotNetAdapter",
     "detect_language",
     "get_adapter",
@@ -53,6 +55,7 @@ LANGUAGE_REGISTRY: dict[str, type[LanguageAdapter]] = {
     "ruby": RubyAdapter,
     "csharp": CSharpAdapter,
     "cpp": CppAdapter,
+    "php": PhpAdapter,
     "dotnet": DotNetAdapter,
 }
 
@@ -66,6 +69,7 @@ _LANGUAGE_MARKERS: list[tuple[tuple[str, ...], str]] = [
     (("requirements.txt", "setup.py", "setup.cfg", "tox.ini"), "python"),
     (("pyproject.toml",), "python"),
     (("CMakeLists.txt", "Makefile", "*.vcxproj"), "cpp"),
+    (("composer.json",), "php"),
 ]
 
 # 目录级 glob 标志（如根目录的 *.gemspec / *.csproj / *.sln）

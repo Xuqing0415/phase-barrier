@@ -194,3 +194,72 @@ def test_cpp_check_syntax_missing_compiler(tmp_path, monkeypatch):
     f.write_text("int main() { return 0; }\n", encoding="utf-8")
     ok, msg = CppAdapter().check_syntax(f)
     assert ok is False and "编译器" in msg
+# ---------- v0.28.0：C 文件与 Catch2 增强 ----------
+
+C_TESTS = """\
+#include <assert.h>
+
+int fib(int n);
+
+TEST_CASE("fib base", "[fib]") {
+    REQUIRE(fib(0) == 0);
+    CHECK(fib(1) == 1);
+}
+
+SCENARIO("fib sequence") {
+    GIVEN("n = 10") {
+        THEN("result is 55") {
+            REQUIRE(fib(10) == 55);
+        }
+    }
+}
+"""
+
+
+def test_cpp_adapter_c_file_classification():
+    a = CppAdapter()
+    assert a.is_source_file(Path("src/main.c"))
+    assert a.is_source_file(Path("fib.c"))
+    assert a.is_test_file(Path("test_fib.c"))
+    assert a.is_test_file(Path("fib_test.c"))
+    assert a.is_test_file(Path("tests/fib_test.c"))
+    assert not a.is_test_file(Path("src/main.c"))
+    assert not a.is_source_file(Path("test_fib.c"))
+
+
+def test_cpp_adapter_analyze_catch2(tmp_path):
+    f = tmp_path / "test_fib.cpp"
+    f.write_text(C_TESTS, encoding="utf-8")
+    info = CppAdapter().analyze_tests(f)
+    assert len(info["test_functions"]) == 2
+    assert info["heuristic"] is True
+    assert info["assertions_total"] >= 3  # REQUIRE x2 + CHECK x1
+
+
+def test_cpp_adapter_parse_passed_catch2():
+    out = "All tests passed (10 assertions in 5 test cases)\n"
+    ok, summary = CppAdapter().parse_test_output(out, 0)
+    assert ok is True and "Catch2" in summary and "5" in summary
+
+
+def test_cpp_adapter_parse_failed_catch2_cases():
+    out = "test cases: 5 | 2 passed | 3 failed\nassertions: 10 | 7 passed | 3 failed\n"
+    ok, summary = CppAdapter().parse_test_output(out, 1)
+    assert ok is False and "Catch2 失败" in summary and "3" in summary
+
+
+def test_cpp_adapter_parse_failed_catch2_header():
+    out = "FAILED:\n  test_add\n"
+    ok, summary = CppAdapter().parse_test_output(out, 1)
+    assert ok is False and "FAILED:" in summary
+
+
+def test_cpp_adapter_check_syntax_c_file(tmp_path):
+    compiler = shutil.which("gcc") or shutil.which("clang") or shutil.which("cc")
+    if compiler is None:
+        pytest.skip("无 gcc / clang / cc，跳过 C 语法检查")
+    f = tmp_path / "fib.c"
+    f.write_text("int fib(int n) { return n < 2 ? n : fib(n - 1) + fib(n - 2); }\n", encoding="utf-8")
+    ok, msg = CppAdapter().check_syntax(f)
+    assert ok is True
+    assert "语法检查通过" in msg

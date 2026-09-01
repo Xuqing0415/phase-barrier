@@ -1,6 +1,34 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.28.0] - 2026-09-01
+
+- **PHP 适配器（v0.28.0）**：
+  - 新增 `PhpAdapter`：`php -l` 语法检查（PHP CLI 缺失返回明确错误，不静默放行）、
+    PHPUnit 启发式测试统计（`public function testXxx` 方法 + PHPUnit 10+ `#[Test]` 属性，
+    断言 `assert*()` / `expectException()`）、`composer.json` 自动检测与显式 `language: php`。
+  - 测试命令：`phpunit` / `vendor/bin/phpunit` / `composer test` / `php vendor/bin/phpunit`；
+    输出解析：`OK (N tests, M assertions)`、`Tests: N, Assertions: M, Failures: X, Errors: Y`
+    与 `FAILURES!` / `ERRORS!` 标记。
+- **C/C++ 适配器增强（v0.28.0）**：
+  - 支持 `.c` 文件与 `gcc -fsyntax-only`（`clang` / `cc` 回退，`-std=c17`），
+    C++ 保持 `g++` / `clang++`（`-std=c++17`）；文件识别与测试文件模式覆盖 `test_*.c` / `*_test.c`。
+  - Catch2 支持：`TEST_CASE` / `SCENARIO` / `TEST_CASE_METHOD` / `TEMPLATE_TEST_CASE` 宏统计，
+    `REQUIRE*` / `CHECK*`（含 `_FALSE` / `_THROWS` 等变体）断言计数；
+    输出解析 `All tests passed (N assertions in M test cases)` / `FAILED:` / `test cases: N | P passed | F failed`。
+- **现有适配器测试框架增强（v0.28.0）**：
+  - Java TestNG：命令识别 `testng` / `java ... org.testng.TestNG`；输出解析
+    `Total tests run: N, Failures: M, Skips: K, Configuration Failures: C` 汇总与失败用例行。
+  - Python unittest：`unittest.TestCase` 的 `test_*` 方法内 `self.assert*`（含 `assertRaises`）计入断言。
+  - JS Cypress：断言关键字 `cy.should`、命令 `npx cypress run` / `yarn cypress run` /
+    `node_modules/.bin/cypress run`、输出解析 `All specs passed!` / `N passing` / `N failing`。
+- **CI（v0.28.0）**：test / coverage job 安装 PHP 8.3（`shivammathur/setup-php`），
+  激活 PhpAdapter 真实工具用例；ubuntu 自带 gcc/g++ 执行 C/C++ 真实语法检查用例。
+- 测试：新增 `tests/test_php_adapter.py`（18 个），扩展 C/C++（C 文件 / Catch2 分析 /
+  Catch2 输出 / gcc 语法检查）、Java（TestNG 命令与汇总）、JavaScript（Cypress 断言 /
+  命令 / 输出）、语言层（composer 检测 / unittest 断言计数），全量 644 → 681。
+- 发布后修复：`_PHPUNIT_FAILURES_RE` 末尾 `\b` 在 `!` 与换行间不成立导致 `FAILURES!` 标记漏判，已移除。
+
 ## [0.27.0] - 2026-09-01
 
 - **K8s 生产级部署（v0.27.0）**：

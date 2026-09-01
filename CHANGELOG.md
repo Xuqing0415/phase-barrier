@@ -30,7 +30,7 @@
   `tests/test_benchmarks.py` ×5），全量 633 → 644。
 - 发布后修复：`e2e-kind` CI 首次运行暴露两处问题——e2e 镜像缺 setuptools（`--no-build-isolation`
   失败）且构建上下文无 `.git`（setuptools-scm 无法探测版本），改用显式安装 + `SETUPTOOLS_SCM_PRETEND_VERSION`
-  构建参数；CI 增装 `kubectl`。修复后 `e2e-kind` / `bench` 门禁全绿。
+  构建参数；CI 增装 `kubectl`。e2e 测试用例改为 `pytest.raises`（消除空壳测试判定）；隔离断言对齐真实安全属性——agent 写入 workspace 卷内挂载点空目录的伪文件不影响 sidecar 独占 `gate-state` 卷中的真实状态（经 `/api/state` 验证仍为交付）。修复后 `e2e-kind` / `bench` 门禁全绿。
 
 ## [0.26.4] - 2026-09-01
 

@@ -64,11 +64,15 @@ echo "[e2e] pod=${POD}"
 echo "[e2e] 6/6 运行 GateClient 端到端 Agent（拦截 + 规范流程）"
 kubectl exec -n "$NAMESPACE" "$POD" -c gate-sidecar -i -- python - < "$E2E_AGENT"
 
-echo "[e2e] 验证 Agent 容器无法写入门禁状态卷"
-if kubectl exec -n "$NAMESPACE" "$POD" -c agent -- sh -c 'echo tampered > /workspace/.agent_gate/state.json' >/dev/null 2>&1; then
-  echo "[e2e] FAIL: agent 竟能写入 .agent_gate（隔离失效）" >&2
+echo "[e2e] 验证 Agent 无法篡改真实门禁状态（gate-state 卷隔离）"
+# workspace 卷上 .agent_gate 只是 gate-state 卷的挂载点空目录：agent 的伪写入
+# 落在 workspace 卷，不影响 sidecar 独占的 gate-state 卷中的真实 state.json。
+kubectl exec -n "$NAMESPACE" "$POD" -c agent -- sh -c 'echo tampered > /workspace/.agent_gate/state.json' >/dev/null 2>&1 || true
+STAGE="$(kubectl exec -n "$NAMESPACE" "$POD" -c gate-sidecar -- python -c "from anti_shortcut.proxy_client import GateClient; print(GateClient('http://localhost:8080').state()['stage_name'])")"
+if [ "$STAGE" != "交付" ]; then
+  echo "[e2e] FAIL: agent 篡改了真实门禁状态（当前: ${STAGE}）" >&2
   exit 1
 fi
-echo "[e2e] OK: agent 无法访问门禁状态卷"
+echo "[e2e] OK: agent 无法篡改真实门禁状态（gate-state 卷隔离有效）"
 
 echo "[e2e] 全部通过 ✅"

@@ -41,8 +41,9 @@ helm install pb ./deploy/helm/phase-barrier --namespace phase-barrier-demo --cre
   内联门禁配置（`sidecar.configYaml`，挂载为 `/workspace/gate.yaml`）、
   一次性 gate-keeper Job（`gatekeeper.enabled`）、资源限制与就绪探针。
 - 默认 sidecar 容器命令为 `python -m anti_shortcut sidecar --workspace /workspace --port 8080`；
-  agent 容器与 sidecar 共享 `workspace` 卷，`.agent_gate` 单独挂载（`gate-state` 卷），
-  agent 无写入权限。
+  agent 容器与 sidecar 共享 `workspace` 卷，真实门禁状态存放于独立的 `gate-state` 卷（
+  挂载到 sidecar 的 `/workspace/.agent_gate`），agent 容器不挂载该卷，无法篡改状态机；
+  workspace 卷中的 `.agent_gate` 仅为挂载点空目录，agent 写入其中的伪文件不影响真实状态。
 - 端到端验证（需 docker + kind + helm + kubectl）：
 
   ```bash

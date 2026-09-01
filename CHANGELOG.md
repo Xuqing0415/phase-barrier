@@ -2,6 +2,15 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.25.1] - 2026-09-01
+
+- GitHub Action 修复：composite action 的 `outputs` 必须通过
+  `value: ${{ steps.<id>.outputs.<name> }}` 映射才能传播到调用方，仅写 `$GITHUB_OUTPUT`
+  不会生效（v0.25.0 的 gate-action 自测 "Assert inspect outputs" 因此读到空值）。
+  - `action.yml` 三个输出（`workspace` / `stage` / `allowed`）补上 `value` 映射。
+  - action 内部 `actions/setup-python@v5` 升级到 `@v7`，消除 Node 20 弃用告警。
+  - `tests/test_action_meta.py` 增加 outputs value 映射断言（共 11 个用例）。
+
 ## [0.25.0] - 2026-09-01
 
 - GitHub Action 市场元数据增强（v0.25.0）：

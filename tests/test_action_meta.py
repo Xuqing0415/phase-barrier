@@ -36,6 +36,14 @@ def test_action_branding(action_meta):
     assert branding["color"] == "blue"
 
 
+def test_action_outputs_value_mapping(action_meta):
+    """composite action 的 outputs 必须用 value 映射 steps.<id>.outputs.*，
+    仅写 $GITHUB_OUTPUT 不会传播到调用方（GitHub Actions 元数据语法）。"""
+    outputs = action_meta["outputs"]
+    for name in ("workspace", "stage", "allowed"):
+        assert outputs[name]["value"] == "${{ steps.gate.outputs.%s }}" % name
+
+
 def test_action_outputs_declared(action_meta):
     outputs = action_meta.get("outputs")
     assert outputs is not None

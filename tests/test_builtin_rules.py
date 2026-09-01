@@ -186,3 +186,56 @@ def test_skill_allows_clean_write_via_wrap_write_file(tmp_path):
     tools = skill.install({"write_file": real_write})
     tools["write_file"]("README.md", "clean docs\n")
     assert (tmp_path / "README.md").exists()
+
+
+# ---------- 边界补强（v0.26.0 覆盖率门禁） ----------
+
+def test_no_path_traversal_abstains_without_config():
+    # 无 config：路径解析后不与工作区比较，直接弃权
+    decision, _ = evaluate_rules("write", "src/x.py", None, 1)
+    assert decision is None
+
+
+def test_no_path_traversal_ignores_exec_kind(tmp_path):
+    cfg = GateConfig(rules=["no_path_traversal"], workspace=tmp_path)
+    decision, _ = evaluate_rules("exec", "../../etc/passwd", cfg, 1)
+    assert decision is None
+
+
+def test_no_shell_injection_handles_unterminated_backslash():
+    # shlex 对末尾孤反斜杠抛 ValueError，回退 split() 后仍识别反斜杠续行
+    cfg = GateConfig(rules=["no_shell_injection"])
+    decision, reason = evaluate_rules("exec", "echo a\\", cfg, 3)
+    assert decision is False and "no_shell_injection" in reason
+
+
+def test_no_hardcoded_secrets_blocks_aws_key():
+    cfg = GateConfig(rules=["no_hardcoded_secrets"])
+    decision, reason = evaluate_rules(
+        "write", "aws.py", cfg, 1, content="AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE"
+    )
+    assert decision is False and "no_hardcoded_secrets" in reason
+
+
+def test_require_license_header_ignores_exec_kind():
+    cfg = GateConfig(
+        rules=["require_license_header"], rules_options={"license_header": "Copyright"}
+    )
+    decision, _ = evaluate_rules("exec", "a.py", cfg, 1, content="x")
+    assert decision is None
+
+
+def test_require_license_header_ignores_non_source_ext():
+    cfg = GateConfig(
+        rules=["require_license_header"], rules_options={"license_header": "Copyright"}
+    )
+    decision, _ = evaluate_rules("write", "notes.txt", cfg, 1, content="hello")
+    assert decision is None
+
+
+def test_require_license_header_abstains_empty_content():
+    cfg = GateConfig(
+        rules=["require_license_header"], rules_options={"license_header": "Copyright"}
+    )
+    decision, _ = evaluate_rules("write", "a.py", cfg, 1, content="")
+    assert decision is None

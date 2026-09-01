@@ -137,3 +137,60 @@ def test_cpp_parse_ctest_passed():
 def test_cpp_parse_unknown_failure():
     ok, summary = CppAdapter().parse_test_output("", 7)
     assert ok is False and "7" in summary
+
+
+# ---------- 输出解析 / 工具缺失边界（v0.26.0 覆盖率门禁） ----------
+
+def test_cpp_parse_passed_run_lines_without_count():
+    # exit 0 且有 [ RUN ] 行但无 PASSED/FAILED 计数：按运行用例数判定通过
+    out = "[ RUN      ] FibTest.Base\n[ RUN      ] FibTest.Next\n"
+    ok, summary = CppAdapter().parse_test_output(out, 0)
+    assert ok is True and "2" in summary
+
+
+def test_cpp_parse_passed_fallback():
+    # exit 0 且无任何 GoogleTest / ctest 标记：兜底判定通过
+    ok, summary = CppAdapter().parse_test_output("build finished", 0)
+    assert ok is True and "所有测试通过" in summary
+
+
+def test_cpp_parse_failed_header():
+    # exit != 0 且出现 [  FAILED  ] 头：判定存在失败用例
+    out = "[  FAILED  ] FibTest.Base\n"
+    ok, summary = CppAdapter().parse_test_output(out, 1)
+    assert ok is False and "失败用例" in summary
+
+
+def test_cpp_parse_ctest_failed():
+    # exit != 0 且输出含 "tests failed"：判定 ctest 失败
+    out = "50% tests passed, 2 tests failed out of 4\n"
+    ok, summary = CppAdapter().parse_test_output(out, 1)
+    assert ok is False and "ctest" in summary
+
+
+def test_cpp_decode_output_none():
+    from anti_shortcut.languages.cpp import _decode_output
+
+    assert _decode_output(None) == ""
+
+
+def test_cpp_decode_output_fallback_latin1():
+    # utf-8 / gbk / cp1252 均无法解码时回退 latin-1
+    from anti_shortcut.languages.cpp import _decode_output
+
+    assert _decode_output(b"\x81") == "\x81"
+
+
+def test_cpp_check_syntax_empty_file(tmp_path):
+    f = tmp_path / "empty.cpp"
+    f.write_text("", encoding="utf-8")
+    ok, msg = CppAdapter().check_syntax(f)
+    assert ok is False and "空文件" in msg
+
+
+def test_cpp_check_syntax_missing_compiler(tmp_path, monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+    f = tmp_path / "x.cpp"
+    f.write_text("int main() { return 0; }\n", encoding="utf-8")
+    ok, msg = CppAdapter().check_syntax(f)
+    assert ok is False and "编译器" in msg

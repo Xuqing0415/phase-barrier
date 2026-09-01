@@ -1,0 +1,14 @@
+# kind e2e 使用的 Helm values：本地构建镜像 + emptyDir（无需 StorageClass）
+image:
+  repository: phase-barrier-demo
+  tag: e2e
+  pullPolicy: IfNotPresent
+sidecar:
+  userRequest: "K8s e2e：实现斐波那契数列第 n 项的函数 fib(n)"
+agent:
+  image:
+    repository: phase-barrier-demo
+    tag: e2e
+    pullPolicy: IfNotPresent
+persistence:
+  type: emptyDir

@@ -1,0 +1,31 @@
+{{- if eq .Values.persistence.type "pvc" }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "phase-barrier.fullname" . }}-workspace
+  labels:
+    {{- include "phase-barrier.labels" . | nindent 4 }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+{{- with .Values.persistence.workspace.storageClass }}
+  storageClassName: {{ . | quote }}
+{{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.workspace.size }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "phase-barrier.fullname" . }}-gate
+  labels:
+    {{- include "phase-barrier.labels" . | nindent 4 }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+{{- with .Values.persistence.gate.storageClass }}
+  storageClassName: {{ . | quote }}
+{{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.gate.size }}
+{{- end }}

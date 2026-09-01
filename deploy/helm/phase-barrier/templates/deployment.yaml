@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "phase-barrier.fullname" . }}
+  labels:
+    {{- include "phase-barrier.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "phase-barrier.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "phase-barrier.labels" . | nindent 8 }}
+    spec:
+      volumes:
+        - name: workspace
+{{- if eq .Values.persistence.type "pvc" }}
+          persistentVolumeClaim:
+            claimName: {{ include "phase-barrier.fullname" . }}-workspace
+{{- else }}
+          emptyDir: {}
+{{- end }}
+        - name: gate-state
+{{- if eq .Values.persistence.type "pvc" }}
+          persistentVolumeClaim:
+            claimName: {{ include "phase-barrier.fullname" . }}-gate
+{{- else }}
+          emptyDir: {}
+{{- end }}
+{{- if .Values.sidecar.configYaml }}
+        - name: gate-config
+          configMap:
+            name: {{ include "phase-barrier.fullname" . }}-config
+{{- end }}
+{{- if and .Values.sidecar.tls.enabled .Values.sidecar.tls.secretName }}
+        - name: tls-volume
+          secret:
+            secretName: {{ .Values.sidecar.tls.secretName }}
+{{- end }}
+      containers:
+{{- if .Values.agent.enabled }}
+        - name: agent
+          image: "{{ .Values.agent.image.repository }}:{{ .Values.agent.image.tag }}"
+          imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
+          command: {{ toYaml .Values.agent.command | nindent 12 }}
+          resources: {{ toYaml .Values.agent.resources | nindent 12 }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+{{- end }}
+        - name: gate-sidecar
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-m", "anti_shortcut", "sidecar"]
+          args:
+            - --workspace
+            - /workspace
+            - --host
+            - {{ .Values.sidecar.host | quote }}
+            - --port
+            - {{ .Values.sidecar.port | quote }}
+{{- if .Values.sidecar.userRequest }}
+            - --user-request
+            - {{ .Values.sidecar.userRequest | quote }}
+{{- end }}
+{{- if .Values.sidecar.configYaml }}
+            - --config
+            - /workspace/gate.yaml
+{{- end }}
+{{- if and .Values.sidecar.tls.enabled .Values.sidecar.tls.secretName }}
+            - --tls-cert
+            - /etc/pb-tls/tls.crt
+            - --tls-key
+            - /etc/pb-tls/tls.key
+            - --tls-client-ca
+            - /etc/pb-tls/ca.crt
+{{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.sidecar.port }}
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+{{- if .Values.sidecar.hmac.enabled }}
+            - name: PHASE_BARRIER_HMAC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "phase-barrier.secretName" . }}
+                  key: {{ .Values.sidecar.hmac.key }}
+{{- end }}
+{{- if .Values.sidecar.audit.enabled }}
+            - name: AUDIT_REMOTE_URL
+              value: {{ .Values.sidecar.audit.url | quote }}
+            - name: AUDIT_REMOTE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.sidecar.audit.secretName | default (printf "%s-secrets" (include "phase-barrier.fullname" .)) }}
+                  key: {{ .Values.sidecar.audit.tokenKey }}
+{{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+{{- with .Values.sidecar.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+{{- end }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: gate-state
+              mountPath: /workspace/.agent_gate
+{{- if .Values.sidecar.configYaml }}
+            - name: gate-config
+              mountPath: /workspace/gate.yaml
+              subPath: gate.yaml
+{{- end }}
+{{- if and .Values.sidecar.tls.enabled .Values.sidecar.tls.secretName }}
+            - name: tls-volume
+              mountPath: /etc/pb-tls
+              readOnly: true
+{{- end }}

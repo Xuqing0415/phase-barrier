@@ -26,6 +26,34 @@ flowchart LR
   `POST /api/write`、`POST /api/exec`（v0.17.0 透明代理）、`GET /api/audit`（v0.20.0 审计查询）。
 - agent 容器：只挂载 workspace；写代码后通过 localhost 调用 sidecar API 推进阶段。
 
+
+## Helm 一键部署（v0.27.0）
+
+推荐直接使用 Helm chart（`deploy/helm/phase-barrier/`），一条命令部署 sidecar + agent：
+
+```bash
+helm install pb ./deploy/helm/phase-barrier --namespace phase-barrier-demo --create-namespace
+# 自定义：helm upgrade pb ./deploy/helm/phase-barrier -f my-values.yaml
+```
+
+- `values.yaml` 支持：镜像（`image` / `agent.image`）、存储（`persistence.type: emptyDir | pvc`）、
+  HMAC 状态签名（`sidecar.hmac`）、mTLS（`sidecar.tls`）、审计远程推送（`sidecar.audit`）、
+  内联门禁配置（`sidecar.configYaml`，挂载为 `/workspace/gate.yaml`）、
+  一次性 gate-keeper Job（`gatekeeper.enabled`）、资源限制与就绪探针。
+- 默认 sidecar 容器命令为 `python -m anti_shortcut sidecar --workspace /workspace --port 8080`；
+  agent 容器与 sidecar 共享 `workspace` 卷，`.agent_gate` 单独挂载（`gate-state` 卷），
+  agent 无写入权限。
+- 端到端验证（需 docker + kind + helm + kubectl）：
+
+  ```bash
+  bash deploy/k8s/kind-e2e-test.sh
+  ```
+
+  该脚本已在 CI（`e2e-kind` job，ubuntu）中运行：kind 建集群 → 加载本地镜像 →
+  `helm install` → `kubectl exec` 运行 GateClient 全流程（跳步拦截 + SOP 推进到交付），
+  并断言 agent 容器无法写入 `.agent_gate/state.json`。
+- 更多参数说明见 `deploy/helm/phase-barrier/README.md`。
+
 ## 快速开始（kind / minikube）
 
 1. 构建并推送镜像（用仓库根 `deploy/Dockerfile`）：

@@ -351,6 +351,53 @@ jobs:
           echo "::error::phase-barrier 应拒绝缺失工作区但通过了"
           exit 1
 
+  e2e-kind:
+    name: K8s Helm e2e (kind)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # setuptools-scm 需要读取 tag
+
+      - name: Install kind
+        run: |
+          curl -fsSLo /tmp/kind https://github.com/kubernetes-sigs/kind/releases/download/v0.27.0/kind-linux-amd64
+          chmod +x /tmp/kind
+          sudo mv /tmp/kind /usr/local/bin/kind
+          kind version
+
+      - name: Install helm
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          helm version
+
+      - name: Run Helm + kind end-to-end test
+        run: bash deploy/k8s/kind-e2e-test.sh
+
+  bench:
+    name: Performance benchmark (regression gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run performance benchmark
+        run: |
+          python benchmarks/bench.py --fail-fast \
+            --state-threads 32 --state-iters 8 \
+            --write-ops 100 --exec-ops 20 \
+            --state-p95-ms 2000 --write-p95-ms 5000 --exec-p95-ms 10000
+
   package:
     name: Build sdist and wheel
     runs-on: ubuntu-latest

@@ -5,6 +5,14 @@ branding:
   icon: "shield"
   color: "blue"
 
+outputs:
+  workspace:
+    description: "检查的工作区路径（与 inputs.workspace 一致），供下游步骤复用"
+  stage:
+    description: "阶段号：inspect=当前阶段，check=输入 stage，advance=目标 to；exec 模式为空"
+  allowed:
+    description: "是否通过门禁/允许执行（true/false），失败时固定为 false"
+
 inputs:
   workspace:
     description: "工作区路径（相对仓库根）"
@@ -74,11 +82,14 @@ runs:
         fi
 
     - name: Run phase-barrier gate
+      id: gate
       shell: bash
       run: |
         set -euo pipefail
         WS="${{ inputs.workspace }}"
         MODE="${{ inputs.mode }}"
+        echo "workspace=$WS" >> "$GITHUB_OUTPUT"
+        echo "allowed=false" >> "$GITHUB_OUTPUT"
         if [ "$MODE" != "inspect" ] && [ "$MODE" != "advance" ] && [ "$MODE" != "exec" ] && [ "$MODE" != "check" ]; then
           echo "::error::mode 必须是 inspect / advance / exec / check，当前值: $MODE"
           exit 1
@@ -132,6 +143,7 @@ runs:
             CWD_ARGS+=(--cwd "${{ inputs.cwd }}")
           fi
           python -m anti_shortcut exec --workspace "$WS" --command "$COMMAND" "${CONFIG_ARGS[@]}" "${CWD_ARGS[@]}"
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
           echo "phase-barrier 门禁执行通过：$COMMAND"
         elif [ "$MODE" == "check" ]; then
           STAGE="${{ inputs.stage }}"
@@ -160,6 +172,8 @@ runs:
             cat /tmp/phase-barrier-check.json
             exit 1
           fi
+          echo "stage=${{ inputs.stage }}" >> "$GITHUB_OUTPUT"
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
           echo "phase-barrier 门禁通过：放行进入阶段 ${{ inputs.stage }}"
         elif [ "$MODE" == "advance" ]; then
           USER_ARGS=()
@@ -167,6 +181,8 @@ runs:
             USER_ARGS+=(--user-request "${{ inputs.user_request }}")
           fi
           python -m anti_shortcut advance --workspace "$WS" --to "${{ inputs.to }}" "${CONFIG_ARGS[@]}" "${USER_ARGS[@]}"
+          echo "stage=${{ inputs.to }}" >> "$GITHUB_OUTPUT"
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
         else
           python -m anti_shortcut inspect --workspace "$WS" --json "${CONFIG_ARGS[@]}" > /tmp/phase-barrier-gate.json
           STAGE=$(python -c "import json; print(json.load(open('/tmp/phase-barrier-gate.json'))['current_stage'])")
@@ -175,5 +191,7 @@ runs:
             cat /tmp/phase-barrier-gate.json
             exit 1
           fi
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
           echo "phase-barrier 门禁通过：当前阶段 $STAGE >= 期望阶段 $EXPECTED"
         fi

@@ -18,21 +18,21 @@ jobs:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # setuptools-scm 需要读取 tag
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: pyproject.toml
 
       # v0.16.0: 安装真实工具链，激活 JS/Go/Rust/Ruby 适配器的真实工具测试
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '20'
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version: '1.22'
       - uses: dtolnay/rust-toolchain@stable
@@ -62,21 +62,21 @@ jobs:
     name: coverage (fail-under 90)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # setuptools-scm 需要读取 tag
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: pyproject.toml
 
       # v0.16.0: 覆盖率门禁需要与主测试矩阵一致的真实工具链
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '20'
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version: '1.22'
       - uses: dtolnay/rust-toolchain@stable
@@ -96,7 +96,7 @@ jobs:
           coverage json -o coverage.json
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage.json
@@ -106,7 +106,7 @@ jobs:
     name: GitHub Action gate self-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Prepare demo workspace (fresh -> stage 1)
         shell: bash
@@ -125,11 +125,18 @@ jobs:
           EOF
 
       - name: Gate passes at expected_stage=1
+        id: gate
         uses: ./
         with:
           workspace: ci_gate_ws
           expected_stage: 1
           local: "true"
+
+      - name: Assert inspect outputs
+        run: |
+          [ "${{ steps.gate.outputs.workspace }}" == "ci_gate_ws" ]
+          [ "${{ steps.gate.outputs.stage }}" == "1" ]
+          [ "${{ steps.gate.outputs.allowed }}" == "true" ]
 
       - name: Gate should fail at expected_stage=6
         id: gate_fail
@@ -321,11 +328,11 @@ jobs:
     name: Build sdist and wheel
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # setuptools-scm 需要读取 tag
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -341,7 +348,7 @@ jobs:
       - name: List artifacts
         run: ls -l dist/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/

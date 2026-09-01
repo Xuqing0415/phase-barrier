@@ -3,6 +3,7 @@
 [![CI](https://github.com/Xuqing0415/phase-barrier/actions/workflows/ci.yml/badge.svg)](https://github.com/Xuqing0415/phase-barrier/actions/workflows/ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/phase-barrier.svg)](https://pypi.org/project/phase-barrier/)
 [![Python versions](https://img.shields.io/pypi/pyversions/phase-barrier.svg)](https://pypi.org/project/phase-barrier/)
+[![Marketplace](https://img.shields.io/badge/Marketplace-Phase%20Barrier%20Gate-blue.svg?logo=github&logoColor=white)](https://github.com/marketplace/actions/phase-barrier-gate)
 
 强制编码 Agent（如 Alpha-SWE）遵循标准工程师 SOP 的**阶段门禁（Stage Gate）**组件：
 以“阶段状态机 + 证据校验 + 工具拦截”的组合，阻止 Agent 跳步、偷步或伪造产出。
@@ -168,7 +169,7 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 
 ```yaml
 # 示例：PR 时要求工作区至少完成“实现代码”（阶段 3）
-- uses: Xuqing0415/phase-barrier@v0.8.0
+- uses: Xuqing0415/phase-barrier@v0.25.0
   with:
     workspace: .          # 工作区路径（相对仓库根）
     expected_stage: 3     # 0-6；当前阶段 < 期望阶段则失败
@@ -189,6 +190,26 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 | `version` | 空 | 安装的 phase-barrier 版本（留空取最新版） |
 | `local` | `false` | 安装本地仓库代码而非 PyPI（CI 自测用） |
 
+**参数联动（v0.25.0）**：`mode` 决定需要哪些参数——`advance` 需配 `to`，`check` 需配 `stage`，`exec` 需配 `command`；不满足时门禁直接失败并输出 `::error::`。
+
+**Action 输出（v0.25.0）**：门禁步骤通过后会输出 `workspace` / `stage` / `allowed`，下游步骤可通过 `steps.gate.outputs.*` 复用：
+
+```yaml
+- uses: Xuqing0415/phase-barrier@v0.25.0
+  id: gate
+  with:
+    workspace: .
+    expected_stage: 3
+
+- name: 复用门禁输出
+  run: |
+    echo "当前阶段: ${{ steps.gate.outputs.stage }}"
+    echo "是否放行: ${{ steps.gate.outputs.allowed }}"
+```
+
+`stage` 取值：`inspect` = 当前阶段，`check` = 输入 `stage`，`advance` = 目标 `to`，`exec` 模式为空。
+
+
 
 **输入校验（v0.14.0 / v0.18.0 / v0.23.0）**：`mode` 必须是 `inspect` / `advance` / `exec` / `check`；`expected_stage` 与 `advance` 模式的 `to` 与 `check` 模式的 `stage` 必须是 0-6 的整数；`workspace` 必须存在。参数非法时 CI 直接失败并输出 `::error::` 定位信息，避免静默误判。
 
@@ -200,7 +221,7 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 该 Action 已发布到 [GitHub Marketplace](https://github.com/marketplace/actions/phase-barrier-gate)
 （已确认上架：Marketplace 页面显示 **Phase-Barrier Gate**，Latest 版本与 GitHub Release 同步）：
 每次打 `v*` tag 时 release 工作流自动创建 GitHub Release（附 CHANGELOG 摘要与发行包），
-Action 随之自动上架，用户可直接在 Marketplace 搜索 **Phase-Barrier Gate** 使用。
+Action 随之自动上架，用户可直接在 Marketplace 搜索 **Phase-Barrier Gate** 使用。 上架与发布流程详见 `docs/publish-to-marketplace.md`。
 
 ## 编排器集成（Orchestrator Hooks，v0.22.0）
 
@@ -686,10 +707,10 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
   `BUILD SUCCESSFUL` 汇总与多模块 reactor 聚合（`N tests completed, M failed` 求和）；JUnit Platform Console
   `MethodSource` 嵌套格式（`Class.method(ParameterizedTest)[N]`）；测试命令识别补充 Windows wrapper
   （`mvnw.cmd test` / `gradlew.bat test` / `.\mvnw`）；新增 10 个 Java 解析边界测试（528 → 538）。
+- **v0.25.0 已完成**：GitHub Action 市场元数据增强——`action.yml` 增加 `outputs` 声明（`workspace` / `stage` / `allowed`），门禁步骤可通过 `steps.gate.outputs.*` 供下游复用；示例更新至 `@v0.25.0` 并补充 outputs 用法与参数联动说明；CI 升级 checkout@v7 / setup-python@v7 / setup-node@v7 / setup-go@v7 / upload-artifact@v7 与 action-gh-release@v3（消除 Node 20 弃用告警）并新增 gate outputs 断言；新增发布到 GitHub Marketplace 的流程文档 `docs/publish-to-marketplace.md` 与 action 元数据测试 `tests/test_action_meta.py`。
 
 **规划中（Next）**
 
-- **v0.25.0（GitHub Action 市场元数据增强）**：`action.yml` 增加 `branding`（icon / color）与 `outputs` 声明；补齐 inputs 描述与参数联动说明；README 增加 Marketplace 长描述、使用徽章与最小示例；提供发布到 GitHub Marketplace 的流程文档（`phase-barrier-action` 独立仓库或 in-tree 发布二选一）；Action 输出 `workspace` / `stage` / `allowed` 供下游步骤复用。
 - **v0.26.0（编排器集成闭环）**：alpha-swe 端到端接入（[alpha-swe#1](https://github.com/Xuqing0415/alpha-swe/issues/1) B 组任务：依赖 `phase-barrier>=0.22.0`、任务启动 / 阶段切换钩子、校验失败消息回传、端到端测试）；`PhaseBarrier` SDK 增加 `list_stages()` 与 `stage_of(path)` 辅助查询；编排器钩子示例扩展（多 Agent 并发任务共享门禁状态）。
 
 **长期规划**：K8s sidecar 透明代理（HTTP / gRPC 全量接管文件写与命令执行）；状态文件与证据签名（HMAC，密钥经 Kubernetes Secret 注入）；`sigstore` 签名发布（已用于 release 工件）；Java / Go / Rust 适配器测试命令与输出解析持续打磨；SWE-bench 门禁基准评估。

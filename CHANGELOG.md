@@ -2,6 +2,19 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.25.0] - 2026-09-01
+
+- GitHub Action 市场元数据增强（v0.25.0）：
+  - `action.yml` 新增 `outputs` 声明（`workspace` / `stage` / `allowed`），门禁步骤 `id: gate`
+    在成功路径输出阶段号与放行结果，失败时 `allowed=false`，下游步骤可通过 `steps.gate.outputs.*` 复用。
+  - 输入参数联动说明补齐：`advance` 需配 `to`，`check` 需配 `stage`，`exec` 需配 `command`。
+  - CI / Release 工作流升级 checkout@v7、setup-python@v7、setup-node@v7、setup-go@v7、
+    upload-artifact@v7、action-gh-release@v3（消除 Node 20 弃用告警）；gate-action 自测新增 outputs 断言。
+  - README 增加 Marketplace 徽章、Action 输出用法示例，示例版本更新至 `@v0.25.0`。
+  - 新增 `docs/publish-to-marketplace.md`（in-tree 上架流程与检查清单）与 `tests/test_action_meta.py`
+    （action.yml 元数据测试，新增 10 个，全量 538 → 548）。
+
+
 ## [0.24.0] - 2026-09-01
 
 - Java 适配器输出解析剩余项（v0.24.0）：

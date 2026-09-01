@@ -31,7 +31,11 @@ cleanup() {
 trap cleanup EXIT
 
 echo "[e2e] 1/6 构建 e2e 镜像（本地代码 + pytest）"
-docker build -f "$REPO_ROOT/deploy/k8s/e2e.Dockerfile" -t "$IMAGE" "$REPO_ROOT"
+E2E_VERSION="$(git -C "$REPO_ROOT" describe --tags --abbrev=0 2>/dev/null || echo 0.0.0)"
+echo "[e2e] 构建版本: ${E2E_VERSION#v}"
+docker build -f "$REPO_ROOT/deploy/k8s/e2e.Dockerfile" \
+  --build-arg SETUPTOOLS_SCM_PRETEND_VERSION="${E2E_VERSION#v}" \
+  -t "$IMAGE" "$REPO_ROOT"
 
 echo "[e2e] 2/6 创建 kind 集群并加载镜像"
 kind create cluster --name "$CLUSTER_NAME" --wait 120s

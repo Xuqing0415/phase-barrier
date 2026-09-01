@@ -28,6 +28,9 @@
   GBK 线程解码告警；SWE-agent 自测改为调用时读取 `PB_SIDECAR_URL`（避免模块级常量烘焙问题）。
 - 测试：新增集成示例 + 性能基准冒烟测试（`tests/test_integration_examples.py` ×4、
   `tests/test_benchmarks.py` ×5），全量 633 → 644。
+- 发布后修复：`e2e-kind` CI 首次运行暴露两处问题——e2e 镜像缺 setuptools（`--no-build-isolation`
+  失败）且构建上下文无 `.git`（setuptools-scm 无法探测版本），改用显式安装 + `SETUPTOOLS_SCM_PRETEND_VERSION`
+  构建参数；CI 增装 `kubectl`。修复后 `e2e-kind` / `bench` 门禁全绿。
 
 ## [0.26.4] - 2026-09-01
 

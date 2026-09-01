@@ -39,7 +39,9 @@ _JS_SUMMARY_PATTERNS = [
     re.compile(r"Tests?:\s+[^\n]+"),
     re.compile(r"Test Files?:\s+[^\n]+"),
     re.compile(r"Test Suites?:\s+[^\n]+"),
-    re.compile(r"\b\d+\s+(?:passed|failed)[^\n]*"),
+    re.compile(r"All specs passed!?"),
+    re.compile(r"\b\d+\s+(?:passed|failed|passing|failing)[^\n]*"),
+    re.compile(r"\(\d+\s+(?:passing|failing|pending)\s*\)"),
 ]
 
 
@@ -107,6 +109,9 @@ class JavaScriptAdapter(LanguageAdapter):
         r"^\s*vitest\b",
         r"^\s*playwright\s+test\b",
         r"^\s*npx\s+tsc\s+--noEmit\b",
+        r"^\s*npx\s+cypress\s+run\b",
+        r"^\s*(?:yarn|pnpm)\s+cypress\s+run\b",
+        r"^\s*(?:\.?/?node_modules/\.bin/)?cypress\s+run\b",
     ]
 
     def __init__(self) -> None:
@@ -294,8 +299,10 @@ class JavaScriptAdapter(LanguageAdapter):
             return False, summary[:300]
         if re.search(r"FAIL\s+\S+\.(test|spec)\.", text):
             return False, "存在失败的测试文件（FAIL）"
-        if re.search(r"\b(\d+)\s+failed\b", text, re.IGNORECASE):
-            return False, "存在失败的测试用例（failed）"
+        if re.search(r"\b(\d+)\s+(?:failed|failing)\b", text, re.IGNORECASE):
+            return False, "存在失败的测试用例（failed / failing）"
+        if "Cypress" in text and ("failed" in text.lower() or "FAILED" in text):
+            return False, "Cypress 测试存在失败（failed）"
         return False, f"测试失败，退出码 {exit_code}"
 
     def analyze_tests(self, path: Path) -> dict[str, Any]:

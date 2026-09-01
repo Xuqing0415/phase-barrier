@@ -26,7 +26,7 @@ _JS_TEST_DECL_RE = re.compile(
     re.M,
 )
 _JS_ASSERT_RE = re.compile(
-    r"\b(assert|expect|should\.)\b|\.toBe(?:CloseTo)?\b|\.toEqual\b|\.toStrictEqual\b|"
+    r"\b(assert|expect|should\.)\b|\.should\b|\.toBe(?:CloseTo)?\b|\.toEqual\b|\.toStrictEqual\b|"
     r"\.toBeTruthy\b|\.toBeFalsy\b|\.toContain(?:Equal)?\b|\.toHaveLength\b|\.toMatch(?:Object)?\b|"
     r"\.toBeNull\b|\.toBeDefined\b|\.toBeUndefined\b|\.rejects\.|\.resolves\.",
     re.M,

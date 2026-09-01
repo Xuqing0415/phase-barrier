@@ -386,3 +386,40 @@ def test_js_acorn_helper_real_fallback_heuristic(tmp_path):
     info = JavaScriptAdapter().analyze_tests(f)
     assert info["test_functions"]
     assert info["assertions_total"] >= 2
+
+
+# ---------- v0.28.0：Cypress 支持 ----------
+
+def test_js_cypress_assertions_should():
+    info = analyze_js_style_tests(
+        "describe('calc', () => {\n"
+        "  it('shows button', () => { cy.get('#btn').should('be.visible'); });\n"
+        "  it('adds', () => { expect(2).to.equal(2); });\n"
+        "});\n"
+    )
+    assert len(info["test_functions"]) == 3  # describe + 2 x it
+    assert info["assertions_total"] >= 2
+
+
+def test_js_cypress_command_identified():
+    a = JavaScriptAdapter()
+    assert a.identify_test_command("npx cypress run")
+    assert a.identify_test_command("yarn cypress run --spec e2e.cy.js")
+    assert a.identify_test_command("./node_modules/.bin/cypress run")
+    assert not a.identify_test_command("npm run build")
+
+
+def test_js_cypress_parse_pass():
+    a = JavaScriptAdapter()
+    out = "All specs passed!\n  2 passing (3s)\n"
+    ok, summary = a.parse_test_output(out, 0)
+    assert ok is True
+    assert "All specs passed" in summary
+
+
+def test_js_cypress_parse_fail():
+    a = JavaScriptAdapter()
+    out = "  1 passing (2s)\n  1 failing (4s)\n"
+    ok, summary = a.parse_test_output(out, 1)
+    assert ok is False
+    assert "failing" in summary

@@ -590,7 +590,7 @@ test_commands:
 
 不写 `language` 时自动检测标志文件：`package.json` → `javascript`，`pom.xml` → `java`，
 `go.mod` → `go`，`Cargo.toml` → `rust`，`Gemfile` / `*.gemspec` → `ruby`，
-`*.csproj` / `*.sln` → `csharp`，`CMakeLists.txt` / `Makefile` / `*.vcxproj` → `cpp`，
+`*.csproj` / `*.sln` → `csharp`，`CMakeLists.txt` / `Makefile` / `*.vcxproj` → `cpp`，`composer.json` → `php`，
 `requirements.txt` / `setup.py` / `pyproject.toml` → `python`；未识别时默认 Python。
 .NET 项目可显式 `language: dotnet` 启用 `DotNetAdapter`（与 `csharp` 共用实现，便于按生态区分）。
 适配器默认文件模式与 YAML 中的 `test_file_patterns` / `source_file_patterns`
@@ -602,14 +602,15 @@ test_commands:
 
 | 适配器 | 文件识别 | 语法检查 | 测试校验 |
 |--------|----------|----------|----------|
-| `PythonAdapter` | `test_*.py` / `tests/**` 为测试，`*.py` 为实现 | `compile()` | AST 解析：测试函数数 + `assert` / `pytest.raises` |
-| `JavaScriptAdapter` | `*.test.js` / `*.spec.ts` / `__tests__/` 为测试，`src/**` 与 `*.js|ts|jsx|tsx` 为实现 | `node --check` / `tsc --noEmit`（优先 `tsconfig.json` 项目检查；工具缺失返回明确错误） | 项目安装 acorn 时真实解析（`test` / `it` / `describe` 声明 + `expect` / `assert` 断言），否则启发式；可选 `jest --listTests --json` 动态发现；输出解析：Jest / Vitest（`Tests: N passed`）与 Playwright（`N passed` / `N failed`） |
-| `JavaAdapter` | `*Test.java` / `*Tests.java` / `src/test/**` 为测试，`src/**` 与 `*.java` 为实现 | 项目级 `mvn test-compile` / `gradle compileTestJava`（优先 `mvnw` / `gradlew`，带缓存）；无构建工具时回退 `javac -proc:none` | 启发式：`@Test` 注解数 + JUnit/Hamcrest 断言关键字 |
+| `PythonAdapter` | `test_*.py` / `tests/**` 为测试，`*.py` 为实现 | `compile()` | AST 解析：测试函数数 + `assert` / `pytest.raises` / `unittest.TestCase` 的 `self.assert*` 断言 |
+| `JavaScriptAdapter` | `*.test.js` / `*.spec.ts` / `__tests__/` 为测试，`src/**` 与 `*.js|ts|jsx|tsx` 为实现 | `node --check` / `tsc --noEmit`（优先 `tsconfig.json` 项目检查；工具缺失返回明确错误） | 项目安装 acorn 时真实解析（`test` / `it` / `describe` 声明 + `expect` / `assert` 断言），否则启发式；可选 `jest --listTests --json` 动态发现；输出解析：Jest / Vitest（`Tests: N passed`）、Playwright（`N passed` / `N failed`）与 Cypress（`All specs passed!` / `N passing` / `N failing`） |
+| `JavaAdapter` | `*Test.java` / `*Tests.java` / `src/test/**` 为测试，`src/**` 与 `*.java` 为实现 | 项目级 `mvn test-compile` / `gradle compileTestJava`（优先 `mvnw` / `gradlew`，带缓存）；无构建工具时回退 `javac -proc:none` | 启发式：`@Test` 注解数（JUnit / TestNG）+ JUnit/Hamcrest 断言关键字；输出解析：Surefire / Gradle / JUnit Console / TestNG（`Total tests run:`） |
 | `GoAdapter` | `*_test.go` 为测试，`*.go` / `cmd|internal|pkg/**` 为实现 | `gofmt -e`（Go 工具链缺失返回明确错误） | 启发式：`func TestXxx(t *testing.T)` 函数数 + `t.Error` / `t.Fatal` / `assert` / `require` 断言 |
 | `RustAdapter` | `tests/**` / `*_test.rs` / `src/**/tests.rs` 为测试，`src/**` 与 `*.rs` 为实现 | `cargo check`（有 `Cargo.toml`）/ `rustc` 单文件回退（工具缺失返回明确错误） | 启发式：`#[test]` / `#[tokio::test]` 属性数 + `assert!` / `assert_eq!` / `assert_ne!` |
 | `CSharpAdapter` | `*Test.cs` / `*Tests.cs` / `**/Tests/**` 为测试，`*.cs` 为实现 | 项目级 `dotnet build`（查找 `.csproj` / `.sln` 项目根，带指纹缓存；无项目根或工具缺失返回明确错误） | 启发式：`[Fact]` / `[Theory]` / `[Test]` 特性数 + `Assert.*` 断言；输出解析：VSTest `Passed! - Failed: F, Passed: P` / NUnit |
-| `CppAdapter` | `test_*.cpp` / `*_test.cpp` / `tests/**` 为测试，`*.cpp` / `*.cc` / `*.cxx` / `*.h` / `*.hpp` 为实现 | `g++ -fsyntax-only`（`clang++` 回退；编译器缺失返回明确错误） | 启发式：GoogleTest `TEST(` / `TEST_F(` 宏数 + `EXPECT_*` / `ASSERT_*` 断言；输出解析：`[  PASSED  ]` / `[  FAILED  ]` / ctest 摘要 |
+| `CppAdapter` | `test_*.cpp` / `*_test.cpp` / `tests/**` 为测试，`*.cpp` / `*.cc` / `*.cxx` / `*.c` / `*.h` / `*.hpp` 为实现 | C++：`g++ -fsyntax-only`（`clang++` 回退）；C：`gcc -fsyntax-only`（`clang` / `cc` 回退）；编译器缺失返回明确错误 | 启发式：GoogleTest `TEST(` / `TEST_F(` 与 Catch2 `TEST_CASE(` / `SCENARIO(` 宏数 + `EXPECT_*` / `ASSERT_*` / `REQUIRE*` / `CHECK*` 断言；输出解析：`[  PASSED  ]` / `[  FAILED  ]` / ctest / Catch2（`All tests passed` / `FAILED:`） |
 | `DotNetAdapter` | 同 `CSharpAdapter`（`name="dotnet"`） | 同 `CSharpAdapter` | 同 `CSharpAdapter`（显式 `language: dotnet` 启用） |
+| `PhpAdapter` | `*Test.php` / `tests/**` / `spec/**` 为测试，`*.php` / `src/**` / `app/**` 为实现 | `php -l`（PHP CLI 缺失返回明确错误） | 启发式：PHPUnit `public function testXxx` 方法 + `#[Test]` 属性数 + `assert*()` / `expectException()` 断言；输出解析：`OK (N tests, M assertions)` / `Tests: N, Failures: M, Errors: K` / `FAILURES!` |
 
 ### 自定义适配器
 
@@ -761,10 +762,16 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.26.2 已完成**：编排器 SDK 辅助查询——`PhaseBarrier.list_stages()`（阶段清单：编号 / 名称 / 准入门槛 / 必需证据，元数据集中定义于 `config.STAGE_META`）与 `PhaseBarrier.stage_of(path)`（spec→1 / test→2 / source→3 / other→None，与 `verify-evidence --git-base` 的 `git_impact` 分类一致）；`docs/plugins.md` 收录第一批官方示例插件索引。
 - **v0.27.0 已完成**：K8s 生产级部署 —— `deploy/helm/phase-barrier/` Helm chart（sidecar + agent 双容器、PVC/emptyDir、mTLS / HMAC / 审计、gate-keeper Job）与 `kind` 端到端测试进 CI；LangChain / AutoGPT / SWE-agent 框架集成示例（`examples/*_integration/` + `docs/integrations.md`）；性能基准 `benchmarks/bench.py`（并发状态写入 + sidecar HTTP 写/执行延迟与吞吐，CI 性能回归门禁）。
 
+- **v0.28.0 已完成**：新增 PHP 适配器（`PhpAdapter`，`php -l` 语法检查 + PHPUnit 启发式，
+  `OK (N tests)` / `Tests: N, Failures: M` 输出解析，`composer.json` 自动检测）；C/C++ 适配器增强
+  （支持 `.c` 文件与 `gcc -fsyntax-only`、Catch2 `TEST_CASE` / `SCENARIO` 宏与 `REQUIRE*` / `CHECK*`
+  断言、Catch2 输出解析）；现有适配器测试框架增强（Java TestNG `Total tests run:` 汇总、
+  Python `unittest.TestCase` 的 `self.assert*` 断言计数、JS Cypress `cy.should` 断言与
+  `npx cypress run` 命令 / `All specs passed!` 输出）；CI 安装 PHP 激活真实工具用例。
+
 **规划中（Next）**
 
 - 集成收尾：alpha-swe 插件接入已合并（[alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3)），编排器集成闭环剩余项已全部完成。
-- **v0.28.0**：PHP（PHPUnit）与 C/C++（GoogleTest/Catch2）适配器，并增强现有适配器的测试框架支持（Java TestNG / Python unittest / JS Cypress）。
 - **v0.29.0**：插件生态自动化（插件索引 + 自动验证）+ 官方文档站点（MkDocs / GitHub Pages）。
 - **长期规划**：K8s sidecar gRPC / 透明代理 HTTP 全链路加固、SWE-bench 门禁基准、性能与安全加固（依赖漏洞扫描 / 模糊测试）。
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

@@ -387,3 +387,30 @@ def test_skill_custom_adapter_via_language_adapter(tmp_path, fake_tools, monkeyp
         user_request=USER_REQUEST,
     )
     assert skill.adapter.name == "verbatim"
+# ---------- v0.28.0：PHP 检测与 Python unittest ----------
+
+def test_detect_language_php_composer(tmp_path):
+    (tmp_path / "composer.json").write_text("{}", encoding="utf-8")
+    assert detect_language(tmp_path) == "php"
+
+
+def test_python_adapter_unittest_testcase(tmp_path):
+    """unittest.TestCase 风格：test_* 方法 + self.assert* 断言计数。"""
+    f = tmp_path / "test_calc.py"
+    f.write_text(
+        "import unittest\n"
+        "def add(a, b): return a + b\n"
+        "class TestCalc(unittest.TestCase):\n"
+        "    def test_add(self):\n"
+        "        self.assertEqual(3, add(1, 2))\n"
+        "    def test_raises(self):\n"
+        "        with self.assertRaises(ValueError):\n"
+        "            add(-1, 1)\n",
+        encoding="utf-8",
+    )
+    info = PythonAdapter().analyze_tests(f)
+    assert len(info["test_functions"]) == 2
+    counts = {t["name"]: t["assertions"] for t in info["test_functions"]}
+    assert counts["test_add"] == 1
+    assert counts["test_raises"] == 1
+    assert info.get("heuristic") is not True  # Python 走 AST 非启发式路径

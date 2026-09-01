@@ -39,6 +39,11 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
+      # v0.28.0: 安装 PHP，激活 PhpAdapter 真实工具测试（ubuntu 自带 gcc/g++）
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
 
       - name: Install package and dev deps
         run: |
@@ -84,6 +89,11 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
+      # v0.28.0: 安装 PHP，激活 PhpAdapter 真实工具测试（ubuntu 自带 gcc/g++）
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
 
       - name: Install package and dev deps
         run: |

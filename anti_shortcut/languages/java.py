@@ -68,6 +68,20 @@ _JUNIT_CONSOLE_AGG_RE = re.compile(
 )
 
 
+# TestNG 汇总：``Total tests run: 5, Failures: 1, Skips: 0, Configuration Failures: 0``
+_TESTNG_AGG_RE = re.compile(
+    r"Total tests run:\s*(?P<run>\d+)(?:,\s*Failures:\s*(?P<fail>\d+))?"
+    r"(?:,\s*Skips:\s*(?P<skip>\d+))?"
+    r"(?:,\s*Configuration Failures:\s*(?P<cfg>\d+))?",
+    re.M,
+)
+# TestNG 失败用例行：``[ERROR] testAdd(com.example.CalcTest)  FAILED``
+_TESTNG_FAILURE_RE = re.compile(
+    r"^\s*(?:\[ERROR\]\s*)?(\w+\([^)]*\))\s+FAILED\b",
+    re.M,
+)
+
+
 # 失败用例提取（v0.23.0）：
 # - Surefire：``methodName(ClassName) ... <<< FAILURE!`` / ``<<< ERROR!``
 # - Gradle：``com.example.Class > methodName FAILED``
@@ -210,6 +224,8 @@ class JavaAdapter(LanguageAdapter):
         r"^\s*gradle\s+test\b",
         r"^\s*(\./|\.\\)?gradlew(?:\.bat)?\s+test\b",
         r"^\s*java\s+-jar\s+.*junit-platform-console-standalone\.jar\b",
+        r"^\s*(\./|\.\\)?testng\b",
+        r"^\s*java\b[^\n]*\borg\.testng\.TestNG\b",
     ]
 
     def __init__(self) -> None:
@@ -391,6 +407,20 @@ class JavaAdapter(LanguageAdapter):
             ok = failures == 0 and errors == 0
             detail = summary or f"Tests run: {m.group('run')}, Failures: {failures}, Errors: {errors}"
             return ok, detail + ("" if ok else suffix)
+        m = _TESTNG_AGG_RE.search(text)
+        if m:
+            failures = int(m.group("fail") or 0)
+            cfg_fail = int(m.group("cfg") or 0)
+            ok = failures == 0 and cfg_fail == 0
+            detail = summary or (
+                f"Total tests run: {m.group('run')}, Failures: {failures}, "
+                f"Skips: {m.group('skip') or 0}"
+            )
+            if not ok:
+                names = _TESTNG_FAILURE_RE.findall(text)
+                if names:
+                    detail += "；失败用例: " + "、".join(dict.fromkeys(names))[:400]
+            return ok, detail
         agg = _gradle_aggregate(text)
         if agg:
             failures = agg[1]
@@ -434,6 +464,10 @@ def _extract_test_summary(text: str) -> str:
     tests_run = [ln for ln in lines if re.match(r"Tests run:\s*\d+", ln)]
     if tests_run:
         return tests_run[-1][:300]
+    # TestNG：``Total tests run: N, Failures: M, Skips: K``
+    testng = [ln for ln in lines if re.match(r"Total tests run:\s*\d+", ln)]
+    if testng:
+        return testng[-1][:300]
     # Gradle：`3 tests completed, 1 failed`（多模块 reactor 时聚合汇总）
     agg = _gradle_aggregate(text)
     if agg is not None:

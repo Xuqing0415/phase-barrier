@@ -29,15 +29,22 @@ def test_mkdocs_config_exists():
     assert (REPO_ROOT / "mkdocs.yml").is_file()
 
 
+def _iter_nav_pages(items):
+    for entry in items:
+        for _label, page in entry.items():
+            if isinstance(page, list):
+                yield from _iter_nav_pages(page)
+            else:
+                yield page
+
+
 def test_mkdocs_nav_pages_exist():
     import yaml
 
     cfg = yaml.safe_load((REPO_ROOT / "mkdocs.yml").read_text(encoding="utf-8"))
-    nav = cfg["nav"]
     docs = REPO_ROOT / "docs"
-    for entry in nav:
-        for _label, page in entry.items():
-            assert (docs / page).is_file(), f"nav 页面缺失: {page}"
+    for page in _iter_nav_pages(cfg["nav"]):
+        assert (docs / page).is_file(), f"nav 页面缺失: {page}"
 
 
 @mkdocs_missing

@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "cryptography>=42", "coverage>=7.0"]
+dev = ["pytest>=7.0", "cryptography>=42", "coverage>=7.0", "mkdocs>=1.6", "mkdocs-material>=9.5"]
 
 [project.scripts]
 anti-shortcut = "anti_shortcut.__main__:main"
@@ -47,6 +47,7 @@ ruby = "anti_shortcut.languages.ruby:RubyAdapter"
 csharp = "anti_shortcut.languages.csharp:CSharpAdapter"
 cpp = "anti_shortcut.languages.cpp:CppAdapter"
 dotnet = "anti_shortcut.languages.dotnet:DotNetAdapter"
+php = "anti_shortcut.languages.php:PhpAdapter"
 
 # 自定义校验器 / 拦截规则入口点：第三方包可通过这些组注册自定义阶段校验器与拦截规则
 [project.entry-points."phase_barrier.validators"]

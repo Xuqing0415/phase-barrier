@@ -1,0 +1,21 @@
+# 插件仓库参考工作流：复制到你的插件仓库 .github/workflows/ci.yml 即可。
+# 首次使用需在 PyPI 或 GitHub 上发布插件包；phase-barrier 版本可固定（如 v0.29.0）以保持可复现。
+name: Plugin CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  plugin-test:
+    name: phase-barrier plugin-verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: Xuqing0415/phase-barrier/.github/actions/plugin-test@v0.29.0
+        with:
+          plugin-path: .            # 插件包目录（包含 pyproject.toml）
+          python-version: '3.12'
+          phase-barrier-version: '' # 留空 = 最新发布版

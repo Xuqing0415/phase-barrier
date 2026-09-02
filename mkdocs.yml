@@ -1,0 +1,54 @@
+site_name: phase-barrier
+site_description: 反捷径校验 Skill：阶段门禁 + 证据校验 + 工具拦截，强制编码 Agent 遵循标准工程师 SOP
+site_url: https://xuqing0415.github.io/phase-barrier/
+repo_url: https://github.com/Xuqing0415/phase-barrier
+repo_name: Xuqing0415/phase-barrier
+edit_uri: blob/main/docs/
+
+theme:
+  name: material
+  language: zh
+  features:
+    - navigation.top
+    - navigation.tabs
+    - toc.integrate
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: 切换到深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: 切换到浅色模式
+
+exclude_docs: |
+  publish-to-marketplace.md
+  blog/
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - tables
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+
+nav:
+  - 首页: index.md
+  - 快速开始: quickstart.md
+  - CLI 使用: usage.md
+  - 配置指南: configuration.md
+  - 集成: integrations.md
+  - 插件与生态: plugins.md
+  - K8s 部署: k8s.md
+  - 贡献指南: contributing.md
+  - 更新日志: changelog.md

@@ -44,6 +44,7 @@ from .evidence import (
 )
 from .paths import sha256_file
 from .languages import get_adapter
+from .plugins import discover_plugins, summarize_plugin_verification, verify_plugins
 from .proxy import ExecDenied, GateProxy, ProxyError, WriteDenied
 from .sdk import PhaseBarrier, classify_stage_path
 from .skill import AntiShortcutSkill
@@ -59,6 +60,33 @@ def _build_skill(args: argparse.Namespace) -> AntiShortcutSkill:
         config=args.config,
         user_request=getattr(args, "user_request", "") or "",
     )
+
+
+def _cmd_plugin_verify(args: argparse.Namespace) -> int:
+    """验证当前环境全部插件入口点（v0.29.0，供插件 CI 使用）。"""
+    results = verify_plugins()
+    discovered = discover_plugins()
+    ok, summary = summarize_plugin_verification(results)
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "ok": ok,
+                    "summary": summary,
+                    "plugins": results,
+                    "discovered": discovered,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+    else:
+        print(summary)
+        if not ok:
+            return 1
+        if not discovered:
+            print("（当前环境未安装任何第三方插件）")
+    return 0
 
 
 def _cmd_init(args: argparse.Namespace) -> int:
@@ -138,7 +166,6 @@ def _cmd_advance(args: argparse.Namespace) -> int:
     return 0 if result["success"] else 1
 
 
-
 def _cmd_check(args: argparse.Namespace) -> int:
     """编排器钩子校验：检查是否放行进入指定阶段（只读，v0.22.0）。
 
@@ -162,6 +189,7 @@ def _cmd_check(args: argparse.Namespace) -> int:
         for v in result["violations"]:
             print(f"  - {v}", file=sys.stderr)
     return 0 if result["allowed"] else 1
+
 
 def _git_changed_files(ws: Path, git_base: str) -> list[str]:
     """返回当前分支相对 git_base 改动的文件（``git diff --name-only <base>...HEAD``）。"""
@@ -445,6 +473,13 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument("--workspace", type=str, default=".", help="工作区根目录（默认当前目录）")
     common.add_argument("--config", type=str, default=None, help="YAML 配置文件路径")
     common.add_argument("--json", action="store_true", help="以 JSON 输出")
+
+    p_plugin = sub.add_parser(
+        "plugin-verify",
+        parents=[common],
+        help="验证当前环境全部插件入口点（v0.29.0，供插件 CI 使用）",
+    )
+    p_plugin.set_defaults(func=_cmd_plugin_verify)
 
     p_init = sub.add_parser(
         "init", parents=[common], help="生成 phase-barrier 配置模板（v0.26.0）"

@@ -787,7 +787,8 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 ## 反馈与贡献
 
 - 使用中遇到问题或想提需求：请在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 反馈，最好附上复现步骤（版本、配置、命令输出）；提交时请使用仓库内置的 Issue 模板（bug / feature / plugin）。
-- 官方文档站：[https://xuqing0415.github.io/phase-barrier/](https://xuqing0415.github.io/phase-barrier/)（MkDocs，含快速开始 / CLI / 配置 / 集成 / K8s 部署）。
+- 官方文档站：[https://xuqing0415.github.io/phase-barrier/](https://xuqing0415.github.io/phase-barrier/)（MkDocs，含快速开始 / CLI / 配置 / 集成 / K8s 部署 / 最佳实践与教程）。
+- 教程与最佳实践：[CI 增量门禁](docs/tutorials/ci-incremental-gate.md)、[K8s sidecar 加固与 gRPC 演进](docs/tutorials/k8s-sidecar-grpc.md)、[SWE-bench 门禁基准](docs/tutorials/swe-bench-gate.md)、[best-practices](docs/best-practices.md)。
 - 贡献指南见 [CONTRIBUTING.md](CONTRIBUTING.md)（架构、开发环境、新语言适配器 / 新拦截规则步骤、发布流程）；
   插件与生态索引见 [docs/plugins.md](docs/plugins.md)（语言适配器 / 校验器 / 拦截规则 / 集成插件四类入口点，
   含 `plugin-verify` 自动验证与插件 CI 模板）。

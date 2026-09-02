@@ -1,6 +1,27 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.30.0] - 2026-09-02
+
+- **SWE-bench 门禁基准脚本化（v0.30.0）**：
+  - 新增 `benchmarks/swe_bench_gate.py`：模拟 SWE-bench 风格任务，驱动 `AntiShortcutSkill`
+    + 包装工具（write_file / execute_command / advance_stage）跑完整流程，支持三种行为路径
+    （按 SOP、跳步被拦截、空壳测试被证据校验拒绝），拦截后可回退按 SOP 完成。
+  - 聚合指标：`sop_compliance_rate` / `shortcut_interception_rate` / `evidence_fix_rate` /
+    `resolve_rate` / `avg_interceptions_per_task` / `final_stage_distribution`。
+  - CLI：`--tasks --seed --sop-rate --fake-test-rate --stubborn-rate --give-up-rate
+    --resolve-sop-rate --resolve-shortcut-rate --json --output --fail-fast
+    --min-compliance --min-interception --max-interceptions-per-task`；`--json` 模式 banner
+    写入 stderr，stdout 为纯 JSON，便于管道消费。
+  - 修复空壳测试被拒后二次 advance 的推进逻辑（拆分 `_run_impl_phase`），保证跳步/空壳任务
+    可回退按 SOP 完成。
+  - CI：`bench` job 追加 `python benchmarks/swe_bench_gate.py --fail-fast --tasks 20`，
+    阈值门禁（合规率 ≥80%、拦截率 ≥90%、单任务拦截 ≤5）。
+  - 测试：新增 `tests/test_swe_bench_gate.py` 6 个冒烟测试（聚合指标 / 全 SOP / 全跳步放弃 /
+    阈值检查 / CLI JSON 输出）。
+  - 文档：`docs/tutorials/swe-bench-gate.md` 新增“脚本化基准”章节，README Roadmap 标记
+    v0.30.0 已落地。
+
 ## [0.29.1] - 2026-09-02
 
 - 修复 `examples/custom_adapter` 示例插件打包：目录内同时存在 `demo.py` 与

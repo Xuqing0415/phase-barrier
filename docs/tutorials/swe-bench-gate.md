@@ -118,3 +118,43 @@ python -m anti_shortcut verify-evidence --git-base origin/main --workspace .
 
 如果 `resolve_rate` 相当但 `sop_compliance_rate` 明显更高，说明门禁没有损失能力；
 如果 `shortcut_interception_rate` 高，说明 Agent 确实有跳步倾向，门禁在起作用。
+
+
+## 七、脚本化基准（v0.30.0）
+
+仓库内置可重复运行的 SWE-bench 门禁基准脚本 `benchmarks/swe_bench_gate.py`，无需真实
+SWE-bench 数据集即可验证门禁的拦截与推进行为：
+
+```bash
+python benchmarks/swe_bench_gate.py                      # 默认 20 个模拟任务
+python benchmarks/swe_bench_gate.py --tasks 50 --json    # JSON 输出
+python benchmarks/swe_bench_gate.py --fail-fast          # CI 阈值门禁
+```
+
+脚本用 `AntiShortcutSkill` + 包装工具（write_file / execute_command / advance_stage）驱动每个
+模拟任务，覆盖三种行为路径：
+
+1. **按 SOP 推进**：写 spec → advance 2 → 写测试 → advance 3 → 写实现 → advance 4 →
+   运行 pytest → advance 5 → 自动进入交付 6。
+2. **跳步**：阶段 1 直接写实现（`write_file` 拦截）与 shell 重定向写实现（`execute_command`
+   拦截）各记 1 次拦截；拦截后可按配置选择放弃或回退按 SOP 完成。
+3. **空壳测试**：先写空测试文件，`advance_stage(3)` 被证据校验（AST 检查测试函数与断言）
+   拒绝，记录 `evidence_failures` 后补写真实测试继续推进。
+
+聚合指标除上文"三、指标定义"外，另有：
+
+| 指标 | 说明 |
+|------|------|
+| `sop_compliance_rate` | 最终阶段 ≥ 6 的任务占比 |
+| `shortcut_interception_rate` | 跳步尝试被拦截的比例（期望 1.0） |
+| `evidence_fix_rate` | 证据校验失败后被修复并完成的任务占比 |
+| `resolve_rate` | 模拟隐藏测试通过率（`resolve_sop_rate` / `resolve_shortcut_rate` 抽样） |
+| `avg_interceptions_per_task` | 平均每任务拦截次数 |
+
+CI（`.github/workflows/ci.yml` 的 `bench` job）已纳入：
+
+```bash
+python benchmarks/swe_bench_gate.py --fail-fast --tasks 20
+```
+
+阈值：合规率 ≥80%、拦截率 ≥90%、单任务拦截 ≤5 次，超阈值即失败，防止门禁回归。

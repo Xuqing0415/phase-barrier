@@ -778,10 +778,12 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
   integrations / plugins / k8s / contributing / changelog），`.github/workflows/docs.yml`
   构建并推送 `gh-pages` 分支，启用 Pages 后访问 https://xuqing0415.github.io/phase-barrier/ 。
 
+- **v0.30.0 已落地**：SWE-bench 门禁基准脚本化——新增 `benchmarks/swe_bench_gate.py` 模拟 SWE-bench 风格任务驱动 `AntiShortcutSkill`，统计 SOP 合规率 / 跳步拦截率 / 证据修复率 / resolve 率，支持 `--json` / `--fail-fast` 阈值门禁并纳入 CI bench job；配套冒烟测试 6 个与教程“脚本化基准”章节。
+
 **规划中（Next）**
 
 - 集成收尾：alpha-swe 插件接入已合并（[alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3)），编排器集成闭环剩余项已全部完成。
-- **长期规划**：K8s sidecar gRPC / 透明代理 HTTP 全链路加固、SWE-bench 门禁基准、性能与安全加固（依赖漏洞扫描 / 模糊测试）。
+- **长期规划**：K8s sidecar gRPC / 透明代理 HTTP 全链路加固、性能与安全加固（依赖漏洞扫描 / 模糊测试）。
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 
 ## 反馈与贡献

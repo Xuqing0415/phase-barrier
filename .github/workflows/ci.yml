@@ -451,6 +451,9 @@ jobs:
             --write-ops 100 --exec-ops 20 \
             --state-p95-ms 2000 --write-p95-ms 5000 --exec-p95-ms 10000
 
+      - name: Run SWE-bench gate benchmark (v0.30.0)
+        run: python benchmarks/swe_bench_gate.py --fail-fast --tasks 20
+
   package:
     name: Build sdist and wheel
     runs-on: ubuntu-latest

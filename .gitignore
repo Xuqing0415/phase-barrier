@@ -47,3 +47,5 @@ Thumbs.db
 # ���лỰ�����ʵ���ļ���ɳ�����������ԣ�
 identifier.sqlite
 
+# MkDocs build output
+site/

@@ -1,0 +1,51 @@
+# 安全加固（v0.31.0）：依赖漏洞扫描
+# - pip-audit：审计完整安装环境（运行时 + dev 依赖）的已知漏洞（OSV 数据库）
+# - osv-scanner：扫描仓库内 lockfile / manifest（pyproject.toml 等）
+# 每周一 06:00 UTC 定时 + 每次 push / PR 触发。
+name: Security
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  pip-audit:
+    name: pip-audit (Python dependencies)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package and dev deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install pip-audit
+
+      - name: Audit dependencies
+        run: pip-audit
+
+  osv-scanner:
+    name: osv-scanner (manifests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Run osv-scanner
+        uses: google/osv-scanner-action@v2
+        with:
+          scan-args: |-
+            --recursive
+            .
+          fail-on-vuln: true

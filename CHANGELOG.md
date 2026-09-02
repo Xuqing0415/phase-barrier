@@ -1,6 +1,25 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.31.0] - 2026-09-02
+
+- **性能与安全加固（v0.31.0）**：
+  - 解析器模糊测试基准：新增 `benchmarks/fuzz_parsers.py`，对 8 个解析/识别纯函数做确定性模糊测试
+    （固定种子复现）：`summarize_test_output` / `_extract_coverage` / `extract_written_paths` /
+    `touches_gate_dir` / Java 模块解析器（Gradle 聚合、失败明细、javac 错误、构建错误）/
+    JavaAdapter.parse_test_output / 全语言适配器文件识别（is_test_file / is_source_file）/
+    is_language_test_command；随机输入覆盖 ASCII / shell 特殊字符 / ANSI 转义 / NUL / 中文。
+  - CLI：`--iterations --seed --json --output --fail-fast --max-crash-rate`；`--json` 模式
+    banner 写入 stderr，stdout 为纯 JSON；`--fail-fast` 时崩溃率超阈值即退出码 1。
+  - CI：`bench` job 追加 `python benchmarks/fuzz_parsers.py --fail-fast --iterations 1000`
+    （8 目标 x 1000 用例，要求 0 崩溃）；本地验证 3 组种子（42 / 7 / 123）共 6.8 万用例 0 崩溃。
+  - 依赖漏洞扫描：新增 `.github/workflows/security.yml`，`pip-audit` 审计完整安装环境
+    （运行时 + dev 依赖）+ `osv-scanner` 扫描 manifest（`pyproject.toml`），
+    每周一 06:00 UTC 定时 + 每次 push / PR 触发。
+  - 测试：新增 `tests/test_fuzz.py` 7 个冒烟测试（聚合指标 / 多种子 / 阈值检查 /
+    CLI JSON 输出 / `--fail-fast` 拒绝路径，monkeypatch 模拟崩溃）。
+  - 文档：README Roadmap 标记 v0.31.0 已落地，长期规划移除“性能与安全加固”项。
+
 ## [0.30.0] - 2026-09-02
 
 - **SWE-bench 门禁基准脚本化（v0.30.0）**：

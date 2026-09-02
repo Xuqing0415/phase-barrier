@@ -13,3 +13,6 @@ dependencies = ["phase-barrier>=0.3.0"]
 
 [project.entry-points."phase_barrier.languages"]
 foo = "foo_language:FooAdapter"
+
+[tool.setuptools]
+py-modules = ["foo_language"]

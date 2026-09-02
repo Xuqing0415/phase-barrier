@@ -1,6 +1,13 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.29.1] - 2026-09-02
+
+- 修复 `examples/custom_adapter` 示例插件打包：目录内同时存在 `demo.py` 与
+  `foo_language.py` 导致 setuptools flat-layout 报 “Multiple top-level modules”，无法
+  `pip install -e`；显式声明 `[tool.setuptools] py-modules = [“foo_language”]`，
+  插件 CI / `plugin-verify` 自测 job 恢复全绿。
+
 ## [0.29.0] - 2026-09-02
 
 - **插件生态自动化（v0.29.0）**：

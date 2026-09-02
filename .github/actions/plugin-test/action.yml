@@ -1,0 +1,52 @@
+name: "Phase-Barrier Plugin Test"
+description: "插件 CI：安装 phase-barrier + 插件包后运行 plugin-verify 自动验证入口点（语言适配器 / 校验器 / 拦截规则 / 集成插件）"
+author: "Anti-Shortcut Team"
+branding:
+  icon: "package"
+  color: "green"
+
+inputs:
+  plugin-path:
+    description: "插件包目录（相对仓库根，需包含 pyproject.toml）"
+    required: false
+    default: "."
+  python-version:
+    description: "Python 版本"
+    required: false
+    default: "3.12"
+  phase-barrier-version:
+    description: "安装的 phase-barrier 版本（留空表示最新发布版；可写 0.29.0 等固定版本）"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install phase-barrier
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -m pip install --upgrade pip
+        if [ -n "${{ inputs.phase-barrier-version }}" ]; then
+          python -m pip install "phase-barrier==${{ inputs.phase-barrier-version }}"
+        else
+          python -m pip install phase-barrier
+        fi
+
+    - name: Install plugin package
+      shell: bash
+      working-directory: ${{ inputs.plugin-path }}
+      run: |
+        set -euo pipefail
+        python -m pip install -e .
+
+    - name: Verify plugin entry points
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -m anti_shortcut plugin-verify

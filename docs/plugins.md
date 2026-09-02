@@ -53,13 +53,56 @@ def deny_uploads(kind, target, config, stage, content=None):
 rules = [deny_uploads]
 ```
 
+## 自动验证（v0.29.0）
+
+安装插件包后，`python -m anti_shortcut plugin-verify` 会自动加载并冒烟验证
+全部四类入口点：语言适配器（`name` + 必需方法）、校验器（映射 / 工厂）、
+拦截规则（可调用规则）、集成插件（可调用 / `install()`）。返回码 0 = 全部通过。
+
+```bash
+pip install phase-barrier my-plugin
+python -m anti_shortcut plugin-verify          # 全部通过时退出码 0
+python -m anti_shortcut plugin-verify --json   # 结构化结果（CI 断言用）
+```
+
+### 插件 CI 模板（一键接入）
+
+把下面工作流复制到插件仓库 `.github/workflows/ci.yml`，每次 push / PR 自动验证：
+
+```yaml
+name: Plugin CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  plugin-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Xuqing0415/phase-barrier/.github/actions/plugin-test@v0.29.0
+        with:
+          plugin-path: .            # 插件包目录（包含 pyproject.toml）
+          python-version: '3.12'
+          phase-barrier-version: '' # 留空 = 最新发布版；可固定如 0.29.0
+```
+
+验证通过后可在 README 添加徽章：
+
+```markdown
+[![Plugin CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg)](https://github.com/<owner>/<repo>/actions/workflows/ci.yml)
+```
+
 ## 提交到索引
 
 1. 把插件发布为公开的 PyPI 包（或提供可安装的 GitHub 仓库）。
-2. 在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 选择
+2. 在插件仓库接入上面的 **插件 CI 模板**，保证 `plugin-verify` 全绿。
+3. 在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 选择
    「插件提交（Plugin Submission）」模板，附上：包名 / 仓库链接、支持的入口点组、
-   一段使用示例。
-3. 维护者审核后合并到下表。
+   CI 状态链接、一段使用示例。
+4. 维护者审核后合并到下表。
 
 ## 第一批索引（官方示例，v0.26.2）
 

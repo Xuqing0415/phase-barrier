@@ -1,6 +1,38 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.29.0] - 2026-09-02
+
+- **插件生态自动化（v0.29.0）**：
+  - 新增 `anti_shortcut/plugins.py`：插件发现与自动验证。`verify_plugins()` 加载并冒烟验证
+    四类入口点（`phase_barrier.languages` / `phase_barrier.validators` /
+    `phase_barrier.interceptors` / `anti_shortcut.integrations`）：语言适配器检查
+    `name` + 6 个必需方法，校验器检查映射 / 工厂形态，拦截规则检查可调用规则，
+    集成插件检查可调用 / `install()`；加载失败返回明确错误而非静默跳过。
+  - CLI 新增 `python -m anti_shortcut plugin-verify [--json]`：全部通过退出码 0，
+    JSON 输出 `{ok, summary, plugins, discovered}` 供 CI 断言。
+  - 插件 CI 模板：`.github/actions/plugin-test/` composite action
+    （`uses: Xuqing0415/phase-barrier/.github/actions/plugin-test@v0.29.0`，
+    安装 phase-barrier + 插件包后运行 `plugin-verify`）+ 参考工作流
+    `.github/workflows/plugin-test.yml`（插件仓库复制即用）。
+  - CI 新增 `plugin-verify` 自测 job：安装本地包 + `examples/custom_adapter` 示例插件，
+    JSON 断言 `foo` 语言适配器验证通过。
+  - `docs/plugins.md` 新增「自动验证」章节（用法 + 插件 CI 模板 + 提交流程更新）。
+- **官方文档站（v0.29.0）**：
+  - MkDocs + Material 主题：`mkdocs.yml`（中文、明暗主题、`--strict` 构建），
+    `docs/` 页面 index / quickstart / usage / configuration / integrations / plugins /
+    k8s / contributing / changelog；dev extras 增加 `mkdocs>=1.6` / `mkdocs-material>=9.5`。
+  - `.github/workflows/docs.yml`：main push / tag 时构建站点并推送 `gh-pages` 分支；
+    在仓库 Settings → Pages 选择 "Deploy from a branch: gh-pages" 后即可访问
+    https://xuqing0415.github.io/phase-barrier/ 。
+  - README 增加 Docs 徽章与文档站链接。
+- 测试：新增 `tests/test_plugin_verify.py`（28 个：discover / 语言适配器校验 / 各类插件
+  验证 / summarize / CLI 三态）与 `tests/test_docs_site.py`（MkDocs `--strict` 构建冒烟，
+  未安装 mkdocs 时跳过），全量 681 → 712。
+- 修复：补注册 `php` 语言适配器到 `phase_barrier.languages` 入口点（v0.28.0 遗留），`plugin-verify` 现可验证全部 10 个内置适配器。。
+- 本地验证：`python -m mkdocs build --strict` 通过；`python -m anti_shortcut plugin-verify`
+  对内置 10 个语言适配器全部验证通过。
+
 ## [0.28.0] - 2026-09-01
 
 - **PHP 适配器（v0.28.0）**：

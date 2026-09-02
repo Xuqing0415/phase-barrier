@@ -4,6 +4,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/phase-barrier.svg)](https://pypi.org/project/phase-barrier/)
 [![Python versions](https://img.shields.io/pypi/pyversions/phase-barrier.svg)](https://pypi.org/project/phase-barrier/)
 [![Marketplace](https://img.shields.io/badge/Marketplace-Phase%20Barrier%20Gate-blue.svg?logo=github&logoColor=white)](https://github.com/marketplace/actions/phase-barrier-gate)
+[![Docs](https://img.shields.io/badge/Docs-MkDocs-blue.svg)](https://xuqing0415.github.io/phase-barrier/)
 
 强制编码 Agent（如 Alpha-SWE）遵循标准工程师 SOP 的**阶段门禁（Stage Gate）**组件：
 以“阶段状态机 + 证据校验 + 工具拦截”的组合，阻止 Agent 跳步、偷步或伪造产出。
@@ -769,18 +770,27 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
   Python `unittest.TestCase` 的 `self.assert*` 断言计数、JS Cypress `cy.should` 断言与
   `npx cypress run` 命令 / `All specs passed!` 输出）；CI 安装 PHP 激活真实工具用例。
 
+- **v0.29.0 已完成**：插件生态自动化——`python -m anti_shortcut plugin-verify` 自动验证四类插件
+  入口点（语言适配器 / 校验器 / 拦截规则 / 集成插件），CLI `--json` 供 CI 断言；插件 CI 模板
+  `.github/actions/plugin-test/`（composite action）+ 参考工作流 `.github/workflows/plugin-test.yml`，
+  插件仓库复制即用；CI 新增 `plugin-verify` 自测 job（本地安装示例插件端到端验证）。
+  官方文档站：MkDocs + Material 主题（`docs/` 下 index / quickstart / usage / configuration /
+  integrations / plugins / k8s / contributing / changelog），`.github/workflows/docs.yml`
+  构建并推送 `gh-pages` 分支，启用 Pages 后访问 https://xuqing0415.github.io/phase-barrier/ 。
+
 **规划中（Next）**
 
 - 集成收尾：alpha-swe 插件接入已合并（[alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3)），编排器集成闭环剩余项已全部完成。
-- **v0.29.0**：插件生态自动化（插件索引 + 自动验证）+ 官方文档站点（MkDocs / GitHub Pages）。
 - **长期规划**：K8s sidecar gRPC / 透明代理 HTTP 全链路加固、SWE-bench 门禁基准、性能与安全加固（依赖漏洞扫描 / 模糊测试）。
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 
 ## 反馈与贡献
 
 - 使用中遇到问题或想提需求：请在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 反馈，最好附上复现步骤（版本、配置、命令输出）；提交时请使用仓库内置的 Issue 模板（bug / feature / plugin）。
+- 官方文档站：[https://xuqing0415.github.io/phase-barrier/](https://xuqing0415.github.io/phase-barrier/)（MkDocs，含快速开始 / CLI / 配置 / 集成 / K8s 部署）。
 - 贡献指南见 [CONTRIBUTING.md](CONTRIBUTING.md)（架构、开发环境、新语言适配器 / 新拦截规则步骤、发布流程）；
-  插件与生态索引见 [docs/plugins.md](docs/plugins.md)（语言适配器 / 校验器 / 拦截规则 / 集成插件四类入口点）。
+  插件与生态索引见 [docs/plugins.md](docs/plugins.md)（语言适配器 / 校验器 / 拦截规则 / 集成插件四类入口点，
+  含 `plugin-verify` 自动验证与插件 CI 模板）。
 - 与 [alpha-swe](https://github.com/Xuqing0415/alpha-swe) 双向关联：编排器钩子 SDK（v0.22.0）示例见 `examples/orchestrator_hooks/`，alpha-swe 侧集成已合并（[alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3)）。
 - 关注 PyPI 下载量与版本更新：[phase-barrier · PyPI](https://pypi.org/project/phase-barrier/)。
 - 欢迎贡献代码：提交前请运行 `python -m pytest` 与 `python -m flake8 --jobs=1 <files>`，并遵循 Conventional Commits 提交规范（`feat:` / `fix:` / `docs:` / `test:`）。

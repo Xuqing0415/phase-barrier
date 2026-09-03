@@ -75,4 +75,4 @@ if [ "$STAGE" != "交付" ]; then
 fi
 echo "[e2e] OK: agent 无法篡改真实门禁状态（gate-state 卷隔离有效）"
 
-echo "[e2e] 全部通过 ✅"
+echo "[e2e] 全部通过"

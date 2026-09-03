@@ -493,7 +493,7 @@ def test_skill_wires_failure_alert_callback(tmp_path):
 
 
 def test_skill_audit_failure_alert_writes_local_log(tmp_path):
-    """鏁呴殰鍛婅鍐欏叆鏈湴瀹¤鏃ュ織锛屼笖涓嶄骇鐢熻嚜鍠傚惊鐜?涓嶅啀杞彂杩滅▼锛夈€?"""
+    """鏁呴殰鍛婅鍐欏叆鏈湴瀹¤鏃ュ織锛屼笖涓嶄骇鐢熻嚜鍠傚惊鐜?涓嶅啀杞彂杩滅v锛夈€?"""
     skill = AntiShortcutSkill(
         tmp_path,
         config={

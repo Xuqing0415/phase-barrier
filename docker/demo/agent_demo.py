@@ -2,7 +2,7 @@
 
 展示两件事：
 1. 跳步被拦截——在 spec / 测试用例未完成时写实现代码，write_file 抛出 PermissionError；
-2. 规范流程全通——spec → 测试 → 实现 → 运行测试 → 推进到交付，每一步都由
+2. 规范流程全通——spec -> 测试 -> 实现 -> 运行测试 -> 推进到交付，每一步都由
    advance_stage 做证据校验。
 """
 import os

@@ -1,5 +1,5 @@
 name: "Phase-Barrier Gate"
-description: "阶段门禁检查：强制编码 Agent 的产出按 需求→spec→测试→实现→测试→交付 推进；未达到期望阶段则 CI 失败"
+description: "阶段门禁检查：强制编码 Agent 的产出按 需求->spec->测试->实现->测试->交付 推进；未达到期望阶段则 CI 失败"
 author: "Anti-Shortcut Team"
 branding:
   icon: "shield"

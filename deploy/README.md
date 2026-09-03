@@ -11,7 +11,7 @@ gate-keeper 服务                         agent 服务（编码 Agent）
 ```
 
 - `gate-keeper`：对 `.agent_gate` **可写**，负责初始化状态并执行完整门禁流程
-  （spec → 测试 → 实现 → 测试 → 交付）。
+  （spec -> 测试 -> 实现 -> 测试 -> 交付）。
 - `agent`：工作区可写以产出代码，但 `.agent_gate` **只读挂载**——即使 Agent 拿到了
   未包装的 `write_file` / `execute_command`，文件系统层面也不允许写入。
 

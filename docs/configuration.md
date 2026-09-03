@@ -108,10 +108,10 @@ adapter_options:
   min_tests: 3         # 传递给适配器的选项（各适配器自行解释）
 ```
 
-自动检测标志文件：`package.json` → javascript；`pom.xml` / `build.gradle` → java；
-`go.mod` → go；`Cargo.toml` → rust；`Gemfile` → ruby；`*.csproj` / `*.sln` → csharp；
-`CMakeLists.txt` / `Makefile` / `*.vcxproj` → cpp（v0.26.0）；`pyproject.toml` /
-`requirements.txt` / `setup.py` → python；`composer.json` → php（v0.28.0）；
+自动检测标志文件：`package.json` -> javascript；`pom.xml` / `build.gradle` -> java；
+`go.mod` -> go；`Cargo.toml` -> rust；`Gemfile` -> ruby；`*.csproj` / `*.sln` -> csharp；
+`CMakeLists.txt` / `Makefile` / `*.vcxproj` -> cpp（v0.26.0）；`pyproject.toml` /
+`requirements.txt` / `setup.py` -> python；`composer.json` -> php（v0.28.0）；
 `build.gradle.kts` 项目默认仍识别为 java（Gradle 同时用于 Java/Kotlin），纯 Kotlin 工作区（存在
 `src/main/kotlin` 且无其他标志文件）自动识别为 kotlin，否则请显式 `language: kotlin`（v0.32.0）。
 

@@ -11,7 +11,7 @@ pip install phase-barrier        # import anti_shortcut
 
 - 发行名：`phase-barrier`（PyPI）
 - 命令行：`anti-shortcut` / `python -m anti_shortcut`（详见 [CLI 使用](usage.md)）
-- 配置模型：`anti_shortcut.config.GateConfig`（YAML ↔ Pydantic，字段全表见 [配置指南](configuration.md)）
+- 配置模型：`anti_shortcut.config.GateConfig`（YAML / Pydantic，字段全表见 [配置指南](configuration.md)）
 
 ## 核心门禁
 

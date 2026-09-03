@@ -2,6 +2,26 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.32.2] - 2026-09-03
+
+- **README 精简重构（v0.32.2）**：主页从 800+ 行压缩到约 150 行，遵循“是什么 / 为什么 /
+  怎么快速用 / 文档导航”结构：徽章 + 一句话简介 + 痛点 + 核心特性 + 快速开始（Docker /
+  pip init / 最小接入 / CLI）+ 使用示例摘要 + 文档导航 + 语言简表 + 社区 + License。
+- **文档迁移**：原 README 详细内容按主题拆分到 9 个新页面并挂入 MkDocs 导航：
+  docs/architecture.md（架构与设计）、docs/security-rules.md（拦截规则与安全加固）、
+  docs/audit-logging.md（状态与审计）、docs/languages.md（语言适配器）、
+  docs/github-action.md（GitHub Action）、docs/orchestrator-hooks.md（编排器钩子 SDK）、
+  docs/faq.md（FAQ）、docs/roadmap.md（Roadmap）、docs/release.md（发布与供应链安全）；
+  README 保留文档导航表，细节均指向 docs/，降低维护成本。
+- **链接与引用修复**：docs/languages.md 内部链接改为站内相对路径；
+  docs/security-rules.md 指向仓库 deploy/ 的文件链接改为 GitHub 绝对地址（兼容 MkDocs
+  strict 构建）；CONTRIBUTING.md 架构 / Roadmap 指引改为指向对应 docs 页。
+- **emoji / 符号字形清理**：全仓以 ASCII 文本（如 ->、/、v 等）替代箭头与图形符号字形
+  （U+2192 / U+2194 / U+25BC / U+2705），涉及 README / CHANGELOG / docs / 示例 /
+  适配器注释 / 测试字符串与 CI 工作流，去除所有表情符号字形。
+- **CI / 文档站**：mkdocs.yml 导航重组（使用指南 / 集成与生态分组）；mkdocs --strict
+  构建与 tests/test_docs_site.py 校验通过。
+
 ## [0.32.1] - 2026-09-03
 
 - 修复 `docs.yml` 文档站部署并发撞车：发版时 `main` 分支推送与 `v*` 标签推送会各触发一次
@@ -125,12 +145,12 @@
     `docs/` 页面 index / quickstart / usage / configuration / integrations / plugins /
     k8s / contributing / changelog；dev extras 增加 `mkdocs>=1.6` / `mkdocs-material>=9.5`。
   - `.github/workflows/docs.yml`：main push / tag 时构建站点并推送 `gh-pages` 分支；
-    在仓库 Settings → Pages 选择 "Deploy from a branch: gh-pages" 后即可访问
+    在仓库 Settings -> Pages 选择 "Deploy from a branch: gh-pages" 后即可访问
     https://xuqing0415.github.io/phase-barrier/ 。
   - README 增加 Docs 徽章与文档站链接。
 - 测试：新增 `tests/test_plugin_verify.py`（28 个：discover / 语言适配器校验 / 各类插件
   验证 / summarize / CLI 三态）与 `tests/test_docs_site.py`（MkDocs `--strict` 构建冒烟，
-  未安装 mkdocs 时跳过），全量 681 → 712。
+  未安装 mkdocs 时跳过），全量 681 -> 712。
 - 修复：补注册 `php` 语言适配器到 `phase_barrier.languages` 入口点（v0.28.0 遗留），`plugin-verify` 现可验证全部 10 个内置适配器。。
 - 本地验证：`python -m mkdocs build --strict` 通过；`python -m anti_shortcut plugin-verify`
   对内置 10 个语言适配器全部验证通过。
@@ -160,7 +180,7 @@
   激活 PhpAdapter 真实工具用例；ubuntu 自带 gcc/g++ 执行 C/C++ 真实语法检查用例。
 - 测试：新增 `tests/test_php_adapter.py`（18 个），扩展 C/C++（C 文件 / Catch2 分析 /
   Catch2 输出 / gcc 语法检查）、Java（TestNG 命令与汇总）、JavaScript（Cypress 断言 /
-  命令 / 输出）、语言层（composer 检测 / unittest 断言计数），全量 644 → 681。
+  命令 / 输出）、语言层（composer 检测 / unittest 断言计数），全量 644 -> 681。
 - 发布后修复：`_PHPUNIT_FAILURES_RE` 末尾 `\b` 在 `!` 与换行间不成立导致 `FAILURES!` 标记漏判，已移除。
 
 ## [0.27.0] - 2026-09-01
@@ -169,8 +189,8 @@
   - 新增 Helm chart `deploy/helm/phase-barrier/`：sidecar + agent 双容器 Deployment、
     PVC / emptyDir 存储、mTLS / HMAC / 审计推送（ConfigMap + Secret）、
     gate-keeper 一次性 Job、NOTES / README 说明；`helm lint` 与默认 / 全功能两组渲染验证通过。
-  - 新增 `deploy/k8s/kind-e2e-test.sh` 端到端测试：kind 建集群 → 加载本地镜像 →
-    `helm install` → `kubectl exec` 运行 GateClient 全流程（跳步拦截 ×2 + SOP 推进到交付），
+  - 新增 `deploy/k8s/kind-e2e-test.sh` 端到端测试：kind 建集群 -> 加载本地镜像 ->
+    `helm install` -> `kubectl exec` 运行 GateClient 全流程（跳步拦截 ×2 + SOP 推进到交付），
     并验证 agent 容器无法写入 `.agent_gate`；`e2e-kind` job 纳入 CI（ubuntu + kind + helm）。
 - **Agent 框架集成示例（v0.27.0）**：
   - LangChain：`examples/langchain_integration/gate_tools.py` 将 GateClient 包装为
@@ -189,7 +209,7 @@
 - 其他：`proxy.py` 子进程输出解码固定为 UTF-8 + `errors="replace"`，消除 Windows 控制台
   GBK 线程解码告警；SWE-agent 自测改为调用时读取 `PB_SIDECAR_URL`（避免模块级常量烘焙问题）。
 - 测试：新增集成示例 + 性能基准冒烟测试（`tests/test_integration_examples.py` ×4、
-  `tests/test_benchmarks.py` ×5），全量 633 → 644。
+  `tests/test_benchmarks.py` ×5），全量 633 -> 644。
 - 发布后修复：`e2e-kind` CI 首次运行暴露两处问题——e2e 镜像缺 setuptools（`--no-build-isolation`
   失败）且构建上下文无 `.git`（setuptools-scm 无法探测版本），改用显式安装 + `SETUPTOOLS_SCM_PRETEND_VERSION`
   构建参数；CI 增装 `kubectl`。e2e 测试用例改为 `pytest.raises`（消除空壳测试判定）；隔离断言对齐真实安全属性——agent 写入 workspace 卷内挂载点空目录的伪文件不影响 sidecar 独占 `gate-state` 卷中的真实状态（经 `/api/state` 验证仍为交付）。修复后 `e2e-kind` / `bench` 门禁全绿。
@@ -199,7 +219,7 @@
 - 修复 CI 覆盖率门禁在 Linux 上 89%（平台分支测量偏差）：`_file_lock` 的
   POSIX `fcntl.flock` / Windows `msvcrt.locking` 两个互斥分支重构为独立辅助函数
   并标记 `# pragma: no cover`（另一平台不可达），覆盖率测量不再随运行平台漂移；
-  `state.py` 覆盖率 85%（Linux）→ 92%（双平台一致），全量 TOTAL ≥ 90%。
+  `state.py` 覆盖率 85%（Linux）-> 92%（双平台一致），全量 TOTAL ≥ 90%。
 
 ## [0.26.3] - 2026-09-01
 
@@ -215,7 +235,7 @@
     （3 个并发 Agent 协作推进 + 6 路并发 `record_test_run` 写入压力演示），
     CI 端到端 demo 步骤纳入执行。
 - 测试：新增并发安全用例（并发推进单赢家 / 并发写入不损坏不丢 / 混合变更 / 锁文件复用 /
-  锁超时 / `reload` / `refresh`，全量 627 → 633）。
+  锁超时 / `reload` / `refresh`，全量 627 -> 633）。
 
 ## [0.26.2] - 2026-09-01
 
@@ -223,20 +243,20 @@
   - `PhaseBarrier.list_stages()`：返回阶段清单（编号 / 名称 / 准入门槛 / 必需证据，
     JSON 可序列化），元数据集中定义于 `config.STAGE_META`。
   - `PhaseBarrier.stage_of(path)`：把文件路径归类到对应阶段的证据
-    （spec→1 / test→2 / source→3 / other→None），与 `verify-evidence --git-base`
+    （spec->1 / test->2 / source->3 / other->None），与 `verify-evidence --git-base`
     的 `git_impact` 分类一致。
   - `verify-evidence --git-base` 的变更影响映射重构为复用 `sdk.classify_stage_path`
     （输出字段不变，编排器与 CLI 分类口径统一）。
 - 生态：`docs/plugins.md` 收录第一批官方示例插件索引
   （`phase-barrier-foo-adapter` / `phase-barrier-plugin-example` / 编排器钩子集成），
   社区第三方插件提交流程保持开放。
-- 测试：新增 7 个 SDK 查询用例（全量 620 → 627）。
+- 测试：新增 7 个 SDK 查询用例（全量 620 -> 627）。
 
 ## [0.26.1] - 2026-09-01
 
-- CI 修复：coverage 门禁 89% → 90%（新增 10 个边界用例：shlex ValueError / 反斜杠续行、
+- CI 修复：coverage 门禁 89% -> 90%（新增 10 个边界用例：shlex ValueError / 反斜杠续行、
   规则弃权分支（无 config / 非 write / 非源码扩展 / 空内容）、C++ 输出解析兜底分支、
-  `_decode_output` 回退、空文件与编译器缺失的语法检查；全量 605 → 620）。
+  `_decode_output` 回退、空文件与编译器缺失的语法检查；全量 605 -> 620）。
 - release 工作流：docker action 升级到支持 Node 24 的大版本
   （`setup-buildx-action@v4` / `login-action@v4` / `build-push-action@v7`），消除 Node 20 弃用告警。
 
@@ -280,7 +300,7 @@
     upload-artifact@v7、action-gh-release@v3（消除 Node 20 弃用告警）；gate-action 自测新增 outputs 断言。
   - README 增加 Marketplace 徽章、Action 输出用法示例，示例版本更新至 `@v0.25.0`。
   - 新增 `docs/publish-to-marketplace.md`（in-tree 上架流程与检查清单）与 `tests/test_action_meta.py`
-    （action.yml 元数据测试，新增 10 个，全量 538 → 548）。
+    （action.yml 元数据测试，新增 10 个，全量 538 -> 548）。
 
 ## [0.24.0] - 2026-09-01
 
@@ -292,7 +312,7 @@
     （多个 `N tests completed, M failed` 行求和）；
   - JUnit Platform Console：`MethodSource` 嵌套格式 `Class.method(ParameterizedTest)[N]` 与失败条目 `[N]` 序号后缀；
   - 测试命令识别补充 Windows wrapper：`mvnw.cmd test` / `gradlew.bat test` / `.\mvnw test`；
-  - 新增 10 个解析边界测试（`tests/test_java_adapter.py`），全量 528 → 538。
+  - 新增 10 个解析边界测试（`tests/test_java_adapter.py`），全量 528 -> 538。
 
 
 ## [0.23.0] - 2026-08-30
@@ -300,7 +320,7 @@
 - Java 适配器输出解析增强（v0.23.0）：
   - 失败用例提取：Surefire `methodName(Class) <<< FAILURE!/ERROR!`、Gradle `Class > method FAILED`、JUnit Console `MethodSource [methodName=...]`，去重后最多 50 个；
   - `parse_test_output` 失败分支附带失败用例摘要，Gradle 汇总新增 `skipped` 计数解析；
-  - 新增 6 个解析边界测试（`tests/test_java_adapter.py`），全量 522 → 528。
+  - 新增 6 个解析边界测试（`tests/test_java_adapter.py`），全量 522 -> 528。
 - GitHub Action 元数据增强（v0.23.0）：
   - 新增 `mode: check`：只读校验是否放行进入 `--stage` 阶段（`anti_shortcut check`），拒绝时输出 `::error::` 与明细；
   - 新增 `stage` 输入（check 模式）与 `cwd` 输入（exec 模式工作目录）；
@@ -320,7 +340,7 @@
 - CLI 新增 `check` 子命令：`python -m anti_shortcut check --stage N [--json]`（0 = 放行，1 = 拒绝）。
 - 编排器集成示例：`examples/orchestrator_hooks/`（demo.py + README，任务启动 / 阶段切换两钩子全流程演示）。
 - README 新增“编排器集成”章节并交叉引用 alpha-swe；CI demo 步骤同时运行编排器示例。
-- 测试：新增 28 个 SDK / CLI 用例（`tests/test_sdk.py`），全量 494 → 522。
+- 测试：新增 28 个 SDK / CLI 用例（`tests/test_sdk.py`），全量 494 -> 522。
 
 ## [0.21.0] - 2026-08-30
 
@@ -332,7 +352,7 @@
 - sidecar 入站 mTLS 访问控制：
   - `python -m anti_shortcut sidecar --tls-cert ... --tls-key ... --tls-client-ca ...`（`CERT_REQUIRED`，未携带客户端证书在 TLS 握手即被拒绝）。
   - `GateClient(base_url, cert=(crt, key), ca=...)` 支持客户端证书；示例 `examples/mtls_sidecar/`（generate_certs.py + demo.py + README）。
-- 测试：新增 10 个用例（`tests/test_sidecar_v21.py`），全量 484 → 494。
+- 测试：新增 10 个用例（`tests/test_sidecar_v21.py`），全量 484 -> 494。
 - 文档：README 特性 / CLI / Roadmap、deploy/k8s 安全说明同步更新。
 
 ## [0.20.0] - 2026-08-30
@@ -342,8 +362,8 @@
   - `GateClient.audit(limit=..., event=...)` 客户端方法；配合 v0.19.0 的 5 类代理审计事件，可远程核对「拦截是否发生、原因是什么」。
 - CLI `sidecar` 子命令：
   - `python -m anti_shortcut sidecar --workspace . --host 0.0.0.0 --port 8080` 以统一 CLI 启动门禁 HTTP 服务（等价 `python -m anti_shortcut.sidecar`），K8s 清单与文档切换为新入口。
-- 端到端审计链测试：HTTP 写拒绝 → 本地 audit.log → `/api/audit` 查询 → 远端 SIEM 推送，全链路验证。
-- 测试：新增 11 个审计查询 / 端到端用例（`tests/test_sidecar_audit_api.py`），全量 473 → 484。
+- 端到端审计链测试：HTTP 写拒绝 -> 本地 audit.log -> `/api/audit` 查询 -> 远端 SIEM 推送，全链路验证。
+- 测试：新增 11 个审计查询 / 端到端用例（`tests/test_sidecar_audit_api.py`），全量 473 -> 484。
 - 文档：README 特性 / CLI / Roadmap、deploy/k8s 清单同步更新。
 
 ## [0.19.0] - 2026-08-30
@@ -353,7 +373,7 @@
   - 每条事件携带阶段摘要（current_stage / stage_name / completed_stages），同时写入本地 `audit.log` 并推送远端 SIEM；原 `proxy_file_written` 更名为 `proxy_write_ok`。
 - 命令工作目录（cwd）三端支持：
   - CLI `exec --cwd <dir>`；sidecar `/api/exec` 新增可选 `cwd` 字段；`GateClient.execute_command(command, cwd=...)`；路径须解析在工作区内，越界返回 400 / 拒绝执行。
-- 测试：新增 12 个代理审计与 cwd 用例（`tests/test_proxy_audit.py`），全量 461 → 473。
+- 测试：新增 12 个代理审计与 cwd 用例（`tests/test_proxy_audit.py`），全量 461 -> 473。
 - 文档：README 特性 / CLI / Roadmap 同步更新。
 
 ## [0.18.0] - 2026-08-30
@@ -371,7 +391,7 @@
   - `mode` 校验扩展为 inspect / advance / exec；CI `gate-action` 自测新增
     exec 通过 / 命令失败 / 缺 command 三条路径。
 - 测试：新增 16 个 CLI 门禁用例（write 拦截/放行/stdin/参数冲突/路径越界、
-  exec 拦截/输出/非零退出码/JSON/超时/测试结果记录），全量测试 445 → 461。
+  exec 拦截/输出/非零退出码/JSON/超时/测试结果记录），全量测试 445 -> 461。
 - 文档：README 特性 / Action 输入表 / CLI 章节 / 模块结构 / Roadmap 同步更新。
 
 
@@ -389,7 +409,7 @@
     被拦截抛 `GateDenied`；新增最小示例 `examples/k8s_proxy/`（自包含 demo）。
   - `deploy/k8s/` 清单与文档更新：镜像版本 0.17.0、拓扑图与接入协议补充代理端点。
 - 测试：新增 30 个透明代理用例（GateProxy 单元 / HTTP 端点 / GateClient 全流程），
-  全量测试 415 → 445。
+  全量测试 415 -> 445。
 - 文档：README 特性 / 架构 / 模块结构 / Roadmap 同步更新。
 
 
@@ -416,7 +436,7 @@
     `fail_under=90`）；CI 新增 coverage job：`coverage run -m pytest` +
     `coverage report --fail-under=90`，上传 `coverage.json` 报告。
   - 当前核心包覆盖率 90%（含分支，本地 ruby/rust 真实用例跳过；CI 装齐工具链后更高）。
-- 测试：383 → 415（+32：边界 29 + 真实 node 3）。
+- 测试：383 -> 415（+32：边界 29 + 真实 node 3）。
 - 文档：README Roadmap / 特性 / CI 与覆盖率章节同步更新。
 
 ## [0.15.0] - 2026-08-30
@@ -426,12 +446,12 @@
     不影响门禁流程；新增 `metrics()` 暴露累计指标（enqueued / dropped / sent_events /
     sent_batches / failed_batches / spooled_events / recovered_events），供宿主监控与告警。
   - `AntiShortcutSkill` 自动接线：把 `audit_remote_failed` 告警事件写入本地 `audit.log`
-    （专用本地 logger，不再转发已失败的远端，避免“告警 → 失败 → 再告警”的自喂循环）。
+    （专用本地 logger，不再转发已失败的远端，避免“告警 -> 失败 -> 再告警”的自喂循环）。
 - sidecar HTTP 门禁输入校验：
   - `/api/advance` 拒绝 `bool`（Python 中为 `int` 子类）与越界阶段号（须为 0-6 的整数）；
   - `/api/test-run` 校验 `output` 必须为字符串；
   - `/api/source-change` 拒绝指向门禁目录 `.agent_gate` 的路径。
-- 测试：新增 7 个用例（376 → 383）：`on_failure` 回调触发/异常吞掉/成功不触发、
+- 测试：新增 7 个用例（376 -> 383）：`on_failure` 回调触发/异常吞掉/成功不触发、
   `metrics()` 键完整性、Skill 告警接线与本地落盘（含防自喂循环断言）、sidecar 输入校验。
 
 ## [0.14.0] - 2026-08-30
@@ -450,7 +470,7 @@
   - `mode` 必须是 `inspect` / `advance`；`expected_stage` 与 `advance` 的 `to`
     必须是 0-6 整数；`workspace` 必须存在；非法输入输出 `::error::` 并失败；
   - CI 自测扩展：`advance` 模式推进、非法 `mode` / `expected_stage` / 缺失工作区三条失败路径。
-- 测试：新增脚本写入与 CLI 边界用例 17 个（359 → 376，另有 6 个按环境跳过）。
+- 测试：新增脚本写入与 CLI 边界用例 17 个（359 -> 376，另有 6 个按环境跳过）。
 - 文档：README 特性 / GitHub Action 章节 / Roadmap 同步更新。
 
 ## [0.13.0] - 2026-08-30
@@ -464,7 +484,7 @@
 - 插件文档与可运行示例：`examples/plugin_rules/` 提供自定义校验器 + 拦截规则完整插件包
   （`phase_barrier.validators` / `phase_barrier.interceptors` 入口点声明 + demo），
   支持进程内注册与入口点加载两种接入方式；README 补充插件章节、特性与 Roadmap。
-- 测试：新增边界与 CLI 错误处理用例 16 个（343 → 359，另有 6 个按环境跳过）。
+- 测试：新增边界与 CLI 错误处理用例 16 个（343 -> 359，另有 6 个按环境跳过）。
 
 ## [0.12.0] - 2026-08-30
 
@@ -481,7 +501,7 @@
   `audit_remote_client_cert` / `audit_remote_client_key` 双向 TLS 链路。
 - 发布：`pyproject.toml` 补 `ruby` / `csharp` 语言入口点与校验器 / 拦截规则入口点组占位；
   dev 依赖增加 `cryptography>=42`（仅示例与端到端测试需要）。
-- 测试：新增插件校验器、拦截规则与 mTLS 端到端用例 21 个（322 → 343，另有 6 个按环境跳过）。
+- 测试：新增插件校验器、拦截规则与 mTLS 端到端用例 21 个（322 -> 343，另有 6 个按环境跳过）。
 - 文档：README 增加“自定义校验器与拦截规则”章节，模块结构 / 特性 / Roadmap 同步更新，
   GitHub Action Marketplace 上架状态确认。
 ## [0.11.0] - 2026-08-30
@@ -506,9 +526,9 @@
   - 新增 `CSharpAdapter`：`dotnet build` 项目级语法检查（向上查找 `*.csproj` / `*.sln`，带指纹缓存）；
     `[Fact]` / `[Theory]` / `[Test]` / `[TestMethod]` 属性统计 + `Assert.*` 断言；`dotnet test` /
     `nunit3-console` / `dotnet vstest` 命令识别；`Passed! - Failed: F, Passed: P, ...` 输出解析。
-  - 自动检测扩展：`Gemfile` / `Gemfile.lock` / `.ruby-version` / `Rakefile` / `*.gemspec` → `ruby`，
-    `*.csproj` / `*.sln` → `csharp`（新增目录级 glob 标志支持）。
-- 测试：新增审计传输 / spool、Git 门禁、Ruby / C# 适配器用例 46 个（276 → 322）。
+  - 自动检测扩展：`Gemfile` / `Gemfile.lock` / `.ruby-version` / `Rakefile` / `*.gemspec` -> `ruby`，
+    `*.csproj` / `*.sln` -> `csharp`（新增目录级 glob 标志支持）。
+- 测试：新增审计传输 / spool、Git 门禁、Ruby / C# 适配器用例 46 个（276 -> 322）。
 - 文档：README 配置示例 / 安全特性 / 多语言支持 / Roadmap 同步更新。
 ## [0.10.0] - 2026-08-30
 
@@ -526,7 +546,7 @@
   - `summarize_test_output` 新增 `adapter` 参数，优先使用语言适配器生成专属摘要（skill / sidecar 已接入）。
   - Go：失败时列出具体失败用例名（`--- FAIL: TestX`，多个用例去重计数）；verbose 模式统计 `--- PASS:` 数量。
   - Rust：失败时从 `failures:` 块提取失败用例名；成功摘要保留 `test result: ok. N passed` 统计。
-- 测试：新增远程审计重试 / CA、证据导出、Go / Rust 解析增强用例 13 个（263 → 276）。
+- 测试：新增远程审计重试 / CA、证据导出、Go / Rust 解析增强用例 13 个（263 -> 276）。
 - 文档：README 特性 / CLI / 配置 / 安全 / 供应链 / Roadmap 与示例配置同步更新。
 
 ## [0.10.1] - 2026-08-30
@@ -559,7 +579,7 @@
   - 新增 `StateManager.rotate_key(new_key, keep_old=False)`：校验现有签名后以新密钥重签名；
     未签名状态视为“启用签名”迁移。配置新增 `state_hmac_keys`。
   - 新增 CLI `rotate-key --to <new> [--from <old>] [--keep-old]`。
-- 测试：新增远程审计、证据清单、密钥轮换用例 29 个（234 → 263）。
+- 测试：新增远程审计、证据清单、密钥轮换用例 29 个（234 -> 263）。
 - 文档：README 特性 / CLI / 配置 / 安全 / 模块结构 / Roadmap、示例配置与 K8s 模板同步更新。
 
 ## [0.8.0] - 2026-08-29
@@ -572,14 +592,14 @@
 - 状态签名（HMAC-SHA256）：
   - 配置新增 `state_hmac_key`（或环境变量 `PHASE_BARRIER_HMAC_KEY`）；启用后 state.json 写入
     `signature: v1:<hmac-sha256>`，加载时自动校验。
-  - 篡改 / 未签名 / 密钥不匹配 → `TamperedStateError`（继承 `CorruptedStateError`），
+  - 篡改 / 未签名 / 密钥不匹配 -> `TamperedStateError`（继承 `CorruptedStateError`），
     CLI 明确报错并拒绝运行；未配置密钥时行为与旧版本完全一致（向后兼容）。
   - sidecar 新增 `--state-key` 参数（等价于 Secret 注入环境变量）。
 - GitHub Action 市场发布：
   - release 工作流新增「创建 GitHub Release」步骤（从 CHANGELOG 提取摘要 + 附加 sdist/wheel），
     每次打 `v*` tag 自动生成 Release，Action 在 GitHub Marketplace 自动上架。
   - README 增加 Marketplace 入口；示例固定 tag 更新到 v0.8.0。
-- 测试：新增 Java 输出解析、状态签名用例 14 个（220 → 234）。
+- 测试：新增 Java 输出解析、状态签名用例 14 个（220 -> 234）。
 - 文档：README 特性 / 安全 / 配置 / Roadmap 与 deploy/k8s 模板同步更新。
 
 ## [0.7.0] - 2026-08-29
@@ -597,7 +617,7 @@
     `POST /api/test-run`、`POST /api/source-change`），标准库实现、零额外依赖、线程安全。
   - 新增 `deploy/k8s/` 部署模板：`pvc.yaml`、`gate-keeper.yaml`（初始化 Job）、
     `gate-sidecar.yaml`（agent + sidecar Deployment + Service）与部署说明 README。
-- 测试：新增 JS 输出解析、覆盖率门禁、sidecar 用例 21 个（199 → 220）。
+- 测试：新增 JS 输出解析、覆盖率门禁、sidecar 用例 21 个（199 -> 220）。
 - 文档：README 适配器表、覆盖率门禁、K8s 部署、模块结构与 Roadmap 同步更新。
 
 ## [0.6.0] - 2026-08-29
@@ -611,7 +631,7 @@
   - 无构建文件或构建工具缺失时回退单文件 `javac -proc:none`（v0.4.0 行为不变）。
 - 示例：新增 `examples/anti_shortcut_go_config.yaml`、`anti_shortcut_rust_config.yaml`（Go / Rust 项目门禁配置模板）与 `examples/github-action/gate-go.yml`、`gate-rust.yml`（安装 `setup-go` / `rust-toolchain` 的 PR 门禁示例，`advance` 模式用真实 `gofmt` / `cargo check` 校验）。
 - 打包：`anti_shortcut/languages/js_count_tests.cjs` 纳入 wheel / sdist（`setuptools` package-data）。
-- 测试：新增 JS acorn / jest-json、Java 项目级编译用例 13 个（186 → 199）。
+- 测试：新增 JS acorn / jest-json、Java 项目级编译用例 13 个（186 -> 199）。
 - 文档：README 适配器表格、GitHub Action 门禁、多语言章节与 Roadmap 同步更新。
 
 ## [0.6.0] - 2026-08-29
@@ -625,7 +645,7 @@
   - 无构建文件或构建工具缺失时回退单文件 `javac -proc:none`（v0.4.0 行为不变）。
 - 示例：新增 `examples/anti_shortcut_go_config.yaml`、`anti_shortcut_rust_config.yaml`（Go / Rust 项目门禁配置模板）与 `examples/github-action/gate-go.yml`、`gate-rust.yml`（安装 `setup-go` / `rust-toolchain` 的 PR 门禁示例，`advance` 模式用真实 `gofmt` / `cargo check` 校验）。
 - 打包：`anti_shortcut/languages/js_count_tests.cjs` 纳入 wheel / sdist（`setuptools` package-data）。
-- 测试：新增 JS acorn / jest-json、Java 项目级编译用例 13 个（186 → 199）。
+- 测试：新增 JS acorn / jest-json、Java 项目级编译用例 13 个（186 -> 199）。
 - 文档：README 适配器表格、GitHub Action 门禁、多语言章节与 Roadmap 同步更新。
 
 ## [0.5.0] - 2026-08-29
@@ -638,7 +658,7 @@
   - 启发式升级：支持 `it.each` / `test.skip` / `describe.each` 等声明，匹配前剥离注释与字符串字面量，降低 `console.log('test(...)')` 误判。
 - `validate_test_collection` 支持适配器级 `error` 字段（jest 缺失等场景直接返回明确原因）；工作区证据扫描跳过 `target/`（cargo 产物目录）。
 - 注册表 / 入口点：内置 `go` / `rust` 适配器，`phase_barrier.languages` 入口点补齐 java / go / rust。
-- 测试：新增 JS 增强、Go、Rust 适配器用例 39 个（147 → 186；Rust 真实工具用例在未安装 cargo / rustc 时自动跳过）。
+- 测试：新增 JS 增强、Go、Rust 适配器用例 39 个（147 -> 186；Rust 真实工具用例在未安装 cargo / rustc 时自动跳过）。
 - 示例：`examples/anti_shortcut_js_config.yaml` 增加 `test_discovery` 说明（README 多语言章节同步更新）。
 
 ## [0.4.0] - 2026-08-29
@@ -647,7 +667,7 @@
 - Java 语法检查：javac 输出目录优先使用源文件旁的隐藏目录 `.phase-barrier-javac`（规避 Windows 系统 Temp 的 ACL 限制），该目录加入证据扫描跳过名单；javac 输出按 UTF-8 / GBK / cp1252 多编码解码，兼容中文 Windows。
 - 测试输出摘要：`summarize_test_output` 支持 Maven/Gradle 风格（`Tests run: N, Failures: M`、`BUILD SUCCESS/FAILURE`），摘要优先取统计行。
 - 新增 GitHub Action 门禁（仓库根 `action.yml`）：`inspect`（低于 `expected_stage` 则失败）/ `advance` 两种模式，支持 `workspace` / `config` / `version` / `local` 等输入；示例见 `examples/github-action/gate.yml`；CI 增加 `gate-action` 自测 job 验证通过/拦截两条路径。
-- 测试：新增 Java 适配器用例 14 个（133 → 147）。
+- 测试：新增 Java 适配器用例 14 个（133 -> 147）。
 
 ## [0.3.1] - 2026-08-29
 
@@ -655,7 +675,7 @@
 - CLI：状态文件损坏 / 版本不兼容时输出明确错误（不再误报“配置无效”）；`inspect` / `advance` 对不存在的工作区友好报错，且不再静默创建目录树。
 - 文档：README 增加“反馈与贡献”入口与“自定义语言适配器”四步教程（本地配置 / 打包发布 / 入口点注册 / 可运行示例）。
 - 示例：新增 `examples/custom_adapter/`（虚构 `.foo` 语言插件 + demo，演示自定义适配器参与拦截流程）。
-- 测试：新增拦截器边界与 CLI 错误处理用例 14 个（119 → 133）。
+- 测试：新增拦截器边界与 CLI 错误处理用例 14 个（119 -> 133）。
 
 ## [0.3.0] - 2026-08-29
 
@@ -664,7 +684,7 @@
 - 适配器选择优先级：显式 `language` > 自定义 `language_adapter` > 工作区自动检测（`package.json` / `pom.xml` / `go.mod` / `Cargo.toml` / `pyproject.toml` 等）> 默认 Python。
 - 配置新增 `language` / `language_adapter` / `adapter_options` 字段；适配器默认文件模式与 YAML 文件模式自动合并。
 - 支持通过 `phase_barrier.languages` 入口点注册第三方自定义适配器；顶层包导出语言 API（`get_adapter` / `detect_language` 等）。
-- 测试：新增语言适配层测试 34 个（83 → 117）。
+- 测试：新增语言适配层测试 34 个（83 -> 117）。
 
 ## [0.2.1] - 2026-08-29
 
@@ -672,7 +692,7 @@
 - 示例：新增 `examples/minimal_agent.py`（最小可运行模拟 Agent 集成示例）与 `examples/anti_shortcut_js_config.yaml`（JS/TS 项目配置）。
 - 多语言：修复目录级文件模式（如 `src/**/*.ts`）在绝对路径下无法匹配的问题；非 Python 测试文件改为轻量启发式校验（测试声明数 + 断言关键字），非 Python 实现文件跳过 compile 但要求非空。
 - CLI：配置加载失败（文件缺失 / YAML 非法 / 字段类型错误 / 工作区不可写）改为友好报错并返回退出码 1，不再输出堆栈。
-- 测试：新增拦截器边界、配置异常、CLI 错误处理、多语言校验用例（64 → 83）。
+- 测试：新增拦截器边界、配置异常、CLI 错误处理、多语言校验用例（64 -> 83）。
 
 ## [0.2.0] - 2026-08-29
 
@@ -682,4 +702,4 @@
 
 ## [0.1.0] - 2026-08-29
 
-- 功能：需求→spec→测试→实现→测试→修复→交付的阶段门禁；`write_file` / `execute_command` 工具拦截；spec / 测试 AST / 实现语法 / 测试运行 / 回归证据校验；JSON 状态机 + 审计日志；Docker 只读卷部署示例。
+- 功能：需求->spec->测试->实现->测试->修复->交付的阶段门禁；`write_file` / `execute_command` 工具拦截；spec / 测试 AST / 实现语法 / 测试运行 / 回归证据校验；JSON 状态机 + 审计日志；Docker 只读卷部署示例。

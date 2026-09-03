@@ -345,7 +345,7 @@ class JavaScriptAdapter(LanguageAdapter):
             return None
         file_info = (data.get("files") or [{}])[0]
         if not file_info or file_info.get("error"):
-            return None  # 解析失败（如 TS 语法）→ 回退启发式
+            return None  # 解析失败（如 TS 语法）-> 回退启发式
         declarations = int(file_info.get("declarations", 0))
         tests = [
             {"name": f"<{i + 1}:acorn>", "assertions": 0, "heuristic": True}

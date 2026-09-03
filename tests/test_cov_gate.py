@@ -115,12 +115,12 @@ def test_skill_cov_gate_full_flow(tmp_path, fake_tools):
     tools["write_file"]("fib.py", GOOD_IMPL)
     assert tools["advance_stage"](4)["success"]
 
-    # 覆盖率不足 → 阶段 4 校验拒绝
+    # 覆盖率不足 -> 阶段 4 校验拒绝
     skill.state.mark_test_run({"exit_code": 0, "passed": True, "coverage": 70.0})
     r = tools["advance_stage"](5)
     assert not r["success"] and "覆盖率不足" in r["error"]
 
-    # 覆盖率达标 → 通过并直接交付（跳过修复）
+    # 覆盖率达标 -> 通过并直接交付（跳过修复）
     skill.state.mark_test_run({"exit_code": 0, "passed": True, "coverage": 90.0})
     r = tools["advance_stage"](5)
     assert r["success"] and r["stage"] == 6
@@ -140,18 +140,18 @@ def test_skill_cov_gate_retest_path(tmp_path, fake_tools):
     tools["write_file"]("fib.py", GOOD_IMPL)
     tools["advance_stage"](4)
 
-    # 第一次测试失败 → 进入阶段 5
+    # 第一次测试失败 -> 进入阶段 5
     skill.state.mark_test_run({"exit_code": 1, "passed": False, "coverage": 80.0})
     r = tools["advance_stage"](5)
     assert r["success"] and r["stage"] == 5
 
-    # 修复后重测但覆盖率不足 → 拒绝
+    # 修复后重测但覆盖率不足 -> 拒绝
     skill.state.mark_source_change("fib.py")
     skill.state.mark_test_run({"exit_code": 0, "passed": True, "coverage": 70.0})
     r = tools["advance_stage"](6)
     assert not r["success"] and "覆盖率不足" in r["error"]
 
-    # 修复后重测且覆盖率达标 → 通过并交付
+    # 修复后重测且覆盖率达标 -> 通过并交付
     skill.state.mark_test_run({"exit_code": 0, "passed": True, "coverage": 90.0})
     r = tools["advance_stage"](6)
     assert r["success"] and r["stage"] == 6

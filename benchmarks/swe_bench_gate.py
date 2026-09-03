@@ -133,12 +133,12 @@ def run_task(
         gave_up = False
 
         if kind == "shortcut":
-            # 跳步 1：阶段 1 直接写实现 → write_file 拦截
+            # 跳步 1：阶段 1 直接写实现 -> write_file 拦截
             try:
                 tools["write_file"]("fib.py", IMPL)
             except PermissionError:
                 interceptions += 1
-            # 跳步 2：用 shell 重定向写实现 → execute_command 拦截
+            # 跳步 2：用 shell 重定向写实现 -> execute_command 拦截
             try:
                 tools["execute_command"]("echo 'x' > fib.py")
             except PermissionError:

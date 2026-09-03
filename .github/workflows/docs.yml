@@ -1,5 +1,5 @@
-# 官方文档站（MkDocs → GitHub Pages，v0.29.0）
-# 构建 docs/ 站点并推送 gh-pages 分支；在仓库 Settings → Pages 选择
+# 官方文档站（MkDocs -> GitHub Pages，v0.29.0）
+# 构建 docs/ 站点并推送 gh-pages 分支；在仓库 Settings -> Pages 选择
 # "Deploy from a branch: gh-pages / (root)" 后即可访问：
 #   https://xuqing0415.github.io/phase-barrier/
 name: docs

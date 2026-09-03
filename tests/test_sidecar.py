@@ -82,7 +82,7 @@ def test_sidecar_full_flow_via_http(tmp_path):
         status, payload = _post(base, "/api/advance", {"new_stage": 4})
         assert status == 200 and payload["stage"] == 4
 
-        # 上报测试运行（带覆盖率），一次通过 → 跳过修复直接交付
+        # 上报测试运行（带覆盖率），一次通过 -> 跳过修复直接交付
         status, payload = _post(
             base,
             "/api/test-run",
@@ -115,11 +115,11 @@ def test_sidecar_source_change_forces_retest(tmp_path):
         status, payload = _post(base, "/api/source-change", {"path": "fib.py"})
         assert status == 200 and payload["ok"]
 
-        # 测试后改码 → 必须进入阶段 5 回归
+        # 测试后改码 -> 必须进入阶段 5 回归
         status, payload = _post(base, "/api/advance", {"new_stage": 5})
         assert status == 200 and payload["stage"] == 5
 
-        # 重测通过 → 交付
+        # 重测通过 -> 交付
         _post(base, "/api/test-run", {"exit_code": 0, "output": "3 passed"})
         status, payload = _post(base, "/api/advance", {"new_stage": 6})
         assert status == 200 and payload["stage"] == 6

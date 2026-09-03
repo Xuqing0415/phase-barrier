@@ -50,8 +50,8 @@ helm install pb ./deploy/helm/phase-barrier --namespace phase-barrier-demo --cre
   bash deploy/k8s/kind-e2e-test.sh
   ```
 
-  该脚本已在 CI（`e2e-kind` job，ubuntu）中运行：kind 建集群 → 加载本地镜像 →
-  `helm install` → `kubectl exec` 运行 GateClient 全流程（跳步拦截 + SOP 推进到交付），
+  该脚本已在 CI（`e2e-kind` job，ubuntu）中运行：kind 建集群 -> 加载本地镜像 ->
+  `helm install` -> `kubectl exec` 运行 GateClient 全流程（跳步拦截 + SOP 推进到交付），
   并断言 agent 容器无法写入 `.agent_gate/state.json`。
 - 更多参数说明见 `deploy/helm/phase-barrier/README.md`。
 
@@ -120,8 +120,8 @@ v0.16.0 之前，sidecar 只拦截“阶段推进”，Agent 仍需自己写文�
 ## 新任务流程（agent 接入协议）
 
 1. Agent 启动后先 `GET /api/state` 确认初始阶段（新状态机为 1：Spec 设计）。
-2. 在 `/workspace` 写 `spec.md` → `POST /api/advance {"new_stage": 2}`。
-3. 写测试 → `POST /api/advance {"new_stage": 3}`；写实现 → `POST /api/advance {"new_stage": 4}`。
+2. 在 `/workspace` 写 `spec.md` -> `POST /api/advance {"new_stage": 2}`。
+3. 写测试 -> `POST /api/advance {"new_stage": 3}`；写实现 -> `POST /api/advance {"new_stage": 4}`。
 4. 自己运行测试命令后，把结果上报：`POST /api/test-run {"exit_code": 0, "output": "<命令输出>"}`
    （sidecar 会按语言适配器解析摘要 / 覆盖率，并写入状态机）。
 5. `POST /api/advance {"new_stage": 5}`：一次通过则直接交付（阶段 6），否则进入阶段 5 修复回归。
@@ -140,7 +140,7 @@ v0.16.0 之前，sidecar 只拦截“阶段推进”，Agent 仍需自己写文�
 - **网络**：sidecar Service 仅暴露在集群内；生产环境建议用 NetworkPolicy 限制只有 agent Pod 可访问。
 - **入站 mTLS（v0.21.0）**：sidecar 支持 `--tls-cert` / `--tls-key` / `--tls-client-ca`，要求客户端证书后才接受 `/api/*` 调用；配合 NetworkPolicy 可进一步限制访问来源。
 - **镜像签名**：配合 sigstore / cosign 对 sidecar 镜像签名，防止供应链投毒（见仓库 Roadmap）。
-- **状态签名（v0.8.0）**：为 sidecar 注入 `PHASE_BARRIER_HMAC_KEY`（Secret → env，见
+- **状态签名（v0.8.0）**：为 sidecar 注入 `PHASE_BARRIER_HMAC_KEY`（Secret -> env，见
   `gate-sidecar.yaml` 注释），state.json 即带 HMAC-SHA256 签名；Agent 篡改状态后
   sidecar 拒绝加载并明确报错。
 

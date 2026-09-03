@@ -77,6 +77,6 @@ git push origin vX.Y.Z
 
 ## 其他
 
-- 架构问题与 Roadmap 见 [README](README.md)。
+- 架构与设计见 [docs/architecture.md](docs/architecture.md)，Roadmap 见 [docs/roadmap.md](docs/roadmap.md)。
 - 插件生态见 [docs/plugins.md](docs/plugins.md)。
 - 配置项说明见 [docs/configuration.md](docs/configuration.md)。

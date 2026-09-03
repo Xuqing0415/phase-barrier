@@ -19,7 +19,7 @@ docker run --rm -it phase-barrier-demo
 ## 内容
 
 - `agent_demo.py`：模拟编码 Agent——先尝试跳步（未完成 spec / 测试就写实现，被
-  `write_file` 拦截），再按规范流程 spec → 测试 → 实现 → 测试 → 交付推进，
+  `write_file` 拦截），再按规范流程 spec -> 测试 -> 实现 -> 测试 -> 交付推进，
   每一步由 `advance_stage` 自动校验证据。
 - `entrypoint.sh`：容器启动入口。
 - 镜像在 tag 驱动发布时自动构建并推送到 GHCR

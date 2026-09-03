@@ -33,14 +33,14 @@ Helm chart 组件：
 bash deploy/k8s/kind-e2e-test.sh
 ```
 
-脚本创建 kind 集群 → 加载本地镜像 → `helm install` → `kubectl exec` 运行 GateClient
+脚本创建 kind 集群 -> 加载本地镜像 -> `helm install` -> `kubectl exec` 运行 GateClient
 全流程（跳步拦截 ×2 + SOP 推进到交付），并验证 agent 容器无法写入 `.agent_gate`。
 该测试已纳入 CI（`e2e-kind` job），每次 PR 自动运行。
 
 ## 安全模型
 
 - **状态目录只读**：`gate-state` 卷仅 sidecar 挂载可写，agent 容器无写入路径。
-- **mTLS**：agent → sidecar 双向证书认证（`tls-client-ca` 开启后强制客户端证书）。
+- **mTLS**：agent -> sidecar 双向证书认证（`tls-client-ca` 开启后强制客户端证书）。
 - **HMAC 状态签名**：`state.json` 每次写入携带 HMAC-SHA256 签名，篡改即拒绝。
 - **审计日志**：所有拦截与阶段变更写入结构化日志，可远程推送。
 - **暴露面**：默认 `ClusterIP` 仅在集群内可达；如确需对外暴露管理面，可用 Ingress/TLS 终止接入

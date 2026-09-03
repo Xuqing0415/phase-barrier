@@ -1,6 +1,6 @@
 """语言适配器注册表与选择逻辑（v0.3.0）。
 
-- ``LANGUAGE_REGISTRY``：内置适配器注册表（名称 → 适配器类）
+- ``LANGUAGE_REGISTRY``：内置适配器注册表（名称 -> 适配器类）
 - ``detect_language``：按工作区标志文件自动检测语言
 - ``get_adapter``：按“显式配置 > 自定义适配器 > 自动检测 > 默认 Python”选择适配器
 - ``load_entry_point_adapters``：加载通过 ``phase_barrier.languages`` 入口点注册的第三方适配器
@@ -47,7 +47,7 @@ __all__ = [
     "validate_test_collection",
 ]
 
-# 内置适配器注册表：名称 → 适配器类
+# 内置适配器注册表：名称 -> 适配器类
 LANGUAGE_REGISTRY: dict[str, type[LanguageAdapter]] = {
     "python": PythonAdapter,
     "javascript": JavaScriptAdapter,
@@ -62,7 +62,7 @@ LANGUAGE_REGISTRY: dict[str, type[LanguageAdapter]] = {
     "kotlin": KotlinAdapter,
 }
 
-# 标志文件 → 语言（顺序即优先级；同语言内按可依赖程度排序）
+# 标志文件 -> 语言（顺序即优先级；同语言内按可依赖程度排序）
 _LANGUAGE_MARKERS: list[tuple[tuple[str, ...], str]] = [
     (("package.json",), "javascript"),
     (("pom.xml", "build.gradle", "build.gradle.kts"), "java"),

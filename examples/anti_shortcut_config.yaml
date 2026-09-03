@@ -72,7 +72,7 @@ allow_other_files_any_stage: true
 # audit_remote_max_queue: 1000
 # audit_remote_flush_interval: 5.0
 # audit_remote_retries: 2            # v0.10.0：发送失败重试次数（指数退避）
-# audit_remote_backoff_factor: 0.5   # v0.10.0：退避基数秒（0.5→1→2…）
+# audit_remote_backoff_factor: 0.5   # v0.10.0：退避基数秒（0.5->1->2…）
 # audit_remote_ca_bundle: ""         # v0.10.0：自建 SIEM TLS 的自定义 CA（PEM 路径）
 
 # 更严格的项目还可以这样配：

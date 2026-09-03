@@ -1,11 +1,20 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.31.2] - 2026-09-03
+
+- 修复 `security.yml` 权限不足导致的可复用工作流调用失败：
+  `osv-scanner-reusable.yml@v2.5.0` 内部 job 静态声明需要 `actions: read` 与
+  `security-events: write`（与 `upload-sarif` 取值无关），而 workflow 顶层仅授予
+  `contents: read`；改为在 osv-scanner job 上显式声明
+  `permissions: {actions: read, security-events: write, contents: read}`（pip-audit job 不受影响）。
+- 修复后 security.yml 两个 job 均可在 push / PR / 每周定时下正常运行。
+
 ## [0.31.1] - 2026-09-02
 
 - 修复 `.github/workflows/security.yml` 中 osv-scanner 引用：`google/osv-scanner-action@v2` 并非普通 action，
   而是 job 级可复用工作流；改为 `google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.5.0`，
-  并设置 `upload-sarif: false`（无需 `security-events: write` 权限）。
+  并设置 `upload-sarif: false`。
 - 首次运行 `security.yml` 时 osv-scanner job 因 `Unable to resolve action google/osv-scanner-action@v2` 失败，
   本次修复后该 job 与 pip-audit 均可在 push / PR / 每周定时下正常运行。
 

@@ -69,7 +69,7 @@ resources:
 ### 5. 不要暴露 Ingress
 
 sidecar 是 Pod 内通信组件，**不应**通过 Ingress/NodePort 暴露到集群外。
-跨节点访问只允许 mTLS 客户端证书；审计外发是 sidecar → 审计端点（出站），不是入站。
+跨节点访问只允许 mTLS 客户端证书；审计外发是 sidecar -> 审计端点（出站），不是入站。
 
 ### 6. 审计闭环
 
@@ -108,11 +108,11 @@ service PhaseBarrier {
 
 ### 全链路加固要点
 
-信任链：`Agent → GateClient(mTLS) → sidecar(校验+审计) → 文件系统/执行环境`
+信任链：`Agent -> GateClient(mTLS) -> sidecar(校验+审计) -> 文件系统/执行环境`
 
 | 环节 | 风险 | 对策 |
 |------|------|------|
-| Agent → sidecar | 未授权调用 | mTLS 客户端证书（`tls-client-ca`） |
+| Agent -> sidecar | 未授权调用 | mTLS 客户端证书（`tls-client-ca`） |
 | sidecar 校验 | 证据伪造 | AST/启发式校验 + HMAC 状态签名 + 哈希清单 |
 | sidecar 执行 | 命令注入 | 拦截规则（`no_shell_injection`）+ 白名单命令模式 |
 | 审计 | 日志丢失/篡改 | 远程推送 + spool 缓冲 + 结构化为 JSON |

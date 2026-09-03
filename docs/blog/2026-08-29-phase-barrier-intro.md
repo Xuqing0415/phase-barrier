@@ -6,7 +6,7 @@ tags: [AI Agent, 软件工程, 工程效能, Python, 开源]
 
 # 给编码 Agent 装上"红绿灯"：phase-barrier 反捷径校验 Skill 的设计与实践
 
-> 一句话：把"需求 → spec 设计 → 测试用例 → 实现 → 测试 → 修复 → 交付"变成一道 Agent 绕不过去的门禁。
+> 一句话：把"需求 -> spec 设计 -> 测试用例 -> 实现 -> 测试 -> 修复 -> 交付"变成一道 Agent 绕不过去的门禁。
 
 ## 为什么需要"反捷径"
 
@@ -83,7 +83,7 @@ tools = skill.install(agent_tools)   # 替换 Agent 工具表，注入 advance_s
           -> 当前阶段不允许运行测试命令：请先完成实现代码（阶段 3）...
 ```
 
-仓库里有完整的最小可运行示例：`examples/minimal_agent.py`，一键跑通"跳步被拦 → 按 SOP 推进到交付"的全过程。
+仓库里有完整的最小可运行示例：`examples/minimal_agent.py`，一键跑通"跳步被拦 -> 按 SOP 推进到交付"的全过程。
 
 ## v0.3.0：语言适配层
 

@@ -41,7 +41,7 @@ def test_rotate_key_signed_without_keys_rejected(tmp_path):
 
 
 def test_rotate_key_enables_signing_on_unsigned(tmp_path):
-    """未签名状态 → 视为“启用签名”迁移，直接用新密钥签名。"""
+    """未签名状态 -> 视为“启用签名”迁移，直接用新密钥签名。"""
     StateManager(state_path(tmp_path), user_request="r")  # 无签名
     s = StateManager(state_path(tmp_path))  # 无密钥加载
     s.rotate_key("new-key")

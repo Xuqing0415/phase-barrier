@@ -3,7 +3,7 @@
 强制编码 Agent（如 Alpha-SWE）遵循标准工程师 SOP 的 **阶段门禁（Stage Gate）** 组件：
 以“阶段状态机 + 证据校验 + 工具拦截”的组合，阻止 Agent 跳步、偷步或伪造产出。
 
-> 流程：**需求 → spec 设计 → 测试用例 → 实现 → 测试 → 修复 → 交付**
+> 流程：**需求 -> spec 设计 -> 测试用例 -> 实现 -> 测试 -> 修复 -> 交付**
 
 [![CI](https://github.com/Xuqing0415/phase-barrier/actions/workflows/ci.yml/badge.svg)](https://github.com/Xuqing0415/phase-barrier/actions/workflows/ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/phase-barrier.svg)](https://pypi.org/project/phase-barrier/)

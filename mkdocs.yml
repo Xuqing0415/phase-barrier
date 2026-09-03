@@ -30,7 +30,6 @@ theme:
         name: 切换到浅色模式
 
 exclude_docs: |
-  publish-to-marketplace.md
   blog/
 
 markdown_extensions:
@@ -45,16 +44,28 @@ markdown_extensions:
 nav:
   - 首页: index.md
   - 快速开始: quickstart.md
-  - CLI 使用: usage.md
-  - 配置指南: configuration.md
-  - API 参考: api.md
-  - 集成: integrations.md
-  - 插件与生态: plugins.md
-  - K8s 部署: k8s.md
-  - 最佳实践: best-practices.md
+  - 使用指南:
+      - CLI 使用: usage.md
+      - 配置指南: configuration.md
+      - 语言适配器: languages.md
+      - GitHub Action 门禁: github-action.md
+      - GitHub Action 上架: publish-to-marketplace.md
+      - 编排器钩子 SDK: orchestrator-hooks.md
+      - 状态与审计: audit-logging.md
+      - 拦截规则与安全加固: security-rules.md
+      - 架构与设计: architecture.md
+      - API 参考: api.md
+  - 集成与生态:
+      - Agent 框架集成: integrations.md
+      - 插件与生态: plugins.md
+      - K8s 部署: k8s.md
+      - 最佳实践: best-practices.md
   - 教程:
       - CI 增量门禁: tutorials/ci-incremental-gate.md
       - K8s sidecar 加固与 gRPC 演进: tutorials/k8s-sidecar-grpc.md
       - SWE-bench 门禁基准: tutorials/swe-bench-gate.md
+  - FAQ: faq.md
+  - Roadmap: roadmap.md
+  - 发布与供应链安全: release.md
   - 贡献指南: contributing.md
   - 更新日志: changelog.md

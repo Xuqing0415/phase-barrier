@@ -12,7 +12,7 @@
 |------|------|
 | `generate_certs.py` | 生成自签 CA / 服务端 / 客户端证书（依赖 `cryptography`，仅示例需要） |
 | `server.py` | mTLS 收集端点：要求客户端证书，打印收到的审计事件 |
-| `demo.py` | 一键端到端演示：生成证书 → 启动收集端 → Skill 发送 → 校验送达 |
+| `demo.py` | 一键端到端演示：生成证书 -> 启动收集端 -> Skill 发送 -> 校验送达 |
 | `anti_shortcut_mtls.yaml` | 对应 YAML 配置示例 |
 
 ## 快速开始

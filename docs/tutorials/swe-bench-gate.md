@@ -2,7 +2,7 @@
 
 [SWE-bench](https://www.swebench.com/) 用真实 GitHub issue 评估编码 Agent 的修 bug 能力。
 phase-barrier 可以在评估流水线中作为 **过程合规门禁**：Agent 必须按
-`需求 → spec → 测试 → 实现 → 测试 → 修复 → 交付` 推进，任何跳步都会被拦截并记录，
+`需求 -> spec -> 测试 -> 实现 -> 测试 -> 修复 -> 交付` 推进，任何跳步都会被拦截并记录，
 从而量化“Agent 是否按工程师 SOP 干活”，而不只是“最终对不对”。
 
 ## 一、为什么需要过程门禁
@@ -134,8 +134,8 @@ python benchmarks/swe_bench_gate.py --fail-fast          # CI 阈值门禁
 脚本用 `AntiShortcutSkill` + 包装工具（write_file / execute_command / advance_stage）驱动每个
 模拟任务，覆盖三种行为路径：
 
-1. **按 SOP 推进**：写 spec → advance 2 → 写测试 → advance 3 → 写实现 → advance 4 →
-   运行 pytest → advance 5 → 自动进入交付 6。
+1. **按 SOP 推进**：写 spec -> advance 2 -> 写测试 -> advance 3 -> 写实现 -> advance 4 ->
+   运行 pytest -> advance 5 -> 自动进入交付 6。
 2. **跳步**：阶段 1 直接写实现（`write_file` 拦截）与 shell 重定向写实现（`execute_command`
    拦截）各记 1 次拦截；拦截后可按配置选择放弃或回退按 SOP 完成。
 3. **空壳测试**：先写空测试文件，`advance_stage(3)` 被证据校验（AST 检查测试函数与断言）

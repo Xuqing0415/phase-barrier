@@ -103,7 +103,7 @@ def main() -> int:
         print("[e2e] FAIL: 未到达交付态")
         return 1
 
-    print("\n[e2e] GateClient 全流程通过 ✅")
+    print("\n[e2e] GateClient 全流程通过")
     return 0
 
 

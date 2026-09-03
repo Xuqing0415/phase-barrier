@@ -41,7 +41,7 @@ __all__ = ["AntiShortcutSkill"]
 
 
 class AntiShortcutSkill:
-    """阶段门禁 Skill：强制编码 Agent 按“需求→spec→测试→实现→测试→修复→交付”推进。
+    """阶段门禁 Skill：强制编码 Agent 按“需求->spec->测试->实现->测试->修复->交付”推进。
 
     :param workspace: 工作区根目录（所有证据文件都在其下）
     :param config: 配置（GateConfig / YAML 路径 / dict / None）
@@ -93,8 +93,8 @@ class AntiShortcutSkill:
             console=console_log,
             remote=self.remote_sink,
         )
-        # v0.15.0：审计远程推送重试耗尽 → 写入审计告警事件（供人工 / SIEM 观察）
-        # 告警事件使用本地专用 logger（不再转发远端），避免“告警 → 失败 → 再告警”的自喂循环
+        # v0.15.0：审计远程推送重试耗尽 -> 写入审计告警事件（供人工 / SIEM 观察）
+        # 告警事件使用本地专用 logger（不再转发远端），避免“告警 -> 失败 -> 再告警”的自喂循环
         self._alert_logger = get_audit_logger(
             self.gate_dir / self.config.audit_log_name,
             console=console_log,
@@ -375,8 +375,8 @@ class AntiShortcutSkill:
         """阶段推进专用工具：校验“只能进入当前阶段 + 1”，并验证当前阶段的证据。
 
         特殊分支：阶段 4（运行测试）推进时——
-        - 最近一次测试通过且无后续代码变更 → 直接进入阶段 6（交付，跳过修复）
-        - 测试未通过 / 代码在测试后被修改 → 进入阶段 5（修复与回归）
+        - 最近一次测试通过且无后续代码变更 -> 直接进入阶段 6（交付，跳过修复）
+        - 测试未通过 / 代码在测试后被修改 -> 进入阶段 5（修复与回归）
         """
         cur = self.current_stage
         if self.is_complete:

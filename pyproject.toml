@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "phase-barrier"
 dynamic = ["version"]
-description = "阶段门禁反捷径校验 Skill：强制编码 Agent 遵循标准工程师 SOP（需求→spec→测试→实现→测试→修复→交付）"
+description = "阶段门禁反捷径校验 Skill：强制编码 Agent 遵循标准工程师 SOP（需求->spec->测试->实现->测试->修复->交付）"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

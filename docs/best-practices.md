@@ -5,7 +5,7 @@ Agent 集成选型、常见坑，以及 README 长期规划中的性能与安全
 
 ## 阶段建模
 
-默认门禁为 6 个阶段（`0 需求 → 1 spec → 2 测试 → 3 实现 → 4 运行测试 → 5 修复 → 6 交付`），
+默认门禁为 6 个阶段（`0 需求 -> 1 spec -> 2 测试 -> 3 实现 -> 4 运行测试 -> 5 修复 -> 6 交付`），
 大多数场景无需改动。需要自定义时注意：
 
 - **阶段数量保持 0-6 或整体平移**：GitHub Action、编排器 SDK、`classify_stage_path` 都依赖
@@ -57,7 +57,7 @@ audit_remote_url: ${AUDIT_URL}   # 审计远程推送（SIEM / webhook）
 | CI 门禁 | GitHub Action `inspect` / `verify` 模式 |
 | 人工监督 / 脚本 | CLI `inspect` / `advance` / `exec` / `verify-evidence` |
 
-集成优先级：**先 SDK（最小侵入）→ 再工具透明代理（不可绕过）→ 最后 CI 兜底**。
+集成优先级：**先 SDK（最小侵入）-> 再工具透明代理（不可绕过）-> 最后 CI 兜底**。
 
 ## 常见坑
 

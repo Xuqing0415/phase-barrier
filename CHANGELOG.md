@@ -1,6 +1,31 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.32.0] - 2026-09-03
+
+- **主流 Agent 框架集成收尾（v0.32.0）**：
+  - LangChain 新增 `examples/langchain_integration/phase_barrier_tool.py`：`PhaseBarrierTool`
+    （`PhaseBarrierWriteTool` / `PhaseBarrierExecTool`）继承 `langchain_core.tools.BaseTool`，
+    内部使用 `GateClient` 代理写文件 / 执行命令，被拦截返回 denied JSON（不抛异常，LLM 可读取原因补写证据）；
+    langchain 为可选依赖（未安装时模块可导入，实例化报安装提示）。
+  - 新增最小演示 `examples/langchain_integration/demo.py`：跳步拦截 + 按 SOP 全通到交付；
+    已安装 `langchain-core` 走真实 BaseTool（`invoke`）路径，否则自动回退 `gate_tools` 函数路径。
+  - CI 新增 `integration-langchain` job：固定安装 `langchain-core>=0.3,<0.5` 后运行 `demo.py`
+    验证真实 BaseTool 路径；主矩阵端到端 demo 步骤追加 langchain demo（回退路径，零额外依赖）。
+  - `docs/integrations.md` 与示例 README 补充 PhaseBarrierTool 用法与 CI 说明。
+- **Kotlin 语言适配器（v0.32.0）**：新增 `anti_shortcut/languages/kotlin.py`（`KotlinAdapter`，
+  复用 Java 适配器 Gradle / Surefire / JUnit Console 输出解析）：
+  - 文件识别：`*.kt` / `src/main/kotlin/**` 为实现；`*Test.kt` / `*Tests.kt` / `src/test/**`（kotlin）为测试。
+  - 语法检查：`kotlinc -d <tmp> <file>` 单文件检查（跨文件/依赖缺失降级提示，语法错误拒绝；kotlinc 缺失明确报错）。
+  - 测试统计：`@Test` 注解数（JUnit5 / kotlin.test）+ `assert*` / `fail` 断言关键字（启发式，支持泛型尾随 lambda）。
+  - 注册 `LANGUAGE_REGISTRY` / entry point / `pyproject.toml`；自动检测：存在 `src/main/kotlin`
+    且无其他标志文件时识别为 kotlin，否则显式 `language: kotlin`（`build.gradle.kts` 仍优先识别为 java）。
+  - 测试：`tests/test_kotlin_adapter.py` 15 个用例（注册 / 检测 / 文件识别 / 启发式 / 语法检查 /
+    命令识别 / 输出解析；真实 kotlinc 用例按环境 skipif）。
+- **文档与生态（v0.32.0）**：文档站新增 `docs/api.md`（API 参考）并挂入 mkdocs nav；
+  README「内置适配器」表格与 Roadmap 同步；`docs/configuration.md` 语言清单与自动检测说明补全；
+  `docs/k8s.md` 补充生产暴露面建议（默认 ClusterIP，可选 Ingress + mTLS）。
+
 ## [0.31.2] - 2026-09-03
 
 - 修复 `security.yml` 权限不足导致的可复用工作流调用失败：

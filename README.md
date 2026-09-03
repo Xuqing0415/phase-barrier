@@ -606,6 +606,7 @@ test_commands:
 | `PythonAdapter` | `test_*.py` / `tests/**` 为测试，`*.py` 为实现 | `compile()` | AST 解析：测试函数数 + `assert` / `pytest.raises` / `unittest.TestCase` 的 `self.assert*` 断言 |
 | `JavaScriptAdapter` | `*.test.js` / `*.spec.ts` / `__tests__/` 为测试，`src/**` 与 `*.js|ts|jsx|tsx` 为实现 | `node --check` / `tsc --noEmit`（优先 `tsconfig.json` 项目检查；工具缺失返回明确错误） | 项目安装 acorn 时真实解析（`test` / `it` / `describe` 声明 + `expect` / `assert` 断言），否则启发式；可选 `jest --listTests --json` 动态发现；输出解析：Jest / Vitest（`Tests: N passed`）、Playwright（`N passed` / `N failed`）与 Cypress（`All specs passed!` / `N passing` / `N failing`） |
 | `JavaAdapter` | `*Test.java` / `*Tests.java` / `src/test/**` 为测试，`src/**` 与 `*.java` 为实现 | 项目级 `mvn test-compile` / `gradle compileTestJava`（优先 `mvnw` / `gradlew`，带缓存）；无构建工具时回退 `javac -proc:none` | 启发式：`@Test` 注解数（JUnit / TestNG）+ JUnit/Hamcrest 断言关键字；输出解析：Surefire / Gradle / JUnit Console / TestNG（`Total tests run:`） |
+| `KotlinAdapter` | `*Test.kt` / `*Tests.kt` / `src/test/**`（kotlin）为测试，`src/main/kotlin/**` 与 `*.kt` 为实现 | `kotlinc`（缺失返回明确错误；跨文件/依赖缺失降级为“需完整项目编译验证”） | 启发式：`@Test` 注解数（JUnit5 / kotlin.test）+ `assert*` 断言关键字；输出解析复用 Java（Gradle / Surefire / JUnit Console） |
 | `GoAdapter` | `*_test.go` 为测试，`*.go` / `cmd|internal|pkg/**` 为实现 | `gofmt -e`（Go 工具链缺失返回明确错误） | 启发式：`func TestXxx(t *testing.T)` 函数数 + `t.Error` / `t.Fatal` / `assert` / `require` 断言 |
 | `RustAdapter` | `tests/**` / `*_test.rs` / `src/**/tests.rs` 为测试，`src/**` 与 `*.rs` 为实现 | `cargo check`（有 `Cargo.toml`）/ `rustc` 单文件回退（工具缺失返回明确错误） | 启发式：`#[test]` / `#[tokio::test]` 属性数 + `assert!` / `assert_eq!` / `assert_ne!` |
 | `CSharpAdapter` | `*Test.cs` / `*Tests.cs` / `**/Tests/**` 为测试，`*.cs` 为实现 | 项目级 `dotnet build`（查找 `.csproj` / `.sln` 项目根，带指纹缓存；无项目根或工具缺失返回明确错误） | 启发式：`[Fact]` / `[Theory]` / `[Test]` 特性数 + `Assert.*` 断言；输出解析：VSTest `Passed! - Failed: F, Passed: P` / NUnit |
@@ -781,11 +782,16 @@ JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志
 - **v0.30.0 已落地**：SWE-bench 门禁基准脚本化——新增 `benchmarks/swe_bench_gate.py` 模拟 SWE-bench 风格任务驱动 `AntiShortcutSkill`，统计 SOP 合规率 / 跳步拦截率 / 证据修复率 / resolve 率，支持 `--json` / `--fail-fast` 阈值门禁并纳入 CI bench job；配套冒烟测试 6 个与教程“脚本化基准”章节。
 
 - **v0.31.0 已落地**：性能与安全加固——新增解析器模糊测试基准 `benchmarks/fuzz_parsers.py`（8 个目标：输出摘要 / 覆盖率提取 / 写路径提取 / 门禁目录探测 / Java 解析器 / 适配器文件识别 / 测试命令识别，确定性种子复现），并纳入 CI bench job；新增 `.github/workflows/security.yml` 依赖漏洞扫描（`pip-audit` 完整环境 + `osv-scanner` manifest，每周定时 + push/PR 触发）；配套冒烟测试 7 个。
+- **v0.32.0 已完成**：主流 Agent 框架集成收尾——LangChain 新增 `PhaseBarrierTool`（`BaseTool` 子类，
+  `examples/langchain_integration/phase_barrier_tool.py`）与最小演示 `demo.py`，CI 新增 `integration-langchain`
+  job（固定安装 `langchain-core>=0.3,<0.5` 验证真实 BaseTool 路径）；新增 Kotlin 语言适配器
+  （`KotlinAdapter`：`kotlinc` 语法检查 + JUnit5/kotlin.test 启发式，复用 Java Gradle/Surefire 输出解析，
+  注册 `language: kotlin` 与 `src/main/kotlin` 自动探测）；文档站新增 API 参考页；多语言文档清单同步。
 
 **规划中（Next）**
 
-- 集成收尾：alpha-swe 插件接入已合并（[alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3)），编排器集成闭环剩余项已全部完成。
-- **长期规划**：K8s sidecar gRPC / 透明代理 HTTP 全链路加固。
+- Kotlin 真实工具链：CI 暂未内置 kotlinc，`tests/test_kotlin_adapter.py` 的真实语法用例在本地具备 kotlinc 时执行；可按需在 ubuntu runner 安装 `kotlin` 包激活。
+- `phase-barrier-plugin-template` 独立模板仓库（把插件索引自动化托管到仓库级，`docs/plugins.md` 已含 CI 模板与提交流程）。
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
 
 ## 反馈与贡献

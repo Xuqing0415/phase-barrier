@@ -38,14 +38,10 @@ jobs:
 
   osv-scanner:
     name: osv-scanner (manifests)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Run osv-scanner
-        uses: google/osv-scanner-action@v2
-        with:
-          scan-args: |-
-            --recursive
-            .
-          fail-on-vuln: true
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.5.0
+    with:
+      scan-args: |-
+        --recursive
+        ./
+      fail-on-vuln: true
+      upload-sarif: false

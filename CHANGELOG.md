@@ -1,6 +1,14 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+## [0.31.1] - 2026-09-02
+
+- 修复 `.github/workflows/security.yml` 中 osv-scanner 引用：`google/osv-scanner-action@v2` 并非普通 action，
+  而是 job 级可复用工作流；改为 `google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.5.0`，
+  并设置 `upload-sarif: false`（无需 `security-events: write` 权限）。
+- 首次运行 `security.yml` 时 osv-scanner job 因 `Unable to resolve action google/osv-scanner-action@v2` 失败，
+  本次修复后该 job 与 pip-audit 均可在 push / PR / 每周定时下正常运行。
+
 ## [0.31.0] - 2026-09-02
 
 - **性能与安全加固（v0.31.0）**：

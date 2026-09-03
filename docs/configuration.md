@@ -102,7 +102,7 @@ coverage_threshold: null        # 设为 80.0 后要求测试输出含覆盖率�
 ### 语言适配（多语言）
 
 ```yaml
-language: python       # 显式指定：python / javascript / java / go / rust / ruby / csharp / dotnet / cpp
+language: kotlin       # 显式指定：python / javascript / java / go / rust / ruby / csharp / dotnet / cpp / php / kotlin
 language_adapter: "my_pkg.module:MyAdapter"   # 或自定义适配器导入路径（优先级最高）
 adapter_options:
   min_tests: 3         # 传递给适配器的选项（各适配器自行解释）
@@ -111,7 +111,9 @@ adapter_options:
 自动检测标志文件：`package.json` → javascript；`pom.xml` / `build.gradle` → java；
 `go.mod` → go；`Cargo.toml` → rust；`Gemfile` → ruby；`*.csproj` / `*.sln` → csharp；
 `CMakeLists.txt` / `Makefile` / `*.vcxproj` → cpp（v0.26.0）；`pyproject.toml` /
-`requirements.txt` / `setup.py` → python。
+`requirements.txt` / `setup.py` → python；`composer.json` → php（v0.28.0）；
+`build.gradle.kts` 项目默认仍识别为 java（Gradle 同时用于 Java/Kotlin），纯 Kotlin 工作区（存在
+`src/main/kotlin` 且无其他标志文件）自动识别为 kotlin，否则请显式 `language: kotlin`（v0.32.0）。
 
 ### 覆盖率门禁
 

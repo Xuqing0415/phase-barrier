@@ -39,6 +39,12 @@ tool = Tool.from_function(func=tools["write_file"]["func"], name="gate_write_fil
                           description=tools["write_file"]["description"])
 ```
 
+- BaseTool 子类（v0.32.0）：`examples/langchain_integration/phase_barrier_tool.py`
+  提供 `PhaseBarrierWriteTool` / `PhaseBarrierExecTool`（继承 `langchain_core.tools.BaseTool`），
+  被拦截时同样返回 denied JSON；最小演示 `python examples/langchain_integration/demo.py`
+  （安装 langchain-core 走真实 BaseTool 路径，否则自动回退 gate_tools 函数路径），
+  CI 的 `integration-langchain` job 固定安装 `langchain-core>=0.3,<0.5` 验证。
+
 ## AutoGPT
 
 - 示例：`examples/autogpt_integration/`

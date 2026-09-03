@@ -20,6 +20,7 @@ from .dotnet import DotNetAdapter
 from .go import GoAdapter
 from .php import PhpAdapter
 from .java import JavaAdapter
+from .kotlin import KotlinAdapter
 from .javascript import JavaScriptAdapter
 from .python import PythonAdapter
 from .ruby import RubyAdapter
@@ -31,6 +32,7 @@ __all__ = [
     "PythonAdapter",
     "JavaScriptAdapter",
     "JavaAdapter",
+    "KotlinAdapter",
     "GoAdapter",
     "RustAdapter",
     "RubyAdapter",
@@ -57,6 +59,7 @@ LANGUAGE_REGISTRY: dict[str, type[LanguageAdapter]] = {
     "cpp": CppAdapter,
     "php": PhpAdapter,
     "dotnet": DotNetAdapter,
+    "kotlin": KotlinAdapter,
 }
 
 # 标志文件 → 语言（顺序即优先级；同语言内按可依赖程度排序）
@@ -116,6 +119,9 @@ def detect_language(workspace: Path) -> str:
         for glob in globs:
             if any(root.glob(glob)):
                 return lang
+    # Kotlin 探针：无标志文件的纯 Kotlin 工作区（src/main/kotlin 源根）
+    if (root / "src" / "main" / "kotlin").is_dir():
+        return "kotlin"
     return "python"
 
 

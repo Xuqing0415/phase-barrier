@@ -47,6 +47,7 @@ nav:
   - 快速开始: quickstart.md
   - CLI 使用: usage.md
   - 配置指南: configuration.md
+  - API 参考: api.md
   - 集成: integrations.md
   - 插件与生态: plugins.md
   - K8s 部署: k8s.md

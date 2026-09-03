@@ -58,6 +58,7 @@ jobs:
           python examples/demo.py
           python examples/orchestrator_hooks/demo.py
           python examples/orchestrator_hooks/multi_agent.py
+          python examples/langchain_integration/demo.py
 
       - name: Smoke-test CLI entry point
         run: |
@@ -360,6 +361,29 @@ jobs:
         run: |
           echo "::error::phase-barrier 应拒绝缺失工作区但通过了"
           exit 1
+
+  integration-langchain:
+    name: LangChain example (BaseTool subclass, v0.32.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # setuptools-scm 需要读取 tag
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package, dev deps and langchain-core (pinned range)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install "langchain-core>=0.3,<0.5"
+
+      - name: Run LangChain demo (real BaseTool path)
+        run: python examples/langchain_integration/demo.py
 
   plugin-verify:
     name: Plugin auto-verify (self-test)

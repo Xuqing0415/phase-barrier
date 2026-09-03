@@ -76,3 +76,53 @@ def test_langchain_wrapper_blocks_jump_and_passes_sop(tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_phase_barrier_tool_optional_langchain(tmp_path):
+    """phase_barrier_tool 无 langchain 时可导入；缺依赖时实例化报安装提示。"""
+    mod = _load("pb_lc_basetool", "langchain_integration/phase_barrier_tool.py")
+    if not mod.HAS_LANGCHAIN:
+        with pytest.raises(RuntimeError, match="langchain-core"):
+            mod.PhaseBarrierWriteTool(gate=None)
+        return
+
+    # langchain-core 已安装：真实 BaseTool 子类路径，校验跳步拦截 + SOP 通过
+    import json
+    import threading
+    from http.server import ThreadingHTTPServer
+
+    from anti_shortcut.proxy_client import GateClient
+    from anti_shortcut.sidecar import GateSidecar, make_handler
+
+    server = ThreadingHTTPServer(
+        ("127.0.0.1", 0),
+        make_handler(GateSidecar(tmp_path, user_request="实现斐波那契函数")),
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    gate = GateClient("http://127.0.0.1:%d" % server.server_address[1])
+    try:
+        tools_mod = _load("pb_lc_tools3", "langchain_integration/gate_tools.py")
+        write_tool = mod.PhaseBarrierWriteTool(gate=gate)
+        exec_tool = mod.PhaseBarrierExecTool(gate=gate)
+        denied = json.loads(write_tool.invoke({"path": "fib.py", "content": tools_mod.IMPL}))
+        assert denied["ok"] is False and "denied" in denied
+        assert json.loads(write_tool.invoke({"path": "spec.md", "content": tools_mod.SPEC}))["ok"] is True
+        gate.advance(2)
+        assert json.loads(write_tool.invoke({"path": "test_fib.py", "content": tools_mod.TESTS}))["ok"] is True
+        gate.advance(3)
+        assert json.loads(write_tool.invoke({"path": "fib.py", "content": tools_mod.IMPL}))["ok"] is True
+        gate.advance(4)
+        out = json.loads(exec_tool.invoke({"command": "python -m pytest test_fib.py -q"}))
+        assert out["ok"] is True and out["exit_code"] == 0
+        gate.advance(5)
+        assert gate.state()["stage_name"] == "交付"
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_langchain_demo_runs_end_to_end():
+    """demo.py 在无 langchain-core 时走 gate_tools 回退路径，拦截 + SOP 全通。"""
+    mod = _load("pb_lc_demo", "langchain_integration/demo.py")
+    assert mod.main() == 0

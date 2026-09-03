@@ -48,3 +48,36 @@ executor.invoke({"input": "实现一个斐波那契函数 fib(n) 并保证质量
 - `advance_stage` 建议由编排器钩子在工具链外调用（见 `examples/orchestrator_hooks/`），
   或在工具描述中引导 Agent 先完成证据再申请推进。
 - 生产环境把 `GateClient` 指向 K8s sidecar Service（Helm chart 默认 8080 端口）。
+
+## PhaseBarrierTool（BaseTool 子类）与 demo（v0.32.0）
+
+`phase_barrier_tool.py` 把 `GateClient` 包装为 `langchain_core.tools.BaseTool` 子类：
+
+- `PhaseBarrierWriteTool`：经门禁写文件（入参 `path` / `content`）
+- `PhaseBarrierExecTool`：经门禁执行 shell 命令（入参 `command`）
+
+被拦截时返回 `{"ok": false, "denied": "..."}`（JSON 字符串，LangChain 工具约定），
+LLM 读取拦截原因后补写 spec / 测试再重试。langchain 为可选依赖：未安装
+`langchain-core` 时模块可正常导入（`HAS_LANGCHAIN=False`），实例化会抛出
+带安装提示的 `RuntimeError`。
+
+```python
+# pip install "langchain-core>=0.3"
+from anti_shortcut.proxy_client import GateClient
+from phase_barrier_tool import PhaseBarrierWriteTool, PhaseBarrierExecTool
+
+gate = GateClient("http://sidecar:8080")
+write_tool = PhaseBarrierWriteTool(gate=gate)
+write_tool.invoke({"path": "fib.py", "content": "..."})   # 跳步 -> denied JSON
+```
+
+最小演示（跳步拦截 + 按 SOP 全通）：
+
+```bash
+python examples/langchain_integration/demo.py
+```
+
+- 已安装 `langchain-core`：走真实 BaseTool 路径（`PhaseBarrierTool.invoke`）。
+- 未安装：自动回退到 `gate_tools` 工具函数路径，脚本仍可完整运行。
+- CI（`.github/workflows/ci.yml` 的 `integration-langchain` job）安装固定范围
+  `langchain-core>=0.3,<0.5` 后运行 `demo.py`，验证真实 BaseTool 代码路径。

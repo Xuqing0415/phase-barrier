@@ -39,6 +39,10 @@ jobs:
   osv-scanner:
     name: osv-scanner (manifests)
     uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.5.0
+    permissions:
+      actions: read
+      security-events: write
+      contents: read
     with:
       scan-args: |-
         --recursive

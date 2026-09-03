@@ -1,6 +1,19 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+
+## [0.32.1] - 2026-09-03
+
+- 修复 `docs.yml` 文档站部署并发撞车：发版时 `main` 分支推送与 `v*` 标签推送会各触发一次
+  部署工作流，而并发组按 `github.ref` 分组（`refs/heads/main` 与 `refs/tags/vX.Y.Z` 不同名），
+  两次运行各锁各的、互不可见，同时向 `gh-pages` 强推导致远端拒绝
+  （`cannot lock ref 'refs/heads/gh-pages'`，v0.32.0 首次复现，此前为偶发侥幸）。
+- 并发组改为全工作流共享的静态组 `docs-deploy` 并设 `cancel-in-progress: false`：
+  同组任务排队串行执行，后到的等先跑的推完再推（两次内容来自同一 commit，重复推送结果一致）；
+  `workflow_dispatch` 手动触发同样受此锁保护。
+- 注：本问题仅影响文档站部署任务本身；主 CI（测试 / 覆盖率 / 门禁自检 / 基准 / 打包）与
+  PyPI 发布、GHCR 镜像均不受影响，线上文档站内容已是 v0.32.0 最新。
+
 ## [0.32.0] - 2026-09-03
 
 - **主流 Agent 框架集成收尾（v0.32.0）**：

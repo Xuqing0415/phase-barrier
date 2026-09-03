@@ -13,9 +13,14 @@ on:
 permissions:
   contents: write
 
+# 并发组必须是不带 ref 的静态组：main 推送与 v* 标签推送会各自触发一次本工作流，
+# 而两者 github.ref 不同（refs/heads/main vs refs/tags/vX.Y.Z），按 ref 分组等于各锁各的、
+# 互不可见，两次部署会同时向 gh-pages 强推并撞车（远端 "cannot lock ref" 拒绝，v0.32.0 首次复现）。
+# 改为共享静态组 + cancel-in-progress: false：同组任务排队串行，后到的等先跑的推完再推；
+# 两次内容来自同一 commit，重复推送结果一致无害；workflow_dispatch 手动触发同样受此锁保护。
 concurrency:
-  group: docs-${{ github.ref }}
-  cancel-in-progress: true
+  group: docs-deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:

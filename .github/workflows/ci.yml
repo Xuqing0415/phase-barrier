@@ -71,6 +71,19 @@ jobs:
           echo "/opt/scala-2.13.18/bin" >> "$GITHUB_PATH"
           /opt/scala-2.13.18/bin/scalac -version
           /opt/scala-2.13.18/bin/scalac -version 2>&1 | grep -q '2\.13\.18'
+      # v0.37.0: 安装 Swift 工具链（swift.org ubuntu24.04），激活 SwiftAdapter 真实语法用例
+      - name: Install Swift toolchain (swift-6.1.2)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libcurl4-openssl-dev libxml2-dev libz3-dev libedit2
+          curl -fsSL -o /tmp/swift.tar.gz \
+            https://download.swift.org/swift-6.1.2-release/ubuntu2404/swift-6.1.2-RELEASE/swift-6.1.2-RELEASE-ubuntu24.04.tar.gz
+          sudo mkdir -p /opt
+          sudo rm -rf /opt/swift-6.1.2-RELEASE-ubuntu24.04
+          sudo tar -xzf /tmp/swift.tar.gz -C /opt
+          echo "/opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin" >> "$GITHUB_PATH"
+          /opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin/swiftc -version
+          /opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin/swiftc -version 2>&1 | grep -q '6\.1\.2'
 
 
       - name: Install package and dev deps
@@ -150,6 +163,19 @@ jobs:
           echo "/opt/scala-2.13.18/bin" >> "$GITHUB_PATH"
           /opt/scala-2.13.18/bin/scalac -version
           /opt/scala-2.13.18/bin/scalac -version 2>&1 | grep -q '2\.13\.18'
+      # v0.37.0: 安装 Swift 工具链（swift.org ubuntu24.04），激活 SwiftAdapter 真实语法用例
+      - name: Install Swift toolchain (swift-6.1.2)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libcurl4-openssl-dev libxml2-dev libz3-dev libedit2
+          curl -fsSL -o /tmp/swift.tar.gz \
+            https://download.swift.org/swift-6.1.2-release/ubuntu2404/swift-6.1.2-RELEASE/swift-6.1.2-RELEASE-ubuntu24.04.tar.gz
+          sudo mkdir -p /opt
+          sudo rm -rf /opt/swift-6.1.2-RELEASE-ubuntu24.04
+          sudo tar -xzf /tmp/swift.tar.gz -C /opt
+          echo "/opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin" >> "$GITHUB_PATH"
+          /opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin/swiftc -version
+          /opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin/swiftc -version 2>&1 | grep -q '6\.1\.2'
 
 
       - name: Install package and dev deps

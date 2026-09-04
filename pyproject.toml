@@ -49,6 +49,8 @@ cpp = "anti_shortcut.languages.cpp:CppAdapter"
 dotnet = "anti_shortcut.languages.dotnet:DotNetAdapter"
 php = "anti_shortcut.languages.php:PhpAdapter"
 kotlin = "anti_shortcut.languages.kotlin:KotlinAdapter"
+scala = "anti_shortcut.languages.scala:ScalaAdapter"
+swift = "anti_shortcut.languages.swift:SwiftAdapter"
 
 # 自定义校验器 / 拦截规则入口点：第三方包可通过这些组注册自定义阶段校验器与拦截规则
 [project.entry-points."phase_barrier.validators"]

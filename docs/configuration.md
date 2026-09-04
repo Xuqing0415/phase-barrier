@@ -102,7 +102,7 @@ coverage_threshold: null        # 设为 80.0 后要求测试输出含覆盖率�
 ### 语言适配（多语言）
 
 ```yaml
-language: kotlin       # 显式指定：python / javascript / java / go / rust / ruby / csharp / dotnet / cpp / php / kotlin
+language: swift        # 显式指定：python / javascript / java / kotlin / scala / swift / go / rust / ruby / csharp / dotnet / cpp / php
 language_adapter: "my_pkg.module:MyAdapter"   # 或自定义适配器导入路径（优先级最高）
 adapter_options:
   min_tests: 3         # 传递给适配器的选项（各适配器自行解释）
@@ -112,7 +112,7 @@ adapter_options:
 `go.mod` -> go；`Cargo.toml` -> rust；`Gemfile` -> ruby；`*.csproj` / `*.sln` -> csharp；
 `CMakeLists.txt` / `Makefile` / `*.vcxproj` -> cpp（v0.26.0）；`pyproject.toml` /
 `requirements.txt` / `setup.py` -> python；`composer.json` -> php（v0.28.0）；
-`build.gradle.kts` 项目默认仍识别为 java（Gradle 同时用于 Java/Kotlin），纯 Kotlin 工作区（存在
+`Package.swift` -> swift（v0.37.0）。`build.gradle.kts` 项目默认仍识别为 java（Gradle 同时用于 Java/Kotlin），纯 Kotlin 工作区（存在
 `src/main/kotlin` 且无其他标志文件）自动识别为 kotlin，否则请显式 `language: kotlin`（v0.32.0）。
 
 ### 覆盖率门禁
@@ -175,6 +175,6 @@ allow_other_files_any_stage: true  # 是否允许任意阶段写入“其他”�
 - **如何关闭某道门禁？** 调低 `min_test_functions`、关闭 `require_assert_per_test`、
   去掉 `coverage_threshold`，或自定义 `spec_sections` / `test_file_patterns`。
 - **如何适配非 Python 项目？** 设置 `language` 并核对 `test_file_patterns` /
-  `source_file_patterns` / `test_commands`；内置适配器覆盖 JS / Java / Go / Rust / Ruby /
-  C# / .NET / C++。
+  `source_file_patterns` / `test_commands`；内置适配器覆盖 Python / JS-TS / Java / Kotlin /
+  Scala / Swift / Go / Rust / Ruby / PHP / C++ / C#（.NET）。
 - **如何只启用安全规则中的部分？** `rules` 列表按需增删；未列出的规则不生效。

@@ -2,6 +2,31 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.37.0] - 2026-09-04
+
+- **Swift 语言适配器（v0.37.0）**：新增 `SwiftAdapter`（`anti_shortcut/languages/swift.py`）——
+  文件识别 `*.swift` / `Sources/**`（`Package.swift` 清单除外），测试文件
+  `*Test.swift` / `*Tests.swift` / `Tests/**` / `test/**` / `spec/**`；语法检查
+  `swiftc -typecheck`（脚本模式对 `@main` 文件报错自动以 `-parse-as-library` 重试，
+  跨文件/依赖缺失——cannot find / no such module / cannot build module 等——降级为
+  “需完整项目编译验证”，真正的语法错误仍拒绝；swiftc 缺失返回明确错误）。
+- **启发式测试统计与输出解析（v0.37.0）**：XCTest `func testXxx()` 方法与 swift-testing
+  `@Test` 属性统计，先剥离 `//` / `/* */`（含嵌套）/ 字符串字面量避免注释误判；
+  断言关键字覆盖 `XCTAssert*` / `XCTFail` / `#expect` / `#require`；输出解析 XCTest
+  （`Executed N tests, with M failures`，多套件取最后一次汇总）、swift-testing
+  （`Test run with N tests passed|failed`）与 xcodebuild（`** TEST SUCCEEDED/FAILED **`）。
+- **注册与检测（v0.37.0）**：`LANGUAGE_REGISTRY` 注册 `swift`，`Package.swift` 自动探测；
+  `pyproject.toml` 补齐 v0.34.0 遗漏的 `scala` 语言入口点并新增 `swift` 入口点；
+  工作区遍历跳过目录补充 `.build`（SwiftPM 构建产物）。
+- **解析器模糊测试目标 10 -> 11（v0.37.0）**：`benchmarks/fuzz_parsers.py` 新增
+  `swift_parsers` 目标（SwiftAdapter.parse_test_output 随机输入 0 崩溃），
+  `tests/test_fuzz.py` 计数同步更新。
+- **Swift 真实工具链进 CI（v0.37.0）**：test / coverage job 安装 swift.org ubuntu24.04
+  工具链（swift-6.1.2，apt 补齐运行依赖 + 绝对路径版本断言），激活 SwiftAdapter
+  真实语法用例（通过 / 报错 / 依赖降级三条路径），不再按环境跳过。
+- **测试**：新增 `tests/test_swift_adapter.py` 30 个用例（注册/检测/文件识别/统计/语法
+  检查/命令识别/输出解析/内部聚合函数），本地 Windows 全绿（swiftc 真实用例按 skipif 跳过）。
+
 ## [0.36.0] - 2026-09-04
 
 - **Windows CI 核心测试矩阵（v0.36.0）**：`.github/workflows/ci.yml` 新增 `test-windows` job

@@ -1,10 +1,16 @@
-# 教程：K8s sidecar 生产加固与 gRPC 演进
+# 教程：K8s sidecar 生产加固与 gRPC 演进（gRPC 部分为规划草案）
+
+> **重要：gRPC 尚未实现。** 当前版本（v0.34.x）的 sidecar 仅提供 HTTP API
+> （`/api/write`、`/api/exec`、`/api/advance`、`/api/state`、`/api/audit`），
+> 本文第三部分的 gRPC 接口与 proto 只是设计草案，请勿按 gRPC 接口接入生产。
+> gRPC 支持将作为独立版本推出（见 [Roadmap](../roadmap.md)）。
 
 phase-barrier 的 K8s 部署采用 **sidecar 透明代理** 模式：Agent 容器不挂载门禁目录，
 文件写入与命令执行都走 sidecar 的 HTTP API（`/api/write`、`/api/exec`、`/api/advance`、
 `/api/state`、`/api/audit`），因此 Agent 无法绕过阶段门禁，也无法篡改状态。
 
-本教程分三部分：现状速览、生产加固清单、以及 README 长期规划中的 **gRPC 演进方案**。
+本教程分三部分：现状速览、生产加固清单、以及规划中的 **gRPC 演进方案**
+（尚未实现，见顶部警告）。
 
 ## 一、现状速览
 

@@ -41,5 +41,5 @@ docker run --rm -it ghcr.io/xuqing0415/phase-barrier-demo
 
 - [最佳实践](best-practices.md)：阶段建模、证据设计、配置建议、常见坑、性能与安全加固清单。
 - [CI 增量门禁](tutorials/ci-incremental-gate.md)：PR 场景只校验变更文件相关证据（`verify-evidence --git-base`）。
-- [K8s sidecar 加固与 gRPC 演进](tutorials/k8s-sidecar-grpc.md)：生产部署清单与 gRPC 迁移设计草案。
+- [K8s sidecar 加固与 gRPC 演进（规划中）](tutorials/k8s-sidecar-grpc.md)：生产部署清单；gRPC 部分为设计草案（当前版本仅提供 HTTP API）。
 - [SWE-bench 门禁基准](tutorials/swe-bench-gate.md)：把过程合规纳入 Agent 评估指标。

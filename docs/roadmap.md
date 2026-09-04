@@ -105,10 +105,16 @@
   版本断言），激活 CSharpAdapter / ScalaAdapter 真实语法用例；解析器模糊测试目标 8 -> 10
   （新增 C# / Scala 输出解析目标）。
 
+- **v0.34.1 已完成**：gRPC 教程降级为规划草案（顶部醒目警告 + MkDocs 导航 / 首页标题标注
+  「规划中」，与代码事实一致）；新增 `.github/workflows/plugin-check.yml` 每周一自动对
+  `examples/custom_adapter` 与 `examples/plugin_rules` 两个官方示例插件运行
+  `plugin-verify --json` 并上传报告 artifact；`.gitattributes` 显式列出常见文本类型统一 LF，
+  CONTRIBUTING 记录 Windows `git add` 换行规范化提示属正常现象。
 
-## 待办 / 已知缺口（截至 v0.34.0）
 
-- **K8s sidecar gRPC 服务**：当前仅有 HTTP 透明代理与设计草案（docs/tutorials/k8s-sidecar-grpc.md）；
+## 待办 / 已知缺口（截至 v0.34.1）
+
+- **K8s sidecar gRPC 服务**：尚未实现（教程已标注「规划中」并在顶部给出警告）；当前仅有 HTTP 透明代理，
   gRPC 需引入 grpcio 依赖与 proto 生成，建议作为独立版本推进，且不破坏核心包零依赖原则。
 - **真实 SWE-bench 评测**：benchmarks/swe_bench_gate.py 是任务模拟器；接入官方 SWE-bench 数据集 /
   harness 需要下载数据集并运行 Agent，列为后续专项。

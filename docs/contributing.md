@@ -11,6 +11,8 @@ python -m pytest                 # 全量测试
 python -m flake8 --jobs=1 <files> # 风格检查
 ```
 
+仓库统一 LF（`.gitattributes` 强制）；Windows 下 `git add` 的 CRLF 规范化提示属正常，可忽略。
+
 ## 新增语言适配器
 
 1. 实现 `LanguageAdapter`（文件识别 / `check_syntax` / `analyze_tests` / 输出解析），

@@ -31,6 +31,10 @@ python -m flake8 --jobs=1 <files> # 风格检查（Windows 下需 --jobs=1）
 测试用 `tmp_path` 隔离工作区；运行完整测试套件约需 3-4 分钟
 （含 Java / Ruby 等真实工具用例，环境缺失时自动 skip，CI 中全部激活）。
 
+**换行符**：仓库统一 LF（`.gitattributes` 强制，常见文本类型显式 `eol=lf`）。Windows 上旧工作副本
+含 CRLF 时，`git add` 会出现 “CRLF will be replaced by LF” 的规范化提示——这是索引与 CI 均为 LF
+的正常表现，无需处理；如需彻底消除可执行 `git config --local core.autocrlf false` 后重新检出工作副本。
+
 ## 如何添加新语言适配器
 
 1. 阅读 `anti_shortcut/languages/base.py` 的 `LanguageAdapter` 接口。

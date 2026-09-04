@@ -43,3 +43,4 @@ docker run --rm -it ghcr.io/xuqing0415/phase-barrier-demo
 - [CI 增量门禁](tutorials/ci-incremental-gate.md)：PR 场景只校验变更文件相关证据（`verify-evidence --git-base`）。
 - [K8s sidecar 生产加固与 gRPC 接口](tutorials/k8s-sidecar-grpc.md)：生产部署清单与 gRPC 服务接入指南（v0.39.0 起 gRPC 已实现，与 HTTP API 等价）。
 - [SWE-bench 门禁基准](tutorials/swe-bench-gate.md)：把过程合规纳入 Agent 评估指标。
+- [SWE-bench 真实评测 harness](tutorials/swe-bench-real.md)：在官方实例集上做基线 / 门禁双组评测编排（v0.41.0）。

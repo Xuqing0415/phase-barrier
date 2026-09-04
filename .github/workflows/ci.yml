@@ -577,6 +577,8 @@ jobs:
 
       - name: Run SWE-bench gate benchmark (v0.30.0)
         run: python benchmarks/swe_bench_gate.py --fail-fast --tasks 20
+      - name: Run real SWE-bench harness smoke (v0.41.0)
+        run: python benchmarks/swebench_runner.py --synthetic 20 --fail-fast
 
       - name: Run parser fuzz benchmark (v0.31.0)
         run: python benchmarks/fuzz_parsers.py --fail-fast --iterations 1000

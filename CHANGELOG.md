@@ -2,6 +2,13 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.41.0] - 2026-09-04
+
+- **真实 SWE-bench 评测 harness（v0.41.0）**：新增 `benchmarks/swebench_runner.py` —— 编排与统计层，加载与官方数据集同构的实例清单（instance_id / repo / base_commit / problem_statement / patch / test_patch），为每个实例准备独立工作目录，按命令模板分别运行基线 / 门禁 Agent 并解析 stdout 标记（`PB_RESOLVED` / `PB_GATE_INTERCEPTS`），聚合 resolve 率、平均耗时与拦截率；定位明确 —— 不内置官方 swebench 容器与隐藏测试打分，真实运行需用户环境（教程见 `docs/tutorials/swe-bench-real.md`）。
+- **双模式与门禁判定（v0.41.0）**：`--synthetic N` 确定性合成冒烟（固定种子，无需 swebench / Docker）；真实模式 `--instances` + `--cmd-baseline` / `--cmd-gated` 命令模板（`{id}` / `{workdir}` 占位符，`PB_INSTANCE_ID` / `PB_WORKDIR` 环境变量）；`--fail-fast` 阈值判定（gated resolve 率不得低于 baseline 且拦截率 > 0）、`--json` / `--output` / `--timeout` / `--no-intercepts-check`；CI bench job 追加 20 实例合成冒烟步骤。
+- **测试与文档（v0.41.0）**：新增 `tests/test_swebench_runner.py` 11 个用例（实例清单加载 / 合成确定性 / stdout 标记解析 / 命令 mock / 聚合统计 / 阈值门禁 / JSON 输出）；`docs/tutorials/swe-bench-real.md` 真实评测教程，`docs/index.md` 与 `mkdocs.yml` 导航同步；Roadmap 移除真实 SWE-bench 评测缺口。
+- **Alpha-SWE 上游接入落地（记录）**：`Xuqing0415/alpha-swe` PR #3 已合并（依赖 phase-barrier + 钩子接入 + 端到端演示），Roadmap 对应待办移除。
+
 ## [0.40.0] - 2026-09-04
 
 - **Dart 语言适配器（v0.40.0）**：新增 `DartAdapter`（`anti_shortcut/languages/dart.py`）——

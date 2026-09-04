@@ -83,6 +83,11 @@ anti_shortcut = ["languages/js_count_tests.cjs", "proto/*.py", "proto/*.proto"]
 [tool.coverage.run]
 source = ["anti_shortcut"]
 branch = true
+# v0.39.1: 生成的 grpc pb2 模板代码不参与覆盖率统计
+omit = [
+    "anti_shortcut/proto/*_pb2.py",
+    "anti_shortcut/proto/*_pb2_grpc.py",
+]
 # 测量范围限定为核心包（不含 tests / examples / deploy），与 CI 门禁保持一致
 
 [tool.coverage.report]

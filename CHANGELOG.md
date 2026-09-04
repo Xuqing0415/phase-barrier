@@ -2,6 +2,12 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.39.1] - 2026-09-04
+
+- **coverage 门禁修复（v0.39.1）**：grpc 生成代码（`anti_shortcut/proto/*_pb2*.py`，
+  grpcio-tools 模板产物）不计入核心包覆盖率统计——`[tool.coverage.run]` 增加
+  `omit`，恢复 coverage job `--fail-under=90` 全绿；业务代码（`grpc_service.py` 等）
+  仍全量参与测量。
 ## [0.39.0] - 2026-09-04
 
 - **K8s sidecar gRPC 服务（v0.39.0）**：`anti_shortcut/proto/sidecar.proto` 定义

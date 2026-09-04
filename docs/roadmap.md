@@ -90,4 +90,33 @@
   `tests/test_kotlin_adapter.py` 的真实语法用例（kotlinc 成功 / 报错两条路径）在 CI 强制运行，
   不再按环境跳过。
 
+- **v0.33.2 已完成**：修复 v0.33.1 误用不存在的 `actions/setup-java@v7` 导致 job 无法解析的问题，
+  回退到长期稳定的 `actions/setup-java@v4`（temurin 17），kotlinc 安装与真实语法用例照常执行。
+
+- **v0.33.3 已完成**：修复 kotlinc 安装步骤的假自检——`$GITHUB_PATH` 只对后续 step 生效，
+  安装 step 内裸调 `kotlinc -version` 打印的是 runner 预装 kotlinc（2.4.10）而非下载的 2.2.0；
+  改为解压前 `sudo rm -rf /opt/kotlinc` 清理 + 绝对路径 `/opt/kotlinc/bin/kotlinc -version` 打印 
+  并 grep 断言 `2.2.0`；test / coverage job 的 `actions/setup-java@v4` 同步升级 `@v5`。
+
+
+- **v0.34.0 已完成**：新增 Scala 语言适配器（`ScalaAdapter`：scalac 单文件语法检查 + JUnit / ScalaTest / 
+  MUnit / spec2 启发式统计，输出解析 ScalaTest 优先、回退 Java Surefire / Gradle / JUnit Console；
+  `build.sbt` 自动探测）；C# / .NET 与 Scala 真实工具链进 CI（.NET SDK 8 + scala-2.13.18，绝对路径
+  版本断言），激活 CSharpAdapter / ScalaAdapter 真实语法用例；解析器模糊测试目标 8 -> 10
+  （新增 C# / Scala 输出解析目标）。
+
+
+## 待办 / 已知缺口（截至 v0.34.0）
+
+- **K8s sidecar gRPC 服务**：当前仅有 HTTP 透明代理与设计草案（docs/tutorials/k8s-sidecar-grpc.md）；
+  gRPC 需引入 grpcio 依赖与 proto 生成，建议作为独立版本推进，且不破坏核心包零依赖原则。
+- **真实 SWE-bench 评测**：benchmarks/swe_bench_gate.py 是任务模拟器；接入官方 SWE-bench 数据集 /
+  harness 需要下载数据集并运行 Agent，列为后续专项。
+- **Swift / Dart 适配器**：尚未实现（Swift 真实语法检查需 macOS 或重型 ubuntu 工具链；
+  Dart 单文件语法检查依赖项目上下文，均需单独设计）。
+- **CI 平台矩阵**：当前为 ubuntu-latest 单平台；Windows / macOS 矩阵与跨平台行为验证待加。
+- **Alpha-SWE 上游接入（Xuqing0415/alpha-swe issue #1 B 组）**：目标仓库与验收清单已确认
+  （依赖 phase-barrier、钩子接入、端到端演示、README 说明），接入 PR 待提交。
+
+
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

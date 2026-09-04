@@ -29,8 +29,8 @@ def test_run_fuzz_smoke():
     mod = _load_fuzz()
     results = mod.run_fuzz(iterations=120, seed=1)
     assert results["benchmark"] == "parser-fuzz"
-    assert results["n_targets"] == 8
-    assert results["n_cases"] == 8 * 120
+    assert results["n_targets"] == 10
+    assert results["n_cases"] == 10 * 120
     assert results["crashes"] == 0
     assert results["crash_rate"] == 0.0
     assert all(v == 0 for v in results["target_crashes"].values())
@@ -40,7 +40,7 @@ def test_run_fuzz_other_seed():
     mod = _load_fuzz()
     results = mod.run_fuzz(iterations=80, seed=20260902)
     assert results["crashes"] == 0
-    assert results["n_targets"] == 8
+    assert results["n_targets"] == 10
 
 
 def test_check_thresholds_overflow():
@@ -70,7 +70,7 @@ def test_main_json_output(capsys):
     assert rc == 0
     data = json.loads(capsys.readouterr().out)
     assert data["benchmark"] == "parser-fuzz"
-    assert data["n_cases"] == 8 * 30
+    assert data["n_cases"] == 10 * 30
     assert data["crashes"] == 0
 
 

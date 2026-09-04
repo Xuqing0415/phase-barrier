@@ -7,7 +7,7 @@
 
 用法::
 
-    python benchmarks/fuzz_parsers.py                    # 8 目标 x 1000 次
+    python benchmarks/fuzz_parsers.py                    # 10 目标 x 1000 次
     python benchmarks/fuzz_parsers.py --iterations 3000 --json
     python benchmarks/fuzz_parsers.py --fail-fast --max-crash-rate 0
 """
@@ -40,6 +40,11 @@ from anti_shortcut.languages.java import (  # noqa: E402
     _gradle_aggregate,
     _gradle_summary,
 )
+from anti_shortcut.languages.csharp import (  # noqa: E402
+    CSharpAdapter,
+    _extract_build_errors as _csharp_extract_build_errors,
+)
+from anti_shortcut.languages.scala import ScalaAdapter  # noqa: E402
 
 _TEXT_ALPHABET = (
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \t\n"
@@ -170,6 +175,35 @@ def fuzz_java_parse_output(rng: random.Random, n: int) -> int:
     return crashes
 
 
+def fuzz_csharp_parsers(rng: random.Random, n: int) -> int:
+    crashes = 0
+    adapter = CSharpAdapter()
+    for _ in range(n):
+        text = _random_text(rng)
+        try:
+            assert isinstance(_csharp_extract_build_errors(text), list)
+            ok, summary = adapter.parse_test_output(text, _random_exit_code(rng))
+            assert isinstance(ok, bool)
+            assert isinstance(summary, str)
+        except Exception:
+            crashes += 1
+    return crashes
+
+
+def fuzz_scala_parsers(rng: random.Random, n: int) -> int:
+    crashes = 0
+    adapter = ScalaAdapter()
+    for _ in range(n):
+        text = _random_text(rng)
+        try:
+            ok, summary = adapter.parse_test_output(text, _random_exit_code(rng))
+            assert isinstance(ok, bool)
+            assert isinstance(summary, str)
+        except Exception:
+            crashes += 1
+    return crashes
+
+
 def fuzz_adapters_classify(rng: random.Random, n: int) -> int:
     crashes = 0
     adapters = [cls() for cls in LANGUAGE_REGISTRY.values()]
@@ -204,6 +238,8 @@ TARGETS: dict[str, object] = {
     "java_parse_output": fuzz_java_parse_output,
     "adapters_classify": fuzz_adapters_classify,
     "is_test_command": fuzz_is_test_command,
+    "csharp_parsers": fuzz_csharp_parsers,
+    "scala_parsers": fuzz_scala_parsers,
 }
 
 

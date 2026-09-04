@@ -2,6 +2,15 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.33.1] - 2026-09-04
+
+- **Kotlin 真实工具链进 CI（v0.33.1）**：test 矩阵与 coverage job 在现有 Node / Go / Rust /
+  Ruby / PHP 工具链基础上，追加安装 JDK 17（temurin）与 kotlinc 2.2.0
+  （官方 compiler zip 解压至 /opt/kotlinc 并加入 PATH），`tests/test_kotlin_adapter.py` 的
+  `@needs_kotlinc` 真实语法用例（kotlinc 成功 / 语法报错两条路径）在 CI 强制运行，消除 Kotlin
+  适配器真实工具链的“假绿”跳过盲区。
+- **docs/roadmap.md**：移除 Next 中的 Kotlin 工具链项，标记 v0.33.1 已完成。
+
 ## [0.33.0] - 2026-09-04
 
 - **官方插件模板仓库（v0.33.0）**：新增独立模板仓库

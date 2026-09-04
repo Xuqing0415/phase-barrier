@@ -64,6 +64,7 @@ nav:
       - CI 增量门禁: tutorials/ci-incremental-gate.md
       - K8s sidecar 加固与 gRPC 接口（v0.39.0 已实现）: tutorials/k8s-sidecar-grpc.md
       - SWE-bench 门禁基准: tutorials/swe-bench-gate.md
+      - SWE-bench 真实评测 harness: tutorials/swe-bench-real.md
   - FAQ: faq.md
   - Roadmap: roadmap.md
   - 发布与供应链安全: release.md

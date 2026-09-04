@@ -160,15 +160,9 @@
   入口点 / 文档同步；解析器模糊测试目标 11 -> 12；CI test / coverage job 安装
   `dart-lang/setup-dart` 激活真实语法用例（通过 / 报错两条路径）；新增
   `tests/test_dart_adapter.py` 19 个用例（2 个真实用例按 dart 是否安装启用）。
-## 待办 / 已知缺口（截至 v0.40.0）
-- **真实 SWE-bench 评测**：benchmarks/swe_bench_gate.py 是任务模拟器；接入官方 SWE-bench 数据集 /
-  harness 需要下载数据集并运行 Agent，列为后续专项。
-
+- **v0.41.0 已完成**：真实 SWE-bench 评测 harness —— 新增 `benchmarks/swebench_runner.py`（官方同构实例清单 + 基线 / 门禁双组命令模板 + stdout 标记聚合 resolve 率 / 拦截率 / 耗时；`--synthetic` 确定性冒烟与 `--fail-fast` 阈值门禁；不内置官方 swebench 容器与隐藏测试打分，真实运行需用户环境，教程见 `docs/tutorials/swe-bench-real.md`）；新增 `tests/test_swebench_runner.py` 11 个用例；CI bench job 追加合成冒烟步骤。Alpha-SWE 上游接入同步落地（`Xuqing0415/alpha-swe` PR #3 已合并，原待办移除）。## 待办 / 已知缺口（截至 v0.41.0）
 - **CI 平台矩阵**：Linux / Windows（v0.36.0）/ macOS（v0.38.0）核心 pytest 均入 CI；
   Windows / macOS job 不装真实语言工具链（ubuntu 全量激活，macOS 原生 swiftc 激活
   SwiftAdapter 真实用例）；Windows 真实工具链激活仍待加。
-- **Alpha-SWE 上游接入（Xuqing0415/alpha-swe issue #1 B 组）**：目标仓库与验收清单已确认
-  （依赖 phase-barrier、钩子接入、端到端演示、README 说明），接入 PR 待提交。
-
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

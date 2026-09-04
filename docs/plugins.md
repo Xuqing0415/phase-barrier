@@ -11,6 +11,11 @@ phase-barrier 通过 Python 入口点（entry points）支持四类插件：
 
 ## 开发模板
 
+> **推荐：官方模板仓库**
+> 独立模板仓库 [phase-barrier-plugin-template](https://github.com/Xuqing0415/phase-barrier-plugin-template)
+> 点 GitHub 右上角 **Use this template** 一键生成插件仓库，内置四类入口点示例、
+> CI（`plugin-verify` + pytest）与冒烟测试；下文片段为最小示例，完整模板以该仓库为准。
+
 最小语言适配器插件：
 
 ```toml
@@ -82,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: Xuqing0415/phase-barrier/.github/actions/plugin-test@v0.29.0
+      - uses: Xuqing0415/phase-barrier/.github/actions/plugin-test@v0.32.2
         with:
           plugin-path: .            # 插件包目录（包含 pyproject.toml）
           python-version: '3.12'
@@ -97,12 +102,18 @@ jobs:
 
 ## 提交到索引
 
-1. 把插件发布为公开的 PyPI 包（或提供可安装的 GitHub 仓库）。
+1. 用官方模板仓库 [phase-barrier-plugin-template](https://github.com/Xuqing0415/phase-barrier-plugin-template) 生成插件仓库（Use this template），把插件发布为公开的 PyPI 包（或提供可安装的 GitHub 仓库）。
 2. 在插件仓库接入上面的 **插件 CI 模板**，保证 `plugin-verify` 全绿。
 3. 在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 选择
    「插件提交（Plugin Submission）」模板，附上：包名 / 仓库链接、支持的入口点组、
    CI 状态链接、一段使用示例。
 4. 维护者审核后合并到下表。
+
+## 官方模板仓库（非插件，用于生成插件）
+
+- [phase-barrier-plugin-template](https://github.com/Xuqing0415/phase-barrier-plugin-template)：
+  独立模板仓库，Use this template 即可生成；含四类入口点示例（.demo 语言适配器 / 阶段 1 校验器 /
+  vendor 拦截规则 / 集成插件）、`examples/demo.py` 端到端演示、CI（plugin-verify + pytest）。
 
 ## 第一批索引（官方示例，v0.26.2）
 

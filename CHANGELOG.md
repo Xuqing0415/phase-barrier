@@ -2,6 +2,21 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.33.0] - 2026-09-04
+
+- **官方插件模板仓库（v0.33.0）**：新增独立模板仓库
+  [phase-barrier-plugin-template](https://github.com/Xuqing0415/phase-barrier-plugin-template)
+  （Use this template 一键生成插件仓库），一次覆盖 phase-barrier 四类插件入口点：
+  `.demo` 语言适配器（`DemoLanguageAdapter`）、阶段 1 校验器（`require_design_review`，
+  额外要求 design-review.md）、拦截规则（`deny_vendor_writes`）、集成插件
+  （`install_demo(agent, skill)`）。模板内置 `pyproject.toml` 入口点声明、`tests/test_plugin.py`
+  冒烟测试、`examples/demo.py` 端到端演示与 CI（官方 plugin-test action + pytest）。
+- **本地验证**：plugin-verify 全量 15 个插件通过（含模板 4 个入口点）、冒烟测试与
+  `examples/demo.py`（语言适配器加载 -> 校验器拦截/放行 -> 规则拦截）全部通过。
+- **插件索引更新（docs/plugins.md）**：新增「官方模板仓库」章节；「提交到索引」流程
+  引导用模板仓库生成；插件 CI 模板 pin 版本升至 `@v0.32.2`。
+- **docs/roadmap.md**：移除 Next 中的模板仓库项，标记 v0.33.0 已完成。
+
 ## [0.32.2] - 2026-09-03
 
 - **README 精简重构（v0.32.2）**：主页从 800+ 行压缩到约 150 行，遵循“是什么 / 为什么 /

@@ -529,13 +529,25 @@ jobs:
           python benchmarks/bench.py --fail-fast \
             --state-threads 32 --state-iters 8 \
             --write-ops 100 --exec-ops 20 \
-            --state-p95-ms 2000 --write-p95-ms 5000 --exec-p95-ms 10000
+            --state-p95-ms 2000 --write-p95-ms 5000 --exec-p95-ms 10000 \
+            --state-p99-ms 4000 --write-p99-ms 8000 --exec-p99-ms 15000 \
+            --output bench-report.json
+          cat bench-report.json
+
+      - name: Run sidecar/lock fuzz benchmark (v0.35.0)
+        run: python benchmarks/fuzz_sidecar.py --fail-fast --http-iterations 200 --lock-rounds 3
 
       - name: Run SWE-bench gate benchmark (v0.30.0)
         run: python benchmarks/swe_bench_gate.py --fail-fast --tasks 20
 
       - name: Run parser fuzz benchmark (v0.31.0)
         run: python benchmarks/fuzz_parsers.py --fail-fast --iterations 1000
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bench-report
+          path: bench-report.json
+          if-no-files-found: error
 
   package:
     name: Build sdist and wheel

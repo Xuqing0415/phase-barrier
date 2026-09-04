@@ -68,6 +68,25 @@ def test_bench_check_thresholds_overflow():
     assert any("sidecar_exec" in item for item in failures)
 
 
+def test_bench_check_thresholds_p99_overflow():
+    mod = _load_bench()
+    results = {
+        "state": {"p95_ms": 100.0, "p99_ms": 5000.0},
+        "sidecar_write": {"p95_ms": 100.0, "p99_ms": 9000.0},
+        "sidecar_exec": {"p95_ms": 100.0, "p99_ms": 20000.0},
+    }
+    failures = mod.check_thresholds(
+        results,
+        state_p99_ms=1000.0,
+        write_p99_ms=2000.0,
+        exec_p99_ms=3000.0,
+    )
+    assert len(failures) == 3
+    assert any("p99" in item and "state" in item for item in failures)
+    assert any("p99" in item and "sidecar_write" in item for item in failures)
+    assert any("p99" in item and "sidecar_exec" in item for item in failures)
+
+
 def test_bench_check_thresholds_all_pass():
     mod = _load_bench()
     results = {

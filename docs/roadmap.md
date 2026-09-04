@@ -111,8 +111,14 @@
   `plugin-verify --json` 并上传报告 artifact；`.gitattributes` 显式列出常见文本类型统一 LF，
   CONTRIBUTING 记录 Windows `git add` 换行规范化提示属正常现象。
 
+- **v0.35.0 已完成**：sidecar HTTP 边界模糊 + 多进程并发锁压力基准 `benchmarks/fuzz_sidecar.py`
+  （真实 HTTP 服务器随机请求 0 崩溃；持锁原子递增 + 持锁异常退出验证 OS 自动释放锁）并纳入
+  CI bench job；修复模糊暴露的 sidecar HTML 501（`send_error` 改 JSON）与
+  `execute_command` Popen 启动失败未捕获（转 `ProxyError`）两个问题；`benchmarks/bench.py`
+  新增可选 p99 阈值门禁并在 CI 启用（报告 artifact 上传）。
 
-## 待办 / 已知缺口（截至 v0.34.1）
+
+## 待办 / 已知缺口（截至 v0.35.0）
 
 - **K8s sidecar gRPC 服务**：尚未实现（教程已标注「规划中」并在顶部给出警告）；当前仅有 HTTP 透明代理，
   gRPC 需引入 grpcio 依赖与 proto 生成，建议作为独立版本推进，且不破坏核心包零依赖原则。

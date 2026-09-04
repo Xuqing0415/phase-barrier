@@ -205,6 +205,19 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
             self.end_headers()
             self.wfile.write(body)
 
+        def send_error(  # noqa: D102（覆盖 stdlib 方法）
+            self,
+            code: int,
+            message: str | None = None,
+            explain: str | None = None,
+        ) -> None:
+            # v0.35.0：未实现方法（如 PUT / PATCH / DELETE）与畸形请求统一返回 JSON 错误体，
+            # 保证 sidecar API 响应恒为 JSON，客户端无需解析 HTML 错误页。
+            try:
+                self._send(code, {"error": message or "error"})
+            except OSError:  # pragma: no cover（客户端提前断开等场景）
+                pass  # pragma: no cover
+
         def _read_json(self) -> dict[str, Any]:
             length = int(self.headers.get("Content-Length") or 0)
             if length <= 0:

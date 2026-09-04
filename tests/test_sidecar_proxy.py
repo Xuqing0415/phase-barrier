@@ -217,6 +217,20 @@ def test_proxy_exec_invalid_timeout_rejected(tmp_path):
         proxy.execute_command("echo hi", timeout=99999)
 
 
+def test_proxy_exec_popen_start_failure_raises_proxy_error(tmp_path, monkeypatch):
+    """v0.35.0：Popen 启动失败（cwd 不存在等）应转为 ProxyError，而非裸异常打到 HTTP 层。"""
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    proxy = GateProxy(_make_skill(ws))
+
+    def _boom(*args, **kwargs):
+        raise OSError("no such directory")
+
+    monkeypatch.setattr("anti_shortcut.proxy.subprocess.Popen", _boom)
+    with pytest.raises(ProxyError, match="无法启动"):
+        proxy.execute_command("echo hi", cwd=str(ws / "missing"))
+
+
 def test_proxy_exec_cwd_outside_rejected(tmp_path):
     ws = tmp_path / "ws"
     ws.mkdir()

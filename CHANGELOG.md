@@ -2,6 +2,18 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.38.0] - 2026-09-04
+
+- **macOS CI 核心测试矩阵（v0.38.0）**：`.github/workflows/ci.yml` 新增 `test-macos` job
+  （`macos-latest` × Python 3.12 / 3.13），运行全量 pytest。macOS runner 自带 Xcode
+  命令行工具，`swiftc` 开箱可用——SwiftAdapter 真实语法用例（通过 / 报错 / 依赖降级）
+  在 macOS 上天然激活（不经下载安装）；其余语言真实工具链不额外安装、对应用例按
+  `skipif` 自动跳过（ubuntu job 全量激活）。覆盖 macOS 专属路径：POSIX `flock`（fcntl）
+  状态文件锁、路径分隔符、CLI / sidecar / audit 等。
+- **跨平台矩阵补齐（v0.38.0）**：核心 pytest 现覆盖 Linux（ubuntu-latest，全量真实
+  工具链 × Python 3.10–3.14）、Windows（3.12 / 3.13，msvcrt 锁）与 macOS
+  （3.12 / 3.13，flock 锁 + 原生 swiftc），CI 平台盲区进一步收窄。
+
 ## [0.37.0] - 2026-09-04
 
 - **Swift 语言适配器（v0.37.0）**：新增 `SwiftAdapter`（`anti_shortcut/languages/swift.py`）——

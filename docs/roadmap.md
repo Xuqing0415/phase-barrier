@@ -134,7 +134,13 @@
   遗漏的 `scala` 语言入口点并新增 `swift` 入口点；`.build`（SwiftPM 构建产物）加入
   工作区遍历跳过目录。
 
-## 待办 / 已知缺口（截至 v0.37.0）
+- **v0.38.0 已完成**：macOS CI 核心测试矩阵——`test-macos` job（`macos-latest` ×
+  Python 3.12/3.13）运行全量 pytest；macOS runner 自带 Xcode CLT，`swiftc` 开箱可用，
+  SwiftAdapter 真实语法用例在 macOS 天然激活（无需下载工具链）；其余真实工具链不装、
+  按 skipif 跳过（ubuntu 全量激活）。核心 pytest 现覆盖 Linux / Windows / macOS 三平台
+  （POSIX flock 与 msvcrt 文件锁均在 CI 实测）。
+
+## 待办 / 已知缺口（截至 v0.38.0）
 
 - **K8s sidecar gRPC 服务**：尚未实现（教程已标注「规划中」并在顶部给出警告）；当前仅有 HTTP 透明代理，
   gRPC 需引入 grpcio 依赖与 proto 生成，建议作为独立版本推进，且不破坏核心包零依赖原则。
@@ -142,8 +148,9 @@
   harness 需要下载数据集并运行 Agent，列为后续专项。
 - **Dart 适配器**：尚未实现（Dart 单文件语法检查依赖项目上下文，需单独设计；
   Swift 适配器已于 v0.37.0 落地，CI 安装 swift.org ubuntu24.04 工具链激活真实用例）。
-- **CI 平台矩阵**：Windows 核心测试已入 CI（v0.36.0，`test-windows` job，不含真实工具链）；
-  macOS 矩阵与 Windows 真实工具链激活仍待加。
+- **CI 平台矩阵**：Linux / Windows（v0.36.0）/ macOS（v0.38.0）核心 pytest 均入 CI；
+  Windows / macOS job 不装真实语言工具链（ubuntu 全量激活，macOS 原生 swiftc 激活
+  SwiftAdapter 真实用例）；Windows 真实工具链激活仍待加。
 - **Alpha-SWE 上游接入（Xuqing0415/alpha-swe issue #1 B 组）**：目标仓库与验收清单已确认
   （依赖 phase-barrier、钩子接入、端到端演示、README 说明），接入 PR 待提交。
 

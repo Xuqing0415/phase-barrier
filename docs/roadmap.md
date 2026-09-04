@@ -82,8 +82,11 @@
 - **v0.32.2 已完成**：README 精简重构（约 150 行）并按主题迁移到 9 个新 docs 页，MkDocs 导航重组；
   全仓 emoji / 符号字形 ASCII 清理。
 
+- **v0.33.0 已完成**：官方插件模板仓库 [phase-barrier-plugin-template](https://github.com/Xuqing0415/phase-barrier-plugin-template) 落地——独立仓库提供四类入口点示例
+  （.demo 语言适配器 / 阶段 1 校验器 / vendor 拦截规则 / 集成插件）、`examples/demo.py` 端到端演示、
+  CI（plugin-verify + pytest）；`docs/plugins.md` 收录模板仓库并更新提交流程与 CI pin 版本。
+
 **规划中（Next）**
 
 - Kotlin 真实工具链：CI 暂未内置 kotlinc，`tests/test_kotlin_adapter.py` 的真实语法用例在本地具备 kotlinc 时执行；可按需在 ubuntu runner 安装 `kotlin` 包激活。
-- `phase-barrier-plugin-template` 独立模板仓库（把插件索引自动化托管到仓库级，`docs/plugins.md` 已含 CI 模板与提交流程）。
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

@@ -45,7 +45,7 @@ jobs:
           php-version: '8.3'
           coverage: none
       # v0.33.1: 安装 kotlinc（含 JDK 17），激活 KotlinAdapter 真实语法用例
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -53,9 +53,11 @@ jobs:
         run: |
           curl -fsSL -o /tmp/kotlin-compiler.zip \
             https://github.com/JetBrains/kotlin/releases/download/v2.2.0/kotlin-compiler-2.2.0.zip
+          sudo rm -rf /opt/kotlinc
           sudo unzip -q /tmp/kotlin-compiler.zip -d /opt
           echo "/opt/kotlinc/bin" >> "$GITHUB_PATH"
-          kotlinc -version
+          /opt/kotlinc/bin/kotlinc -version
+          /opt/kotlinc/bin/kotlinc -version 2>&1 | grep -q '2\.2\.0'
 
 
       - name: Install package and dev deps
@@ -109,7 +111,7 @@ jobs:
           php-version: '8.3'
           coverage: none
       # v0.33.1: 安装 kotlinc（含 JDK 17），激活 KotlinAdapter 真实语法用例
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -117,9 +119,11 @@ jobs:
         run: |
           curl -fsSL -o /tmp/kotlin-compiler.zip \
             https://github.com/JetBrains/kotlin/releases/download/v2.2.0/kotlin-compiler-2.2.0.zip
+          sudo rm -rf /opt/kotlinc
           sudo unzip -q /tmp/kotlin-compiler.zip -d /opt
           echo "/opt/kotlinc/bin" >> "$GITHUB_PATH"
-          kotlinc -version
+          /opt/kotlinc/bin/kotlinc -version
+          /opt/kotlinc/bin/kotlinc -version 2>&1 | grep -q '2\.2\.0'
 
 
       - name: Install package and dev deps

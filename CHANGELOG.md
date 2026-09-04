@@ -2,6 +2,16 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.33.3] - 2026-09-04
+
+- **修复：kotlinc 安装步骤的版本自检改为绝对路径并加硬断言（v0.33.3）**：
+  `$GITHUB_PATH` 仅在后续步骤生效，安装步骤内裸调 `kotlinc -version` 实际打印的是 runner 
+  预装的 kotlinc（日志显示 2.4.10），而非本次下载到 `/opt/kotlinc` 的 2.2.0，存在假验证风险；
+  现改为 `sudo rm -rf /opt/kotlinc` 清理后解压，再用 `/opt/kotlinc/bin/kotlinc -version` 
+  打印并 grep 断言版本包含 2.2.0，确保 CI 实际使用钉住的 kotlinc 2.2.0。
+- **CI 依赖升级**：`actions/setup-java@v4` 已弃用并告警，test / coverage job 同步升级到 
+  `actions/setup-java@v5`（temurin 17 不变），消除 deprecation 提示。
+
 ## [0.33.2] - 2026-09-04
 
 - 修复：v0.33.1 的 CI 使用 `actions/setup-java@v7`，但该 action 未跟进到 v7，

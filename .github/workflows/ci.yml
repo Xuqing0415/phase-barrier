@@ -58,6 +58,19 @@ jobs:
           echo "/opt/kotlinc/bin" >> "$GITHUB_PATH"
           /opt/kotlinc/bin/kotlinc -version
           /opt/kotlinc/bin/kotlinc -version 2>&1 | grep -q '2\.2\.0'
+      # v0.34.0: 安装 .NET SDK 与 Scala 编译器，激活 CSharpAdapter / ScalaAdapter 真实工具用例
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install Scala compiler (scala-2.13.18)
+        run: |
+          curl -fsSL -o /tmp/scala.tgz \
+            https://github.com/scala/scala/releases/download/v2.13.18/scala-2.13.18.tgz
+          sudo rm -rf /opt/scala-2.13.18
+          sudo tar -xzf /tmp/scala.tgz -C /opt
+          echo "/opt/scala-2.13.18/bin" >> "$GITHUB_PATH"
+          /opt/scala-2.13.18/bin/scalac -version
+          /opt/scala-2.13.18/bin/scalac -version 2>&1 | grep -q '2\.13\.18'
 
 
       - name: Install package and dev deps
@@ -124,6 +137,19 @@ jobs:
           echo "/opt/kotlinc/bin" >> "$GITHUB_PATH"
           /opt/kotlinc/bin/kotlinc -version
           /opt/kotlinc/bin/kotlinc -version 2>&1 | grep -q '2\.2\.0'
+      # v0.34.0: 安装 .NET SDK 与 Scala 编译器，激活 CSharpAdapter / ScalaAdapter 真实工具用例
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install Scala compiler (scala-2.13.18)
+        run: |
+          curl -fsSL -o /tmp/scala.tgz \
+            https://github.com/scala/scala/releases/download/v2.13.18/scala-2.13.18.tgz
+          sudo rm -rf /opt/scala-2.13.18
+          sudo tar -xzf /tmp/scala.tgz -C /opt
+          echo "/opt/scala-2.13.18/bin" >> "$GITHUB_PATH"
+          /opt/scala-2.13.18/bin/scalac -version
+          /opt/scala-2.13.18/bin/scalac -version 2>&1 | grep -q '2\.13\.18'
 
 
       - name: Install package and dev deps

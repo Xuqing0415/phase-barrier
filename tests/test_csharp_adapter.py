@@ -1,4 +1,5 @@
 """C# 语言适配器测试：注册 / 检测 / 文件识别 / dotnet build / dotnet test 解析。"""
+import shutil
 from pathlib import Path
 
 import pytest
@@ -6,6 +7,18 @@ import pytest
 from anti_shortcut.config import GateConfig, load_config
 from anti_shortcut.languages import CSharpAdapter, LANGUAGE_REGISTRY, detect_language, get_adapter
 from anti_shortcut.validators import validate_tests
+
+CS_PROJ = '''<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+</Project>
+'''
+
+needs_dotnet = pytest.mark.skipif(
+    shutil.which("dotnet") is None, reason="dotnet SDK 未安装"
+)
 
 CS_IMPL = """\
 namespace Fib
@@ -206,6 +219,27 @@ def test_csharp_adapter_parse_build_failure():
     a = CSharpAdapter()
     ok, summary = a.parse_test_output("Build FAILED.\nerror CS1002: ; expected", 1)
     assert not ok and "编译失败" in summary
+
+
+# ---------- 真实工具链（CI 已安装 .NET SDK） ----------
+
+@needs_dotnet
+def test_csharp_adapter_real_dotnet_build_ok(tmp_path):
+    (tmp_path / "App.csproj").write_text(CS_PROJ, encoding="utf-8")
+    f = tmp_path / "Fib.cs"
+    f.write_text(CS_IMPL, encoding="utf-8")
+    ok, msg = CSharpAdapter().check_syntax(f)
+    assert ok, msg
+    assert "dotnet build" in msg
+
+
+@needs_dotnet
+def test_csharp_adapter_real_dotnet_build_error(tmp_path):
+    (tmp_path / "App.csproj").write_text(CS_PROJ, encoding="utf-8")
+    f = tmp_path / "Broken.cs"
+    f.write_text("namespace Fib { public class Bad { public void M( { } } }", encoding="utf-8")
+    ok, msg = CSharpAdapter().check_syntax(f)
+    assert not ok and "编译错误" in msg
 
 
 # ---------- 校验器接线 ----------

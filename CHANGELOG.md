@@ -2,6 +2,24 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.34.0] - 2026-09-04
+
+- **新增 Scala 语言适配器（ScalaAdapter，v0.34.0）**：scalac 单文件语法检查（依赖缺失降级、
+  缺失返回明确错误）+ `@Test` / ScalaTest `test("...")` / MUnit / spec2 `"..." should` 启发式统计；
+  测试命令复用 Java（mvn / gradle / testng）并补充 `sbt test` / `scala-cli test`；输出解析优先 ScalaTest
+  （`Tests: succeeded N, failed M` / `All tests passed.`），回退 Java（Surefire / Gradle / JUnit Console）；
+  注册 `language: scala` 与 `build.sbt` 自动探测。测试新增 tests/test_scala_adapter.py（21 个，含 2 个
+  `@needs_scalac` 真实工具用例）。
+- **C# / .NET 真实工具链进 CI（v0.34.0）**：test / coverage job 安装 .NET SDK 8（`setup-dotnet@v6`），
+  tests/test_csharp_adapter.py 新增 2 个 `@needs_dotnet` 真实用例（临时 csproj 项目 `dotnet build` 成功 /
+  编译错误两条路径），消除 CSharpAdapter 真实工具链盲区。
+- **Scala 真实工具链进 CI（v0.34.0）**：test / coverage job 安装 scala-2.13.18（GitHub release tgz，
+  绝对路径 `/opt/scala-2.13.18/bin/scalac` + grep 版本断言），`@needs_scalac` 真实语法用例强制运行。
+- **解析器模糊测试扩展（v0.34.0）**：`benchmarks/fuzz_parsers.py` 目标 8 -> 10，新增 `csharp_parsers`
+  （dotnet build 错误提取 + dotnet test / NUnit 输出解析）与 `scala_parsers`（ScalaTest / Java 回退输出解析）；
+  tests/test_fuzz.py 冒烟断言同步。
+- **docs/roadmap.md 回写**：补记 v0.33.2 / v0.33.3 / v0.34.0 已完成条目。
+
 ## [0.33.3] - 2026-09-04
 
 - **修复：kotlinc 安装步骤的版本自检改为绝对路径并加硬断言（v0.33.3）**：

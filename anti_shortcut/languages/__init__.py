@@ -24,6 +24,7 @@ from .kotlin import KotlinAdapter
 from .javascript import JavaScriptAdapter
 from .python import PythonAdapter
 from .ruby import RubyAdapter
+from .scala import ScalaAdapter
 from .rust import RustAdapter
 
 __all__ = [
@@ -39,6 +40,7 @@ __all__ = [
     "CSharpAdapter",
     "CppAdapter",
     "PhpAdapter",
+    "ScalaAdapter",
     "DotNetAdapter",
     "detect_language",
     "get_adapter",
@@ -58,6 +60,7 @@ LANGUAGE_REGISTRY: dict[str, type[LanguageAdapter]] = {
     "csharp": CSharpAdapter,
     "cpp": CppAdapter,
     "php": PhpAdapter,
+    "scala": ScalaAdapter,
     "dotnet": DotNetAdapter,
     "kotlin": KotlinAdapter,
 }
@@ -68,6 +71,7 @@ _LANGUAGE_MARKERS: list[tuple[tuple[str, ...], str]] = [
     (("pom.xml", "build.gradle", "build.gradle.kts"), "java"),
     (("go.mod",), "go"),
     (("Cargo.toml",), "rust"),
+    (("build.sbt",), "scala"),
     (("Gemfile", "Gemfile.lock", ".ruby-version", "Rakefile"), "ruby"),
     (("requirements.txt", "setup.py", "setup.cfg", "tox.ini"), "python"),
     (("pyproject.toml",), "python"),

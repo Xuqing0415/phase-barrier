@@ -86,7 +86,8 @@
   （.demo 语言适配器 / 阶段 1 校验器 / vendor 拦截规则 / 集成插件）、`examples/demo.py` 端到端演示、
   CI（plugin-verify + pytest）；`docs/plugins.md` 收录模板仓库并更新提交流程与 CI pin 版本。
 
-**规划中（Next）**
+- **v0.33.1 已完成**：Kotlin 真实工具链进 CI——test / coverage job 安装 JDK 17 + kotlinc 2.2.0，
+  `tests/test_kotlin_adapter.py` 的真实语法用例（kotlinc 成功 / 报错两条路径）在 CI 强制运行，
+  不再按环境跳过。
 
-- Kotlin 真实工具链：CI 暂未内置 kotlinc，`tests/test_kotlin_adapter.py` 的真实语法用例在本地具备 kotlinc 时执行；可按需在 ubuntu runner 安装 `kotlin` 包激活。
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

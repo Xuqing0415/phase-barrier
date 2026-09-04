@@ -92,7 +92,8 @@ def test_read_commands_allowed(tmp_path, fake_tools):
     (tmp_path / "spec.md").write_text(SPEC, encoding="utf-8")
     skill = make_skill(tmp_path)
     tools = skill.install(fake_tools)
-    result = tools["execute_command"]("dir")
+    # macOS 无 dir 命令，改用跨平台只读命令（v0.38.1 macOS CI 修复）
+    result = tools["execute_command"]('python -c "print(1)"')
     assert result["exit_code"] == 0
 
 

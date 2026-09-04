@@ -283,6 +283,9 @@ def test_cli_sidecar_serves_and_terminates(tmp_path):
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
+    # v0.38.1: stdout ??????????? PIPE ????????????macOS ????
+    log_path = tmp_path / "sidecar.log"
+    log_fh = open(log_path, "w", encoding="utf-8")
     proc = subprocess.Popen(
         [
             sys.executable,
@@ -296,7 +299,7 @@ def test_cli_sidecar_serves_and_terminates(tmp_path):
             "--port",
             str(port),
         ],
-        stdout=subprocess.PIPE,
+        stdout=log_fh,
         stderr=subprocess.STDOUT,
         text=True,
         encoding="utf-8",
@@ -304,12 +307,13 @@ def test_cli_sidecar_serves_and_terminates(tmp_path):
     )
     try:
         base = "http://127.0.0.1:%d" % port
-        deadline = time.time() + 20
+        deadline = time.time() + 45
         ok = False
         while time.time() < deadline:
             if proc.poll() is not None:
-                out = proc.stdout.read() if proc.stdout else ""
-                pytest.fail("sidecar 提前退出: %s" % out[-500:])
+                log_fh.flush()
+                out = log_path.read_text(encoding="utf-8", errors="replace")
+                pytest.fail("sidecar exited early: %s" % out[-500:])
             try:
                 with urllib.request.urlopen(base + "/healthz", timeout=2) as resp:
                     if resp.status == 200:
@@ -317,10 +321,14 @@ def test_cli_sidecar_serves_and_terminates(tmp_path):
                         break
             except Exception:
                 time.sleep(0.2)
-        assert ok, "sidecar /healthz 未在超时内就绪"
+        if not ok:
+            log_fh.flush()
+            out = log_path.read_text(encoding="utf-8", errors="replace")
+            pytest.fail("sidecar /healthz not ready in time; log tail:\n%s" % out[-2000:])
         code, body = _get(base, "/api/state")
         assert code == 200 and "current_stage" in body
     finally:
+        log_fh.close()
         proc.terminate()
         try:
             proc.wait(timeout=10)

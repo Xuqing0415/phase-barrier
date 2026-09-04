@@ -2,6 +2,15 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.38.1] - 2026-09-04
+
+- **macOS CI 修复（v0.38.1）**：v0.38.0 全量 macOS 矩阵暴露两个平台差异，本版本修复——
+  - `tests/test_skill.py::test_read_commands_allowed`：断言命令由 `dir` 改为跨平台
+    只读命令 `python -c "print(1)"`（macOS 无 coreutils `dir`，退出码 127）。
+  - `tests/test_sidecar_audit_api.py::test_cli_sidecar_serves_and_terminates`：sidecar
+    子进程 stdout 由 PIPE 改为日志文件（避免管道阻塞），就绪超时放宽到 45s，失败时
+    输出日志尾部便于定位（macOS 慢启动 / 高负载下 20s 不足）。
+- 本地 Windows 全量 pytest 回归通过；v0.38.0 的 PyPI 包与文档站不受影响。
 ## [0.38.0] - 2026-09-04
 
 - **macOS CI 核心测试矩阵（v0.38.0）**：`.github/workflows/ci.yml` 新增 `test-macos` job

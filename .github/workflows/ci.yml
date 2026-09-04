@@ -549,6 +549,35 @@ jobs:
           path: bench-report.json
           if-no-files-found: error
 
+  test-windows:
+    name: pytest core (Windows ${{ matrix.python-version }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # setuptools-scm 需要读取 tag
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # v0.36.0: Windows 核心测试（不额外安装 JS/Go/Rust/Ruby/PHP/JDK/kotlinc/dotnet/scala
+      # 真实工具链；对应真实工具用例按 skipif 自动跳过，ubuntu job 全量激活）。
+      # 覆盖 Windows 专属路径：msvcrt 文件锁、路径分隔符、CLI / sidecar / proxy / audit 等。
+      - name: Install package and dev deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run test suite
+        run: python -m pytest
+
   package:
     name: Build sdist and wheel
     runs-on: ubuntu-latest

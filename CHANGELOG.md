@@ -2,6 +2,16 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.36.0] - 2026-09-04
+
+- **Windows CI 核心测试矩阵（v0.36.0）**：`.github/workflows/ci.yml` 新增 `test-windows` job
+  （`windows-latest` × Python 3.12 / 3.13），运行全量 pytest 但不额外安装
+  JS/Go/Rust/Ruby/PHP/JDK/kotlinc/.NET/Scala 真实工具链（对应真实工具用例按 `skipif` 自动跳过，
+  由 ubuntu job 全量激活）。该 job 专门覆盖 Windows 专属行为：`msvcrt` 状态文件锁、
+  路径分隔符、CLI / sidecar 透明代理 / 审计 / 校验器等核心路径。
+- **本地 Windows 预演验证**：在 Windows 本机安装 dev 依赖后全量 pytest 通过
+  （真实工具链缺失自动 skip，0 失败），确认核心测试面在 Windows 无平台假设。
+
 ## [0.35.0] - 2026-09-04
 
 - **sidecar HTTP 边界模糊基准（v0.35.0）**：新增 `benchmarks/fuzz_sidecar.py`，真实启动

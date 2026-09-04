@@ -117,8 +117,13 @@
   `execute_command` Popen 启动失败未捕获（转 `ProxyError`）两个问题；`benchmarks/bench.py`
   新增可选 p99 阈值门禁并在 CI 启用（报告 artifact 上传）。
 
+- **v0.36.0 已完成**：Windows CI 核心测试矩阵——`windows-latest` × Python 3.12/3.13 新增
+  `test-windows` job 运行全量 pytest（真实工具链不额外安装、对应用例按 skipif 自动跳过，
+  ubuntu job 全量激活），覆盖 `msvcrt` 文件锁、路径分隔符与 CLI / sidecar / audit 等核心路径；
+  Windows 本机全量 pytest 预演通过（0 失败）。
 
-## 待办 / 已知缺口（截至 v0.35.0）
+
+## 待办 / 已知缺口（截至 v0.36.0）
 
 - **K8s sidecar gRPC 服务**：尚未实现（教程已标注「规划中」并在顶部给出警告）；当前仅有 HTTP 透明代理，
   gRPC 需引入 grpcio 依赖与 proto 生成，建议作为独立版本推进，且不破坏核心包零依赖原则。
@@ -126,7 +131,8 @@
   harness 需要下载数据集并运行 Agent，列为后续专项。
 - **Swift / Dart 适配器**：尚未实现（Swift 真实语法检查需 macOS 或重型 ubuntu 工具链；
   Dart 单文件语法检查依赖项目上下文，均需单独设计）。
-- **CI 平台矩阵**：当前为 ubuntu-latest 单平台；Windows / macOS 矩阵与跨平台行为验证待加。
+- **CI 平台矩阵**：Windows 核心测试已入 CI（v0.36.0，`test-windows` job，不含真实工具链）；
+  macOS 矩阵与 Windows 真实工具链激活仍待加。
 - **Alpha-SWE 上游接入（Xuqing0415/alpha-swe issue #1 B 组）**：目标仓库与验收清单已确认
   （依赖 phase-barrier、钩子接入、端到端演示、README 说明），接入 PR 待提交。
 

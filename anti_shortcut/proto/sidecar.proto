@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package phase_barrier;
+
+// phase-barrier sidecar gRPC 门禁服务（v0.39.0）。
+// 与 HTTP API（/api/state、/api/advance、/api/test-run、/api/source-change、
+// /api/write、/api/exec、/api/verify-evidence、/api/audit）等价；
+// 拦截与校验语义一致：写入/执行被拒返回 PERMISSION_DENIED，参数非法返回 INVALID_ARGUMENT。
+
+service PhaseBarrier {
+  // 当前阶段（等价 GET /api/state）
+  rpc GetState(GetStateRequest) returns (StateReply);
+  // 推进阶段，走完整证据校验（等价 POST /api/advance）
+  rpc Advance(AdvanceRequest) returns (AdvanceReply);
+  // 上报测试运行结果（等价 POST /api/test-run）
+  rpc RecordTestRun(RecordTestRunRequest) returns (RecordTestRunReply);
+  // 上报源码/测试变更（等价 POST /api/source-change）
+  rpc RecordSourceChange(SourceChangeRequest) returns (SourceChangeReply);
+  // 经门禁写入工作区文件（等价 POST /api/write）
+  rpc WriteFile(WriteFileRequest) returns (WriteFileReply);
+  // 经门禁执行 shell 命令并自动记录测试摘要（等价 POST /api/exec）
+  rpc ExecCommand(ExecCommandRequest) returns (ExecCommandReply);
+  // 校验证据签名清单（等价 GET /api/verify-evidence）
+  rpc VerifyEvidence(VerifyEvidenceRequest) returns (VerifyEvidenceReply);
+  // 查询审计日志（等价 GET /api/audit）
+  rpc QueryAudit(QueryAuditRequest) returns (QueryAuditReply);
+}
+
+message GetStateRequest {}
+
+message StateReply {
+  int32 current_stage = 1;
+  string stage_name = 2;
+  bool is_complete = 3;
+  repeated int32 completed_stages = 4;
+}
+
+message AdvanceRequest {
+  int32 new_stage = 1;
+}
+
+message AdvanceReply {
+  bool success = 1;
+  string message = 2;
+  int32 current_stage = 3;
+  string stage_name = 4;
+  bool is_complete = 5;
+}
+
+message RecordTestRunRequest {
+  int32 exit_code = 1;
+  string output = 2;
+}
+
+message RecordTestRunReply {
+  bool ok = 1;
+  bool passed = 2;
+  string summary = 3;
+  double coverage = 4;
+}
+
+message SourceChangeRequest {
+  string path = 1;
+}
+
+message SourceChangeReply {
+  bool ok = 1;
+  string path = 2;
+}
+
+message WriteFileRequest {
+  string path = 1;
+  string content = 2;
+}
+
+message WriteFileReply {
+  bool ok = 1;
+  string path = 2;
+}
+
+message ExecCommandRequest {
+  string command = 1;
+  int32 timeout = 2;
+  string cwd = 3;
+}
+
+message ExecCommandReply {
+  bool ok = 1;
+  int32 exit_code = 2;
+  string output = 3;
+  bool passed = 4;
+  string summary = 5;
+}
+
+message VerifyEvidenceRequest {}
+
+message VerifyEvidenceReply {
+  bool ok = 1;
+  repeated string violations = 2;
+  bool signed = 3;
+}
+
+message QueryAuditRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+  string since = 3;
+  string until = 4;
+  string event = 5;
+}
+
+message QueryAuditReply {
+  int32 total = 1;
+  // 每条事件为 JSON 字符串（保持与 HTTP /api/audit 返回结构一致，便于审计对接）
+  repeated string events = 2;
+}

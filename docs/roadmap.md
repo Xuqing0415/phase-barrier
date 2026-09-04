@@ -140,10 +140,17 @@
   按 skipif 跳过（ubuntu 全量激活）。核心 pytest 现覆盖 Linux / Windows / macOS 三平台
   （POSIX flock 与 msvcrt 文件锁均在 CI 实测）。
 
-## 待办 / 已知缺口（截至 v0.38.0）
+- **v0.39.0 已完成**：K8s sidecar gRPC 服务——`anti_shortcut/proto/sidecar.proto` 定义
+  `service PhaseBarrier`（8 个 RPC 与 HTTP API 一一对应：GetState / Advance / RecordTestRun /
+  RecordSourceChange / WriteFile / ExecCommand / VerifyEvidence / QueryAudit）；生成代码随包分发
+  （`anti_shortcut/proto/`，重生成脚本 `scripts/gen_grpc.sh`）；`anti_shortcut.grpc_service` 实现
+  servicer 并复用 GateSidecar 业务逻辑（状态推进 / 证据校验 / 透明代理拦截 / 审计），拦截返回
+  `PERMISSION_DENIED`、参数非法返回 `INVALID_ARGUMENT`、推进未通过返回 `FAILED_PRECONDITION`；
+  可选依赖 `phase-barrier[grpc]`（dev extra 同步引入，CI 全量跑 gRPC 测试）；新增
+  `tests/test_grpc_service.py` 8 个 in-process gRPC 用例；教程
+  `docs/tutorials/k8s-sidecar-grpc.md` 由“规划草案”改写为“已实现”。
 
-- **K8s sidecar gRPC 服务**：尚未实现（教程已标注「规划中」并在顶部给出警告）；当前仅有 HTTP 透明代理，
-  gRPC 需引入 grpcio 依赖与 proto 生成，建议作为独立版本推进，且不破坏核心包零依赖原则。
+## 待办 / 已知缺口（截至 v0.39.0）
 - **真实 SWE-bench 评测**：benchmarks/swe_bench_gate.py 是任务模拟器；接入官方 SWE-bench 数据集 /
   harness 需要下载数据集并运行 Agent，列为后续专项。
 - **Dart 适配器**：尚未实现（Dart 单文件语法检查依赖项目上下文，需单独设计；

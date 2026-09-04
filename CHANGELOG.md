@@ -2,6 +2,31 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.39.0] - 2026-09-04
+
+- **K8s sidecar gRPC 服务（v0.39.0）**：`anti_shortcut/proto/sidecar.proto` 定义
+  `service PhaseBarrier`——8 个 RPC 与 HTTP API 一一对应（GetState / Advance /
+  RecordTestRun / RecordSourceChange / WriteFile / ExecCommand / VerifyEvidence /
+  QueryAudit），消息结构对齐 HTTP 请求/响应（含 timeout/cwd、coverage、violations、
+  total/events）。生成代码随包分发（`anti_shortcut/proto/`，`import` 已改为相对导入），
+  重生成脚本 `scripts/gen_grpc.sh`。
+- **gRPC 服务实现（v0.39.0）**：`anti_shortcut.grpc_service.PhaseBarrierServicer`
+  复用 `GateSidecar` 业务逻辑（状态推进 / 证据校验 / 透明代理拦截 / 审计查询），
+  语义与 HTTP 一致——拦截返回 `PERMISSION_DENIED`、参数非法返回 `INVALID_ARGUMENT`、
+  推进未通过证据校验返回 `FAILED_PRECONDITION`；`create_grpc_server` 支持 mTLS
+  （`--tls-cert` / `--tls-key` / `--tls-client-ca`）。
+- **CLI 双协议启动（v0.39.0）**：`sidecar` 子命令新增 `--grpc-port`（默认 0 关闭），
+  可同时暴露 HTTP 与 gRPC 门禁服务；独立入口 `python -m anti_shortcut.grpc_service`
+  亦可用。
+- **打包与依赖（v0.39.0）**：可选依赖 `phase-barrier[grpc]`（`grpcio>=1.83.1`，
+  dev extra 同步引入，CI 全量跑 gRPC 用例）；`pyproject.toml` package-data 补
+  `proto/*.py` / `proto/*.proto`；缺失 grpcio 时模块可导入、启动给出明确安装提示。
+- **测试（v0.39.0）**：新增 `tests/test_grpc_service.py` 8 个 in-process gRPC 用例
+  （全流程推进 / 跳步拒绝 / 写入门禁目录拦截 / 执行命令拦截 / 测试后改码强制回归 /
+  证据校验 / 审计过滤与非法参数）；本地 Windows 全量 pytest 通过。
+- **文档（v0.39.0）**：`docs/tutorials/k8s-sidecar-grpc.md` 由“规划草案”改写为
+  “已实现”接入指南（RPC 表 / 启动 / Python 客户端示例）；`docs/api.md` 补 gRPC 符号
+  与入口；`docs/roadmap.md` 标记 v0.39.0 已完成并移除 gRPC 缺口。
 ## [0.38.1] - 2026-09-04
 
 - **macOS CI 修复（v0.38.1）**：v0.38.0 全量 macOS 矩阵暴露两个平台差异，本版本修复——

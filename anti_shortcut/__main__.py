@@ -584,6 +584,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_sidecar.add_argument("--host", type=str, default="0.0.0.0", help="监听地址（默认 0.0.0.0）")
     p_sidecar.add_argument("--port", type=int, default=8080, help="监听端口（默认 8080）")
     p_sidecar.add_argument(
+        "--grpc-port",
+        type=int,
+        default=0,
+        help="同时启动 gRPC 门禁服务端口（v0.39.0；0 表示不启用，需 phase-barrier[grpc]）",
+    )
+    p_sidecar.add_argument(
         "--tls-cert",
         type=str,
         default="",

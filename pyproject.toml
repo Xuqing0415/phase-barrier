@@ -29,7 +29,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "cryptography>=42", "coverage>=7.0", "mkdocs>=1.6", "mkdocs-material>=9.5"]
+dev = [
+    "pytest>=7.0",
+    "cryptography>=42",
+    "coverage>=7.0",
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "grpcio>=1.83.1",
+]
+grpc = ["grpcio>=1.83.1"]
 
 [project.scripts]
 anti-shortcut = "anti_shortcut.__main__:main"
@@ -70,7 +78,7 @@ local_scheme = "no-local-version"
 include = ["anti_shortcut*"]
 
 [tool.setuptools.package-data]
-anti_shortcut = ["languages/js_count_tests.cjs"]
+anti_shortcut = ["languages/js_count_tests.cjs", "proto/*.py", "proto/*.proto"]
 
 [tool.coverage.run]
 source = ["anti_shortcut"]

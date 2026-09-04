@@ -2,6 +2,28 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.35.0] - 2026-09-04
+
+- **sidecar HTTP 边界模糊基准（v0.35.0）**：新增 `benchmarks/fuzz_sidecar.py`，真实启动
+  `ThreadingHTTPServer`（GateSidecar），随机发送非法/越界/半合法 JSON、随机端点与查询串、
+  PUT/PATCH/DELETE 等未实现方法，并周期性并发突发 + `/healthz` 探活；任何 500、连接断开、
+  不可解析响应都计为崩溃（期望 0）。纳入 CI bench job（`--http-iterations 200`）。
+- **多进程并发锁压力（v0.35.0）**：`fuzz_sidecar.py` 第二目标——多进程共享 `_file_lock`
+  （POSIX flock / Windows msvcrt），持锁内原子读改写计数文件 + 随机小延迟，并让部分 worker
+  **持锁状态异常退出**（`os._exit`），验证 OS 自动释放锁、无丢失更新/重复计数、
+  无临时文件残留、HMAC 签名的 state.json 仍可加载。
+- **修复模糊测试暴露的问题（v0.35.0）**：sidecar 未实现 HTTP 方法（PUT/PATCH/DELETE 等）
+  原返回 HTML 501 错误页，现覆盖 `send_error` 统一返回 JSON 错误体（响应恒为 JSON）；
+  `GateProxy.execute_command` 的 `Popen` 启动失败（如 cwd 不存在）原为裸异常打到 HTTP 层，
+  现转为 `ProxyError`（HTTP 400）并记录审计日志。
+- **性能基准 p99 门禁（v0.35.0）**：`benchmarks/bench.py` 新增可选 `--*-p99-ms` 阈值
+  （p95 之外的尾部延迟回归门禁，缺省不检查）；CI bench job 传入
+  `--state-p99-ms 4000 --write-p99-ms 8000 --exec-p99-ms 15000`，并把 JSON 报告作为
+  artifact（`bench-report.json`）上传。
+- **测试**：新增 `tests/test_fuzz_sidecar.py`（9 个冒烟/边界用例，Windows 本地跳过 2 个
+  multiprocessing 用例）+ `tests/test_sidecar.py` 未实现方法 JSON 501 + `tests/test_sidecar_proxy.py`
+  Popen 启动失败转 `ProxyError` + `tests/test_benchmarks.py` p99 越界判定。
+
 ## [0.34.1] - 2026-09-04
 
 - **gRPC 教程降级为规划草案（v0.34.1）**：`docs/tutorials/k8s-sidecar-grpc.md` 顶部增加醒目警告

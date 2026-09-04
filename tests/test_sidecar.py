@@ -44,6 +44,24 @@ def _stop(server):
     server.server_close()
 
 
+def test_sidecar_unsupported_method_returns_json_501(tmp_path):
+    """v0.35.0：未实现 HTTP 方法返回 JSON 501（sidecar 响应恒为 JSON）。"""
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    server, base = _serve(GateSidecar(ws, user_request="实现斐波那契函数"))
+    try:
+        req = urllib.request.Request(base + "/healthz", method="PUT")
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                status, payload = resp.status, json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            status, payload = exc.code, json.loads(exc.read().decode("utf-8"))
+        assert status == 501
+        assert isinstance(payload, dict) and "error" in payload
+    finally:
+        _stop(server)
+
+
 def test_sidecar_healthz_and_404(tmp_path):
     ws = tmp_path / "ws"
     ws.mkdir()

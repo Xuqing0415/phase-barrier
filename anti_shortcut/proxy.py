@@ -158,18 +158,29 @@ class GateProxy:
             raise ExecDenied(str(exc)) from exc
         run_dir = self._resolve_cwd(cwd)
         eff_timeout = timeout or DEFAULT_EXEC_TIMEOUT
-        proc = subprocess.Popen(
-            command,
-            shell=True,
-            cwd=str(run_dir),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            start_new_session=os.name != "nt",
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
-        )
+        try:
+            proc = subprocess.Popen(
+                command,
+                shell=True,
+                cwd=str(run_dir),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                start_new_session=os.name != "nt",
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
+            )
+        except OSError as exc:
+            # v0.35.0：启动失败（如 cwd 不存在 / 权限受限）转为 ProxyError（HTTP 400），
+            # 而不是让裸异常打到 HTTP 层导致 500 / 连接断开。
+            self.skill.logger.warning(
+                "proxy_exec_start_failed",
+                command=command,
+                reason=str(exc),
+                **self.skill._stage_summary(),
+            )
+            raise ProxyError(f"命令无法启动: {exc}") from exc
         try:
             stdout, stderr = proc.communicate(timeout=eff_timeout)
         except subprocess.TimeoutExpired:

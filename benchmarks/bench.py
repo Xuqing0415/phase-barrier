@@ -1,4 +1,4 @@
-"""phase-barrier 性能基准（v0.27.0）。
+"""phase-barrier 性能基准（v0.35.0）。
 
 衡量两个热点路径：
 1. ``StateManager`` 并发状态写入：多 Agent 共享同一 ``state.json`` 时的
@@ -14,6 +14,7 @@
 
 默认阈值（宽松，防止大幅退化；可用 --*-p95-ms 按压测结果调整）：
   state.p95 < 1000ms、sidecar_write.p95 < 2000ms、sidecar_exec.p95 < 5000ms
+p99 阈值可选（--*-p99-ms），CI 传入后作为 p95 之外的补充回归门禁（v0.35.0）。
 """
 from __future__ import annotations
 
@@ -236,8 +237,11 @@ def check_thresholds(
     state_p95_ms: float = 1000.0,
     write_p95_ms: float = 2000.0,
     exec_p95_ms: float = 5000.0,
+    state_p99_ms: float | None = None,
+    write_p99_ms: float | None = None,
+    exec_p99_ms: float | None = None,
 ) -> list[str]:
-    """返回超阈值指标列表；为空表示全部通过。"""
+    """返回超阈值指标列表；为空表示全部通过。p99 阈值可选（v0.35.0）。"""
     failures = []
     state_p95 = results["state"]["p95_ms"]
     if state_p95 > state_p95_ms:
@@ -248,6 +252,15 @@ def check_thresholds(
     exec_p95 = results["sidecar_exec"]["p95_ms"]
     if exec_p95 > exec_p95_ms:
         failures.append(f"sidecar_exec p95 {exec_p95}ms > {exec_p95_ms}ms")
+    state_p99 = results["state"].get("p99_ms", 0.0)
+    if state_p99_ms is not None and state_p99 > state_p99_ms:
+        failures.append(f"state p99 {state_p99}ms > {state_p99_ms}ms")
+    write_p99 = results["sidecar_write"].get("p99_ms", 0.0)
+    if write_p99_ms is not None and write_p99 > write_p99_ms:
+        failures.append(f"sidecar_write p99 {write_p99}ms > {write_p99_ms}ms")
+    exec_p99 = results["sidecar_exec"].get("p99_ms", 0.0)
+    if exec_p99_ms is not None and exec_p99 > exec_p99_ms:
+        failures.append(f"sidecar_exec p99 {exec_p99}ms > {exec_p99_ms}ms")
     return failures
 
 
@@ -280,10 +293,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--state-p95-ms", type=float, default=1000.0)
     parser.add_argument("--write-p95-ms", type=float, default=2000.0)
     parser.add_argument("--exec-p95-ms", type=float, default=5000.0)
+    parser.add_argument("--state-p99-ms", type=float, default=None, help="state p99 阈值（缺省不检查，v0.35.0）")
+    parser.add_argument("--write-p99-ms", type=float, default=None, help="sidecar_write p99 阈值（缺省不检查）")
+    parser.add_argument("--exec-p99-ms", type=float, default=None, help="sidecar_exec p99 阈值（缺省不检查）")
     parser.add_argument("--output", type=Path, default=None, help="结果另存 JSON 文件")
     args = parser.parse_args(argv)
 
-    print("phase-barrier 性能基准 v0.27.0")
+    print("phase-barrier 性能基准 v0.35.0")
     print("[1/3] StateManager 并发状态写入 ...", flush=True)
     state = bench_state_contention(args.state_threads, args.state_iters)
     print("[2/3] Sidecar 并发 write_file ...", flush=True)
@@ -293,7 +309,7 @@ def main(argv: list[str] | None = None) -> int:
 
     results = {
         "benchmark": "phase-barrier",
-        "version": "0.27.0",
+        "version": "0.35.0",
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "state": state,
         "sidecar_write": write,
@@ -314,6 +330,9 @@ def main(argv: list[str] | None = None) -> int:
             state_p95_ms=args.state_p95_ms,
             write_p95_ms=args.write_p95_ms,
             exec_p95_ms=args.exec_p95_ms,
+            state_p99_ms=args.state_p99_ms,
+            write_p99_ms=args.write_p99_ms,
+            exec_p99_ms=args.exec_p99_ms,
         )
         if failures:
             print("性能门禁未通过:", file=sys.stderr)

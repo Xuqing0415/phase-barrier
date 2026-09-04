@@ -2,6 +2,13 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.33.2] - 2026-09-04
+
+- 修复：v0.33.1 的 CI 使用 `actions/setup-java@v7`，但该 action 未跟进到 v7，
+  运行时无法解析版本（`Unable to resolve action`），test / coverage job 直接失败；
+  改为长期稳定的 `actions/setup-java@v4`（temurin 17），kotlinc 安装与
+  `@needs_kotlinc` 真实语法用例照常执行。
+
 ## [0.33.1] - 2026-09-04
 
 - **Kotlin 真实工具链进 CI（v0.33.1）**：test 矩阵与 coverage job 在现有 Node / Go / Rust /

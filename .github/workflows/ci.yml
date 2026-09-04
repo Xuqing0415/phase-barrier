@@ -84,6 +84,12 @@ jobs:
           echo "/opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin" >> "$GITHUB_PATH"
           /opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin/swiftc -version
           /opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin/swiftc -version 2>&1 | grep -q '6\.1\.2'
+      # v0.40.0: 安装 Dart SDK，激活 DartAdapter 真实语法/输出用例
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Show Dart SDK
+        run: dart --version
 
 
       - name: Install package and dev deps
@@ -176,6 +182,12 @@ jobs:
           echo "/opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin" >> "$GITHUB_PATH"
           /opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin/swiftc -version
           /opt/swift-6.1.2-RELEASE-ubuntu24.04/usr/bin/swiftc -version 2>&1 | grep -q '6\.1\.2'
+      # v0.40.0: 安装 Dart SDK，激活 DartAdapter 真实语法/输出用例
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Show Dart SDK
+        run: dart --version
 
 
       - name: Install package and dev deps

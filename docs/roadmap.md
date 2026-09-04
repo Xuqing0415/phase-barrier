@@ -150,11 +150,20 @@
   `tests/test_grpc_service.py` 8 个 in-process gRPC 用例；教程
   `docs/tutorials/k8s-sidecar-grpc.md` 由“规划草案”改写为“已实现”。
 
-## 待办 / 已知缺口（截至 v0.39.0）
+- **v0.40.0 已完成**：Dart 语言适配器——`DartAdapter`（`anti_shortcut/languages/dart.py`）：
+  `*.dart` / `lib/**` / `bin/**` / `web/**` 为实现，`*_test.dart` / `test/**` /
+  `integration_test/**` 为测试；语法检查 `dart format --output=none`（纯解析不落盘，
+  SDK 缺失返回明确错误）；package:test 启发式统计（`test()` / `testWidgets()` 声明 +
+  `expect` 断言，剥离注释与字符串）；测试命令 `dart test` / `flutter test` /
+  `dart run test` / `pub run test`；输出解析 `+N: All tests passed!` /
+  `+N -M: Some tests failed.`（含 `~K` 跳过）。`pubspec.yaml` 自动探测，注册表 /
+  入口点 / 文档同步；解析器模糊测试目标 11 -> 12；CI test / coverage job 安装
+  `dart-lang/setup-dart` 激活真实语法用例（通过 / 报错两条路径）；新增
+  `tests/test_dart_adapter.py` 19 个用例（2 个真实用例按 dart 是否安装启用）。
+## 待办 / 已知缺口（截至 v0.40.0）
 - **真实 SWE-bench 评测**：benchmarks/swe_bench_gate.py 是任务模拟器；接入官方 SWE-bench 数据集 /
   harness 需要下载数据集并运行 Agent，列为后续专项。
-- **Dart 适配器**：尚未实现（Dart 单文件语法检查依赖项目上下文，需单独设计；
-  Swift 适配器已于 v0.37.0 落地，CI 安装 swift.org ubuntu24.04 工具链激活真实用例）。
+
 - **CI 平台矩阵**：Linux / Windows（v0.36.0）/ macOS（v0.38.0）核心 pytest 均入 CI；
   Windows / macOS job 不装真实语言工具链（ubuntu 全量激活，macOS 原生 swiftc 激活
   SwiftAdapter 真实用例）；Windows 真实工具链激活仍待加。

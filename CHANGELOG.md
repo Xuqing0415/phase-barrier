@@ -2,6 +2,29 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.40.0] - 2026-09-04
+
+- **Dart 语言适配器（v0.40.0）**：新增 `DartAdapter`（`anti_shortcut/languages/dart.py`）——
+  文件识别 `*.dart` / `lib/**` / `bin/**` / `web/**` 为实现，`*_test.dart` / `test/**` /
+  `integration_test/**`（Flutter）为测试；语法检查 `dart format --output=none`（纯解析
+  不落盘，行号报错；Dart SDK 缺失返回明确错误，不静默放行）。
+- **启发式测试统计与输出解析（v0.40.0）**：package:test `test()` / Flutter `testWidgets()`
+  声明统计 + `expect` / `expectLater` / `expectAsync` 断言，统计前剥离 `//` / `/* */`（含
+  嵌套）/ 单双引号与三引号字符串 / 原始字符串；输出解析 `dart test` / `flutter test`
+  进度汇总（`+N: All tests passed!`、`+N -M: Some tests failed.`，含 `~K` 跳过计数）。
+- **注册与检测（v0.40.0）**：`LANGUAGE_REGISTRY` 注册 `dart`，`pubspec.yaml` 自动探测；
+  `pyproject.toml` 新增 `dart` 语言入口点；`api.md` / `configuration.md` / `index.md` /
+  `languages.md` 语言清单同步。
+- **解析器模糊测试目标 11 -> 12（v0.40.0）**：`benchmarks/fuzz_parsers.py` 新增
+  `dart_parsers` 目标（DartAdapter.parse_test_output 随机输入 0 崩溃），
+  `tests/test_fuzz.py` 计数同步更新。
+- **Dart 真实工具链进 CI（v0.40.0）**：test / coverage job 安装
+  `dart-lang/setup-dart@v1`（stable SDK），激活 DartAdapter 真实语法用例
+  （通过 / 报错两条路径），不再按环境跳过。
+- **测试（v0.40.0）**：新增 `tests/test_dart_adapter.py` 19 个用例（注册/检测/文件识别/
+  统计剥离注释字符串/mock 语法检查/输出解析 + 2 个真实 dart 用例按 SDK 是否安装启用）；
+  本地 Windows 全量 pytest 通过（真实用例按 skipif 跳过）。
+
 ## [0.39.1] - 2026-09-04
 
 - **coverage 门禁修复（v0.39.1）**：grpc 生成代码（`anti_shortcut/proto/*_pb2*.py`，

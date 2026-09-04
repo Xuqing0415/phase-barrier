@@ -15,6 +15,7 @@ from typing import Any
 from ..config import GateConfig
 from .base import LanguageAdapter, analyze_js_style_tests, validate_test_collection
 from .cpp import CppAdapter
+from .dart import DartAdapter
 from .csharp import CSharpAdapter
 from .dotnet import DotNetAdapter
 from .go import GoAdapter
@@ -44,6 +45,7 @@ __all__ = [
     "ScalaAdapter",
     "SwiftAdapter",
     "DotNetAdapter",
+    "DartAdapter",
     "detect_language",
     "get_adapter",
     "load_entry_point_adapters",
@@ -66,6 +68,7 @@ LANGUAGE_REGISTRY: dict[str, type[LanguageAdapter]] = {
     "swift": SwiftAdapter,
     "dotnet": DotNetAdapter,
     "kotlin": KotlinAdapter,
+    "dart": DartAdapter,
 }
 
 # 标志文件 -> 语言（顺序即优先级；同语言内按可依赖程度排序）
@@ -76,6 +79,7 @@ _LANGUAGE_MARKERS: list[tuple[tuple[str, ...], str]] = [
     (("Cargo.toml",), "rust"),
     (("build.sbt",), "scala"),
     (("Package.swift",), "swift"),
+    (("pubspec.yaml",), "dart"),
     (("Gemfile", "Gemfile.lock", ".ruby-version", "Rakefile"), "ruby"),
     (("requirements.txt", "setup.py", "setup.cfg", "tox.ini"), "python"),
     (("pyproject.toml",), "python"),

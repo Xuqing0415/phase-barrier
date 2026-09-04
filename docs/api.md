@@ -35,7 +35,7 @@ pip install phase-barrier        # import anti_shortcut
 | `anti_shortcut.languages.LanguageAdapter` | 语言适配器抽象基类 |
 | `anti_shortcut.languages.LANGUAGE_REGISTRY` | 内置适配器注册表 |
 | `anti_shortcut.languages.detect_language` / `get_adapter` | 自动检测与适配器选择（配置 > 检测 > 默认 Python） |
-| `anti_shortcut.languages.python.PythonAdapter` 等 | 内置适配器：python / javascript / java / kotlin / scala / swift / go / rust / ruby / php / cpp / csharp / dotnet |
+| `anti_shortcut.languages.python.PythonAdapter` 等 | 内置适配器：python / javascript / java / kotlin / scala / swift / dart / go / rust / ruby / php / cpp / csharp / dotnet |
 
 ## Sidecar / 代理 / SDK
 

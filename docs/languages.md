@@ -4,7 +4,7 @@
 
 v0.3.0 起，语言相关逻辑（文件识别、语法检查、测试统计、测试命令识别）抽象为
 **语言适配器（Language Adapter）**。核心包内置 Python、JavaScript/TypeScript、Java、Kotlin、Scala、Go、Rust、Swift、Ruby、
-C#、C++ 与 .NET 适配器，第三方可注册自定义适配器；未显式指定时按工作区标志文件自动检测。
+PHP、C#、C++、.NET 与 Dart 适配器，第三方可注册自定义适配器；未显式指定时按工作区标志文件自动检测。
 
 ### 快速启用
 
@@ -32,7 +32,7 @@ test_commands:
 不写 `language` 时自动检测标志文件：`package.json` -> `javascript`，`pom.xml` -> `java`，
 `go.mod` -> `go`，`Cargo.toml` -> `rust`，`Gemfile` / `*.gemspec` -> `ruby`，
 `*.csproj` / `*.sln` -> `csharp`，`CMakeLists.txt` / `Makefile` / `*.vcxproj` -> `cpp`，`composer.json` -> `php`，
-`build.sbt` -> `scala`，`Package.swift` -> `swift`，`requirements.txt` / `setup.py` / `pyproject.toml` -> `python`；未识别时默认 Python。
+`build.sbt` -> `scala`，`Package.swift` -> `swift`，`pubspec.yaml` -> `dart`，`requirements.txt` / `setup.py` / `pyproject.toml` -> `python`；未识别时默认 Python。
 .NET 项目可显式 `language: dotnet` 启用 `DotNetAdapter`（与 `csharp` 共用实现，便于按生态区分）。
 适配器默认文件模式与 YAML 中的 `test_file_patterns` / `source_file_patterns`
 自动合并（配置只增不减）。完整字段说明见 [配置指南](configuration.md)。
@@ -49,6 +49,7 @@ test_commands:
 | `KotlinAdapter` | `*Test.kt` / `*Tests.kt` / `src/test/**`（kotlin）为测试，`src/main/kotlin/**` 与 `*.kt` 为实现 | `kotlinc`（缺失返回明确错误；跨文件/依赖缺失降级为“需完整项目编译验证”） | 启发式：`@Test` 注解数（JUnit5 / kotlin.test）+ `assert*` 断言关键字；输出解析复用 Java（Gradle / Surefire / JUnit Console） |
 | `ScalaAdapter` | `*Test.scala` / `*Tests.scala` / `*Spec.scala` / `src/test/**` 为测试，`src/main/scala/**` 与 `*.scala` 为实现 | `scalac` 单文件编译（缺失返回明确错误；跨文件/依赖缺失降级为“需完整项目编译验证”） | 启发式：`@Test` 注解 + ScalaTest / MUnit `test("...")` / spec2 `"..." should` 统计 + `assert*` / matcher 断言；输出解析：ScalaTest（`Tests: succeeded N, failed M`），回退 Java（Surefire / Gradle / JUnit Console） |
 | `SwiftAdapter` | `*Test.swift` / `*Tests.swift` / `Tests/**`（SwiftPM）为测试，`Sources/**` 与 `*.swift` 为实现（`Package.swift` 清单除外） | `swiftc -typecheck`（缺失返回明确错误；`@main` 自动以 `-parse-as-library` 重试；跨文件/依赖缺失降级为“需完整项目编译验证”） | 启发式：XCTest `func testXxx()` 方法 + swift-testing `@Test` 属性 + `XCTAssert*` / `#expect` / `#require` 断言；输出解析：XCTest（`Executed N tests, with M failures`）、swift-testing（`Test run with N tests passed|failed`）与 xcodebuild（`** TEST SUCCEEDED/FAILED **`） |
+| `DartAdapter` | `*_test.dart` / `test/**` / `integration_test/**` 为测试，`lib/**` / `bin/**` / `web/**` 与 `*.dart` 为实现 | `dart format --output=none`（解析不落盘；Dart SDK 缺失返回明确错误） | 启发式：package:test `test()` / `testWidgets()` 声明数 + `expect` / `expectLater` 断言；输出解析：`dart test` / `flutter test` 进度汇总（`+N: All tests passed!` / `+N -M: Some tests failed.`，含 `~K` 跳过） |
 | `GoAdapter` | `*_test.go` 为测试，`*.go` / `cmd|internal|pkg/**` 为实现 | `gofmt -e`（Go 工具链缺失返回明确错误） | 启发式：`func TestXxx(t *testing.T)` 函数数 + `t.Error` / `t.Fatal` / `assert` / `require` 断言 |
 | `RustAdapter` | `tests/**` / `*_test.rs` / `src/**/tests.rs` 为测试，`src/**` 与 `*.rs` 为实现 | `cargo check`（有 `Cargo.toml`）/ `rustc` 单文件回退（工具缺失返回明确错误） | 启发式：`#[test]` / `#[tokio::test]` 属性数 + `assert!` / `assert_eq!` / `assert_ne!` |
 | `CSharpAdapter` | `*Test.cs` / `*Tests.cs` / `**/Tests/**` 为测试，`*.cs` 为实现 | 项目级 `dotnet build`（查找 `.csproj` / `.sln` 项目根，带指纹缓存；无项目根或工具缺失返回明确错误） | 启发式：`[Fact]` / `[Theory]` / `[Test]` 特性数 + `Assert.*` 断言；输出解析：VSTest `Passed! - Failed: F, Passed: P` / NUnit |

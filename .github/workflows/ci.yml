@@ -604,6 +604,39 @@ jobs:
       - name: Run test suite
         run: python -m pytest
 
+  test-macos:
+    name: pytest core (macOS ${{ matrix.python-version }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # setuptools-scm 需要读取 tag
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # v0.38.0: macOS 核心测试（不额外安装 JS/Go/Rust/Ruby/PHP/JDK/kotlinc/dotnet/scala
+      # 真实工具链；对应真实工具用例按 skipif 自动跳过，ubuntu job 全量激活）。
+      # macOS runner 自带 Xcode CLT（swiftc），SwiftAdapter 真实语法用例天然激活；
+      # 覆盖 macOS 专属路径：POSIX flock（fcntl）状态锁、路径处理、CLI / sidecar / audit。
+      - name: Show Swift toolchain (Xcode CLT)
+        run: swiftc -version
+
+      - name: Install package and dev deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run test suite
+        run: python -m pytest
+
   package:
     name: Build sdist and wheel
     runs-on: ubuntu-latest

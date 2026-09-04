@@ -123,14 +123,25 @@
   Windows 本机全量 pytest 预演通过（0 失败）。
 
 
-## 待办 / 已知缺口（截至 v0.36.0）
+- **v0.37.0 已完成**：新增 Swift 语言适配器（`SwiftAdapter`：`swiftc -typecheck` 单文件
+  语法检查——脚本模式对 `@main` 文件报错自动以 `-parse-as-library` 重试、跨文件/依赖缺失
+  降级为“需完整项目编译验证”、swiftc 缺失返回明确错误；文件识别排除 `Package.swift` 清单；
+  XCTest `func testXxx()` + swift-testing `@Test` 启发式统计，先剥离注释/字符串避免误判；
+  输出解析 XCTest `Executed N tests, with M failures` / swift-testing `Test run with N tests
+  passed|failed` / xcodebuild `** TEST SUCCEEDED/FAILED **`）；`Package.swift` 自动探测；
+  解析器模糊测试目标 10 -> 11（新增 Swift 输出解析目标）；CI 安装 swift.org ubuntu24.04
+  工具链（swift-6.1.2，绝对路径版本断言），激活 SwiftAdapter 真实语法用例；补齐 v0.34.0
+  遗漏的 `scala` 语言入口点并新增 `swift` 入口点；`.build`（SwiftPM 构建产物）加入
+  工作区遍历跳过目录。
+
+## 待办 / 已知缺口（截至 v0.37.0）
 
 - **K8s sidecar gRPC 服务**：尚未实现（教程已标注「规划中」并在顶部给出警告）；当前仅有 HTTP 透明代理，
   gRPC 需引入 grpcio 依赖与 proto 生成，建议作为独立版本推进，且不破坏核心包零依赖原则。
 - **真实 SWE-bench 评测**：benchmarks/swe_bench_gate.py 是任务模拟器；接入官方 SWE-bench 数据集 /
   harness 需要下载数据集并运行 Agent，列为后续专项。
-- **Swift / Dart 适配器**：尚未实现（Swift 真实语法检查需 macOS 或重型 ubuntu 工具链；
-  Dart 单文件语法检查依赖项目上下文，均需单独设计）。
+- **Dart 适配器**：尚未实现（Dart 单文件语法检查依赖项目上下文，需单独设计；
+  Swift 适配器已于 v0.37.0 落地，CI 安装 swift.org ubuntu24.04 工具链激活真实用例）。
 - **CI 平台矩阵**：Windows 核心测试已入 CI（v0.36.0，`test-windows` job，不含真实工具链）；
   macOS 矩阵与 Windows 真实工具链激活仍待加。
 - **Alpha-SWE 上游接入（Xuqing0415/alpha-swe issue #1 B 组）**：目标仓库与验收清单已确认

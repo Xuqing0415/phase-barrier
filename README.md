@@ -123,6 +123,7 @@ anti-shortcut advance --workspace . --to 2                         # 推进阶�
 | Java | JavaAdapter | JUnit 4/5 / TestNG / Maven / Gradle |
 | Kotlin | KotlinAdapter | JUnit 5 / kotlin.test / Gradle |
 | Scala | ScalaAdapter | ScalaTest / MUnit / JUnit / sbt |
+| Swift | SwiftAdapter | XCTest / swift-testing（swift test） |
 | Go | GoAdapter | testing / testify |
 | Rust | RustAdapter | cargo test |
 | Ruby | RubyAdapter | RSpec / Minitest |

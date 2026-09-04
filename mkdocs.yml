@@ -62,7 +62,7 @@ nav:
       - 最佳实践: best-practices.md
   - 教程:
       - CI 增量门禁: tutorials/ci-incremental-gate.md
-      - K8s sidecar 加固与 gRPC 演进（规划中）: tutorials/k8s-sidecar-grpc.md
+      - K8s sidecar 加固与 gRPC 接口（v0.39.0 已实现）: tutorials/k8s-sidecar-grpc.md
       - SWE-bench 门禁基准: tutorials/swe-bench-gate.md
   - FAQ: faq.md
   - Roadmap: roadmap.md

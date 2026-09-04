@@ -519,9 +519,28 @@ def main(argv: list[str] | None = None) -> int:
         tls_key=args.tls_key or None,
         tls_client_ca=args.tls_client_ca or None,
     )
+    grpc_server = None
+    if getattr(args, "grpc_port", 0):
+        try:
+            from .grpc_service import create_grpc_server
+
+            grpc_server = create_grpc_server(
+                sidecar,
+                host=args.host,
+                port=args.grpc_port,
+                tls_cert=args.tls_cert or None,
+                tls_key=args.tls_key or None,
+                tls_client_ca=args.tls_client_ca or None,
+            )
+        except RuntimeError as exc:
+            print(f"[sidecar] 无法启用 gRPC: {exc}", file=__import__("sys").stderr)
+            server.server_close()
+            sidecar.skill.close()
+            return 1
     scheme = "https" if args.tls_cert else "http"
+    extra = f"，gRPC :{getattr(args, 'grpc_port', 0)}" if grpc_server is not None else ""
     print(
-        f"[sidecar] phase-barrier 门禁服务已启动: {scheme}://{args.host}:{args.port}"
+        f"[sidecar] phase-barrier 门禁服务已启动: {scheme}://{args.host}:{args.port}{extra}"
         f"（工作区 {args.workspace}，阶段 {sidecar.skill.current_stage}）",
         flush=True,
     )
@@ -531,6 +550,8 @@ def main(argv: list[str] | None = None) -> int:
         pass
     finally:
         server.server_close()
+        if grpc_server is not None:
+            grpc_server.stop(0)
         sidecar.skill.close()
     return 0
 

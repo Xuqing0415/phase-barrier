@@ -1,17 +1,15 @@
-# 教程：K8s sidecar 生产加固与 gRPC 演进（gRPC 部分为规划草案）
+# 教程：K8s sidecar 生产加固与 gRPC 接口（v0.39.0 起 gRPC 已实现）
 
-> **重要：gRPC 尚未实现。** 当前版本（v0.34.x）的 sidecar 仅提供 HTTP API
-> （`/api/write`、`/api/exec`、`/api/advance`、`/api/state`、`/api/audit`），
-> 本文第三部分的 gRPC 接口与 proto 只是设计草案，请勿按 gRPC 接口接入生产。
-> gRPC 支持将作为独立版本推出（见 [Roadmap](../roadmap.md)）。
+> v0.39.0 起 sidecar 提供与 HTTP API 等价的 **gRPC 服务**（`python -m anti_shortcut.grpc_service`），
+> proto 定义见 `anti_shortcut/proto/sidecar.proto`，客户端与 HTTP 共用同一套 GateSidecar 业务
+> 逻辑（状态推进、证据校验、透明代理拦截、审计）。HTTP 仍为默认与最小依赖路径；gRPC 为可选
+> 增强（`pip install 'phase-barrier[grpc]'`）。
 
 phase-barrier 的 K8s 部署采用 **sidecar 透明代理** 模式：Agent 容器不挂载门禁目录，
-文件写入与命令执行都走 sidecar 的 HTTP API（`/api/write`、`/api/exec`、`/api/advance`、
-`/api/state`、`/api/audit`），因此 Agent 无法绕过阶段门禁，也无法篡改状态。
+文件写入与命令执行都走 sidecar 的门禁 API（HTTP `/api/*` 或 gRPC `PhaseBarrier` 服务），
+因此 Agent 无法绕过阶段门禁，也无法篡改状态。
 
-本教程分三部分：现状速览、生产加固清单、以及规划中的 **gRPC 演进方案**
-（尚未实现，见顶部警告）。
-
+本教程分三部分：现状速览、生产加固清单、以及 **gRPC 接口接入指南**。
 ## 一、现状速览
 
 ```bash
@@ -82,43 +80,65 @@ sidecar 是 Pod 内通信组件，**不应**通过 Ingress/NodePort 暴露到集
 - 开启远程审计，设置 `AUDIT_REMOTE_SPOOL_DIR` 做本地缓冲，避免审计端点抖动丢日志。
 - 阶段变更、拦截事件都写入审计；事故复盘时用 `kubectl logs` + 远程审计双查。
 
-## 三、gRPC 演进方案（Roadmap）
+## 三、gRPC 接口接入指南（v0.39.0 已实现）
 
-当前 HTTP 透明代理已满足功能需求；README 长期规划中的 **gRPC** 主要解决三类问题：
+gRPC 服务与 HTTP API 等价（8 个 RPC，语义一一对应），适合对类型安全、流式/长连接、
+多路复用有要求的客户端（如 Go/Rust sidecar 代理或生产级 Agent SDK）。
 
-1. **类型化接口**：`/api/write` 的请求/响应是自由 JSON，字段拼错只能靠运行时才发现；
-   gRPC + proto 在编译期约束请求结构。
-2. **连接复用与流式**：Agent 高频调用（写文件、跑测试）可复用一条 HTTP/2 连接，
-   长任务（`exec`）可用服务端流实时回传输出。
-3. **性能**：HTTP/2 多路复用减少握手开销；`benchmarks/bench.py` 的 p95 指标可作前后对比基线。
+### 1. 服务定义（`anti_shortcut/proto/sidecar.proto`）
 
-### 设计草案
+`service PhaseBarrier` 提供 8 个 RPC：
 
-```proto
-syntax = "proto3";
+| gRPC RPC | 等价 HTTP | 说明 |
+|----------|-----------|------|
+| `GetState` | `GET /api/state` | 当前阶段 / 完成情况 |
+| `Advance` | `POST /api/advance` | 推进阶段（完整证据校验；跳步返回 `FAILED_PRECONDITION`） |
+| `RecordTestRun` | `POST /api/test-run` | 上报测试运行（自动解析通过数 / 覆盖率） |
+| `RecordSourceChange` | `POST /api/source-change` | 上报源码/测试变更（强制回归） |
+| `WriteFile` | `POST /api/write` | 透明代理写入（拦截返回 `PERMISSION_DENIED`） |
+| `ExecCommand` | `POST /api/exec` | 透明代理执行命令（拦截返回 `PERMISSION_DENIED`） |
+| `VerifyEvidence` | `GET /api/verify-evidence` | 校验证据签名清单 |
+| `QueryAudit` | `GET /api/audit` | 审计查询（分页 / 时间过滤 / 事件过滤） |
 
-service PhaseBarrier {
-  rpc WriteFile(WriteFileRequest) returns (WriteFileReply);   // /api/write 等价
-  rpc ExecCommand(ExecCommandRequest) returns (stream ExecChunk); // /api/exec 流式
-  rpc Advance(AdvanceRequest) returns (AdvanceReply);         // /api/advance
-  rpc GetState(GetStateRequest) returns (GetStateReply);      // /api/state
-}
+错误语义与 HTTP 对齐：写入门禁目录、未到阶段写源码/跑测试等被拒返回
+`PERMISSION_DENIED`；参数非法（空路径、越界 timeout/limit、非法时间戳）返回
+`INVALID_ARGUMENT`；推进未通过证据校验返回 `FAILED_PRECONDITION`。
+
+### 2. 启动 gRPC 服务
+
+```bash
+pip install 'phase-barrier[grpc]'
+
+# 独立入口（等价 HTTP sidecar 的业务逻辑）
+python -m anti_shortcut.grpc_service --workspace . --host 0.0.0.0 --port 50051 \
+  --state-key "$PHASE_BARRIER_HMAC_KEY"
 ```
 
-迁移建议（不破坏现有 HTTP 客户端）：
+mTLS 与 HTTP 模式一致（`--tls-cert` / `--tls-key` / `--tls-client-ca`）；启用
+`--tls-client-ca` 后强制校验客户端证书。K8s 中可与 HTTP sidecar 同容器双端口暴露，
+或单独作为 gRPC sidecar 容器（详见 [K8s 部署](../k8s.md) 与 Helm `values.yaml`）。
 
-- 新增 `grpc` 监听端口，与 HTTP 并存一个版本周期；
-- `GateClient` 增加传输层抽象：`base_url` 不变，内部自动选择 gRPC（可用时）或 HTTP；
-- mTLS 证书体系复用（gRPC TLS 配置与 HTTP 一致），Secret 无需变更；
-- 先在 kind e2e 中加 gRPC 冒烟用例，全绿后再默认切 gRPC。
+### 3. 客户端示例（Python）
 
-### 全链路加固要点
+```python
+import grpc
+from anti_shortcut.proto import sidecar_pb2, sidecar_pb2_grpc
 
-信任链：`Agent -> GateClient(mTLS) -> sidecar(校验+审计) -> 文件系统/执行环境`
+channel = grpc.insecure_channel("phase-barrier:50051")
+stub = sidecar_pb2_grpc.PhaseBarrierStub(channel)
 
-| 环节 | 风险 | 对策 |
-|------|------|------|
-| Agent -> sidecar | 未授权调用 | mTLS 客户端证书（`tls-client-ca`） |
-| sidecar 校验 | 证据伪造 | AST/启发式校验 + HMAC 状态签名 + 哈希清单 |
-| sidecar 执行 | 命令注入 | 拦截规则（`no_shell_injection`）+ 白名单命令模式 |
-| 审计 | 日志丢失/篡改 | 远程推送 + spool 缓冲 + 结构化为 JSON |
+state = stub.GetState(sidecar_pb2.GetStateRequest(), timeout=5)
+print(state.current_stage, state.stage_name)
+
+try:
+    stub.WriteFile(sidecar_pb2.WriteFileRequest(path="fib.py", content="..."), timeout=5)
+except grpc.RpcError as exc:
+    if exc.code() == grpc.StatusCode.PERMISSION_DENIED:
+        print("拦截:", exc.details())  # 与 HTTP 403 同一语义
+```
+
+### 4. 版本说明
+
+- v0.39.0 前：gRPC 仅为设计草案（`docs/tutorials` 曾标注“规划中”）。
+- v0.39.0：gRPC 服务实现并纳入测试与打包（可选依赖 `phase-barrier[grpc]`）；
+  生成代码随包分发（`anti_shortcut/proto/`），重生成脚本见 `scripts/gen_grpc.sh`。

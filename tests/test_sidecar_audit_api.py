@@ -274,7 +274,7 @@ def test_cli_sidecar_help(capsys):
         main(["sidecar", "--help"])
     assert exc_info.value.code == 0
     out = capsys.readouterr().out
-    assert "sidecar" in out and "--port" in out
+    assert "sidecar" in out and "--port" in out and "--grpc-port" in out
 
 
 def test_cli_sidecar_serves_and_terminates(tmp_path):
@@ -283,7 +283,7 @@ def test_cli_sidecar_serves_and_terminates(tmp_path):
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    # v0.38.1: stdout ??????????? PIPE ????????????macOS ????
+    # v0.38.1: stdout 重定向到日志文件（避免 PIPE 阻塞），并放宽就绪超时（macOS 慢启动）
     log_path = tmp_path / "sidecar.log"
     log_fh = open(log_path, "w", encoding="utf-8")
     proc = subprocess.Popen(

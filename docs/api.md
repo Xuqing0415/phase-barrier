@@ -1,7 +1,7 @@
 # API 参考
 
 phase-barrier 的 Python 包名为 `anti_shortcut`（发行名 / CLI 见下），核心 API 面向两类调用方：
-宿主进程内嵌（`AntiShortcutSkill` + 包装工具）与 sidecar 进程外代理（`GateClient` HTTP API）。
+宿主进程内嵌（`AntiShortcutSkill` + 包装工具）与 sidecar 进程外代理（`GateClient` HTTP / gRPC API）。
 
 安装：
 
@@ -42,6 +42,8 @@ pip install phase-barrier        # import anti_shortcut
 | 符号 | 说明 |
 |------|------|
 | `anti_shortcut.sidecar.GateSidecar` / `make_handler` | 进程外 HTTP 门禁服务（state / advance / write / exec / audit） |
+| `anti_shortcut.grpc_service` | gRPC 门禁服务（v0.39.0）：8 个 RPC 与 HTTP API 等价；`python -m anti_shortcut.grpc_service` 独立启动 |
+| `anti_shortcut.proto.sidecar_pb2` / `sidecar_pb2_grpc` | gRPC 生成代码（`sidecar.proto`，随包分发；可选依赖 `phase-barrier[grpc]`） |
 | `anti_shortcut.proxy_client.GateClient` | sidecar 客户端（零额外依赖，`urllib`）；被拦截抛 `GateDenied` |
 | `anti_shortcut.sdk.PhaseBarrier` | 编排器钩子 SDK：`check(stage)` / `advance(to_stage)` |
 | `anti_shortcut.proxy` | K8s 透明代理辅助（写 / 执行代理） |
@@ -56,6 +58,7 @@ pip install phase-barrier        # import anti_shortcut
 | `anti-shortcut write` / `exec` | 经门禁写文件 / 执行命令（CLI 透明代理） |
 | `anti-shortcut advance` | 声明完成当前阶段并推进（校验证据） |
 | `anti-shortcut sidecar` | 启动 HTTP 门禁服务（`--port` / `--tls-*` mTLS） |
+| `python -m anti_shortcut.grpc_service` | 启动 gRPC 门禁服务（v0.39.0；`--port` / `--tls-*` mTLS） |
 | `anti-shortcut plugin-verify` | 插件自动验证 |
 | `anti-shortcut verify-evidence` / `export-evidence` | 证据清单校验 / 导出 |
 | `anti-shortcut rotate-key` | HMAC 密钥轮换 |

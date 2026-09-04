@@ -1,0 +1,67 @@
+# v0.34.1: 插件索引自动检查（官方示例插件周检）
+# 每周一 06:00 UTC + 手动触发；安装官方示例插件后运行 plugin-verify --json，
+# 断言入口点全绿并上传 JSON 报告 artifact。第三方插件收录仍为人工 + 插件仓库自带 Plugin CI。
+name: Plugin Index Check
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  plugin-check:
+    name: Verify indexed official example plugins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # setuptools-scm 需要读取 tag
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package and indexed example plugins
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install -e examples/custom_adapter
+          pip install -e examples/plugin_rules
+
+      - name: Run plugin-verify (JSON) and assert indexed plugins healthy
+        run: |
+          python -m anti_shortcut plugin-verify --json > plugin-check-report.json
+          python - <<'EOF'
+          import json
+          d = json.load(open('plugin-check-report.json', encoding='utf-8'))
+          assert d['ok'] is True, d
+          plugins = d['plugins']
+          langs = plugins.get('phase_barrier.languages', {})
+          vals = plugins.get('phase_barrier.validators', {})
+          ints = plugins.get('phase_barrier.interceptors', {})
+          assert 'foo' in langs and langs['foo']['ok'] is True, langs
+          assert 'strict_design' in vals and vals['strict_design']['ok'] is True, vals
+          assert 'deny_vendor' in ints and ints['deny_vendor']['ok'] is True, ints
+          summary = 'plugin-verify OK: groups=%d entries=%s' % (
+              len(plugins),
+              ', '.join('%s/%d' % (g, len(e)) for g, e in sorted(plugins.items())),
+          )
+          print(summary)
+          with open('plugin-check-summary.txt', 'w', encoding='utf-8') as f:
+              f.write(summary + '\n')
+          EOF
+
+      - name: Publish summary to job summary
+        run: |
+          if [ -f plugin-check-summary.txt ]; then
+            echo "### Plugin Index Check" >> "$GITHUB_STEP_SUMMARY"
+            cat plugin-check-summary.txt >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: plugin-check-report
+          path: plugin-check-report.json
+          if-no-files-found: error

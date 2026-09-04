@@ -1,5 +1,16 @@
 * text=auto eol=lf
 
+# 常见文本类型显式统一 LF（v0.34.1）
+*.py text eol=lf
+*.pyi text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.cfg text eol=lf
+*.txt text eol=lf
+*.sh text eol=lf
+
 *.png binary
 *.jpg binary
 *.ico binary

@@ -2,6 +2,21 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.34.1] - 2026-09-04
+
+- **gRPC 教程降级为规划草案（v0.34.1）**：`docs/tutorials/k8s-sidecar-grpc.md` 顶部增加醒目警告
+  （当前版本 sidecar 仅提供 HTTP API，gRPC 服务尚未实现，请勿按 gRPC 接口接入生产）；
+  MkDocs 导航与文档站首页该教程标题同步标注「（规划中）」，消除“文档承诺但代码未实现”的误导。
+- **插件索引自动检查（v0.34.1）**：新增 `.github/workflows/plugin-check.yml`（每周一 06:00 UTC
+  + `workflow_dispatch` 手动触发），安装本仓库两个官方示例插件
+  （`examples/custom_adapter`、`examples/plugin_rules`）后运行
+  `python -m anti_shortcut plugin-verify --json`，断言四类入口点全绿并上传 JSON 报告 artifact；
+  `docs/plugins.md` 补充说明（第三方插件仍走人工收录 + 插件仓库自带 Plugin CI）。
+- **换行符规范化收尾（v0.34.1）**：`.gitattributes` 显式列出常见文本类型
+  （py / pyi / md / yml / yaml / toml / cfg / txt / sh）统一 `eol=lf`；说明 Windows 下旧工作副本
+  `git add` 的 “CRLF will be replaced by LF” 提示属正常的索引规范化（索引与 CI 均为 LF），
+  并在 CONTRIBUTING 记录处理方式。
+
 ## [0.34.0] - 2026-09-04
 
 - **新增 Scala 语言适配器（ScalaAdapter，v0.34.0）**：scalac 单文件语法检查（依赖缺失降级、

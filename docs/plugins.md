@@ -130,3 +130,17 @@ jobs:
 | 插件 | 类型 | 作者 | 说明 |
 |------|------|------|------|
 | （待社区提交） | | | 第一个第三方插件等你来 |
+
+## 索引自动检查（v0.34.1）
+
+主仓库新增 `.github/workflows/plugin-check.yml`：每周一 06:00 UTC 自动运行
+（也可手动 `workflow_dispatch` 触发），安装 `examples/custom_adapter` 与
+`examples/plugin_rules` 两个官方示例插件后执行 `python -m anti_shortcut plugin-verify --json`，
+断言 `foo`（语言适配器）/ `strict_design`（校验器）/ `deny_vendor`（拦截规则）等入口点全部通过，
+并把 JSON 报告作为 artifact（`plugin-check-report.json`）上传供人工抽查。
+
+说明：
+
+- 该检查针对**本仓库官方示例插件**，防止示例随代码演进失效。
+- **第三方插件** 的收录仍走 Issue 模板 + 插件仓库自带 Plugin CI（见上文模板），状态由作者仓库徽章体现；
+  自动轮询第三方插件仓库（`phase-barrier-plugin-index`）属于后续规划，尚未实现。

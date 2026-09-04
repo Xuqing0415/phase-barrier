@@ -17,7 +17,7 @@
 - **证据明确**：每个阶段要求具体可验证的产物（文件、AST 统计、测试退出码与摘要）。
 - **自动校验**：spec 章节检查、测试 AST 分析（函数数量 + 断言）、实现语法检查、测试结果解析，全部自动完成。
 - **可配置**：YAML + Pydantic 配置，可自定义阶段要求、文件模式、测试命令，或关闭某些严格校验。
-- **多语言（v0.3.0+）**：Python / JavaScript/TypeScript / Java / Go / Rust / Ruby / C# / C++ / PHP / .NET 语言适配器，可插拔扩展。
+- **多语言（v0.3.0+）**：Python / JavaScript/TypeScript / Java / Kotlin / Scala / Go / Rust / Swift / Dart / Ruby / C# / C++ / PHP / .NET 语言适配器，可插拔扩展。
 - **K8s sidecar（v0.7.0）**：Agent 容器不挂载门禁目录，通过 sidecar HTTP 代理写入与执行，无法绕过门禁。
 - **状态签名（v0.8.0）**：HMAC-SHA256 签名 state.json，篡改即拒绝启动。
 - **供应链签名（v0.10.0）**：发布流程用 sigstore 对 sdist / wheel 签名。

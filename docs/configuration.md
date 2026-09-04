@@ -102,7 +102,7 @@ coverage_threshold: null        # 设为 80.0 后要求测试输出含覆盖率�
 ### 语言适配（多语言）
 
 ```yaml
-language: swift        # 显式指定：python / javascript / java / kotlin / scala / swift / go / rust / ruby / csharp / dotnet / cpp / php
+language: swift        # 显式指定：python / javascript / java / kotlin / scala / swift / dart / go / rust / ruby / csharp / dotnet / cpp / php
 language_adapter: "my_pkg.module:MyAdapter"   # 或自定义适配器导入路径（优先级最高）
 adapter_options:
   min_tests: 3         # 传递给适配器的选项（各适配器自行解释）
@@ -176,5 +176,5 @@ allow_other_files_any_stage: true  # 是否允许任意阶段写入“其他”�
   去掉 `coverage_threshold`，或自定义 `spec_sections` / `test_file_patterns`。
 - **如何适配非 Python 项目？** 设置 `language` 并核对 `test_file_patterns` /
   `source_file_patterns` / `test_commands`；内置适配器覆盖 Python / JS-TS / Java / Kotlin /
-  Scala / Swift / Go / Rust / Ruby / PHP / C++ / C#（.NET）。
+  Scala / Swift / Dart / Go / Rust / Ruby / PHP / C++ / C#（.NET）。
 - **如何只启用安全规则中的部分？** `rules` 列表按需增删；未列出的规则不生效。

@@ -7,7 +7,7 @@
 
 用法::
 
-    python benchmarks/fuzz_parsers.py                    # 11 目标 x 1000 次
+    python benchmarks/fuzz_parsers.py                    # 12 目标 x 1000 次
     python benchmarks/fuzz_parsers.py --iterations 3000 --json
     python benchmarks/fuzz_parsers.py --fail-fast --max-crash-rate 0
 """
@@ -46,6 +46,7 @@ from anti_shortcut.languages.csharp import (  # noqa: E402
 )
 from anti_shortcut.languages.scala import ScalaAdapter  # noqa: E402
 from anti_shortcut.languages.swift import SwiftAdapter  # noqa: E402
+from anti_shortcut.languages.dart import DartAdapter  # noqa: E402
 
 _TEXT_ALPHABET = (
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \t\n"
@@ -218,6 +219,19 @@ def fuzz_swift_parsers(rng: random.Random, n: int) -> int:
     return crashes
 
 
+def fuzz_dart_parsers(rng: random.Random, n: int) -> int:
+    crashes = 0
+    adapter = DartAdapter()
+    for _ in range(n):
+        try:
+            ok, summary = adapter.parse_test_output(_random_text(rng), _random_exit_code(rng))
+            assert isinstance(ok, bool)
+            assert isinstance(summary, str)
+        except Exception:
+            crashes += 1
+    return crashes
+
+
 def fuzz_adapters_classify(rng: random.Random, n: int) -> int:
     crashes = 0
     adapters = [cls() for cls in LANGUAGE_REGISTRY.values()]
@@ -255,6 +269,7 @@ TARGETS: dict[str, object] = {
     "csharp_parsers": fuzz_csharp_parsers,
     "scala_parsers": fuzz_scala_parsers,
     "swift_parsers": fuzz_swift_parsers,
+    "dart_parsers": fuzz_dart_parsers,
 }
 
 

@@ -176,8 +176,15 @@
   C#/.NET/Scala/Dart 适配器真实工具用例在 macOS CI 强制执行。至此 Linux（v0.16.0 起）/ 
   Windows（v0.42.0 起）/ macOS（v0.43.0 起）三平台真实工具链全量激活。
 
-## 待办 / 已知缺口（截至 v0.43.0）
-- 暂无已知缺口：CI 平台矩阵已在 Linux / Windows（v0.42.0）/ macOS（v0.43.0）三平台全量激活真实
-  语言工具链，原先“macOS 其余真实工具链未装”项已关闭；后续缺口随 Roadmap 迭代再补记。
+- **v0.43.1 已完成**：Windows 证据清单并发读写修复 —— v0.43.0 CI `pytest (Windows 3.12)`
+  偶发 `test_run_fuzz_http_only_smoke` 500，根因同 v0.42.1：`EvidenceManifest` 无锁读
+  `evidence_manifest.json` 会阻塞并发推进线程的 `os.replace`；修复为初始加载 / `reload()` /
+  `record()` 写前重载 / 查询快照全部持伴生文件锁（`evidence_manifest.json.lock`）并改用
+  `_replace_with_retry` 重试；新增并发回归测试 `test_concurrent_record_reload_safe`。
+
+## 待办 / 已知缺口（截至 v0.43.1）
+- 暂无已知缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活；
+  v0.43.0 暴露的 Windows 偶发 `evidence_manifest.json` 并发写入缺陷已在 v0.43.1 修复并补
+  回归测试；后续缺口随 Roadmap 迭代再补记。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

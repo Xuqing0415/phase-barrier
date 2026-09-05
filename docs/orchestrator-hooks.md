@@ -28,6 +28,11 @@ if not result["success"]:
 - `list_stages()`：阶段清单，返回 `[{stage, name, entry, evidence}]`（v0.26.2）。
 - `stage_of(path)`：把文件路径归类到对应阶段证据（spec->1 / test->2 / source->3 / other->None），
   与 `verify-evidence --git-base` 的 `git_impact` 分类一致（v0.26.2）。
+- `get_required_evidence(stage)`：证据库存（只读，v0.45.0），返回完成该阶段所需证据项的现有文件 / 是否满足，
+  结构 `[{stage, name, evidence, kind, files, satisfied}]`；仅判断存在性，完整门禁用 `check` / `advance`。
+- `get_last_test_run()`：返回最近一次测试运行详情（deep copy），未运行过返回 `None`（v0.45.0）。
+- `get_stage_history(stage=None)`：阶段完成历史，每条 `{stage, name, timestamp, evidence}`，可按阶段过滤（v0.45.0）。
+- `has_uncommitted_changes()`：Git 未提交变更检查：有变更 `True` / 干净 `False` / 非仓库或 git 不可用 `None`（v0.45.0）。
 
 CLI 等价调用：`python -m anti_shortcut check --workspace . --stage 2 --json`。
 完整示例见 `examples/orchestrator_hooks/`。

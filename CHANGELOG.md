@@ -2,6 +2,30 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.45.0] - 2026-09-05
+
+- **编排器 SDK 辅助查询扩展（v0.45.0）**：`PhaseBarrier` 新增四个只读辅助查询
+  方法，便于 Alpha-SWE 等编排器在钩子处做更细的决策——
+  `get_required_evidence(stage)`：证据库存视图，结合工作区当前文件与状态记录返回
+  `[{stage, name, evidence, kind, files, satisfied}]`（spec / tests / source /
+  test_run / regression / delivery 六类，仅判存在性，完整门禁仍用 `check` /
+  `advance`）；`get_last_test_run()`：deep copy 最近一次测试运行记录，未运行返回
+  `None`；`get_stage_history(stage=None)`：阶段完成历史（`{stage, name,
+  timestamp, evidence}`），可按阶段过滤；`has_uncommitted_changes()`：`git status
+  --porcelain` 检查工作区未提交变更（有变更 `True` / 干净 `False` / 非仓库或 git
+  不可用 `None`，不抛异常）。`examples/orchestrator_hooks/demo.py`、`docs/api.md`
+  与 `docs/orchestrator-hooks.md` 同步演示 / 收录新方法；新增 13 个 SDK 单测
+  （含真实 git 仓库与 monkeypatch 双路径）。
+- **插件生态自动验证流程（v0.45.0）**：根目录新增机器可读索引 `plugins.json`
+  （name / repo / install / entry_points / last_verified / status，收录两个官方
+  示例插件）；新增 `scripts/verify_plugins.py` —— 安装索引条目后在全新子进程运行
+  `plugin-verify --json`，断言声明入口点全部可用，`--update` 把 status /
+  last_verified 写回（退出码 0 = 全部通过 / 1 = 存在失败）；新增
+  `.github/workflows/plugin-verification.yml`（每周二 05:00 UTC + 手动触发，
+  与 `plugin-check.yml` 周一 06:00 错开）：验证 -> 上传 JSON 报告 artifact ->
+  有变更自动提交到 main；`docs/plugins.md` 新增“索引数据文件与自动验证”章节；
+  新增 20 个脚本单测（schema / 入口点对照 / 安装失败 / 子进程解析 / 写回 / CLI）。
+
 ## [0.44.0] - 2026-09-05
 
 - **Java 适配器输出解析剩余项与框架矩阵回归（v0.44.0）**：

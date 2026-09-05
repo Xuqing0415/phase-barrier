@@ -165,6 +165,18 @@ def main() -> int:
         info = barrier.stage_of(rel)
         print(f"        -> stage_of({rel}) = 阶段 {info['stage']}（{info['kind']}）")
 
+    # ---- 辅助查询（v0.45.0）：证据库存 / 最近测试 / 阶段历史 / git 未提交 ----
+    print("\n[编排器] 辅助查询 get_required_evidence() / get_last_test_run() / get_stage_history() / has_uncommitted_changes()")
+    for ev in barrier.get_required_evidence(6):
+        files = ", ".join(ev["files"]) if ev["files"] else "（记录型）"
+        status = "已满足" if ev["satisfied"] else "未满足"
+        print(f"        -> 阶段 {ev['stage']} {ev['name']}: {status} [{files}]")
+    last = barrier.get_last_test_run()
+    print("        -> get_last_test_run() =", "None" if last is None else f"passed={last.get('passed')} exit_code={last.get('exit_code')}")
+    for rec in barrier.get_stage_history(1):
+        print(f"        -> get_stage_history(1) = 阶段 {rec['stage']} @ {rec['timestamp']}")
+    print("        -> has_uncommitted_changes() =", barrier.has_uncommitted_changes())
+
     # ---- 收尾：状态快照 + 证据校验 ----
     print("\n" + "=" * 72)
     snapshot = barrier.inspect()

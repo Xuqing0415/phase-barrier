@@ -6,8 +6,10 @@ advance 钩子、record_test_run、verify_evidence、CLI check 子命令、向�
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -523,5 +525,197 @@ class TestPhaseBarrierRefresh:
             barrier.refresh()
             after = barrier.inspect()
             assert before == after
+        finally:
+            barrier.close()
+# ---------- v0.45.0：辅助查询扩展 ----------
+
+class TestPhaseBarrierAuxQueries:
+    """PhaseBarrier 辅助查询：get_required_evidence / get_last_test_run /
+    get_stage_history / has_uncommitted_changes（v0.45.0）。"""
+
+    def test_required_evidence_spec_stage(self, tmp_path):
+        _prepare(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            item = barrier.get_required_evidence(1)[0]
+            assert item["stage"] == 1
+            assert item["name"] == STAGES[1]
+            assert item["kind"] == "spec"
+            assert item["files"] == []
+            assert item["satisfied"] is False
+            _write_spec(tmp_path)
+            item = barrier.get_required_evidence(1)[0]
+            assert item["files"] == ["spec.md"]
+            assert item["satisfied"] is True
+            json.dumps(barrier.get_required_evidence(1))  # 编排器透传需 JSON 可序列化
+        finally:
+            barrier.close()
+
+    def test_required_evidence_user_request(self, tmp_path):
+        _prepare(tmp_path)
+        plain = PhaseBarrier(workspace=tmp_path)
+        with_req = PhaseBarrier(workspace=tmp_path, user_request=USER_REQUEST)
+        try:
+            assert plain.get_required_evidence(0)[0]["kind"] == "user_request"
+            assert plain.get_required_evidence(0)[0]["satisfied"] is False
+            assert with_req.get_required_evidence(0)[0]["satisfied"] is True
+        finally:
+            plain.close()
+            with_req.close()
+
+    def test_required_evidence_tests_and_source(self, tmp_path):
+        _prepare(tmp_path)
+        _write_spec(tmp_path)
+        _write_tests(tmp_path)
+        _write_impl(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            ev2 = barrier.get_required_evidence(2)[0]
+            assert ev2["kind"] == "tests"
+            assert ev2["satisfied"] is True
+            assert "test_fib.py" in ev2["files"]
+            ev3 = barrier.get_required_evidence(3)[0]
+            assert ev3["kind"] == "source"
+            assert ev3["satisfied"] is True
+            assert "fib.py" in ev3["files"]
+            assert "spec.md" not in ev3["files"]
+        finally:
+            barrier.close()
+
+    def test_required_evidence_test_run_and_regression(self, tmp_path):
+        _prepare(tmp_path)
+        _write_spec(tmp_path)
+        _write_tests(tmp_path)
+        _write_impl(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            assert barrier.get_required_evidence(4)[0]["satisfied"] is False
+            assert barrier.get_required_evidence(5)[0]["satisfied"] is False
+            ev6 = barrier.get_required_evidence(6)[0]
+            assert ev6["kind"] == "delivery"
+            assert ev6["satisfied"] is True
+
+            barrier.record_test_run(_run_tests(tmp_path))
+            assert barrier.get_required_evidence(4)[0]["kind"] == "test_run"
+            assert barrier.get_required_evidence(4)[0]["satisfied"] is True
+            assert barrier.get_required_evidence(5)[0]["kind"] == "regression"
+            assert barrier.get_required_evidence(5)[0]["satisfied"] is True
+
+            # 源码在测试后发生变更 -> 回归证据不满足（但阶段 4 仍认可已运行）
+            barrier.skill.state.mark_source_change("fib.py", at_epoch=time.time() + 10_000)
+            assert barrier.get_required_evidence(5)[0]["satisfied"] is False
+            assert barrier.get_required_evidence(4)[0]["satisfied"] is True
+        finally:
+            barrier.close()
+
+    @pytest.mark.parametrize("bad", [-1, 7, "2", True, None])
+    def test_required_evidence_invalid_stage(self, tmp_path, bad):
+        _prepare(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            assert barrier.get_required_evidence(bad) == []  # type: ignore[arg-type]
+        finally:
+            barrier.close()
+
+    def test_get_last_test_run_none_and_deep_copy(self, tmp_path):
+        _prepare(tmp_path)
+        _write_spec(tmp_path)
+        _write_tests(tmp_path)
+        _write_impl(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            assert barrier.get_last_test_run() is None
+            barrier.record_test_run(_run_tests(tmp_path))
+            tr = barrier.get_last_test_run()
+            assert tr is not None
+            assert tr["passed"] is True
+            assert "at_epoch" in tr and "exit_code" in tr
+            # 返回必须是 deep copy，外部改动不影响状态机
+            tr["passed"] = False
+            assert barrier.get_last_test_run()["passed"] is True
+        finally:
+            barrier.close()
+
+    def test_get_stage_history_after_full_sop(self, tmp_path):
+        _prepare(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path, user_request=USER_REQUEST)
+        try:
+            _write_spec(tmp_path)
+            assert barrier.advance(2)["success"]
+            _write_tests(tmp_path)
+            assert barrier.advance(3)["success"]
+            _write_impl(tmp_path)
+            assert barrier.advance(4)["success"]
+            assert barrier.record_test_run(_run_tests(tmp_path))["passed"] is True
+            assert barrier.advance(5)["success"]  # 通过 -> 直达交付
+
+            history = barrier.get_stage_history()
+            assert [e["stage"] for e in history] == [0, 1, 2, 3, 4]
+            for entry in history:
+                assert set(entry) == {"stage", "name", "timestamp", "evidence"}
+            spec_records = barrier.get_stage_history(1)
+            assert len(spec_records) == 1
+            assert spec_records[0]["name"] == STAGES[1]
+            assert barrier.get_stage_history(5) == []
+            assert barrier.get_stage_history(99) == []
+        finally:
+            barrier.close()
+
+    def test_has_uncommitted_changes_monkeypatched(self, tmp_path, monkeypatch):
+        _prepare(tmp_path)
+        barrier = PhaseBarrier(workspace=tmp_path)
+        try:
+            class _Proc:
+                def __init__(self, rc: int, out: str):
+                    self.returncode = rc
+                    self.stdout = out
+
+            monkeypatch.setattr(subprocess, "run", lambda *a, **k: _Proc(0, ""))
+            assert barrier.has_uncommitted_changes() is False
+            monkeypatch.setattr(subprocess, "run", lambda *a, **k: _Proc(0, " M fib.py\n"))
+            assert barrier.has_uncommitted_changes() is True
+            # git 不在仓库内（rc=128）
+            monkeypatch.setattr(subprocess, "run", lambda *a, **k: _Proc(128, "fatal: not a git repository"))
+            assert barrier.has_uncommitted_changes() is None
+            # git 不可用 / 调用异常
+            def _missing(*a, **k):
+                raise FileNotFoundError("git")
+            monkeypatch.setattr(subprocess, "run", _missing)
+            assert barrier.has_uncommitted_changes() is None
+
+            def _timeout(*a, **k):
+                raise subprocess.TimeoutExpired("git", 10)
+            monkeypatch.setattr(subprocess, "run", _timeout)
+            assert barrier.has_uncommitted_changes() is None
+        finally:
+            barrier.close()
+
+    def test_has_uncommitted_changes_real_git(self, tmp_path):
+        if shutil.which("git") is None:
+            pytest.skip("git 不可用，跳过真实仓库用例")
+        ws = tmp_path / "repo"
+        ws.mkdir()
+        (ws / ".gitignore").write_text(".agent_gate/\n__pycache__/\n", encoding="utf-8")
+
+        def git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(ws), *args],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+
+        git("init", "-q")
+        git("add", ".gitignore")
+        git("-c", "user.email=t@example.com", "-c", "user.name=test", "commit", "-qm", "init")
+        barrier = PhaseBarrier(workspace=ws)
+        try:
+            assert barrier.has_uncommitted_changes() is False
+            (ws / "new.txt").write_text("x", encoding="utf-8")
+            assert barrier.has_uncommitted_changes() is True
+            (ws / "new.txt").unlink()
+            assert barrier.has_uncommitted_changes() is False
         finally:
             barrier.close()

@@ -45,7 +45,7 @@ pip install phase-barrier        # import anti_shortcut
 | `anti_shortcut.grpc_service` | gRPC 门禁服务（v0.39.0）：8 个 RPC 与 HTTP API 等价；`python -m anti_shortcut.grpc_service` 独立启动 |
 | `anti_shortcut.proto.sidecar_pb2` / `sidecar_pb2_grpc` | gRPC 生成代码（`sidecar.proto`，随包分发；可选依赖 `phase-barrier[grpc]`） |
 | `anti_shortcut.proxy_client.GateClient` | sidecar 客户端（零额外依赖，`urllib`）；被拦截抛 `GateDenied` |
-| `anti_shortcut.sdk.PhaseBarrier` | 编排器钩子 SDK：`check(stage)` / `advance(to_stage)` |
+| `anti_shortcut.sdk.PhaseBarrier` | 编排器钩子 SDK：`check(stage)` / `advance(to_stage)` / `record_test_run` / `verify_evidence` / `list_stages` / `stage_of` 及辅助查询（见下） |
 | `anti_shortcut.proxy` | K8s 透明代理辅助（写 / 执行代理） |
 | `anti_shortcut.init` | `anti_shortcut init`：自动生成带注释的项目配置 |
 

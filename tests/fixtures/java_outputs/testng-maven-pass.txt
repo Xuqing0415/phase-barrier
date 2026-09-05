@@ -1,0 +1,4 @@
+[INFO] Running TestSuite
+[TestNG] Running: testng.xml
+Total tests run: 4, Failures: 0, Skips: 1, Configuration Failures: 0
+[INFO] BUILD SUCCESS

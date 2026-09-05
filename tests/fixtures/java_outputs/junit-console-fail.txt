@@ -1,0 +1,7 @@
+Failures (1):
+  JUnit Jupiter:addBasic(com.example.CalcTest)
+    MethodSource [className = 'com.example.CalcTest', methodName = 'addBasic']
+Test run finished after 223 ms
+[         6 tests found           ]
+[         3 tests successful      ]
+[         3 tests failed          ]

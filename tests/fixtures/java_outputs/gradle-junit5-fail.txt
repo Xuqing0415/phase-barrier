@@ -1,0 +1,7 @@
+> Task :test FAILED
+com.example.CalcTest > [1] add(int, int) FAILED
+    org.opentest4j.AssertionFailedError at CalcTest.java:42
+com.example.CalcTest > addBasic() FAILED
+    java.lang.AssertionError at CalcTest.java:12
+3 tests completed, 2 failed
+BUILD FAILED in 2s

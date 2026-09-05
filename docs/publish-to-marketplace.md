@@ -42,6 +42,21 @@ GitHub 会自动将仓库 Action 上架 / 更新到 Marketplace（in-tree 上架
 - [ ] 示例 / README 引用的版本号与最新 tag 一致（如 `@v0.26.3`）。
 - [ ] CI 的 gate-action 自测 job 覆盖主要模式（inspect / check / advance / exec）。
 
+## 元数据最佳实践（v0.44.0）
+
+`action.yml` 的元数据决定 Marketplace 展示、搜索可发现性与工作流编辑器的参数提示，维护时遵循：
+
+- **description**：英文且精简（50-200 字符），包含核心关键词
+  （如 `stage gate` / `coding agent` / `SOP` / `CI`），不重复 action name。
+- **author**：指向 GitHub 用户名 / 组织（本仓库为 `Xuqing0415`）。
+- **branding**：`icon` + `color` 必填，且在 GitHub 允许集合内
+  （icon 例： `shield` / `lock` / `check`；color 例： `blue` / `green`）。
+- **inputs / outputs**：每个参数都要有单语句 `description`
+  （用途 + 示例值 + 面向那个 mode）；composite action 的
+  `outputs` 必须用 `value: ${{ steps.<id>.outputs.<name> }}` 映射。
+- **自动校验**：`tests/test_action_meta.py` 保证以上约束（长度 /
+  关键词 / author / branding / 参数描述），改动 `action.yml` 后请跑该测试模块。
+
 ## 备选方案：独立仓库（phase-barrier-action）
 
 若希望 Action 与主仓库解耦（例如面向不同受众、独立版本节奏），可另建

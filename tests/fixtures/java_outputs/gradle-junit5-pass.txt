@@ -1,0 +1,5 @@
+> Task :test
+com.example.CalcTest > addBasic() PASSED
+com.example.CalcTest > addNegative() SKIPPED
+4 tests completed, 0 failed, 1 skipped
+BUILD SUCCESSFUL in 1s

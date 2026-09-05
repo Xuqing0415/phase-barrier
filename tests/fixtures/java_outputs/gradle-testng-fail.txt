@@ -1,0 +1,5 @@
+> Task :test FAILED
+com.example.CalcTest > verifyResult FAILED
+    java.lang.AssertionError at CalcTest.java:23
+Total tests run: 3, Failures: 1, Skips: 0
+BUILD FAILED in 1s

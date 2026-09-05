@@ -1,0 +1,5 @@
+[TestNG] Running: testng.xml
+[ERROR] testTimeout(com.example.CalcTest)  FAILED
+[ERROR] org.testng.internal.thread.ThreadTimeoutException
+Total tests run: 6, Failures: 1, Skipped: 2, Configuration Failures: 0
+[INFO] BUILD FAILURE

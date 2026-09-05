@@ -179,3 +179,50 @@ def test_cli_export_evidence_tampered(capsys, tmp_path):
     bundle = json.loads(out)
     assert bundle["verified"] is False
     assert any("被篡改" in v for v in bundle["violations"])
+
+
+# ---------- v0.43.1：并发 record / reload 线程安全（Windows 无共享删除读句柄修复） ----------
+
+def test_concurrent_record_reload_safe(tmp_path):
+    """并发 record / reload / entries 不抛异常，清单最终一致（镜像 v0.42.1 state.json 修复）。"""
+    import threading
+
+    spec = tmp_path / "spec.md"
+    spec.write_text(SPEC, encoding="utf-8")
+    manifest_file = tmp_path / ".agent_gate" / EVIDENCE_MANIFEST_NAME
+    m = EvidenceManifest(manifest_file)
+    errors: list[Exception] = []
+    barrier = threading.Barrier(4)
+
+    def writer() -> None:
+        barrier.wait()
+        try:
+            for _ in range(25):
+                m.record(1, {"spec.md": sha256(spec)})
+                m.reload()
+        except Exception as exc:  # noqa: BLE001
+            errors.append(exc)
+
+    def reader() -> None:
+        barrier.wait()
+        try:
+            for _ in range(25):
+                m.entries()
+                m.is_signed()
+                m.reload()
+        except Exception as exc:  # noqa: BLE001
+            errors.append(exc)
+
+    threads = [threading.Thread(target=writer) for _ in range(2)] + [
+        threading.Thread(target=reader) for _ in range(2)
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert errors == []
+    assert (tmp_path / ".agent_gate" / (EVIDENCE_MANIFEST_NAME + ".lock")).exists()
+    fresh = EvidenceManifest(manifest_file)
+    assert fresh.entries() == {"spec.md": {"stage": 1, "sha256": sha256(spec)}}
+    ok, violations = fresh.verify(tmp_path)
+    assert ok is True and violations == []

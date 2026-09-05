@@ -15,9 +15,15 @@ from pathlib import Path
 from typing import Any
 
 from .paths import sha256_file
+from .state import _file_lock, _replace_with_retry
 
 EVIDENCE_MANIFEST_VERSION = 1
 EVIDENCE_MANIFEST_NAME = "evidence_manifest.json"
+
+
+def _evidence_lock_path(manifest_file: Path) -> Path:
+    """返回证据清单的伴生锁文件路径（同目录 evidence_manifest.json.lock）。"""
+    return manifest_file.with_name(manifest_file.name + ".lock")
 
 
 class EvidenceManifestError(ValueError):
@@ -40,19 +46,23 @@ class EvidenceManifest:
         self.manifest_file = Path(manifest_file)
         self._hmac_key = hmac_key
         self.manifest_file.parent.mkdir(parents=True, exist_ok=True)
-        if self.manifest_file.exists():
-            self._data = self._load()
-        else:
-            self._data = {"version": EVIDENCE_MANIFEST_VERSION, "entries": {}}
+        # 初始加载持伴生文件锁：Windows 上无共享删除的读句柄会阻塞并发 os.replace（同 v0.42.1 state.json 修复）
+        with _file_lock(_evidence_lock_path(self.manifest_file)):
+            if self.manifest_file.exists():
+                self._data = self._load()
+            else:
+                self._data = {"version": EVIDENCE_MANIFEST_VERSION, "entries": {}}
 
     # ---------- 查询 ----------
 
     def entries(self) -> dict[str, dict[str, Any]]:
         """返回 {相对路径: {stage, sha256}} 的副本。"""
-        return {k: dict(v) for k, v in self._data.get("entries", {}).items()}
+        with _file_lock(_evidence_lock_path(self.manifest_file)):
+            return {k: dict(v) for k, v in self._data.get("entries", {}).items()}
 
     def is_signed(self) -> bool:
-        return "sig" in self._data
+        with _file_lock(_evidence_lock_path(self.manifest_file)):
+            return "sig" in self._data
 
     def reload(self) -> None:
         """从磁盘重新加载最新清单（多 Agent 共享时读取他人记录，v0.26.3）。
@@ -61,8 +71,9 @@ class EvidenceManifest:
         当前内存数据（首次创建前的空清单）。若文件被篡改仍会抛
         :class:`EvidenceManifestError`。
         """
-        if self.manifest_file.exists():
-            self._data = self._load()
+        with _file_lock(_evidence_lock_path(self.manifest_file)):
+            if self.manifest_file.exists():
+                self._data = self._load()
 
     # ---------- 记录 ----------
 
@@ -71,13 +82,17 @@ class EvidenceManifest:
 
         同一路径被重复记录时以最新为准（同阶段多次推进只保留最终状态）。
         """
-        entries = self._data.setdefault("entries", {})
-        for rel, digest in sha256_map.items():
-            rel = str(rel).replace("\\", "/").lstrip("/")
-            if not rel or not digest:
-                continue
-            entries[rel] = {"stage": int(stage), "sha256": str(digest)}
-        self._atomic_write()
+        with _file_lock(_evidence_lock_path(self.manifest_file)):
+            # 写前重载最新清单，避免并发 / 多进程推进丢更新（同 v0.42.1 state 语义）
+            if self.manifest_file.exists():
+                self._data = self._load()
+            entries = self._data.setdefault("entries", {})
+            for rel, digest in sha256_map.items():
+                rel = str(rel).replace("\\", "/").lstrip("/")
+                if not rel or not digest:
+                    continue
+                entries[rel] = {"stage": int(stage), "sha256": str(digest)}
+            self._atomic_write()
 
     # ---------- 校验 ----------
 
@@ -89,7 +104,8 @@ class EvidenceManifest:
         :class:`EvidenceTamperedError`），这里只负责文件级比对。
         """
         violations: list[str] = []
-        entries = self._data.get("entries", {})
+        with _file_lock(_evidence_lock_path(self.manifest_file)):
+            entries = {k: dict(v) for k, v in self._data.get("entries", {}).items()}
         if not entries:
             violations.append("证据清单为空：尚未记录任何证据文件")
         for rel, meta in sorted(entries.items()):
@@ -155,7 +171,14 @@ class EvidenceManifest:
             json.dump(self._data, fh, ensure_ascii=False, indent=2)
             fh.flush()
             os.fsync(fh.fileno())
-        os.replace(tmp, self.manifest_file)
+        try:
+            _replace_with_retry(tmp, self.manifest_file)
+        except BaseException:
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+            raise
 
 
 __all__ = [

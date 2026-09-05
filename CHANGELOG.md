@@ -2,6 +2,22 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.43.1] - 2026-09-05
+
+- **Windows 证据清单并发读写修复（v0.43.1）**：v0.43.0 全矩阵 CI 中 `pytest (Windows 3.12)`
+  偶发失败 `test_run_fuzz_http_only_smoke`（sidecar HTTP 模糊 1 次 500）。定位根因与 v0.42.1
+  `state.json` 相同：`EvidenceManifest.__init__` / `reload()` 无锁读取
+  `evidence_manifest.json`，Windows 读句柄默认不共享删除，会阻塞并发推进线程的
+  `os.replace`（PermissionError WinError 5，表现为 `/api/advance` 500）。修复：初始加载、
+  `reload()`、`record()`（写前重载最新清单）与 `entries()` / `is_signed()` / `verify()`
+  快照均持有伴生文件锁（`evidence_manifest.json.lock`）；`_atomic_write()` 改用
+  `_replace_with_retry`（短退避重试 5 次）并清理失败遗留临时文件，锁语义与 v0.42.1
+  `StateManager` 对齐。
+- **测试与文档（v0.43.1）**：新增 `test_concurrent_record_reload_safe`（2 写 2 读线程 x 25 轮
+  并发 record / reload / entries / verify，断言 0 异常且清单可复载一致）；本地 venv312 全量
+  pytest 通过（844 passed，仅 `test_mkdocs_build_strict` 因本机 PATH 解析到无 mkdocs 的解释器
+  而失败，属环境问题、CI 不受影响）；CHANGELOG / Roadmap 记录 v0.43.1 已落地。
+
 ## [0.43.0] - 2026-09-05
 
 - **macOS CI 真实工具链激活（v0.43.0）**：`test-macos` job（Python 3.12 / 3.13）更名为

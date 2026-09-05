@@ -254,6 +254,7 @@ python scripts/auto_discover_plugins.py --update --json   # 结构化摘要（st
 <!-- plugins-index:start -->
 | 插件 | 来源 | 入口点 | 状态 | 最近验证 |
 |------|------|--------|------|----------|
-| phase-barrier-foo-adapter | `./examples/custom_adapter` | languages: foo | passed | 2026-09-05T04:40:30Z |
-| phase-barrier-plugin-example | `./examples/plugin_rules` | validators: strict_design; interceptors: deny_vendor | passed | 2026-09-05T04:40:30Z |
+| phase-barrier-foo-adapter | `./examples/custom_adapter` | languages: foo | passed | 2026-09-05T09:13:39Z |
+| phase-barrier-plugin-example | `./examples/plugin_rules` | validators: strict_design; interceptors: deny_vendor | passed | 2026-09-05T09:13:39Z |
+| Xuqing0415/phase-barrier-plugin-template | `https://github.com/Xuqing0415/phase-barrier-plugin-template` | languages: cpp, csharp, dart, dotnet, go, java, javascript, kotlin, php, python, ruby, rust, scala, swift, demo; validators: require_design_review; interceptors: deny_vendor; integrations: demo_integration | passed | 2026-09-05T09:13:39Z |
 <!-- plugins-index:end -->

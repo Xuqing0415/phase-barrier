@@ -2,6 +2,20 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.46.1] - 2026-09-05
+
+- **自动发现入口点归属修复（v0.46.1）**：手动触发 `plugin-verification.yml` 首次实跑
+  （不等周一 cron）收录官方模板仓库时暴露缺陷——`clone_verify` 原按 `plugin-verify`
+  的 discovered 全量列表收集入口点，把环境中 phase-barrier 自带的 14 个内置语言
+  适配器（同为 `phase_barrier.languages` 入口点）错误归属给候选插件。修复：新增
+  `_entry_points_of_workdir()`，按 `pip install -e` 写入 site-packages 的
+  `direct_url.json` 定位候选发行版，只统计该仓库自声明的 `phase_barrier.*` /
+  `anti_shortcut.*` 入口点并与 `plugin-verify` ok 结果求交，环境基线不再污染收录
+  条目；测试新增 2 个 direct_url 归属用例 + 1 个“内置入口点不误录”回归用例
+  （`tests/test_auto_discover.py` 共 20 个用例全绿）。据此先移除归属错误的自动条目，
+  再手动触发工作流重新收录（入口点仅含模板自声明的 demo /
+  require_design_review / deny_vendor / demo_integration）。
+
 ## [0.46.0] - 2026-09-05
 
 - **第三方插件仓库自动轮询（v0.46.0）**：插件索引从“人工维护 + 自动验证”升级为

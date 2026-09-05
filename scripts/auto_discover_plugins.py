@@ -4,6 +4,7 @@
 ``plugins.json`` 中的条目；对新候选执行 ``git clone -> pip install -e ->
 anti-shortcut plugin-verify --json`` 全链路验证，通过后以 ``auto_discovered:
 true`` 加入索引并同步 ``docs/plugins.md`` 状态表，实现插件索引维护的自动化
+（入口点归属到该仓库发行版，避免把环境中既有入口点误录为候选）
 （v0.45.0 的 ``verify_plugins.py`` 负责“验证既有条目”，本脚本负责“发现并收录
 新条目”，周期 workflow 先发现再全量验证）。
 
@@ -23,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import importlib.metadata
 import json
 import os
 import subprocess
@@ -154,6 +156,47 @@ def _run(cmd: list[str], timeout: float = 300) -> subprocess.CompletedProcess:
     )
 
 
+def _entry_points_of_workdir(workdir: Path, dists=None) -> dict[str, list[str]]:
+    """返回已安装发行版中归属该 clone 目录的插件入口点（按 direct_url 定位）。
+
+    候选仓库 ``pip install -e`` 后会在 site-packages 写入指向克隆目录的
+    ``direct_url.json``；据此只统计该仓库自己声明的插件入口点，
+    避免把环境中 phase-barrier 内置适配器等既有入口点错误归属给
+    候选插件（v0.46.1 修复：内置语言适配器也是
+    ``phase_barrier.languages`` 入口点）。
+    """
+    from urllib.parse import urlparse
+    from urllib.request import url2pathname
+
+    target = str(Path(workdir).resolve()).lower()
+    candidates = importlib.metadata.distributions() if dists is None else dists
+    for dist in candidates:
+        try:
+            text = dist.read_text("direct_url.json")
+        except Exception:
+            text = None
+        if not text:
+            continue
+        try:
+            url = (json.loads(text).get("url") or "").strip()
+        except Exception:
+            continue
+        if not url.startswith("file://"):
+            continue
+        try:
+            source = str(Path(url2pathname(urlparse(url).path)).resolve()).lower()
+        except Exception:
+            continue
+        if source != target:
+            continue
+        groups: dict[str, list[str]] = {}
+        for ep in dist.entry_points:
+            if ep.group.startswith("phase_barrier.") or ep.group.startswith("anti_shortcut."):
+                groups.setdefault(ep.group, []).append(ep.name)
+        return groups
+    return {}
+
+
 def clone_verify(
     repo: dict,
     *,
@@ -198,12 +241,11 @@ def clone_verify(
         except json.JSONDecodeError as exc:
             return False, {}, f"plugin-verify 输出解析失败: {exc}"
         results = payload.get("plugins") or {}
-        discovered = payload.get("discovered") or {}
+        own = _entry_points_of_workdir(workdir)
         entry_points: dict[str, list[str]] = {}
         broken: list[str] = []
         total = 0
-        for group, items in discovered.items():
-            names = [item.get("name") for item in items if item.get("name")]
+        for group, names in own.items():
             if not names:
                 continue
             total += len(names)
@@ -218,7 +260,7 @@ def clone_verify(
             if ok_names:
                 entry_points[group] = ok_names
         if total == 0:
-            return False, {}, "未发现任何 phase_barrier.* 插件入口点"
+            return False, {}, "未发现任何属于该仓库的插件入口点（direct_url 归属失败或未声明 entry_points）"
         if broken:
             return False, {}, "存在未通过验证的入口点: " + "；".join(broken)
         name = full_name or html_url.rstrip("/").rsplit("/", 1)[-1]

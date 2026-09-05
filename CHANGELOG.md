@@ -2,6 +2,15 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.48.1] - 2026-09-05
+
+- **fix: E2E 测试兼容 Python 3.10（v0.48.1）**：`tests/test_auto_discover_e2e.py`
+  原用 `tomllib` 解析 fixture pyproject（Python 3.11+ 才入标准库），导致 CI
+  Python 3.10 job 收集阶段 ImportError 整文件失败（3.11-3.14 矩阵不受影响）。
+  改为正则解析入口点组（`_SECTION_RE` / `_ENTRY_RE`），解析结果与 TOML 声明
+  一致（4 组 4 入口点）；本地 3.12 全量相关测试通过。库代码无运行时改动，
+  v0.48.0 的 PyPI 包不受影响。
+
 ## [0.48.0] - 2026-09-05
 
 - **自定义域名文档与检查（任务 1）**：新增 `docs/custom-domain.md`（把

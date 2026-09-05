@@ -2,6 +2,24 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.47.0] - 2026-09-05
+
+- **插件状态页接入文档站（v0.47.0）**：新增 `docs/plugin-status.md` 作为插件索引
+  状态的官方展示页（mkdocs「集成与生态 -> 插件状态」）；`verify_plugins.py
+  --sync-docs` 默认同步目标从 `docs/plugins.md` 迁到该页，状态表新增「收录」
+  （自动发现 / 官方·人工）与「提交」（自动条目验证 SHA 前 8 位）两列；
+  `docs/plugins.md` 改为指南并链接状态页（移除原被覆盖的旧同步表）；周期
+  workflow 提交与文档说明同步更新。
+- **自动发现条目增量刷新（v0.47.0）**：`scripts/auto_discover_plugins.py` 对已收录
+  自动条目不再“只增不刷”——按 GitHub Search 结果命中条目后先用
+  `git ls-remote <clone_url> HEAD` 与 `last_commit_sha` 对比，SHA 不一致才重新
+  clone -> install -> plugin-verify 并整条更新（含新增入口点）；dry-run 打印
+  `would-refresh`，`--update` 摘要新增 `refresh_candidates / refreshed /
+  refresh_failed`，刷新失败时条目标记 `failed` 并保留最近一次通过验证的 SHA
+  （下轮可重试）；新增 `_remote_head_sha` / `_existing_positions`，测试 +7
+  （ls-remote 解析 x2 + 增量刷新场景 x5），`tests/test_auto_discover.py` 共 27 个
+  用例全绿；索引同步渲染测试更新为 7 列。
+
 ## [0.46.1] - 2026-09-05
 
 - **自动发现入口点归属修复（v0.46.1）**：手动触发 `plugin-verification.yml` 首次实跑

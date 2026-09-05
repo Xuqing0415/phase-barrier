@@ -81,7 +81,6 @@ def _index_path(tmp_path: Path, container: dict | None = None) -> Path:
     return path
 
 
-
 class _FakeTempDir:
     """用工作区下 tmp_path 替代系统 %TEMP%，避免 Windows 沙箱下清理权限问题。"""
 
@@ -254,7 +253,6 @@ class TestCloneVerify:
         assert not ok and "pip install 失败" in reason
 
 
-
 class TestEntryPointAttribution:
     class _FakeDist:
         def __init__(self, url: str, eps: list[tuple[str, str]]):
@@ -302,6 +300,7 @@ class TestDiscover:
     def test_dry_run_no_write(self, tmp_path, monkeypatch):
         path = _index_path(tmp_path)
         monkeypatch.setattr(ad, "github_search", lambda *a, **k: [_repo("a/new-one"), _repo(fork=True), _repo("owner/plugin-demo")])
+        monkeypatch.setattr(ad, "_remote_head_sha", lambda url: "a" * 40)
 
         def boom(*a, **k):
             raise AssertionError("dry-run 不应验证候选")
@@ -320,6 +319,7 @@ class TestDiscover:
     def test_update_adds_and_syncs(self, tmp_path, monkeypatch):
         path = _index_path(tmp_path)
         monkeypatch.setattr(ad, "github_search", lambda *a, **k: [_repo("owner/plugin-demo"), _repo("owner/brand-new")])
+        monkeypatch.setattr(ad, "_remote_head_sha", lambda url: "a" * 40)
         monkeypatch.setattr(ad, "clone_verify", lambda repo, **k: (True, _entry(name=repo["full_name"], repo=repo["html_url"]), ""))
         synced = []
         monkeypatch.setattr(ad.verify_plugins, "sync_index_docs", lambda index: synced.append(index))
@@ -371,14 +371,157 @@ class TestDiscover:
         assert len(ad.verify_plugins.load_index(path)) == 1
 
 
+class TestLsRemote:
+    def test_parses_head_sha(self, monkeypatch):
+        import subprocess as sp
+
+        sha = "c" * 40
+        monkeypatch.setattr(
+            ad,
+            "_run",
+            lambda cmd, timeout=60: sp.CompletedProcess(cmd, 0, stdout=f"{sha}\tHEAD\n", stderr=""),
+        )
+        assert ad._remote_head_sha("https://github.com/a/b.git") == sha
+
+    def test_failure_and_empty_output(self, monkeypatch):
+        import subprocess as sp
+
+        monkeypatch.setattr(
+            ad,
+            "_run",
+            lambda cmd, timeout=60: sp.CompletedProcess(cmd, 1, stdout="", stderr="boom"),
+        )
+        assert ad._remote_head_sha("https://github.com/a/b.git") == ""
+        monkeypatch.setattr(
+            ad,
+            "_run",
+            lambda cmd, timeout=60: sp.CompletedProcess(cmd, 0, stdout="", stderr=""),
+        )
+        assert ad._remote_head_sha("https://github.com/a/b.git") == ""
+        assert ad._remote_head_sha("") == ""  # 空 URL 不执行 git
+
+
+class TestDiscoverRefresh:
+    """v0.47.0: 已收录自动条目的增量刷新（git ls-remote 对比 last_commit_sha）。"""
+
+    def test_refresh_detected_when_sha_changed_dry_run(self, tmp_path, monkeypatch):
+        path = _index_path(tmp_path)
+        monkeypatch.setattr(ad, "github_search", lambda *a, **k: [_repo("owner/plugin-demo")])
+        monkeypatch.setattr(ad, "_remote_head_sha", lambda url: "c" * 40)
+
+        def boom(*a, **k):
+            raise AssertionError("dry-run 不应重新验证候选")
+
+        monkeypatch.setattr(ad, "clone_verify", boom)
+        summary = ad.discover(path, dry_run=True)
+        assert summary["repos_seen"] == 1
+        assert summary["already_indexed"] == 0
+        assert summary["candidates"] == 0
+        assert len(summary["refresh_candidates"]) == 1
+        cand = summary["refresh_candidates"][0]
+        assert cand["name"] == "owner/plugin-demo"
+        assert cand["old_sha"] == "a" * 40 and cand["new_sha"] == "c" * 40
+        assert summary["index_updated"] is False
+        assert len(json.loads(path.read_text(encoding="utf-8"))["plugins"]) == 2
+
+    def test_update_refreshes_auto_entry(self, tmp_path, monkeypatch):
+        path = _index_path(tmp_path)
+        monkeypatch.setattr(ad, "github_search", lambda *a, **k: [_repo("owner/plugin-demo")])
+        monkeypatch.setattr(ad, "_remote_head_sha", lambda url: "c" * 40)
+        monkeypatch.setattr(
+            ad,
+            "clone_verify",
+            lambda repo, **k: (
+                True,
+                _entry(
+                    name=repo["full_name"],
+                    repo=repo["html_url"],
+                    last_commit_sha="c" * 40,
+                    entry_points={"phase_barrier.languages": ["demo", "new_lang"]},
+                ),
+                "",
+            ),
+        )
+        synced = []
+        monkeypatch.setattr(ad.verify_plugins, "sync_index_docs", lambda index: synced.append(index))
+        summary = ad.discover(path, dry_run=False)
+        assert summary["refreshed"] == ["owner/plugin-demo"]
+        assert summary["added"] == [] and summary["candidates"] == 0
+        assert summary["index_updated"] is True and len(synced) == 1
+        written = json.loads(path.read_text(encoding="utf-8"))
+        entry = next(e for e in written["plugins"] if e["name"] == "owner/plugin-demo")
+        assert entry["last_commit_sha"] == "c" * 40
+        assert entry["entry_points"] == {"phase_barrier.languages": ["demo", "new_lang"]}
+        assert entry["status"] == "passed"
+
+    def test_update_refresh_failure_marks_failed_keeps_sha(self, tmp_path, monkeypatch):
+        path = _index_path(tmp_path)
+        monkeypatch.setattr(ad, "github_search", lambda *a, **k: [_repo("owner/plugin-demo")])
+        monkeypatch.setattr(ad, "_remote_head_sha", lambda url: "c" * 40)
+        monkeypatch.setattr(ad, "clone_verify", lambda repo, **k: (False, {}, "入口点验证失败: boom"))
+        synced = []
+        monkeypatch.setattr(ad.verify_plugins, "sync_index_docs", lambda index: synced.append(index))
+        summary = ad.discover(path, dry_run=False)
+        assert summary["refreshed"] == []
+        assert len(summary["refresh_failed"]) == 1
+        assert "boom" in summary["refresh_failed"][0]["reason"]
+        assert summary["index_updated"] is True and len(synced) == 1
+        written = json.loads(path.read_text(encoding="utf-8"))
+        entry = next(e for e in written["plugins"] if e["name"] == "owner/plugin-demo")
+        assert entry["status"] == "failed"
+        assert entry["last_commit_sha"] == "a" * 40  # 保留最近一次通过验证的 SHA，下轮可重试
+
+    def test_no_refresh_when_sha_unchanged(self, tmp_path, monkeypatch):
+        path = _index_path(tmp_path)
+        monkeypatch.setattr(ad, "github_search", lambda *a, **k: [_repo("owner/plugin-demo")])
+        monkeypatch.setattr(ad, "_remote_head_sha", lambda url: "a" * 40)
+
+        def boom(*a, **k):
+            raise AssertionError("SHA 未变不应重新验证")
+
+        monkeypatch.setattr(ad, "clone_verify", boom)
+        summary = ad.discover(path, dry_run=False)
+        assert summary["already_indexed"] == 1
+        assert summary["refresh_candidates"] == []
+        assert summary["refreshed"] == []
+        assert summary["index_updated"] is False
+
+    def test_non_auto_entry_never_refreshed(self, tmp_path, monkeypatch):
+        container = {
+            "plugins": [
+                _entry(
+                    name="owner/manual",
+                    repo="https://github.com/owner/manual",
+                    install="git+https://github.com/owner/manual.git#egg=manual",
+                    auto_discovered=False,
+                    last_commit_sha=None,
+                ),
+            ],
+            "auto_discovery": {"github_topic": "phase-barrier-plugin", "enabled": True},
+        }
+        path = _index_path(tmp_path, container)
+        monkeypatch.setattr(ad, "github_search", lambda *a, **k: [_repo("owner/manual")])
+        monkeypatch.setattr(ad, "_remote_head_sha", lambda url: "c" * 40)
+
+        def boom(*a, **k):
+            raise AssertionError("人工条目不应刷新")
+
+        monkeypatch.setattr(ad, "clone_verify", boom)
+        summary = ad.discover(path, dry_run=False)
+        assert summary["already_indexed"] == 1
+        assert summary["refresh_candidates"] == []
+        assert summary["index_updated"] is False
+
+
 class TestMainCli:
     def test_main_dry_run_prints_candidates(self, tmp_path, monkeypatch, capsys):
         path = _index_path(tmp_path)
         monkeypatch.setattr(ad, "discover", lambda *a, **k: {
             "enabled": True, "topic": "phase-barrier-plugin", "dry_run": True,
             "repos_seen": 3, "already_indexed": 1, "candidates": 1,
-            "candidate_repos": ["https://github.com/a/b"], "added": [],
-            "failures": [], "index_updated": False, "docs_synced": False,
+            "candidate_repos": ["https://github.com/a/b"], "refresh_candidates": [],
+            "added": [], "failures": [], "refreshed": [], "refresh_failed": [],
+            "index_updated": False, "docs_synced": False,
         })
         rc = ad.main(["--index", str(path), "--dry-run"])
         assert rc == 0
@@ -389,7 +532,8 @@ class TestMainCli:
         monkeypatch.setattr(ad, "discover", lambda *a, **k: {
             "enabled": True, "topic": "phase-barrier-plugin", "dry_run": False,
             "repos_seen": 1, "already_indexed": 0, "candidates": 1,
-            "candidate_repos": [], "added": ["owner/x"], "failures": [],
+            "candidate_repos": [], "refresh_candidates": [], "added": ["owner/x"],
+            "failures": [], "refreshed": [], "refresh_failed": [],
             "index_updated": True, "docs_synced": True,
         })
         rc = ad.main(["--index", str(path), "--update", "--json"])

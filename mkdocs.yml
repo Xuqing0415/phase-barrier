@@ -58,6 +58,7 @@ nav:
   - 集成与生态:
       - Agent 框架集成: integrations.md
       - 插件与生态: plugins.md
+      - 插件状态: plugin-status.md
       - K8s 部署: k8s.md
       - 最佳实践: best-practices.md
   - 教程:

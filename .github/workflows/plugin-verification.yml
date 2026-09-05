@@ -1,11 +1,12 @@
-# v0.46.0: 插件索引自动发现 + 自动验证（plugins.json 驱动）
+# v0.47.0: 插件索引自动发现 + 增量刷新 + 自动验证（plugins.json 驱动）
 # 每周一 03:00 UTC + 手动触发（与 plugin-check.yml 周一 06:00 错开）。
 # 第一步 auto_discover_plugins.py：按 GitHub topic 搜索第三方仓库，过滤已收录
 # 条目，对候选执行 clone -> pip install -e -> plugin-verify，通过则以
-# auto_discovered: true 收录并同步 docs/plugins.md（--update）。
+# auto_discovered: true 收录并同步 docs/plugin-status.md（--update）；对已收录
+# 自动条目的新提交（git ls-remote 与 last_commit_sha 不一致）做增量刷新。
 # 第二步 verify_plugins.py：安装索引全部条目并运行 plugin-verify（子进程），
 # 把最新 status / last_verified 写回 plugins.json，并把状态表同步到
-# docs/plugins.md（--update --sync-docs）；有变更则自动提交到 main，
+# docs/plugin-status.md 插件状态页（--update --sync-docs）；有变更则自动提交到 main，
 # 验证报告作为 artifact 上传。GitHub Search 使用仓库内置 GITHUB_TOKEN。
 name: Plugin Verification and Discovery
 
@@ -86,7 +87,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add plugins.json docs/plugins.md
+          git add plugins.json docs/plugin-status.md docs/plugins.md
           if git diff --cached --quiet; then
             echo "plugins.json 无变更，跳过提交"
           else

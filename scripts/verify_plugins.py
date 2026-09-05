@@ -30,7 +30,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INDEX = REPO_ROOT / "plugins.json"
 DOCS_PLUGINS = REPO_ROOT / "docs" / "plugins.md"
-# docs/plugins.md 中“当前索引状态”表的自动同步标记（--sync-docs）
+DOCS_PLUGIN_STATUS = REPO_ROOT / "docs" / "plugin-status.md"
+# docs/plugin-status.md 插件状态页的自动同步标记（--sync-docs）；
+# 旧版本中 docs/plugins.md 嵌入表格也使用同一组标记，保持兼容
 MARK_START = "<!-- plugins-index:start -->"
 MARK_END = "<!-- plugins-index:end -->"
 
@@ -253,14 +255,19 @@ def _short_group(group: str) -> str:
 
 
 def render_index_table(index: list[dict]) -> str:
-    """把索引条目渲染为 Markdown 表格（不含同步标记）。"""
+    """把索引条目渲染为 Markdown 表格（不含同步标记）。
+
+    列：插件 / 来源 / 收录（自动发现 vs 官方/人工）/
+    入口点 / 状态 / 最近验证 / 提交 SHA（自动收录条目）。
+    """
     lines = [
-        "| 插件 | 来源 | 入口点 | 状态 | 最近验证 |",
-        "|------|------|--------|------|----------|",
+        "| 插件 | 来源 | 收录 | 入口点 | 状态 | 最近验证 | 提交 |",
+        "|------|------|------|--------|------|----------|------|",
     ]
     for entry in index:
         name = entry.get("name") or "<unnamed>"
         repo = entry.get("repo") or entry.get("install") or "—"
+        source_kind = "自动发现" if entry.get("auto_discovered") else "官方/人工"
         ep_parts = []
         for group, names in _group_and_names(entry):
             label = _short_group(group)
@@ -268,17 +275,21 @@ def render_index_table(index: list[dict]) -> str:
         eps = "; ".join(ep_parts) if ep_parts else "—"
         status = entry.get("status", "unverified")
         verified = entry.get("last_verified") or "—"
-        lines.append(f"| {name} | `{repo}` | {eps} | {status} | {verified} |")
+        sha = ((entry.get("last_commit_sha") or "")[:8]) or "—"
+        lines.append(f"| {name} | `{repo}` | {source_kind} | {eps} | {status} | {verified} | {sha} |")
     return "\n".join(lines)
 
 
 def sync_index_docs(index: list[dict], path: Path | None = None) -> None:
-    """把 plugins.json 状态表同步到 docs/plugins.md（替换两个标记之间的内容）。
+    """把 plugins.json 状态表同步到 docs/plugin-status.md 插件状态页
+    （替换两个标记之间的内容）。
 
-    文档站（mkdocs）无运行时 JS，故采用“提交时同步”：周期 workflow 运行
-    ``--update --sync-docs`` 后，plugins.json 与文档表格一同更新并自动提交。
+    v0.47.0 起默认目标为 docs/plugin-status.md（文档站状态页）；仍可
+    传入任意路径同步（含旧的 docs/plugins.md 嵌入表格）。
+    文档站（mkdocs）无运行时 JS，故采用“提交时同步”：周期 workflow
+    运行 ``--update --sync-docs`` 后，plugins.json 与状态页一同更新并自动提交。
     """
-    target = Path(path) if path is not None else DOCS_PLUGINS
+    target = Path(path) if path is not None else DOCS_PLUGIN_STATUS
     text = target.read_text(encoding="utf-8")
     block = f"{MARK_START}\n{render_index_table(index)}\n{MARK_END}"
     if MARK_START in text and MARK_END in text:
@@ -298,7 +309,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--update", action="store_true", help="验证后把 status / last_verified 写回索引")
     parser.add_argument("--json", action="store_true", help="stdout 输出结构化报告")
     parser.add_argument("--no-install", action="store_true", help="跳过条目安装（插件须已安装）")
-    parser.add_argument("--sync-docs", action="store_true", help="把索引状态表同步到 docs/plugins.md（需文件内含同步标记）")
+    parser.add_argument("--sync-docs", action="store_true", help="把索引状态表同步到 docs/plugin-status.md 插件状态页（需文件内含同步标记）")
     args = parser.parse_args(argv)
 
     index_path = Path(args.index)
@@ -308,7 +319,7 @@ def main(argv: list[str] | None = None) -> int:
         update_index(index_path, index, report)
     if args.sync_docs:
         sync_index_docs(index)
-        print(f"docs/plugins.md 索引状态表已同步（{len(index)} 个条目）")
+        print(f"docs/plugin-status.md 插件状态页已同步（{len(index)} 个条目）")
     if args.json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:

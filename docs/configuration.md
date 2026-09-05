@@ -61,17 +61,18 @@ python -m anti_shortcut init --with-coverage --rules no_path_traversal,no_shell_
 | `audit_remote_spool_dir` | Union | `None` / 空 |  |
 | `protect_gate_dir` | bool | `True` |  |
 | `allow_other_files_any_stage` | bool | `True` |  |
-| `semantic` | dict | 全关 | 语义级校验总配置（v0.49.0）：`requirement_coverage` / `mutation_score` / `plugin_options`，见「语义级校验（v0.49.0）」 |
+| `semantic` | dict | 全关 | 语义级校验总配置（v0.50.0）：`requirement_coverage` / `mutation_score` / `spec_specificity` / `test_assertion_quality` / `plugin_options`，见「语义级校验（v0.50.0）」 |
 
 > 说明：`rules`（内置安全规则包列表）与 `rules_options`（规则选项，如
 > `license_header`）是 v0.26.0 新增字段，见下文「内置安全规则包」。
 
 
 
-## 语义级校验（v0.49.0）
+## 语义级校验（v0.50.0）
 
-结构校验之上的可选语义增强（需求追踪 + Python 变异测试），默认全部关闭，
-启用后不满足即阻止阶段推进。完整说明见 [语义级校验](semantic-validation.md)。
+结构校验之上的可选语义增强（需求追踪 + Python 变异测试 + spec 具体性 +
+测试断言质量），默认全部关闭，启用后不满足即阻止阶段推进。完整说明见
+[语义级校验](semantic-validation.md)。
 
 ```yaml
 semantic:
@@ -87,6 +88,19 @@ semantic:
     seed: 42
     # python_bin / command 可覆盖测试命令
     stages: [4]
+  spec_specificity:          # spec 具体性五维校验（阶段 1），防“套话 spec”
+    enabled: true
+    min_entities: 5          # 具体实体（fib / /api/login / token=）下限
+    min_signatures: 2        # 接口签名标记下限
+    min_decision_phrases: 1  # 明确技术决策下限
+    min_requirement_anchors: 2  # 需求锚点命中下限（0 关闭该子检查）
+    max_filler_hits: 1       # 套话句式命中上限
+    # filler_patterns: []    # 可覆盖默认套话正则（默认 8 条）
+    stages: [1]
+  test_assertion_quality:    # 测试断言质量（阶段 2，仅 Python），防 assert True
+    enabled: true
+    strict: true             # true=弱函数即拒绝；false=仅警告
+    stages: [2]
   plugin_options:            # 第三方语义校验器配置（按 name 开关）
     my_semantic:
       enabled: true

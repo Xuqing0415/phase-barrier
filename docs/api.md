@@ -29,7 +29,7 @@ pip install phase-barrier        # import anti_shortcut
 | `anti_shortcut.plugins.verify_plugins` | 入口点插件自动验证（`plugin-verify`） |
 
 
-## 语义级校验（v0.49.0）
+## 语义级校验（v0.50.0）
 
 | 符号 | 说明 |
 |------|------|
@@ -37,6 +37,10 @@ pip install phase-barrier        # import anti_shortcut
 | `anti_shortcut.semantic.SemanticCheckResult` | 单次检查结果（`ok` / `message` / `evidence`） |
 | `anti_shortcut.semantic.RequirementCoverageValidator` | 需求追踪：spec `REQ-001` -> 测试 `# REQ-001` 引用（阶段 2） |
 | `anti_shortcut.semantic.MutationScoreValidator` | Python AST 变异测试：存活变异体过多即测试质量不足（阶段 4） |
+| `anti_shortcut.semantic.SpecSpecificityValidator` | spec 具体性五维校验：实体 / 签名 / 技术决策 / 需求锚点 / 套话句式（阶段 1） |
+| `anti_shortcut.semantic.TestAssertionQualityValidator` | 测试断言质量：拒绝 `assert True` 等纯常数断言，仅 Python（阶段 2） |
+| `anti_shortcut.semantic.extract_request_anchors` / `extract_concrete_entities` / `extract_interface_signatures` | spec 具体性提取辅助（需求锚点 / 具体实体 / 接口签名，供自定义校验器复用） |
+| `anti_shortcut.semantic.analyze_spec_specificity` / `analyze_test_assertion_quality` | 五维分析 / 断言质量分析入口（返回结构化明细） |
 | `anti_shortcut.semantic.register_semantic_validator` / `load_semantic_plugins` | 进程内注册 / 加载入口点语义校验器（`phase_barrier.semantic_validators`） |
 | `anti_shortcut.semantic.run_semantic_checks` | 汇总执行启用的语义校验器，任一失败即阻止推进；返回 `(ok, message, evidence)` |
 | `anti_shortcut.semantic.extract_requirement_ids` / `extract_test_references` | REQ 条目 / 测试引用提取（供自定义校验器复用） |

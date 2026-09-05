@@ -13,6 +13,11 @@
 - ``MutationScoreValidator``（变异测试，v0.49.0）：对实现做确定性 AST 变异
   （运算符 / 布尔 / 比较翻转），用工作区现有测试集逐个运行变异体；存活变异体
   越多说明测试越弱，防“空测试 / 假断言”。v0.49.0 仅支持 Python 项目。
+- ``SpecSpecificityValidator``（spec 具体性，v0.50.0）：对 spec 做五维检查——
+  具体实体密度 / 接口签名 / 明确技术决策 / 用户需求锚点 / 套话句式命中上限，
+  拒绝只含章节标题的“278 字套话”式 spec。
+- ``TestAssertionQualityValidator``（断言质量，v0.50.0）：AST 检查测试断言是否
+  引用真实值 / 调用（非 `assert True` 等纯常数断言），防空壳测试。
 
 第三方（含 LLM 审查）语义校验器通过入口点组
 ``phase_barrier.semantic_validators`` 注册（与语言适配器 / 阶段校验器 /
@@ -55,6 +60,15 @@ __all__ = [
     "extract_requirement_ids",
     "extract_test_references",
     "generate_mutations",
+    "SpecSpecificityValidator",
+    "TestAssertionQualityValidator",
+    "analyze_spec_specificity",
+    "analyze_test_assertion_quality",
+    "extract_request_anchors",
+    "extract_concrete_entities",
+    "extract_interface_signatures",
+    "count_decision_phrases",
+    "count_filler_hits",
 ]
 
 SEMANTIC_VALIDATOR_ENTRY_POINT_GROUP = "phase_barrier.semantic_validators"
@@ -520,11 +534,355 @@ class MutationScoreValidator(SemanticValidator):
         )
 
 
+# ---------- 深度补全第一层（v0.50.0）：spec 具体性 + 测试断言质量 ----------
+
+# 需求锚点提取：CJK 段按双字窗口取词，过滤“泛指词 / 虚词”字符
+_CJK_STOP_BIGRAMS = frozenset({
+    # 空泛 / 泛指双字词：不作为需求锚点（避免“实现 / 函数”之类凑数）
+    "实现", "函数", "模块", "一个", "用户", "需要", "进行", "提供", "支持",
+    "使用", "设计", "方案", "系统", "服务", "功能", "方法", "接口", "完整",
+    "相关", "相应", "满足", "各种", "场景", "技术", "因素", "确保", "后续",
+    "阶段", "细节", "补充", "细化", "优质", "合理", "高效", "稳定", "扩展",
+    "能够", "要求", "能力", "动态", "通用", "整体",
+})
+
+_CJK_STOP_CHARS = frozenset(
+    "的一了是在和与为对把请要让会能将并及这那其它们被就也都很等或但而于之中上下从向以可应需做用使进"
+    "行给出到过还后前内外时再才只个有没不也"
+)
+_LATIN_STOPWORDS = frozenset({
+    "the", "to", "and", "for", "with", "a", "an", "of", "in", "on", "by",
+    "at", "from", "that", "this", "please", "implement", "function", "add",
+    "make", "write", "create", "need", "use", "return", "should", "will",
+})
+_PY_KEYWORDS = frozenset({
+    "def", "class", "return", "import", "from", "if", "else", "elif", "for",
+    "while", "in", "not", "and", "or", "is", "None", "True", "False", "raise",
+    "with", "as", "try", "except", "finally", "lambda", "pass", "break",
+    "continue", "yield", "global", "nonlocal", "assert", "del",
+})
+
+_ENTITY_RE = re.compile(
+    r"(?:`[^`]+`|"
+    r"(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]*(?=\s*\()|"
+    r"(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]*(?=\s*:)|"
+    r"(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]*(?=\s*=[^=])|"
+    r"(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]*::|"
+    r"\b(?:GET|POST|PUT|DELETE|PATCH)\s+/[A-Za-z0-9_/{{}}.-]+)"
+)
+_SIG_BULLET_RE = re.compile(
+    r"^(?:[-*]\s*)?(?:函数|方法|接口|输入|输出|参数|返回|异常|请求|响应|路径|字段|属性)\s*[:：]"
+)
+_DECISION_RE = re.compile(
+    r"(?:采用|选择|优先|选用|基于|引入|使用|依赖|放弃)[^。；\n]{0,40}?"
+    r"(?:而非|而不是|避免|不采用|不用|替代|原因|理由|权衡|对比|兼容|迁移|便于|以免|防止|纯函数|无副作用)",
+    re.IGNORECASE,
+)
+_LATIN_ID_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
+
+def extract_request_anchors(request: str) -> list[str]:
+    """从用户原始需求提取锚点词（latin 标识符 + 中文双字领域词，保序去重）。
+
+    中文不做分词：对连续 CJK 段做 2-gram 窗口并丢弃含虚词字符的窗口，既能保留
+    “斐波那契 / 数列”等领域词，又避免“实现 / 函数”等泛指词凑数。
+    """
+    anchors: list[str] = []
+    for tok in _LATIN_ID_RE.findall(request):
+        if tok.lower() in _LATIN_STOPWORDS:
+            continue
+        if tok not in anchors:
+            anchors.append(tok)
+    for seg in re.findall(r"[\u4e00-\u9fff]+", request):
+        if len(seg) < 2:
+            continue
+        for i in range(len(seg) - 1):
+            bigram = seg[i : i + 2]
+            if any(ch in _CJK_STOP_CHARS for ch in bigram):
+                continue
+            if bigram in _CJK_STOP_BIGRAMS:
+                continue
+            if bigram not in anchors:
+                anchors.append(bigram)
+    return anchors
+
+
+def extract_concrete_entities(spec_text: str) -> list[str]:
+    """提取 spec 中代码相关的具体实体（函数 / 类 / 赋值键 / API 路径 / 反引号代码）。"""
+    found: list[str] = []
+    for raw in _ENTITY_RE.findall(spec_text):
+        token = raw.strip().strip("`")
+        if not token or token in _PY_KEYWORDS:
+            continue
+        if not re.match(r"^[A-Za-z_/]", token):  # 排除 REQ-001 编号等纯数字片段
+            continue
+        if token not in found:
+            found.append(token)
+    return found
+
+
+def extract_interface_signatures(spec_text: str) -> list[str]:
+    """统计接口签名标记：def 行 / 反引号签名 / 函数·输入·输出·参数·返回·异常·端点列表项。"""
+    sigs: list[str] = []
+    for line in spec_text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        token = None
+        if re.match(r"^(?:[-*]\s*)?def\s+[A-Za-z_]\w*\s*\(", stripped):
+            token = stripped[:120]
+        elif re.match(r"^(?:[-*]\s*)?(?:GET|POST|PUT|DELETE|PATCH)\s+/", stripped):
+            token = stripped[:120]
+        elif "`" in stripped and "(" in stripped and ")" in stripped:
+            token = stripped[:120]
+        elif _SIG_BULLET_RE.match(stripped) and _LATIN_ID_RE.search(stripped):
+            token = stripped[:120]
+        if token and token not in sigs:
+            sigs.append(token)
+    return sigs
+
+
+def count_decision_phrases(spec_text: str) -> int:
+    """统计“采用 X 避免 Y / 选择 X 而非 Y”式明确技术决策表述的命中数。"""
+    return len(_DECISION_RE.findall(spec_text))
+
+
+def count_filler_hits(spec_text: str, patterns: list[str] | None = None) -> int:
+    """统计套话句式命中总数（patterns 缺省时用默认套话清单）。"""
+    from .config import DEFAULT_SPEC_FILLER_PATTERNS
+
+    patterns = patterns if patterns is not None else DEFAULT_SPEC_FILLER_PATTERNS
+    hits = 0
+    for pattern in patterns:
+        try:
+            hits += len(re.findall(pattern, spec_text))
+        except re.error:
+            continue
+    return hits
+
+
+def analyze_spec_specificity(
+    spec_text: str,
+    request: str,
+    min_entities: int = 5,
+    min_signatures: int = 2,
+    min_decision_phrases: int = 1,
+    min_requirement_anchors: int = 2,
+    max_filler_hits: int = 1,
+    filler_patterns: list[str] | None = None,
+) -> dict[str, Any]:
+    """spec 具体性五维分析（v0.50.0）。返回含各维度 ok/值/阈值 的明细。"""
+    entities = extract_concrete_entities(spec_text)
+    signatures = extract_interface_signatures(spec_text)
+    decisions = count_decision_phrases(spec_text)
+    filler = count_filler_hits(spec_text, filler_patterns)
+    anchors = extract_request_anchors(request) if request else []
+    anchor_hits = [a for a in anchors if a in spec_text]
+    checks: dict[str, dict[str, Any]] = {
+        "concrete_entities": {
+            "ok": len(entities) >= min_entities,
+            "value": len(entities),
+            "min": min_entities,
+            "detail": entities,
+        },
+        "interface_signatures": {
+            "ok": len(signatures) >= min_signatures,
+            "value": len(signatures),
+            "min": min_signatures,
+            "detail": signatures,
+        },
+        "decision_phrases": {
+            "ok": decisions >= min_decision_phrases,
+            "value": decisions,
+            "min": min_decision_phrases,
+        },
+        "filler_phrases": {
+            "ok": filler <= max_filler_hits,
+            "value": filler,
+            "max": max_filler_hits,
+        },
+    }
+    if request and anchors:
+        checks["requirement_anchors"] = {
+            "ok": len(anchor_hits) >= min_requirement_anchors,
+            "value": len(anchor_hits),
+            "min": min_requirement_anchors,
+            "detail": anchor_hits,
+        }
+    return {
+        "ok": all(v["ok"] for v in checks.values()),
+        "checks": checks,
+        "anchors_total": len(anchors),
+        "request_present": bool(request),
+    }
+
+
+class SpecSpecificityValidator(SemanticValidator):
+    """spec 具体性校验：拒绝只含章节标题的“套话 spec”。
+
+    五维检查（阶段 1 推进时）：具体实体密度 / 接口签名数量 / 明确技术决策 /
+    需求锚点命中 / 套话句式命中上限。默认关闭，启用后任一维度不达标即阻止。
+    """
+
+    name = "spec_specificity"
+    description = "spec 具体性五维校验：实体 / 签名 / 决策 / 需求锚点 / 套话句式"
+    stages = (1,)
+
+    def check(
+        self,
+        workspace: Path,
+        config: GateConfig,
+        state: Any,
+        adapter: LanguageAdapter | None = None,
+    ) -> SemanticCheckResult:
+        spec_path = workspace / config.spec_file
+        if not spec_path.exists():
+            return SemanticCheckResult(
+                True, "spec 文件不存在，spec_specificity 跳过（结构校验会先行拦截）", {"skipped": "no_spec"}
+            )
+        opts = config.semantic.spec_specificity
+        spec_text = spec_path.read_text(encoding="utf-8", errors="replace")
+        request = ""
+        if state is not None and hasattr(state, "get_evidence"):
+            try:
+                request = str(state.get_evidence("user_request") or "")
+            except Exception:
+                request = ""
+        analysis = analyze_spec_specificity(
+            spec_text,
+            request,
+            min_entities=opts.min_entities,
+            min_signatures=opts.min_signatures,
+            min_decision_phrases=opts.min_decision_phrases,
+            min_requirement_anchors=opts.min_requirement_anchors,
+            max_filler_hits=opts.max_filler_hits,
+            filler_patterns=list(opts.filler_patterns),
+        )
+        if analysis["ok"]:
+            return SemanticCheckResult(
+                True,
+                "spec 具体性通过（实体 {e} / 签名 {s} / 决策 {d} / 套话 {f}）".format(
+                    e=analysis["checks"]["concrete_entities"]["value"],
+                    s=analysis["checks"]["interface_signatures"]["value"],
+                    d=analysis["checks"]["decision_phrases"]["value"],
+                    f=analysis["checks"]["filler_phrases"]["value"],
+                ),
+                analysis,
+            )
+        labels = {
+            "concrete_entities": "具体实体 {value}/{min}（如 `fib`、`/api/login`、`token=`）",
+            "interface_signatures": "接口签名 {value}/{min}（def 行 / 函数·输入·输出·参数·返回·异常 / API 端点）",
+            "decision_phrases": "明确技术决策 {value}/{min}（如“采用 X 避免 Y”）",
+            "requirement_anchors": "需求锚点命中 {value}/{min}（需回应用户原始需求中的具体词）",
+            "filler_phrases": "套话句式命中 {value}（上限 {max}）",
+        }
+        reasons = []
+        for name, check in analysis["checks"].items():
+            if check["ok"]:
+                continue
+            template = labels[name]
+            reasons.append(template.format(**check))
+        return SemanticCheckResult(
+            False,
+            "spec 具体性未通过（疑似套话 / 内容空泛）：" + "；".join(reasons)
+            + "。请在 spec 中命名具体函数 / 接口 / 数据结构，给出明确技术选型与理由，并逐条回应原始需求",
+            analysis,
+        )
+
+
+def analyze_test_assertion_quality(py_source: str) -> dict[str, Any]:
+    """AST 分析测试源码的断言质量：纯常数断言（不引用任何名称 / 调用）即弱断言。
+
+    返回结构：{"ok": bool, "weak_functions": [{"name","line","assert_lines":[...]}], "test_functions": n}
+    """
+    try:
+        tree = ast.parse(py_source)
+    except SyntaxError:
+        return {"ok": True, "weak_functions": [], "test_functions": 0, "parse_error": True}
+    weak: list[dict[str, Any]] = []
+    count = 0
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) or not node.name.startswith("test_"):
+            continue
+        count += 1
+        asserts = [n for n in ast.walk(node) if isinstance(n, ast.Assert)]
+        weak_lines: list[int] = []
+        for a in asserts:
+            references = [
+                n for n in ast.walk(a)
+                if isinstance(n, (ast.Name, ast.Attribute, ast.Call, ast.Subscript))
+            ]
+            if not references:
+                weak_lines.append(getattr(a, "lineno", 0))
+        if asserts and len(weak_lines) == len(asserts):
+            weak.append({
+                "name": node.name,
+                "line": getattr(node, "lineno", 0),
+                "assert_lines": weak_lines,
+            })
+    return {"ok": not weak, "weak_functions": weak, "test_functions": count, "parse_error": False}
+
+
+class TestAssertionQualityValidator(SemanticValidator):
+    """测试断言质量校验：拒绝 `assert True` / `assert 1 == 1` 等纯常数断言。
+
+    “纯常数断言”指断言表达式中不引用任何名称 / 属性 / 调用 / 下标（即不来自被测
+    代码的变量或返回值）。默认关闭；strict 模式（默认）下任何 test 函数含纯常数
+    断言即拒绝。
+    """
+
+    name = "test_assertion_quality"
+    description = "测试断言质量：拒绝 assert True 等纯常数断言（仅 Python）"
+    stages = (2,)
+
+    def check(
+        self,
+        workspace: Path,
+        config: GateConfig,
+        state: Any,
+        adapter: LanguageAdapter | None = None,
+    ) -> SemanticCheckResult:
+        adapter = adapter or get_adapter(config, workspace)
+        if getattr(adapter, "name", "") != "python":
+            return SemanticCheckResult(
+                True, f"断言质量校验仅支持 Python（当前 {getattr(adapter, 'name', '?')}），跳过",
+                {"skipped": "not_python"},
+            )
+        opts = config.semantic.test_assertion_quality
+        if not opts.strict:
+            return SemanticCheckResult(True, "断言质量校验未启用 strict，跳过", {"skipped": "not_strict"})
+        failures: list[dict[str, Any]] = []
+        for tf in iter_workspace_files(workspace, config):
+            if not adapter.is_test_file(tf, config):
+                continue
+            text = tf.read_text(encoding="utf-8", errors="replace")
+            info = analyze_test_assertion_quality(text)
+            if info.get("parse_error"):
+                continue  # 语法问题由结构校验拦截
+            for fn in info["weak_functions"]:
+                failures.append({"file": str(tf.relative_to(workspace)), **fn})
+        if not failures:
+            return SemanticCheckResult(
+                True, "断言质量通过：所有 test 函数的断言均引用实际值 / 调用", {"weak_functions": []}
+            )
+        detail = "；".join(
+            f"{f['file']}:{f['name']}(L{f['line']}) 纯常数断言行 {f['assert_lines']}" for f in failures
+        )
+        return SemanticCheckResult(
+            False,
+            "断言质量未通过：以下测试函数只含纯常数断言（如 `assert True`），未引用被测代码："
+            + detail + "。请让断言比较真实的函数返回值 / 状态，例如 `assert fib(10) == 55`",
+            {"weak_functions": failures},
+        )
+
+
 # ---------- 注册表与运行 ----------
 
 BUILTIN_SEMANTIC_VALIDATORS: list[SemanticValidator] = [
     RequirementCoverageValidator(),
     MutationScoreValidator(),
+    SpecSpecificityValidator(),
+    TestAssertionQualityValidator(),
 ]
 
 # 进程内自定义语义校验器

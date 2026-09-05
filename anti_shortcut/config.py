@@ -131,11 +131,89 @@ class MutationScoreOptions(BaseModel):
         return value
 
 
+# v0.50.0：spec 套话 / 空话句式清单（命中数超过 max_filler_hits 即拒绝）。
+# 语义层默认关闭；这些默认句式可被 config.semantic.spec_specificity.filler_patterns 覆盖。
+DEFAULT_SPEC_FILLER_PATTERNS: list[str] = [
+    r"采用(?:合适|合理|先进|优秀|业界领先|成熟)的(?:技术|方案|架构)",
+    r"提供(?:完整|完善)的?(?:功能|接口|能力|解决方案)",
+    r"实现一个(?:通用|完整|基础|功能)模块",
+    r"满足(?:用户)?(?:全部|所有)?需求",
+    r"确保(?:系统|模块|平台|产品)的(?:稳定|可靠|安全|高效|可扩展|高性能)性",
+    r"(?:具体)?(?:实现|技术|设计)细节(?:将)?(?:在|留到)?(?:后续|稍后|实现阶段|开发中)(?:再)?(?:补充|细化|确定)",
+    r"根据(?:用户)?需求(?:进行|做出)?(?:相应|合理|适当)的?(?:设计|调整|处理|规划)",
+    r"综合考虑(?:各种)?因素",
+]
+
+
+class SpecSpecificityOptions(BaseModel):
+    """spec 具体性语义校验配置（v0.50.0）：拒绝只有章节标题的“套话 spec”。"""
+
+    enabled: bool = False
+    # 代码相关具体实体（函数 / 类 / 变量赋值 / API 路径 / 反引号代码）最少数量
+    min_entities: int = 5
+    # 接口签名标记（def 行 / 函数·输入·输出·参数·返回·异常列表项 / API 端点）最少数量
+    min_signatures: int = 2
+    # “采用 X 避免 Y / 选择 X 而非 Y”式明确技术决策最少数量
+    min_decision_phrases: int = 1
+    # 用户原始需求锚点词（latin 标识符 + 中文双字领域词）至少命中数；0 关闭该子检查
+    min_requirement_anchors: int = 2
+    # 套话句式允许命中上限（0 = 命中任何默认句式即拒绝）
+    max_filler_hits: int = 1
+    filler_patterns: list[str] = Field(default_factory=lambda: list(DEFAULT_SPEC_FILLER_PATTERNS))
+    stages: list[int] = Field(default_factory=lambda: [1])
+
+    @field_validator("min_entities", "min_signatures", "min_decision_phrases",
+                     "min_requirement_anchors", "max_filler_hits")
+    @classmethod
+    def _check_nonneg_int(cls, value: int, info) -> int:
+        if isinstance(value, bool) or value < 0:
+            raise ValueError(f"semantic.spec_specificity.{info.field_name} 必须 >= 0 的整数，得到 {value}")
+        return value
+
+    @field_validator("filler_patterns")
+    @classmethod
+    def _check_filler_patterns(cls, value: list[str]) -> list[str]:
+        if not value or any(not isinstance(p, str) or not p.strip() for p in value):
+            raise ValueError("semantic.spec_specificity.filler_patterns 必须是非空正则列表")
+        return value
+
+    @field_validator("stages")
+    @classmethod
+    def _check_stages(cls, value: list[int]) -> list[int]:
+        if not value:
+            raise ValueError("semantic 校验器 stages 不能为空")
+        bad = [s for s in value if not isinstance(s, int) or isinstance(s, bool) or not (0 <= s <= 6)]
+        if bad:
+            raise ValueError(f"semantic 校验器 stages 必须是 0-6 的整数，得到 {bad}")
+        return value
+
+
+class TestAssertionQualityOptions(BaseModel):
+    """测试断言质量语义校验配置（v0.50.0，仅 Python）：拒绝 `assert True` 等常数断言。"""
+
+    enabled: bool = False
+    # True：任何 test 函数只要含断言且全部为“纯常数断言”（不引用任何名称/调用）即拒绝
+    strict: bool = True
+    stages: list[int] = Field(default_factory=lambda: [2])
+
+    @field_validator("stages")
+    @classmethod
+    def _check_stages(cls, value: list[int]) -> list[int]:
+        if not value:
+            raise ValueError("semantic 校验器 stages 不能为空")
+        bad = [s for s in value if not isinstance(s, int) or isinstance(s, bool) or not (0 <= s <= 6)]
+        if bad:
+            raise ValueError(f"semantic 校验器 stages 必须是 0-6 的整数，得到 {bad}")
+        return value
+
+
 class SemanticOptions(BaseModel):
-    """语义级校验总配置（v0.49.0，默认全部关闭，不影响既有门禁行为）。"""
+    """语义级校验总配置（v0.49.0 起，默认全部关闭，不影响既有门禁行为）。"""
 
     requirement_coverage: RequirementCoverageOptions = Field(default_factory=RequirementCoverageOptions)
     mutation_score: MutationScoreOptions = Field(default_factory=MutationScoreOptions)
+    spec_specificity: SpecSpecificityOptions = Field(default_factory=SpecSpecificityOptions)
+    test_assertion_quality: TestAssertionQualityOptions = Field(default_factory=TestAssertionQualityOptions)
     # 第三方语义校验器的自由配置（校验器按 config.semantic.<name>.enabled 开关）
     plugin_options: dict[str, Any] = Field(default_factory=dict)
 

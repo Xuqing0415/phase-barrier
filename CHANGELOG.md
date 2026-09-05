@@ -2,6 +2,15 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.48.3] - 2026-09-05
+
+- **docs: 自定义域名启用前置检查与 NXDOMAIN 结论（v0.48.3）**：`docs/custom-domain.md`
+  新增「前置检查（约 2 分钟）」：apex 公网解析自检（`nslookup phase-barrier.dev 8.8.8.8`，
+  NXDOMAIN = 域名未注册 / 未接入公网 DNS，GitHub Pages 无法为不存在的域名签发证书）
+  与 `docs.` 子域冲突检查；故障排查表补充 NXDOMAIN 行。`docs/roadmap.md` 待办项注明
+  截至 v0.48.3 `phase-barrier.dev` 公网 NXDOMAIN，需用户先注册域名（未启用，可选）。
+  无库代码改动。
+
 ## [0.48.2] - 2026-09-05
 
 - **docs: Alpha-SWE #3 上游跟踪状态更新（open -> merged）**：PR 已于 2026-08-30

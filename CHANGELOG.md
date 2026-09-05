@@ -2,6 +2,11 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.41.1] - 2026-09-05
+
+- **coverage 门禁修复（v0.41.1）**：CI coverage job 曾漏测 gRPC worker 线程 —— `anti_shortcut/grpc_service.py` 在 CI 实测仅 17%（本地 69%），导致 v0.40.0 / v0.41.0 全量 CI 覆盖率 88% < 90% 门禁失败；`[tool.coverage.run]` 增加 `concurrency = "thread"`，按线程追踪多线程代码（gRPC handler / 审计队列），恢复门禁一致性。
+- **主线程直调补测（v0.41.1）**：新增 `tests/test_grpc_service_direct.py` 8 个用例，在主线程直接调用 `PhaseBarrierServicer` 全部 8 个 RPC（fake context 捕获 abort），覆盖推进全流程、写/执行拦截、改码强回归、证据校验、审计过滤与参数非法分支，以及 `create_grpc_server` / `serve_grpc` / `main` 入口；`grpc_service.py` 覆盖率 17% -> 92%（本地实测）。修复 v0.39.0 起 gRPC 业务代码未被门禁实测的盲区；v0.40.0 / v0.41.0 的 PyPI 发布不受影响。
+
 ## [0.41.0] - 2026-09-04
 
 - **真实 SWE-bench 评测 harness（v0.41.0）**：新增 `benchmarks/swebench_runner.py` —— 编排与统计层，加载与官方数据集同构的实例清单（instance_id / repo / base_commit / problem_statement / patch / test_patch），为每个实例准备独立工作目录，按命令模板分别运行基线 / 门禁 Agent 并解析 stdout 标记（`PB_RESOLVED` / `PB_GATE_INTERCEPTS`），聚合 resolve 率、平均耗时与拦截率；定位明确 —— 不内置官方 swebench 容器与隐藏测试打分，真实运行需用户环境（教程见 `docs/tutorials/swe-bench-real.md`）。

@@ -53,12 +53,36 @@ def now_iso() -> str:
     )
 
 
-def load_index(path: Path) -> list[dict]:
-    """读取 plugins.json，返回条目列表（顶层必须是数组）。"""
+DEFAULT_AUTO_DISCOVERY: dict = {
+    "github_topic": "phase-barrier-plugin",
+    "enabled": True,
+}
+
+
+def load_index_file(path: Path) -> dict:
+    """读取 plugins.json 顶层容器（v0.46.0 起）。
+
+    新格式为 ``{"plugins": [...], "auto_discovery": {...}}``；兼容 v0.45.x 的
+    顶层数组旧格式（自动包装为默认容器），保证存量数据与测试不破坏。
+    """
     data = json.loads(Path(path).read_text(encoding="utf-8"))
-    if not isinstance(data, list):
-        raise ValueError(f"plugins.json 顶层必须是数组，得到 {type(data).__name__}")
-    return data
+    if isinstance(data, dict):
+        if "plugins" not in data:
+            raise ValueError("plugins.json 顶层 dict 缺少 plugins 字段")
+        if not isinstance(data["plugins"], list):
+            raise ValueError("plugins.json 的 plugins 字段必须是数组")
+        data.setdefault("auto_discovery", dict(DEFAULT_AUTO_DISCOVERY))
+        return data
+    if isinstance(data, list):
+        return {"plugins": data, "auto_discovery": dict(DEFAULT_AUTO_DISCOVERY)}
+    raise ValueError(
+        "plugins.json 顶层必须是数组或 {\"plugins\": [...]} 容器，得到 " + type(data).__name__
+    )
+
+
+def load_index(path: Path) -> list[dict]:
+    """读取 plugins.json，返回条目列表（兼容数组与容器两种顶层格式）。"""
+    return load_index_file(path)["plugins"]
 
 
 def _resolve_target(entry: dict) -> str | None:
@@ -199,7 +223,11 @@ def verify_index(index: list[dict], *, install: bool) -> dict:
 
 
 def update_index(path: Path, index: list[dict], report: dict) -> None:
-    """把报告中的状态写回 plugins.json（仅覆盖自动验证过的条目）。"""
+    """把报告中的状态写回 plugins.json（仅覆盖自动验证过的条目）。
+
+    源文件为 v0.46.0 容器格式时保留顶层 ``auto_discovery`` 等配置；旧数组格式
+    保持原样写回（向后兼容，供存量数据与测试使用）。
+    """
     by_name = report["plugins"]
     verified_at = report["verified_at"]
     for entry in index:
@@ -208,8 +236,12 @@ def update_index(path: Path, index: list[dict], report: dict) -> None:
             continue
         entry["status"] = info["status"]
         entry["last_verified"] = verified_at
-    payload = json.dumps(index, ensure_ascii=False, indent=2) + "\n"
-    Path(path).write_text(payload, encoding="utf-8")
+    raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    payload = index
+    if isinstance(raw, dict):
+        raw["plugins"] = index
+        payload = raw
+    Path(path).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def _short_group(group: str) -> str:

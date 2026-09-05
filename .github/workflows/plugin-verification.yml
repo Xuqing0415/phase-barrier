@@ -1,14 +1,17 @@
-# v0.45.0: 插件索引自动验证（plugins.json 驱动）
-# 每周二 05:00 UTC + 手动触发（与 plugin-check.yml 周一 06:00 错开）。
-# 读取 plugins.json，安装索引条目并运行 plugin-verify（子进程），把最新
-# status / last_verified 写回 plugins.json，并把状态表同步到 docs/plugins.md
-#（--sync-docs）；有变更则自动提交到 main，验证报告作为 artifact 上传。
-# 第三方插件仓库仍由其自带 Plugin CI 验证。
-name: Plugin Verification
+# v0.46.0: 插件索引自动发现 + 自动验证（plugins.json 驱动）
+# 每周一 03:00 UTC + 手动触发（与 plugin-check.yml 周一 06:00 错开）。
+# 第一步 auto_discover_plugins.py：按 GitHub topic 搜索第三方仓库，过滤已收录
+# 条目，对候选执行 clone -> pip install -e -> plugin-verify，通过则以
+# auto_discovered: true 收录并同步 docs/plugins.md（--update）。
+# 第二步 verify_plugins.py：安装索引全部条目并运行 plugin-verify（子进程），
+# 把最新 status / last_verified 写回 plugins.json，并把状态表同步到
+# docs/plugins.md（--update --sync-docs）；有变更则自动提交到 main，
+# 验证报告作为 artifact 上传。GitHub Search 使用仓库内置 GITHUB_TOKEN。
+name: Plugin Verification and Discovery
 
 on:
   schedule:
-    - cron: '0 5 * * 2'
+    - cron: '0 3 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -38,6 +41,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
+      - name: Auto-discover third-party plugins from GitHub topic
+        id: discover
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          python scripts/auto_discover_plugins.py --update --json > plugin-discovery-report.json
+          rc=$?
+          set -e
+          echo "discover_rc=${rc}" >> "$GITHUB_OUTPUT"
+          echo "scripts/auto_discover_plugins.py exit code: ${rc}"
+          if [ "${rc}" -ne 0 ]; then
+            echo "::warning::GitHub Search API 调用失败，本次跳过自动发现（不影响后续索引验证）"
+          fi
+
       - name: Verify indexed plugins and update plugins.json
         id: verify
         continue-on-error: true
@@ -57,7 +76,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: plugin-verification-report
-          path: plugin-verification-report.json
+          path: |
+            plugin-verification-report.json
+            plugin-discovery-report.json
           if-no-files-found: error
 
       - name: Commit updated plugins.json

@@ -2,6 +2,38 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.46.0] - 2026-09-05
+
+- **第三方插件仓库自动轮询（v0.46.0）**：插件索引从“人工维护 + 自动验证”升级为
+  “GitHub topic 自动发现 + 收录 + 周期验证”闭环——
+  - `plugins.json` 顶层升级为容器结构 `{"plugins": [...], "auto_discovery":
+    {"github_topic": "phase-barrier-plugin", "enabled": true}}`；旧版顶层数组仍可
+    读取（自动包装默认容器），写回自动升级；每条新增 `auto_discovered` /
+    `last_commit_sha` 字段（官方示例为 `false` / `null`）。
+  - 新增 `scripts/auto_discover_plugins.py`（纯标准库）：`github_search()` 按
+    topic 调用 GitHub Search API（Bearer token：`GH_TOKEN` / `GITHUB_TOKEN` /
+    `--token`，403/429 限流抛 `GithubApiError`）；候选去重归一化（GitHub URL /
+    `owner/repo` 大小写 / `.git` 与 `#egg=` 后缀剥离）；`clone_verify()` 执行
+    `git clone --depth 1` -> `pip install -e` -> `plugin-verify --json`，仅收录
+    全部入口点通过的仓库（`auto_discovered: true` + `last_commit_sha`）；
+    `discover()` 支持 `--dry-run`（默认，不写盘）与 `--update`（写回容器 +
+    同步 docs/plugins.md），过滤 fork / archived，`enabled: false` 短路跳过，
+    候选失败仅记录不中断。
+  - 周期 workflow `plugin-verification.yml` 更名为「Plugin Verification and
+    Discovery」并调整为每周一 03:00 UTC 两步执行：先自动发现（`--update --json`
+    报告作为 artifact 上传，Search API 失败仅告警并 continue-on-error），再全量
+    安装验证索引条目（`--update --sync-docs`），有变更自动提交；GitHub Search
+    使用仓库内置 `GITHUB_TOKEN`。
+  - 文档：docs/plugins.md 新增「提交到索引 / 自动收录」topic 流程、容器 JSON
+    结构与字段说明、「自动发现脚本」小节，社区占位行改为等待自动发现 /
+    人工提交；CONTRIBUTING.md 新增「如何发布插件并进入索引（自动发现）」章节；
+    Roadmap 移除唯一后续规划项（第三方插件仓库自动轮询）。
+  - 测试：新增 `tests/test_auto_discover.py` 17 个用例（repo 归一化 / Search
+    限流 / clone-verify 链路 / dry-run 不写盘 / --update 收录 + docs 同步 /
+    失败记录 / 容器兼容 / disabled 短路）；`verify_plugins.py` 增加
+    `load_index_file()` 容器读写，`update_index()` 写回时保留顶层
+    `auto_discovery`，既有 64 个插件索引测试保持通过。
+
 ## [0.45.2] - 2026-09-05
 
 - **文档一致性收敛（v0.45.2）**：README 支持语言表补 Dart 行（v0.40.0 遗漏）、

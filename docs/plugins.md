@@ -9,6 +9,11 @@ phase-barrier 通过 Python 入口点（entry points）支持四类插件：
 | `phase_barrier.interceptors` | 自定义拦截规则 | `examples/plugin_rules/` |
 | `anti_shortcut.integrations` | Agent 集成插件（自动装回包装后的工具） | `examples/orchestrator_hooks/` |
 
+> **自动收录（v0.46.0）**：本页插件列表由每周自动验证工作流维护。若希望你的插件
+> 被自动收录，请给仓库添加 `phase-barrier-plugin` 主题，并确保可通过
+> `python -m anti_shortcut plugin-verify` 验证（入口点全部通过）；详见下文
+> 「提交到索引 / 自动收录」与「自动发现脚本」。
+
 ## 开发模板
 
 > **推荐：官方模板仓库**
@@ -100,14 +105,26 @@ jobs:
 [![Plugin CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg)](https://github.com/<owner>/<repo>/actions/workflows/ci.yml)
 ```
 
-## 提交到索引
+## 提交到索引 / 自动收录
 
-1. 用官方模板仓库 [phase-barrier-plugin-template](https://github.com/Xuqing0415/phase-barrier-plugin-template) 生成插件仓库（Use this template），把插件发布为公开的 PyPI 包（或提供可安装的 GitHub 仓库）。
-2. 在插件仓库接入上面的 **插件 CI 模板**，保证 `plugin-verify` 全绿。
-3. 在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 选择
+第三方插件推荐走**自动发现**（v0.46.0）：不再依赖人工合并，满足条件即被每周
+workflow 自动收录：
+
+1. 用官方模板仓库 [phase-barrier-plugin-template](https://github.com/Xuqing0415/phase-barrier-plugin-template) 生成插件仓库（Use this template）。
+2. 给仓库添加 GitHub topic：`phase-barrier-plugin`。
+3. 接入上面的 **插件 CI 模板**，保证 `python -m anti_shortcut plugin-verify` 全绿
+   （入口点可加载、类型与必需接口通过）。
+4. 等待周期自动发现（每周一 03:00 UTC，或提 `workflow_dispatch` 手动触发）；
+   验证通过的插件以 `auto_discovered: true` 自动进入 `plugins.json` 并同步下表。
+   自动收录只校验入口点可用性，不审查代码质量（质量由社区 / Issue 反馈约束）。
+
+不打 topic 的插件仍可走人工提交：
+
+1. 在 [GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues) 选择
    「插件提交（Plugin Submission）」模板，附上：包名 / 仓库链接、支持的入口点组、
    CI 状态链接、一段使用示例。
-4. 维护者审核后合并到下表。
+2. 维护者审核后合并到 `plugins.json`，并运行
+   `python scripts/verify_plugins.py --update --sync-docs` 刷新状态表。
 
 ## 官方模板仓库（非插件，用于生成插件）
 
@@ -129,7 +146,7 @@ jobs:
 
 | 插件 | 类型 | 作者 | 说明 |
 |------|------|------|------|
-| （待社区提交） | | | 第一个第三方插件等你来 |
+| （等待自动发现 / 人工提交） | | | 打 `phase-barrier-plugin` 主题或提 Issue，见「提交到索引 / 自动收录」 |
 
 ## 索引自动检查（v0.34.1）
 
@@ -142,34 +159,48 @@ jobs:
 说明：
 
 - 该检查针对**本仓库官方示例插件**，防止示例随代码演进失效。
-- **第三方插件** 的收录仍走 Issue 模板 + 插件仓库自带 Plugin CI（见上文模板），状态由作者仓库徽章体现；
-  自动轮询第三方插件仓库（`phase-barrier-plugin-index`）属于后续规划，尚未实现。
-## 索引数据文件与自动验证（v0.45.0）
+- **第三方插件** 的收录（v0.46.0 起）优先走自动发现：GitHub topic
+  `phase-barrier-plugin` + 插件 CI 全绿 -> `plugin-verification.yml`（每周一
+  03:00 UTC）自动 clone / 安装 / `plugin-verify`，通过即以
+  `auto_discovered: true` 写入 `plugins.json` 并同步下表；不打 topic 的仍走
+  Issue 模板人工提交。
+
+## 索引数据文件与自动验证（v0.45.0 / v0.46.0）
 
 从 v0.45.0 起，索引不只靠文档表格人工维护，还新增了机器可读的
 `plugins.json`（仓库根目录）与自动验证脚本，方便维护者周期核查已收录插件的
-兼容性：
+兼容性；v0.46.0 起顶层改为容器结构并支持按 GitHub topic 自动发现新插件：
 
 ```json
-[
-  {
-    "name": "phase-barrier-foo-adapter",
-    "repo": "./examples/custom_adapter",
-    "install": "./examples/custom_adapter",
-    "entry_points": { "phase_barrier.languages": ["foo"] },
-    "last_verified": "2026-09-05T00:00:00Z",
-    "status": "passed"
-  }
-]
+{
+  "plugins": [
+    {
+      "name": "owner/repo",
+      "repo": "https://github.com/owner/repo",
+      "install": "git+https://github.com/owner/repo.git#egg=repo",
+      "entry_points": { "phase_barrier.languages": ["my_language"] },
+      "last_verified": "2026-09-05T00:00:00Z",
+      "status": "passed",
+      "auto_discovered": true,
+      "last_commit_sha": "abc123..."
+    }
+  ],
+  "auto_discovery": { "github_topic": "phase-barrier-plugin", "enabled": true }
+}
 ```
 
-- `name`：插件包名；`repo`：仓库地址（本地示例用相对路径，第三方用 URL）。
-- `install`：可被 `pip install -e` 的目标（本地相对路径 / git+https URL）；
+- `plugins`：条目列表（v0.45.x 的顶层数组旧格式仍可读取，写回时自动升级为容器）。
+- `auto_discovery`：自动发现开关与使用的 GitHub topic（置 `enabled: false` 可停用）。
+- `name`：插件标识（官方示例用包名，自动收录的第三方用 `owner/repo`）。
+- `repo`：仓库地址（本地示例用相对路径，第三方用 URL）。
+- `install`：可被 `pip install -e` 的目标（本地相对路径 / `git+https` URL）；
   缺省回退到 `repo`。无 `install` / `repo` 的占位条目不会自动判定状态。
 - `entry_points`：声明该插件应提供的入口点，`{入口点组: [名称列表]}`；
   也可用 `["phase_barrier.languages", ...]` 简写（只断言组内有可用入口点）。
 - `last_verified` / `status`：最近一次自动验证时间与结果（`passed` /
   `failed` / `unverified`），由验证脚本按 `--update` 写回。
+- `auto_discovered` / `last_commit_sha`：是否由自动发现收录 / 收录时验证的
+  提交 SHA（用于后续增量判断），官方示例为 `false` / `null`。
 
 ### 验证脚本
 
@@ -185,17 +216,36 @@ python scripts/verify_plugins.py --json           # 结构化报告（stdout）
 python scripts/verify_plugins.py --no-install     # 跳过安装（插件须已安装）
 ```
 
+### 自动发现脚本（auto_discover_plugins.py，v0.46.0）
+
+`scripts/auto_discover_plugins.py` 负责“发现并收录”：按 GitHub topic 搜索
+（Search API，token 取 `GH_TOKEN` / `GITHUB_TOKEN` / `--token`），过滤已在
+`plugins.json` 中的仓库；对候选执行 `git clone --depth 1` -> `pip install -e`
+-> `plugin-verify --json` 全链路验证，通过则以 `auto_discovered: true` +
+`last_commit_sha` 收录并同步下表；失败只记录原因、不收录（不审查代码）：
+
+```bash
+python scripts/auto_discover_plugins.py               # dry-run：搜索并打印候选
+python scripts/auto_discover_plugins.py --update      # 验证候选并写回 + 同步 docs
+python scripts/auto_discover_plugins.py --update --json   # 结构化摘要（stdout）
+```
+
 ### 周期自动验证（plugin-verification.yml）
 
-`.github/workflows/plugin-verification.yml` 每周二 05:00 UTC（可与周一 06:00 的
-`plugin-check.yml` 区分）自动运行：安装官方索引插件 -> `verify_plugins.py --update --sync-docs`（同步 `plugins.json` 与文档索引表）
--> 上传 JSON 报告 artifact（`plugin-verification-report.json`）-> 若有变更自动
-提交到 main。验证失败不会静默：失败状态写回 `plugins.json` 并随提交 / 报告
-暴露给维护者处置。
+`.github/workflows/plugin-verification.yml` 每周一 03:00 UTC（可与周一 06:00 的
+`plugin-check.yml` 区分）自动运行两步：
+
+1. `auto_discover_plugins.py --update`：按 topic 自动发现并收录新第三方插件；
+2. `verify_plugins.py --update --sync-docs`：全量安装并验证 `plugins.json` 全部
+   条目（含新收录），刷新状态与文档索引表；
+
+随后上传 JSON 报告 artifact（`plugin-verification-report.json` /
+`plugin-discovery-report.json`），有变更自动提交到 main。验证失败不会静默：
+失败状态写回 `plugins.json` 并随提交 / 报告暴露给维护者处置。
 
 `plugin-check.yml` 继续保留，负责官方示例插件的固定断言；`plugins.json` 驱动的
-验证是它的推广形态，第三方插件若提供 `install` 目标并通过维护者审核，即可加入
-`plugins.json` 纳入周期自动核查。
+验证 + topic 自动发现是它的推广形态，第三方插件无需人工合并即可被周期收录
+（自动收录只校验入口点可用性）。
 ### 当前索引状态（由 scripts/verify_plugins.py --sync-docs 自动同步）
 
 运行 `python scripts/verify_plugins.py --sync-docs`（或周期 workflow）后，

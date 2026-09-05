@@ -12,7 +12,7 @@ anti_shortcut/
 ├── validators.py       # 阶段证据校验器（spec / 测试 / 实现 / 测试运行）
 ├── interceptors.py     # 工具拦截辅助 + 自定义拦截规则注册
 ├── rules/              # 内置安全规则包（no_path_traversal 等，v0.26.0）
-├── languages/          # 语言适配层（base.py + python/js/java/go/rust/ruby/csharp/dotnet/cpp）
+├── languages/          # 语言适配层（base.py + python/js/java/go/rust/ruby/csharp/dotnet/cpp/php/kotlin/scala/swift/dart）
 ├── sdk.py              # PhaseBarrier 轻量 SDK（编排器钩子）
 ├── evidence.py         # 证据签名清单（evidence_manifest.json）
 ├── audit.py            # 审计日志（本地 + 远程推送）
@@ -57,6 +57,27 @@ python -m flake8 --jobs=1 <files> # 风格检查（Windows 下需 --jobs=1）
 3. 发布为插件：入口点组 `phase_barrier.interceptors`（参考 `docs/plugins.md`）。
 4. 内置规则包新增规则时，同时更新 `anti_shortcut/rules/__init__.py` 的
    `BUILTIN_RULES` / `RULE_DESCRIPTIONS` 与对应测试。
+
+## 如何发布插件并进入索引（自动发现，v0.46.0）
+
+1. 用官方模板仓库
+   [phase-barrier-plugin-template](https://github.com/Xuqing0415/phase-barrier-plugin-template)
+   生成插件仓库并实现插件（语言适配器 / 校验器 / 拦截规则 / 集成插件，参考
+   `docs/plugins.md`）。
+2. 给仓库添加 GitHub topic：`phase-barrier-plugin`。
+3. 接入插件 CI 模板（`.github/actions/plugin-test/`），保证
+   `python -m anti_shortcut plugin-verify` 全绿。
+4. 主仓库每周一 03:00 UTC 的 `plugin-verification.yml` 自动发现并验证你的插件：
+   `scripts/auto_discover_plugins.py`（GitHub Search API）-> `git clone --depth 1`
+   -> `pip install -e` -> `plugin-verify --json`；通过即自动写入 `plugins.json`
+   （`auto_discovered: true`）并同步 `docs/plugins.md` 状态表。自动收录只校验
+   入口点可用性，不审查代码质量。
+5. 本地可先自查候选：
+   `python scripts/auto_discover_plugins.py --dry-run --token <PAT>`；不想打
+   topic 的插件可改走 GitHub Issue「插件提交」模板人工审核收录。
+
+> 维护 `plugins.json` 时请用 `python scripts/verify_plugins.py --update --sync-docs`
+> 保持状态表同步；手动编辑 `docs/plugins.md` 的索引状态表会被下一次同步覆盖。
 
 ## 代码风格与测试要求
 

@@ -201,7 +201,7 @@ def validate_retest(
 
     changed_at = state.get_evidence("last_source_change_at_epoch")
     ran_at = tr.get("at_epoch")
-    if changed_at is not None and (ran_at is None or ran_at < changed_at):
+    if changed_at is not None and (ran_at is None or ran_at <= changed_at):
         return False, (
             "检测到代码/测试文件在最近一次测试运行之后被修改：请重新运行测试确认回归通过"
         ), {**tr, "after_last_change": False}

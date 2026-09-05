@@ -175,19 +175,29 @@ def test_retest_failed_record(tmp_path, cfg):
 
 def test_retest_passed_but_changed_after(tmp_path, cfg):
     s = make_state(tmp_path)
-    s.mark_test_run({"exit_code": 0, "passed": True})
-    s.mark_source_change("fib.py")  # \u6d4b\u8bd5\u540e\u4fee\u6539
+    s.mark_test_run({"exit_code": 0, "passed": True, "at_epoch": 100.0})
+    s.mark_source_change("fib.py", at_epoch=200.0)  # 测试后修改
     ok, msg, _ = validate_retest(tmp_path, cfg, s)
-    assert not ok and "\u91cd\u65b0\u8fd0\u884c\u6d4b\u8bd5" in msg
+    assert not ok and "重新运行测试" in msg
+
+
+def test_retest_tied_epoch_fails_closed(tmp_path, cfg):
+    # 时钟粒度可能让测试运行与源码修改落在同一时间戳：门禁应失败关闭，要求重测
+    s = make_state(tmp_path)
+    s.mark_test_run({"exit_code": 0, "passed": True, "at_epoch": 100.0})
+    s.mark_source_change("fib.py", at_epoch=100.0)
+    ok, msg, _ = validate_retest(tmp_path, cfg, s)
+    assert not ok and "重新运行测试" in msg
 
 
 def test_retest_passed_after_change(tmp_path, cfg):
     s = make_state(tmp_path)
-    s.mark_source_change("fib.py")
-    s.mark_test_run({"exit_code": 0, "passed": True})
+    s.mark_source_change("fib.py", at_epoch=100.0)
+    s.mark_test_run({"exit_code": 0, "passed": True, "at_epoch": 200.0})
     ok, msg, ev = validate_retest(tmp_path, cfg, s)
     assert ok
     assert ev["after_last_change"] is True
+
 
 def test_non_python_test_heuristic(tmp_path):
     from anti_shortcut.validators import analyze_test_file

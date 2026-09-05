@@ -163,8 +163,8 @@ def test_cov_threshold_just_below(tmp_path):
 def test_cov_retest_missing_report(tmp_path):
     cfg = GateConfig(coverage_threshold=80)
     s = make_state(tmp_path)
-    s.mark_source_change("fib.py")
-    s.mark_test_run({"exit_code": 0, "passed": True})
+    s.mark_source_change("fib.py", at_epoch=100.0)
+    s.mark_test_run({"exit_code": 0, "passed": True, "at_epoch": 200.0})
     ok, msg, _ = validate_retest(tmp_path, cfg, s)
     assert not ok and "覆盖率" in msg
 

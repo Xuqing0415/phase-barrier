@@ -411,7 +411,7 @@ class AntiShortcutSkill:
             tr = self.state.get_evidence("last_test_run") or {}
             changed_at = self.state.get_evidence("last_source_change_at_epoch")
             ran_at = tr.get("at_epoch")
-            if tr.get("passed") and (changed_at is None or (ran_at is not None and ran_at >= changed_at)):
+            if tr.get("passed") and (changed_at is None or (ran_at is not None and ran_at > changed_at)):
                 new_stage = 6
                 msg = "测试全部通过，跳过修复阶段，直接进入交付"
             else:

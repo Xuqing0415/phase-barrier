@@ -2,6 +2,23 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.42.0] - 2026-09-05
+
+- **Windows CI 真实工具链激活（v0.42.0）**：`test-windows` job（Python 3.10-3.14 矩阵）
+  更名为 `pytest (Windows ...)`，安装 Node 20 / Go 1.22 / Rust stable / Ruby 3.3 / PHP 8.3 /
+  JDK 17 + kotlinc 2.2.0 / .NET 8 / Scala 2.13.18 / Dart 工具链并加入 PATH（PowerShell 下载
+  kotlinc / scala zip 解压到 D 盘），JS/Go/Rust/Ruby/PHP/Java/Kotlin/.NET/Scala/Dart 适配器
+  真实工具用例在 Windows CI 强制执行（不再因缺工具链 skip）；Swift 无 Windows 工具链，
+  对应真实用例按 skipif 跳过。
+- **回归门禁时间戳并发修复（v0.42.0）**：修复 Windows CI 偶发失败 `test_retest_passed_but_changed_after`
+  —— `mark_test_run` 与 `mark_source_change` 落在同一时钟粒度（粗时钟平台）时，原严格小于比较会让
+  门禁误判“通过”，现改为失败关闭：`validate_retest` 用 `ran_at <= changed_at` 判定需重测，
+  `advance_stage` 阶段 4 直达交付分支用 `ran_at > changed_at`；`mark_source_change` 新增可选
+  `at_epoch` 注入参数，顺序单测改为显式时间戳，新增同时间戳失败关闭边界用例。
+- **测试与文档（v0.42.0）**：全量测试在 Linux/Windows/macOS 矩阵执行；新增
+  `tests/test_validators.py::test_retest_tied_epoch_fails_closed`；本地 Windows 全量 850+ 用例通过，
+  Roadmap 标记 v0.42.0 已落地。
+
 ## [0.41.2] - 2026-09-05
 
 - **根因修复：grpc extra 补上 protobuf 依赖（v0.41.2）**：v0.39.0 起 gRPC 测试在 CI 一直静默跳过 —— pb2 生成代码依赖 `google.protobuf`（`sidecar_pb2.py` 要求运行时 protobuf>=7.35.1），但 pyproject 的 `grpc` / `dev` extra 未声明 protobuf，CI 全新环境安装后 `from anti_shortcut.proto import sidecar_pb2` 抛 ModuleNotFoundError 被测试文件吞掉（表现为 skipif 跳过），导致 `grpc_service.py` 覆盖率仅 17%、coverage 门禁 88% < 90%。本版本在 `grpc` / `dev` extra 增加 `protobuf>=7.35.1`。

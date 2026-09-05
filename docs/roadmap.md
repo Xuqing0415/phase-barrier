@@ -169,7 +169,15 @@
   `os.replace`，表现为 CI 偶发 `test_bench_state_contention_smoke` 23/24）；
   `os.replace` 增加短退避重试抵御瞬时共享冲突。
 
-## 待办 / 已知缺口（截至 v0.42.1）
-- **CI 平台矩阵**：Linux / Windows（v0.36.0 起入矩阵、v0.42.0 起激活真实工具链）/ macOS（v0.38.0 起）核心 pytest 均入 CI；Linux 与 Windows job 全量安装真实语言工具链（Python/JS/Go/Rust/Ruby/PHP/JDK/Kotlin/.NET/Scala/Dart，Windows 无 Swift 工具链按 skip 跳过），macOS 原生 swiftc 激活 SwiftAdapter 真实用例，其余真实工具链未装（对应真实用例按 skip 跳过）。
+- **v0.43.0 已完成**：macOS CI 真实工具链激活 —— `test-macos` job（Python 3.12 / 3.13）
+  更名为 `pytest (macOS ...)`，安装 Node 20 / Go 1.22 / Rust stable / Ruby 3.3 / PHP 8.3 / 
+  JDK 17 + kotlinc 2.2.0 / .NET 8 / Scala 2.13.18 / Dart（kotlinc / scala 下载到 runner temp 
+  并加入 PATH）；Swift 由 Xcode CLT（swiftc）原生激活。JS/Go/Rust/Ruby/PHP/Java/Kotlin/
+  C#/.NET/Scala/Dart 适配器真实工具用例在 macOS CI 强制执行。至此 Linux（v0.16.0 起）/ 
+  Windows（v0.42.0 起）/ macOS（v0.43.0 起）三平台真实工具链全量激活。
+
+## 待办 / 已知缺口（截至 v0.43.0）
+- 暂无已知缺口：CI 平台矩阵已在 Linux / Windows（v0.42.0）/ macOS（v0.43.0）三平台全量激活真实
+  语言工具链，原先“macOS 其余真实工具链未装”项已关闭；后续缺口随 Roadmap 迭代再补记。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

@@ -70,14 +70,14 @@ python -m flake8 --jobs=1 <files> # 风格检查（Windows 下需 --jobs=1）
 4. 主仓库每周一 03:00 UTC 的 `plugin-verification.yml` 自动发现并验证你的插件：
    `scripts/auto_discover_plugins.py`（GitHub Search API）-> `git clone --depth 1`
    -> `pip install -e` -> `plugin-verify --json`；通过即自动写入 `plugins.json`
-   （`auto_discovered: true`）并同步 `docs/plugins.md` 状态表。自动收录只校验
-   入口点可用性，不审查代码质量。
+   （`auto_discovered: true`）并同步 `docs/plugin-status.md` 插件状态页。自动
+   收录只校验入口点可用性，不审查代码质量。
 5. 本地可先自查候选：
    `python scripts/auto_discover_plugins.py --dry-run --token <PAT>`；不想打
    topic 的插件可改走 GitHub Issue「插件提交」模板人工审核收录。
 
 > 维护 `plugins.json` 时请用 `python scripts/verify_plugins.py --update --sync-docs`
-> 保持状态表同步；手动编辑 `docs/plugins.md` 的索引状态表会被下一次同步覆盖。
+> 保持状态表同步；手动编辑 `docs/plugin-status.md` 的索引状态表会被下一次同步覆盖。
 
 ## 代码风格与测试要求
 

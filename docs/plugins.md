@@ -9,8 +9,9 @@ phase-barrier 通过 Python 入口点（entry points）支持四类插件：
 | `phase_barrier.interceptors` | 自定义拦截规则 | `examples/plugin_rules/` |
 | `anti_shortcut.integrations` | Agent 集成插件（自动装回包装后的工具） | `examples/orchestrator_hooks/` |
 
-> **自动收录（v0.46.0）**：本页插件列表由每周自动验证工作流维护。若希望你的插件
-> 被自动收录，请给仓库添加 `phase-barrier-plugin` 主题，并确保可通过
+> **自动收录（v0.46.0）**：索引数据由 `plugins.json` 承载、每周自动验证工作流维护，
+> 已收录插件的实时状态表见[插件状态页](plugin-status.md)。若希望你的插件被自动收录，
+> 请给仓库添加 `phase-barrier-plugin` 主题，并确保可通过
 > `python -m anti_shortcut plugin-verify` 验证（入口点全部通过）；详见下文
 > 「提交到索引 / 自动收录」与「自动发现脚本」。
 
@@ -115,7 +116,7 @@ workflow 自动收录：
 3. 接入上面的 **插件 CI 模板**，保证 `python -m anti_shortcut plugin-verify` 全绿
    （入口点可加载、类型与必需接口通过）。
 4. 等待周期自动发现（每周一 03:00 UTC，或提 `workflow_dispatch` 手动触发）；
-   验证通过的插件以 `auto_discovered: true` 自动进入 `plugins.json` 并同步下表。
+   验证通过的插件以 `auto_discovered: true` 自动进入 `plugins.json`，并同步到「插件状态页」（见文末链接）。
    自动收录只校验入口点可用性，不审查代码质量（质量由社区 / Issue 反馈约束）。
 
 不打 topic 的插件仍可走人工提交：
@@ -124,7 +125,7 @@ workflow 自动收录：
    「插件提交（Plugin Submission）」模板，附上：包名 / 仓库链接、支持的入口点组、
    CI 状态链接、一段使用示例。
 2. 维护者审核后合并到 `plugins.json`，并运行
-   `python scripts/verify_plugins.py --update --sync-docs` 刷新状态表。
+   `python scripts/verify_plugins.py --update --sync-docs` 刷新插件状态页。
 
 ## 官方模板仓库（非插件，用于生成插件）
 
@@ -162,7 +163,7 @@ workflow 自动收录：
 - **第三方插件** 的收录（v0.46.0 起）优先走自动发现：GitHub topic
   `phase-barrier-plugin` + 插件 CI 全绿 -> `plugin-verification.yml`（每周一
   03:00 UTC）自动 clone / 安装 / `plugin-verify`，通过即以
-  `auto_discovered: true` 写入 `plugins.json` 并同步下表；不打 topic 的仍走
+  `auto_discovered: true` 写入 `plugins.json` 并同步插件状态页；不打 topic 的仍走
   Issue 模板人工提交。
 
 ## 索引数据文件与自动验证（v0.45.0 / v0.46.0）
@@ -211,7 +212,7 @@ workflow 自动收录：
 ```bash
 python scripts/verify_plugins.py                  # 验证并打印摘要（0 = 全通过）
 python scripts/verify_plugins.py --update         # 把 status / last_verified 写回
-python scripts/verify_plugins.py --update --sync-docs  # 写回状态并同步 docs/plugins.md 索引表
+python scripts/verify_plugins.py --update --sync-docs  # 写回状态并同步 docs/plugin-status.md 插件状态页
 python scripts/verify_plugins.py --json           # 结构化报告（stdout）
 python scripts/verify_plugins.py --no-install     # 跳过安装（插件须已安装）
 ```
@@ -222,11 +223,13 @@ python scripts/verify_plugins.py --no-install     # 跳过安装（插件须已�
 （Search API，token 取 `GH_TOKEN` / `GITHUB_TOKEN` / `--token`），过滤已在
 `plugins.json` 中的仓库；对候选执行 `git clone --depth 1` -> `pip install -e`
 -> `plugin-verify --json` 全链路验证，通过则以 `auto_discovered: true` +
-`last_commit_sha` 收录并同步下表；失败只记录原因、不收录（不审查代码）：
+`last_commit_sha` 收录并同步插件状态页；失败只记录原因、不收录（不审查代码）。
+v0.47.0 起，已收录的自动条目还会用 `git ls-remote` 检测远端 HEAD，与
+`last_commit_sha` 不一致时增量重新验证并更新入口点（含新增入口点）：
 
 ```bash
 python scripts/auto_discover_plugins.py               # dry-run：搜索并打印候选
-python scripts/auto_discover_plugins.py --update      # 验证候选并写回 + 同步 docs
+python scripts/auto_discover_plugins.py --update      # 验证候选 / 刷新自动条目并写回 + 同步状态页
 python scripts/auto_discover_plugins.py --update --json   # 结构化摘要（stdout）
 ```
 
@@ -235,9 +238,10 @@ python scripts/auto_discover_plugins.py --update --json   # 结构化摘要（st
 `.github/workflows/plugin-verification.yml` 每周一 03:00 UTC（可与周一 06:00 的
 `plugin-check.yml` 区分）自动运行两步：
 
-1. `auto_discover_plugins.py --update`：按 topic 自动发现并收录新第三方插件；
+1. `auto_discover_plugins.py --update`：按 topic 自动发现并收录新第三方插件，并
+   对已收录自动条目的新提交做增量刷新；
 2. `verify_plugins.py --update --sync-docs`：全量安装并验证 `plugins.json` 全部
-   条目（含新收录），刷新状态与文档索引表；
+   条目（含新收录），刷新状态与插件状态页；
 
 随后上传 JSON 报告 artifact（`plugin-verification-report.json` /
 `plugin-discovery-report.json`），有变更自动提交到 main。验证失败不会静默：
@@ -246,15 +250,8 @@ python scripts/auto_discover_plugins.py --update --json   # 结构化摘要（st
 `plugin-check.yml` 继续保留，负责官方示例插件的固定断言；`plugins.json` 驱动的
 验证 + topic 自动发现是它的推广形态，第三方插件无需人工合并即可被周期收录
 （自动收录只校验入口点可用性）。
-### 当前索引状态（由 scripts/verify_plugins.py --sync-docs 自动同步）
+## 插件状态页（自动同步）
 
-运行 `python scripts/verify_plugins.py --sync-docs`（或周期 workflow）后，
-下表由 `plugins.json` 自动生成并随提交更新；手动修改会被下一次同步覆盖。
-
-<!-- plugins-index:start -->
-| 插件 | 来源 | 入口点 | 状态 | 最近验证 |
-|------|------|--------|------|----------|
-| phase-barrier-foo-adapter | `./examples/custom_adapter` | languages: foo | passed | 2026-09-05T09:20:23Z |
-| phase-barrier-plugin-example | `./examples/plugin_rules` | validators: strict_design; interceptors: deny_vendor | passed | 2026-09-05T09:20:23Z |
-| Xuqing0415/phase-barrier-plugin-template | `https://github.com/Xuqing0415/phase-barrier-plugin-template` | integrations: demo_integration; interceptors: deny_vendor; languages: demo; validators: require_design_review | passed | 2026-09-05T09:20:23Z |
-<!-- plugins-index:end -->
+已收录插件（官方示例 + 自动发现第三方）的实时状态表见
+[插件状态页](plugin-status.md)：由 `scripts/verify_plugins.py --sync-docs`
+从 `plugins.json` 自动渲染，随周期 workflow 提交更新，无需人工维护。

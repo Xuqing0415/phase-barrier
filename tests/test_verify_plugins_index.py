@@ -278,11 +278,21 @@ class TestSyncDocs:
                 status="passed",
                 last_verified="2026-09-05T00:00:00Z",
             ),
+            _entry(
+                name="owner/repo",
+                repo="https://github.com/owner/repo",
+                entry_points={"phase_barrier.validators": ["strict_design"]},
+                status="passed",
+                last_verified="2026-09-05T00:00:00Z",
+                auto_discovered=True,
+                last_commit_sha="c" * 40,
+            ),
             _entry(name="no-eps", repo="./x", entry_points={}, status="unverified", last_verified=None),
         ]
         table = vp.render_index_table(index)
-        assert table.startswith("| 插件 | 来源 | 入口点 | 状态 | 最近验证 |")
-        assert "| phase-barrier-foo-adapter | `./examples/custom_adapter` | languages: foo | passed | 2026-09-05T00:00:00Z |" in table
+        assert table.startswith("| 插件 | 来源 | 收录 | 入口点 | 状态 | 最近验证 | 提交 |")
+        assert "| phase-barrier-foo-adapter | `./examples/custom_adapter` | 官方/人工 | languages: foo | passed | 2026-09-05T00:00:00Z | — |" in table
+        assert "| owner/repo | `https://github.com/owner/repo` | 自动发现 | validators: strict_design | passed | 2026-09-05T00:00:00Z | " + ("c" * 8) + " |" in table
         assert "no-eps" in table and "unverified" in table
         assert "—" in table  # 无入口点 / 未验证的占位
 

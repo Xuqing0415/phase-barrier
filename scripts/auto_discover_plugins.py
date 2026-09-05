@@ -1,9 +1,9 @@
-"""第三方插件仓库自动发现（v0.46.0）。
+"""第三方插件仓库自动发现（v0.46.0，v0.47.0 赋能增量刷新）。
 
 通过 GitHub Search API 按 topic 发现 ``phase-barrier-plugin`` 仓库，过滤已在
 ``plugins.json`` 中的条目；对新候选执行 ``git clone -> pip install -e ->
 anti-shortcut plugin-verify --json`` 全链路验证，通过后以 ``auto_discovered:
-true`` 加入索引并同步 ``docs/plugins.md`` 状态表，实现插件索引维护的自动化
+true`` 加入索引并同步 ``docs/plugin-status.md`` 插件状态页，实现插件索引维护的自动化
 （入口点归属到该仓库发行版，避免把环境中既有入口点误录为候选）
 （v0.45.0 的 ``verify_plugins.py`` 负责“验证既有条目”，本脚本负责“发现并收录
 新条目”，周期 workflow 先发现再全量验证）。
@@ -12,7 +12,7 @@ true`` 加入索引并同步 ``docs/plugins.md`` 状态表，实现插件索引�
 
     python scripts/auto_discover_plugins.py            # 只搜索并打印（dry-run，默认）
     python scripts/auto_discover_plugins.py --dry-run
-    python scripts/auto_discover_plugins.py --update   # 验证候选并写回索引 + 同步 docs
+    python scripts/auto_discover_plugins.py --update   # 验证候选并写回索引 + 同步插件状态页
     python scripts/auto_discover_plugins.py --update --json
 
 GitHub Search API 认证：``GH_TOKEN`` / ``GITHUB_TOKEN`` 环境变量或 ``--token``
@@ -277,6 +277,36 @@ def clone_verify(
         return True, entry, ""
 
 
+def _remote_head_sha(clone_url: str, timeout: float = 60) -> str:
+    """查询远程仓库 HEAD 提交 SHA（``git ls-remote``），失败返回空串。
+
+    用于已收录自动条目的增量判断（v0.47.0）：仅当远程
+    HEAD 与 ``last_commit_sha`` 不一致时才重新 clone 验证，避免每周
+    对未变更仓库重复安装。
+    """
+    if not clone_url:
+        return ""
+    try:
+        proc = _run(["git", "ls-remote", clone_url, "HEAD"], timeout=timeout)
+    except Exception:
+        return ""
+    if proc.returncode != 0:
+        return ""
+    parts = (proc.stdout or "").strip().split()
+    return parts[0][:40] if parts else ""
+
+
+def _existing_positions(index: list[dict]) -> dict[str, int]:
+    """归一化 GitHub 标识 -> 索引位置（首个匹配）。"""
+    positions: dict[str, int] = {}
+    for pos, entry in enumerate(index):
+        for raw in (entry.get("repo"), entry.get("install")):
+            key = _normalize_repo(raw)
+            if key and key not in positions:
+                positions[key] = pos
+    return positions
+
+
 def discover(
     index_path: Path,
     *,
@@ -286,31 +316,44 @@ def discover(
     per_page: int = 50,
     python: str | None = None,
 ) -> dict:
-    """发现并（可选）收录 topic 仓库：返回结构化摘要。"""
+    """发现并（可选）收录 / 刷新 topic 仓库：返回结构化摘要。
+
+    v0.47.0 起支持已收录自动条目的增量刷新：对搜索结果中
+    已在索引且 ``auto_discovered: true`` 的仓库，先用 ``git ls-remote``
+    查远程 HEAD，与 ``last_commit_sha`` 不一致时才重新
+    ``clone -> install -> plugin-verify`` 并更新条目（含新增入口点）；
+    无变化则跳过，避免每周重复安装。失败时把
+    状态记为 ``failed`` 但保留旧 ``last_commit_sha``，留待下轮重试。
+    """
     container = verify_plugins.load_index_file(index_path)
     index = container["plugins"]
     cfg = container.get("auto_discovery") or {}
     topic = topic or cfg.get("github_topic") or DEFAULT_TOPIC
+    empty = {
+        "ran_at": now_iso(),
+        "enabled": False,
+        "topic": topic,
+        "dry_run": dry_run,
+        "repos_seen": 0,
+        "already_indexed": 0,
+        "candidates": 0,
+        "candidate_repos": [],
+        "refresh_candidates": [],
+        "added": [],
+        "failures": [],
+        "refreshed": [],
+        "refresh_failed": [],
+        "index_updated": False,
+        "docs_synced": False,
+    }
     if not cfg.get("enabled", True):
-        return {
-            "ran_at": now_iso(),
-            "enabled": False,
-            "topic": topic,
-            "dry_run": dry_run,
-            "repos_seen": 0,
-            "already_indexed": 0,
-            "candidates": 0,
-            "candidate_repos": [],
-            "added": [],
-            "failures": [],
-            "index_updated": False,
-            "docs_synced": False,
-        }
-    existing = existing_repo_keys(index)
+        return empty
+    existing_pos = _existing_positions(index)
     items = github_search(topic, token=token, per_page=per_page)
     seen = 0
     already = 0
     candidates: list[dict] = []
+    refreshes: list[dict] = []  # 内部：{"repo", "pos", "old_sha", "new_sha"}
     for repo in items:
         if repo.get("fork") or repo.get("archived"):
             continue
@@ -323,12 +366,34 @@ def discover(
             )
             if key
         }
-        if keys & existing:
+        hit_positions = {existing_pos[k] for k in keys if k in existing_pos}
+        if not hit_positions:
+            candidates.append(repo)
+            continue
+        auto_hits = sorted(p for p in hit_positions if index[p].get("auto_discovered"))
+        if not auto_hits:
             already += 1
             continue
-        candidates.append(repo)
+        pos = auto_hits[0]
+        entry = index[pos]
+        old_sha = (entry.get("last_commit_sha") or "").strip()
+        clone_url = repo.get("clone_url") or repo.get("html_url") or ""
+        new_sha = _remote_head_sha(clone_url)
+        if not new_sha or new_sha == old_sha:
+            already += 1
+            continue
+        refreshes.append(
+            {
+                "repo": repo,
+                "pos": pos,
+                "old_sha": old_sha,
+                "new_sha": new_sha,
+            }
+        )
     added: list[dict] = []
     failures: list[dict] = []
+    refreshed_names: list[str] = []
+    refresh_failed: list[dict] = []
     if not dry_run:
         for repo in candidates:
             ok, entry, reason = clone_verify(repo, python=python)
@@ -342,13 +407,30 @@ def discover(
                         "reason": reason,
                     }
                 )
-        if added:
-            container["plugins"] = index
-            Path(index_path).write_text(
-                json.dumps(container, ensure_ascii=False, indent=2) + "\n",
-                encoding="utf-8",
-            )
-            verify_plugins.sync_index_docs(index)
+        for item in refreshes:
+            repo = item["repo"]
+            ok, entry, reason = clone_verify(repo, python=python)
+            if ok:
+                index[item["pos"]] = entry
+                refreshed_names.append(entry.get("name") or repo.get("full_name") or "")
+            else:
+                entry_old = index[item["pos"]]
+                entry_old["status"] = "failed"
+                entry_old["last_verified"] = now_iso()
+                refresh_failed.append(
+                    {
+                        "repo": repo.get("html_url") or repo.get("clone_url"),
+                        "reason": reason,
+                    }
+                )
+    changed = bool(added or refreshed_names or refresh_failed)
+    if not dry_run and changed:
+        container["plugins"] = index
+        Path(index_path).write_text(
+            json.dumps(container, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        verify_plugins.sync_index_docs(index)
     return {
         "ran_at": now_iso(),
         "enabled": True,
@@ -361,20 +443,31 @@ def discover(
             repo.get("html_url") or repo.get("full_name") or ""
             for repo in candidates
         ],
+        "refresh_candidates": [
+            {
+                "repo": item["repo"].get("html_url") or item["repo"].get("clone_url"),
+                "name": index[item["pos"]].get("name") or item["repo"].get("full_name") or "",
+                "old_sha": item["old_sha"],
+                "new_sha": item["new_sha"],
+            }
+            for item in refreshes
+        ],
         "added": [e["name"] for e in added],
         "failures": failures,
-        "index_updated": (not dry_run) and bool(added),
-        "docs_synced": (not dry_run) and bool(added),
+        "refreshed": refreshed_names,
+        "refresh_failed": refresh_failed,
+        "index_updated": (not dry_run) and changed,
+        "docs_synced": (not dry_run) and changed,
     }
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="第三方 phase-barrier 插件仓库自动发现（v0.46.0）"
+        description="第三方 phase-barrier 插件仓库自动发现 / 增量刷新（v0.47.0）"
     )
     parser.add_argument("--index", default=str(DEFAULT_INDEX), help="索引文件路径（默认 plugins.json）")
     parser.add_argument("--topic", default=None, help="GitHub topic（默认取 auto_discovery.github_topic）")
-    parser.add_argument("--update", action="store_true", help="验证候选并写回索引 + 同步 docs/plugins.md")
+    parser.add_argument("--update", action="store_true", help="验证候选并写回索引 + 同步 docs/plugin-status.md（含已收录自动条目的增量刷新）")
     parser.add_argument("--dry-run", action="store_true", help="只搜索与打印，不修改文件（默认）")
     parser.add_argument("--token", default=None, help="GitHub token（默认读 GH_TOKEN / GITHUB_TOKEN）")
     parser.add_argument("--per-page", type=int, default=50, help="Search API per_page（默认 50，上限 100）")
@@ -403,21 +496,31 @@ def main(argv: list[str] | None = None) -> int:
         elif dry_run:
             print(
                 f"[dry-run] topic={summary['topic']}：仓库 {summary['repos_seen']} 个"
-                f"（已在索引 {summary['already_indexed']}），候选 {summary['candidates']} 个"
+                f"（已收录无需动作 {summary['already_indexed']}），"
+                f"新增候选 {summary['candidates']}，可刷新 {len(summary['refresh_candidates'])}"
             )
             for repo in summary["candidate_repos"]:
                 print(f"  would-add: {repo}")
+            for cand in summary["refresh_candidates"]:
+                old8 = cand["old_sha"][:8] or "—"
+                new8 = cand["new_sha"][:8] or "—"
+                print(f"  would-refresh: {cand['name']} ({old8} -> {new8})")
         else:
             print(
-                f"auto-discover 完成：候选 {summary['candidates']}，新增 "
-                f"{len(summary['added'])}，失败 {len(summary['failures'])}"
+                f"auto-discover 完成：新增 {len(summary['added'])}，"
+                f"刷新 {len(summary['refreshed'])}，刷新失败 "
+                f"{len(summary['refresh_failed'])}，失败 {len(summary['failures'])}"
             )
             for entry in summary["added"]:
                 print(f"  added: {entry}")
+            for name in summary["refreshed"]:
+                print(f"  refreshed: {name}")
+            for fail in summary["refresh_failed"]:
+                print(f"  refresh-failed: {fail['repo']} -> {fail['reason']}")
             for fail in summary["failures"]:
                 print(f"  skipped: {fail['repo']} -> {fail['reason']}")
             if summary["index_updated"]:
-                print("plugins.json 已更新并同步 docs/plugins.md")
+                print("plugins.json 已更新并同步 docs/plugin-status.md")
     return 0
 
 

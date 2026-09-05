@@ -1,0 +1,1 @@
+"""plugin_alpha fixture 包：模拟第三方 phase-barrier 插件（四类入口点）。"""

@@ -2,6 +2,41 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.48.0] - 2026-09-05
+
+- **自定义域名文档与检查（任务 1）**：新增 `docs/custom-domain.md`（把
+  `docs.phase-barrier.dev` 指向 GitHub Pages：DNS CNAME、`docs/CNAME`、
+  Pages 设置、强制 HTTPS、回滚与故障排查）；新增纯标准库脚本
+  `scripts/check_custom_domain.py`（默认非阻塞警告、`--strict` 失败退出）；
+  `docs.yml` 每次构建前运行一次检查（未启用仅 `::warning::`，不影响部署）；
+  mkdocs 导航与文档站首页标注域名当前未启用（可选）。新增 5 个单测
+  （`tests/test_check_custom_domain.py`）。
+- **模拟第三方插件端到端演示（任务 2）**：新增可安装 fixture 插件
+  `tests/fixtures/plugin_alpha/`（语言适配器 / 阶段校验器 / 拦截规则 / 集成
+  插件四类入口点，仅测试用不发布）；新增 `tests/test_auto_discover_e2e.py`
+  4 个用例——用真实 git（init/commit/rev-parse）构造仓库，跑通自动发现收录
+  （真实 SHA 写回）、上游新提交触发增量刷新、刷新失败保留旧 SHA 并重试恢复、
+  验证失败不收录；clone/ls-remote 远程传输在沙箱限制下走本地等价实现
+  （copytree / rev-parse），判定语义与真实远端一致。`docs/plugins.md` 补充
+  “成为第一个第三方插件”行动号召与内置演练说明。
+- **文档站状态页自动维护（任务 3）**：`verify_plugins.py` 新增 `--sync-only`
+  （只把 `plugins.json` 渲染进 `docs/plugin-status.md`，不执行安装 / 验证）；
+  `docs.yml` 构建前先运行该步，状态页始终与索引一致；新增
+  `tests/test_docs_consistency.py` 4 个用例守护“plugins.md 只作指南 /
+  状态页是唯一同步表 / 条目一一对应”；CONTRIBUTING 补充维护机制说明。
+- **视频教程模板（任务 5）**：新增 `docs/video-tutorial-template.md`（脚本大纲、
+  OBS/Loom 等工具清单、Docker 演示环境、成片检查清单与发布建议）；
+  CONTRIBUTING 新增“制作视频教程 / 社区推广”章节。
+- **社区推广内容包（任务 6）**：新增 `docs/promotion/README.md`（一句话 /
+  长简介、核心数据表——953 个测试、13+ 语言、三平台 CI 矩阵、文档站与
+  Docker 入口，X / LinkedIn / Reddit / V2EX / 知乎五平台帖子模板、截图素材
+  建议、发布记录表）。
+- **Alpha-SWE 上游跟踪（任务 8）**：`docs/integrations.md` 新增“上游状态跟踪”
+  小节（alpha-swe#3 状态 open、查询命令、合并 / 关闭后的更新约定）。
+- **测试**：新增 14 个用例（域名 5 + E2E 4 + 一致性 4 + --sync-only 1）；
+  本地全量 pytest 953 个用例通过（除已知 mkdocs 子进程解释器差异），
+  mkdocs --strict 构建通过；docs / plugins 状态页一致性自动守护。
+
 ## [0.47.0] - 2026-09-05
 
 - **插件状态页接入文档站（v0.47.0）**：新增 `docs/plugin-status.md` 作为插件索引

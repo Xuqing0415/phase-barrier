@@ -227,10 +227,23 @@
   链接）+ 自动发现条目增量刷新（`git ls-remote` 对比 `last_commit_sha`，SHA 变化
   才重新验证并更新入口点；失败标记 `failed` 且保留旧 SHA 供重试；+7 单测）。
 
-## 待办 / 已知缺口（截至 v0.47.0）
-- 暂无缺陷 / 功能缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活，
-  Windows/macOS 并发写入缺陷（v0.42.1 / v0.43.1）已修复并补回归测试；第三方插件仓库
-  自动轮询（v0.46.0）已落地，插件可通过 GitHub topic 自动进入索引，
-  首次实跑已收录官方模板仓库（入口点归属修复 v0.46.1）。
+- **v0.48.0 已完成（遗留项一次性收口）**：自定义域名文档 + 非阻塞 CI 检查
+  （`docs/custom-domain.md` / `scripts/check_custom_domain.py`，当前未启用属可选）；
+  模拟第三方插件 fixture（`tests/fixtures/plugin_alpha/`）+ 自动发现 E2E 4 用例
+  （发现收录 / 新提交刷新 / 失败保留 SHA 并重试 / 失败不收录）；
+  `verify_plugins.py --sync-only` 接入 docs 构建（状态页与索引自动一致）+
+  文档一致性测试 4 用例；视频教程模板 `docs/video-tutorial-template.md`；
+  社区推广包 `docs/promotion/README.md`；Alpha-SWE #3 上游跟踪记录；
+  新增 14 个单测，全量 953 用例通过。
+
+## 待办 / 已知缺口（截至 v0.48.0）
+- 内部可执行项已清零（CI 平台矩阵真实工具链全量激活、插件自动发现 / 增量刷新 /
+  状态页自动维护、E2E 演练、推广与视频模板、上游跟踪记录均已落地）。
+- 仍属外部 / 资源依赖、无法在本仓库单方面清零：
+  - 自定义域名 `docs.phase-barrier.dev` 需用户持有域名并配置 DNS（未启用，可选）；
+  - 真实第三方插件数量依赖社区采用（工具与流程就绪，索引目前含官方模板仓库 1 条
+    自动条目）；
+  - Alpha-SWE 上游 PR #3 需上游仓库合入（状态 open，见 docs/integrations.md）；
+  - 大规模 SWE-bench 评测与视频 / 推广实际执行为资源型长期项（harness / 模板已备）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

@@ -10,6 +10,9 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/phase-barrier.svg)](https://pypi.org/project/phase-barrier/)
 [![Marketplace](https://img.shields.io/badge/Marketplace-Phase%20Barrier%20Gate-blue.svg?logo=github&logoColor=white)](https://github.com/marketplace/actions/phase-barrier-gate)
 
+> 文档站托管于 GitHub Pages；可选自定义域名 `docs.phase-barrier.dev`
+> 当前**未启用**（配置方法见 [custom-domain.md](custom-domain.md)）。
+
 ## 特性
 
 - **不可绕过**：校验逻辑位于 Agent 工具调用层，Agent 无法通过自然语言指令绕过；状态文件由 Skill 独占原子写入。

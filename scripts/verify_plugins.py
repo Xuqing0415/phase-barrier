@@ -304,15 +304,23 @@ def sync_index_docs(index: list[dict], path: Path | None = None) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="plugins.json 插件索引自动验证（v0.45.0）")
+    parser = argparse.ArgumentParser(
+        description="plugins.json 插件索引自动验证（v0.45.0；v0.48.0 增 --sync-only）"
+    )
     parser.add_argument("--index", default=str(DEFAULT_INDEX), help="索引文件路径（默认 plugins.json）")
     parser.add_argument("--update", action="store_true", help="验证后把 status / last_verified 写回索引")
     parser.add_argument("--json", action="store_true", help="stdout 输出结构化报告")
     parser.add_argument("--no-install", action="store_true", help="跳过条目安装（插件须已安装）")
     parser.add_argument("--sync-docs", action="store_true", help="把索引状态表同步到 docs/plugin-status.md 插件状态页（需文件内含同步标记）")
+    parser.add_argument("--sync-only", action="store_true", help="只把 plugins.json 状态表同步到插件状态页，不执行安装 / 验证（供文档站构建，v0.48.0）")
     args = parser.parse_args(argv)
 
     index_path = Path(args.index)
+    if args.sync_only:
+        index = load_index(index_path)
+        sync_index_docs(index)
+        print(f"docs/plugin-status.md 插件状态页已同步（{len(index)} 个条目，--sync-only）")
+        return 0
     index = load_index(index_path)
     report = verify_index(index, install=not args.no_install)
     if args.update:

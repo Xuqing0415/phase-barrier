@@ -334,10 +334,10 @@ class StateManager:
             self._data["evidence"][key] = value
             self._atomic_write()
 
-    def mark_source_change(self, path: str) -> None:
+    def mark_source_change(self, path: str, *, at_epoch: float | None = None) -> None:
         """记录代码/测试文件发生变更的时间戳（用于“修复后必须重测”校验）。"""
         with self._mutate():
-            self._data["evidence"]["last_source_change_at_epoch"] = time.time()
+            self._data["evidence"]["last_source_change_at_epoch"] = time.time() if at_epoch is None else at_epoch
             self._data["evidence"]["last_source_change_path"] = path
             self._atomic_write()
 

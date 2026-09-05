@@ -84,8 +84,8 @@ def test_test_run_no_threshold_no_coverage_ok(tmp_path):
 def test_retest_cov_threshold_blocks(tmp_path):
     cfg = GateConfig(coverage_threshold=80)
     s = make_state(tmp_path)
-    s.mark_source_change("fib.py")
-    s.mark_test_run({"exit_code": 0, "passed": True, "coverage": 50.0})
+    s.mark_source_change("fib.py", at_epoch=100.0)
+    s.mark_test_run({"exit_code": 0, "passed": True, "coverage": 50.0, "at_epoch": 200.0})
     ok, msg, _ = validate_retest(tmp_path, cfg, s)
     assert not ok and "覆盖率不足" in msg
 
@@ -93,8 +93,8 @@ def test_retest_cov_threshold_blocks(tmp_path):
 def test_retest_cov_threshold_ok(tmp_path):
     cfg = GateConfig(coverage_threshold=80)
     s = make_state(tmp_path)
-    s.mark_source_change("fib.py")
-    s.mark_test_run({"exit_code": 0, "passed": True, "coverage": 95.0})
+    s.mark_source_change("fib.py", at_epoch=100.0)
+    s.mark_test_run({"exit_code": 0, "passed": True, "coverage": 95.0, "at_epoch": 200.0})
     ok, msg, ev = validate_retest(tmp_path, cfg, s)
     assert ok
     assert ev["coverage"] == 95.0
@@ -146,13 +146,13 @@ def test_skill_cov_gate_retest_path(tmp_path, fake_tools):
     assert r["success"] and r["stage"] == 5
 
     # 修复后重测但覆盖率不足 -> 拒绝
-    skill.state.mark_source_change("fib.py")
-    skill.state.mark_test_run({"exit_code": 0, "passed": True, "coverage": 70.0})
+    skill.state.mark_source_change("fib.py", at_epoch=100.0)
+    skill.state.mark_test_run({"exit_code": 0, "passed": True, "coverage": 70.0, "at_epoch": 200.0})
     r = tools["advance_stage"](6)
     assert not r["success"] and "覆盖率不足" in r["error"]
 
     # 修复后重测且覆盖率达标 -> 通过并交付
-    skill.state.mark_test_run({"exit_code": 0, "passed": True, "coverage": 90.0})
+    skill.state.mark_test_run({"exit_code": 0, "passed": True, "coverage": 90.0, "at_epoch": 300.0})
     r = tools["advance_stage"](6)
     assert r["success"] and r["stage"] == 6
     assert skill.is_complete

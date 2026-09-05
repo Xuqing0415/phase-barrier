@@ -160,9 +160,11 @@
   入口点 / 文档同步；解析器模糊测试目标 11 -> 12；CI test / coverage job 安装
   `dart-lang/setup-dart` 激活真实语法用例（通过 / 报错两条路径）；新增
   `tests/test_dart_adapter.py` 19 个用例（2 个真实用例按 dart 是否安装启用）。
-- **v0.41.0 已完成**：真实 SWE-bench 评测 harness —— 新增 `benchmarks/swebench_runner.py`（官方同构实例清单 + 基线 / 门禁双组命令模板 + stdout 标记聚合 resolve 率 / 拦截率 / 耗时；`--synthetic` 确定性冒烟与 `--fail-fast` 阈值门禁；不内置官方 swebench 容器与隐藏测试打分，真实运行需用户环境，教程见 `docs/tutorials/swe-bench-real.md`）；新增 `tests/test_swebench_runner.py` 11 个用例；CI bench job 追加合成冒烟步骤。Alpha-SWE 上游接入同步落地（`Xuqing0415/alpha-swe` PR #3 已合并，原待办移除）。## 待办 / 已知缺口（截至 v0.41.0）
-- **CI 平台矩阵**：Linux / Windows（v0.36.0）/ macOS（v0.38.0）核心 pytest 均入 CI；
-  Windows / macOS job 不装真实语言工具链（ubuntu 全量激活，macOS 原生 swiftc 激活
-  SwiftAdapter 真实用例）；Windows 真实工具链激活仍待加。
+- **v0.41.0 已完成**：真实 SWE-bench 评测 harness —— 新增 `benchmarks/swebench_runner.py`（官方同构实例清单 + 基线 / 门禁双组命令模板 + stdout 标记聚合 resolve 率 / 拦截率 / 耗时；`--synthetic` 确定性冒烟与 `--fail-fast` 阈值门禁；不内置官方 swebench 容器与隐藏测试打分，真实运行需用户环境，教程见 `docs/tutorials/swe-bench-real.md`）；新增 `tests/test_swebench_runner.py` 11 个用例；CI bench job 追加合成冒烟步骤。Alpha-SWE 上游接入同步落地（`Xuqing0415/alpha-swe` PR #3 已合并，原待办移除）。
+- **v0.41.1 / v0.41.2 已完成（coverage 门禁修复）**：v0.40.0 / v0.41.0 全量 CI 覆盖率 88% < 90%，暴露 gRPC 业务代码未被实测的盲区 —— gRPC handler 跑在 worker 线程，默认 coverage 不按线程追踪（`[tool.coverage.run]` 增加 `concurrency = "thread"`），并新增 `tests/test_grpc_service_direct.py` 8 个主线程直调用例（`grpc_service.py` 覆盖率 17% -> 92%）；进一步定位 v0.39.0 起 gRPC 测试在 CI 一直静默跳过的根因：pb2 生成代码依赖 `google.protobuf`，但 `grpc` / `dev` extra 未声明，已补 `protobuf>=7.35.1`，且两个 gRPC 测试模块对非 grpcio 缺失的导入异常直接抛出。修复后 CI coverage job 为 `850 passed, 0 skipped`、`grpc_service.py` 92%、TOTAL 90% 过门禁。
+- **v0.42.0 已完成**：Windows CI 真实工具链激活与回归门禁时间戳修复 —— `test-windows` job（Python 3.10-3.14 矩阵）更名为 `pytest (Windows ...)`，安装 Node 20 / Go 1.22 / Rust stable / Ruby 3.3 / PHP 8.3 / JDK 17 + kotlinc 2.2.0 / .NET 8 / Scala 2.13.18 / Dart 工具链并加入 PATH（PowerShell 下载 kotlinc / scala zip），Windows 上 JS/Go/Rust/Ruby/PHP/Java/Kotlin/.NET/Scala/Dart 适配器真实工具用例不再跳过；Swift 无 Windows 工具链，对应真实用例按 skipif 跳过。同时修复回归门禁的时间戳并发平台差异（Windows CI 偶发失败）：测试运行与源码修改落在同一时钟粒度时门禁失败关闭（`validate_retest` 比较改 `ran_at <= changed_at`，`advance_stage` 4->6 直达分支改 `ran_at > changed_at`），`mark_source_change` 支持注入 `at_epoch` 使顺序单测确定性化，并新增同时间戳失败关闭边界用例。
+
+## 待办 / 已知缺口（截至 v0.42.0）
+- **CI 平台矩阵**：Linux / Windows（v0.36.0 起入矩阵、v0.42.0 起激活真实工具链）/ macOS（v0.38.0 起）核心 pytest 均入 CI；Linux 与 Windows job 全量安装真实语言工具链（Python/JS/Go/Rust/Ruby/PHP/JDK/Kotlin/.NET/Scala/Dart，Windows 无 Swift 工具链按 skip 跳过），macOS 原生 swiftc 激活 SwiftAdapter 真实用例，其余真实工具链未装（对应真实用例按 skip 跳过）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

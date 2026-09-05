@@ -2,6 +2,18 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.43.0] - 2026-09-05
+
+- **macOS CI 真实工具链激活（v0.43.0）**：`test-macos` job（Python 3.12 / 3.13）更名为
+  `pytest (macOS ...)`，安装 Node 20 / Go 1.22 / Rust stable / Ruby 3.3 / PHP 8.3 / JDK 17 +
+  kotlinc 2.2.0 / .NET 8 / Scala 2.13.18 / Dart 工具链（kotlinc / scala 下载到 runner temp
+  并加入 PATH），与 ubuntu / Windows（v0.42.0）job 对齐；JS/Go/Rust/Ruby/PHP/Java/Kotlin/
+  C#/.NET/Scala/Dart 适配器真实工具用例在 macOS CI 强制执行（不再因缺工具链 skip）；Swift 由
+  macOS runner 自带 Xcode CLT（swiftc）原生激活。至此 CI 平台矩阵在 Linux / Windows / macOS
+  三平台全量激活真实语言工具链，消除环境跳过盲区。
+- **测试与文档（v0.43.0）**：覆盖 macOS 专属路径（POSIX flock/fcntl 状态锁、路径分隔、
+  CLI / sidecar / proxy / audit）；Roadmap 标记 v0.43.0 已落地，原“macOS 其余真实工具链未装”
+  缺口关闭。
 ## [0.42.1] - 2026-09-05
 
 - **Windows 状态文件并发写入修复（v0.42.1）**：定位 Windows CI 偶发失败

@@ -667,7 +667,7 @@ jobs:
         run: python -m pytest
 
   test-macos:
-    name: pytest core (macOS ${{ matrix.python-version }})
+    name: pytest (macOS ${{ matrix.python-version }})
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -684,12 +684,56 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      # v0.38.0: macOS 核心测试（不额外安装 JS/Go/Rust/Ruby/PHP/JDK/kotlinc/dotnet/scala
-      # 真实工具链；对应真实工具用例按 skipif 自动跳过，ubuntu job 全量激活）。
-      # macOS runner 自带 Xcode CLT（swiftc），SwiftAdapter 真实语法用例天然激活；
-      # 覆盖 macOS 专属路径：POSIX flock（fcntl）状态锁、路径处理、CLI / sidecar / audit。
-      - name: Show Swift toolchain (Xcode CLT)
-        run: swiftc -version
+      # v0.43.0: macOS 激活真实工具链 —— 安装 Node/Go/Rust/Ruby/PHP/JDK/kotlinc/.NET/Scala/Dart，
+      # 与 ubuntu / Windows（v0.42.0）job 对齐，消除真实工具用例在 macOS 上的 skip 盲区；
+      # Swift 用 macOS runner 自带 Xcode CLT（swiftc）激活 SwiftAdapter 真实用例；
+      # 覆盖 macOS 专属路径：POSIX flock/fcntl 状态锁、路径分隔与 CLI / sidecar / proxy / audit。
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.22'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Kotlin compiler (kotlinc 2.2.0)
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/kotlin-compiler.zip" \
+            https://github.com/JetBrains/kotlin/releases/download/v2.2.0/kotlin-compiler-2.2.0.zip
+          rm -rf "$RUNNER_TEMP/kotlinc"
+          unzip -q "$RUNNER_TEMP/kotlin-compiler.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/kotlinc/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/kotlinc/bin/kotlinc" -version
+          "$RUNNER_TEMP/kotlinc/bin/kotlinc" -version 2>&1 | grep -q '2\.2\.0'
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install Scala compiler (scala-2.13.18)
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/scala.tgz" \
+            https://github.com/scala/scala/releases/download/v2.13.18/scala-2.13.18.tgz
+          rm -rf "$RUNNER_TEMP/scala-2.13.18"
+          tar -xzf "$RUNNER_TEMP/scala.tgz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/scala-2.13.18/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/scala-2.13.18/bin/scalac" -version
+          "$RUNNER_TEMP/scala-2.13.18/bin/scalac" -version 2>&1 | grep -q '2\.13\.18'
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Show toolchains
+        run: |
+          swiftc -version
+          dart --version
 
       - name: Install package and dev deps
         run: |

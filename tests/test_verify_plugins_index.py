@@ -256,3 +256,68 @@ class TestMainCli:
             },
         )
         assert vp.main(["--index", str(index_path), "--no-install"]) == 1
+# ---------- v0.45.1：--sync-docs 文档状态表同步 ----------
+
+class TestSyncDocs:
+    """scripts/verify_plugins.py --sync-docs 与渲染函数（v0.45.1）。"""
+
+    def _doc(self, tmp_path: Path) -> Path:
+        doc = tmp_path / "plugins.md"
+        doc.write_text(
+            "A\n<!-- plugins-index:start -->\nOLD TABLE\n<!-- plugins-index:end -->\nB\n",
+            encoding="utf-8",
+        )
+        return doc
+
+    def test_render_index_table_columns(self):
+        index = [
+            _entry(
+                name="phase-barrier-foo-adapter",
+                repo="./examples/custom_adapter",
+                entry_points={"phase_barrier.languages": ["foo"]},
+                status="passed",
+                last_verified="2026-09-05T00:00:00Z",
+            ),
+            _entry(name="no-eps", repo="./x", entry_points={}, status="unverified", last_verified=None),
+        ]
+        table = vp.render_index_table(index)
+        assert table.startswith("| 插件 | 来源 | 入口点 | 状态 | 最近验证 |")
+        assert "| phase-barrier-foo-adapter | `./examples/custom_adapter` | languages: foo | passed | 2026-09-05T00:00:00Z |" in table
+        assert "no-eps" in table and "unverified" in table
+        assert "—" in table  # 无入口点 / 未验证的占位
+
+    def test_sync_docs_replaces_block(self, tmp_path):
+        doc = self._doc(tmp_path)
+        index = [_entry(status="passed", last_verified="2026-09-05T00:00:00Z")]
+        vp.sync_index_docs(index, doc)
+        text = doc.read_text(encoding="utf-8")
+        assert "OLD TABLE" not in text
+        assert text.startswith("A\n<!-- plugins-index:start -->")
+        assert text.endswith("<!-- plugins-index:end -->\nB\n")
+        assert "demo-plugin" in text and "passed" in text
+        assert text.count(vp.MARK_START) == 1 and text.count(vp.MARK_END) == 1
+
+    def test_sync_docs_missing_markers_raises(self, tmp_path):
+        doc = tmp_path / "plugins.md"
+        doc.write_text("no markers\n", encoding="utf-8")
+        with pytest.raises(ValueError, match="同步标记"):
+            vp.sync_index_docs([_entry()], doc)
+
+    def test_main_sync_docs_flag(self, tmp_path, monkeypatch):
+        index_path = tmp_path / "plugins.json"
+        index_path.write_text(json.dumps([_entry()], ensure_ascii=False), encoding="utf-8")
+        monkeypatch.setattr(
+            vp,
+            "verify_index",
+            lambda index, *, install: {
+                "verified_at": "2026-09-05T00:00:00Z",
+                "ok": True,
+                "plugins": {"demo-plugin": {"status": "passed", "entry_points": [], "detail": "ok"}},
+            },
+        )
+        calls: list[list[dict]] = []
+        monkeypatch.setattr(vp, "sync_index_docs", lambda index: calls.append(index))
+        rc = vp.main(["--index", str(index_path), "--sync-docs", "--no-install"])
+        assert rc == 0
+        assert len(calls) == 1
+        assert calls[0][0]["name"] == "demo-plugin"

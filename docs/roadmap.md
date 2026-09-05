@@ -195,7 +195,13 @@
   （安装 -> 子进程 plugin-verify -> 断言入口点 -> `--update` 写回状态）+
   `plugin-verification.yml` 每周二自动验证并提交变更 + 20 个脚本单测）。
 
-## 待办 / 已知缺口（截至 v0.45.0）
+- **v0.45.1 已完成**：编排器辅助查询 CLI 化（`anti-shortcut query` 子命令：
+  `--required-evidence` / `--last-test-run` / `--stage-history` /
+  `--has-uncommitted-changes`，`--json` 即 SDK 返回结构，API / hooks 文档同步）+ 插件索引
+  状态表自动同步（`verify_plugins.py --sync-docs` 渲染 `docs/plugins.md` 表格，
+  `plugin-verification.yml` 联动提交）。
+
+## 待办 / 已知缺口（截至 v0.45.1）
 - 暂无已知缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活，
   Windows/macOS 并发写入缺陷（v0.42.1 / v0.43.1）已修复并补回归测试；后续缺口随
   Roadmap 迭代再补记。

@@ -248,4 +248,5 @@
     该项不再阻塞，剩余仅为跨仓库推广执行；
   - 大规模 SWE-bench 评测与视频 / 推广实际执行为资源型长期项（harness / 模板已备）。
 
-版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。
+发布为里程碑驱动：日常改动累积在 main，仅用户可感知里程碑 / 紧急修复才打 tag
+（同日不重复发布）；发版前把累积变化汇总进 CHANGELOG（详见 [发布流程](release.md)）。

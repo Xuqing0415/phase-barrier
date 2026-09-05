@@ -33,11 +33,14 @@ python -m flake8 --jobs=1 <files> # 风格检查
 
 ## 发布流程
 
-版本号由 git tag 驱动：
+发布为**里程碑驱动**：日常改动合入 main 累积、不打 tag；只有用户可感知里程碑或
+紧急修复才发版（同日不重复发布）。节奏政策详见 [发布流程](release.md)。
+
+打 tag 时由 git tag 驱动版本号：
 
 ```bash
 git tag vX.Y.Z && git push origin vX.Y.Z
 ```
 
-触发 CI + release 工作流（PyPI Trusted Publishing + sigstore 签名 + GitHub Release）。
-每次发版前更新 [更新日志](changelog.md)。
+触发 CI + release 工作流（PyPI Trusted Publishing + sigstore 签名 + GitHub Release）；
+发版前把累积变化汇总进 [更新日志](changelog.md)。

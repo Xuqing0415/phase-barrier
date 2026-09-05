@@ -198,6 +198,15 @@ def render_config(
         "#   mutation_score:          # Python AST 变异测试，防“空测试 / 假断言”",
         "#     enabled: true",
         "#     min_score: 80",
+        "#   spec_specificity:        # spec 具体性五维校验，拒绝“278 字套话”式空泛 spec",
+        "#     enabled: true",
+        "#     min_entities: 5",
+        "#     min_signatures: 2",
+        "#     min_decision_phrases: 1",
+        "#     min_requirement_anchors: 2",
+        "#     max_filler_hits: 1",
+        "#   test_assertion_quality:  # 断言质量：拒绝 assert True 等纯常数断言",
+        "#     enabled: true",
         "",
     ]
     return "\n".join(lines)

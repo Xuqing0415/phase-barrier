@@ -7,7 +7,7 @@ phase-barrier 通过 Python 入口点（entry points）支持五类插件：
 | `phase_barrier.languages` | 自定义语言适配器 | `examples/custom_adapter/` |
 | `phase_barrier.validators` | 自定义阶段校验器（覆盖内置） | `examples/plugin_rules/` |
 | `phase_barrier.interceptors` | 自定义拦截规则 | `examples/plugin_rules/` |
-| `phase_barrier.semantic_validators` | 语义级校验器（需求追踪 / 变异测试 / LLM 审查等，v0.49.0） | `examples/semantic_llm_check/` |
+| `phase_barrier.semantic_validators` | 语义级校验器（需求追踪 / 变异测试 / spec 具体性 / 断言质量 / LLM 审查等，v0.49.0 起） | `examples/semantic_llm_check/` |
 | `anti_shortcut.integrations` | Agent 集成插件（自动装回包装后的工具） | `examples/orchestrator_hooks/` |
 
 > **自动收录（v0.46.0）**：索引数据由 `plugins.json` 承载、每周自动验证工作流维护，

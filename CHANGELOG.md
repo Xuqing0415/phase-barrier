@@ -2,6 +2,17 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.45.2] - 2026-09-05
+
+- **文档一致性收敛（v0.45.2）**：README 支持语言表补 Dart 行（v0.40.0 遗漏）、
+  docs/languages.md 适配器总表补 RubyAdapter 行（v0.11.0 遗漏）、docs/faq.md 内置适配器
+  清单更新为 13 种语言；docs/best-practices.md 移除对已精简 README“长期规划”章节的过时
+  引用，改为指向已落地事实（v0.31.0 security.yml 依赖漏洞扫描 / benchmarks/fuzz_parsers.py
+  模糊测试基准，供应链示例命令更新到 v0.45.1）；`query` CLI 版本标注统一为 v0.45.1
+  （`__main__.py` help / docstring、docs/api.md、docs/orchestrator-hooks.md）；Roadmap 待办
+  补记唯一后续规划项（第三方插件仓库自动轮询 `phase-barrier-plugin-index`，未承诺版本）；
+  历史博客 docs/blog/ 加更新注记说明为 v0.3 时代快照。
+
 ## [0.45.1] - 2026-09-05
 
 - **编排器辅助查询 CLI 化（v0.45.1）**：新增 `anti-shortcut query` 子命令，把

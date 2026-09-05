@@ -25,8 +25,9 @@ min_test_functions: 3
 彻底“一键关闭全部门禁”与设计目标相悖，不支持。
 
 **如何适配非 Python 项目？**
-v0.3.0 起推荐使用语言适配层：`language: javascript` / `java` / `go` / `rust`（内置 Python、
-JavaScript/TypeScript、Java、Go、Rust 适配器，并支持按工作区标志文件自动检测）；更特殊的语言可提供自定义 `LanguageAdapter`
+v0.3.0 起推荐使用语言适配层：`language: python` / `javascript` / `java` / `go` / `rust` 等
+（内置 Python、JavaScript/TypeScript、Java、Kotlin、Scala、Go、Rust、Ruby、PHP、C/C++、C#/.NET、
+Swift、Dart 语言适配器，并支持按工作区标志文件自动检测，完整清单见 [语言适配器](languages.md)）；更特殊的语言可提供自定义 `LanguageAdapter`
 （用 `language_adapter` 配置导入路径）。不引入适配器时，仍可直接配置
 `test_file_patterns` / `source_file_patterns` / `test_commands` 三项，
 门禁逻辑（阶段状态机 + 证据校验 + 工具拦截）保持不变。

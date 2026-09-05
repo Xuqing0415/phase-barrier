@@ -36,5 +36,5 @@ if not result["success"]:
 
 CLI 等价调用：`python -m anti_shortcut check --workspace . --stage 2 --json`；
 辅助查询可用 `python -m anti_shortcut query --required-evidence 3 --json` /
-`--last-test-run` / `--stage-history` / `--has-uncommitted-changes`（v0.45.0）。
+`--last-test-run` / `--stage-history` / `--has-uncommitted-changes`（v0.45.1）。
 完整示例见 `examples/orchestrator_hooks/`。

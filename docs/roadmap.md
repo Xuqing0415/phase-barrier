@@ -201,9 +201,16 @@
   状态表自动同步（`verify_plugins.py --sync-docs` 渲染 `docs/plugins.md` 表格，
   `plugin-verification.yml` 联动提交）。
 
-## 待办 / 已知缺口（截至 v0.45.1）
-- 暂无已知缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活，
-  Windows/macOS 并发写入缺陷（v0.42.1 / v0.43.1）已修复并补回归测试；后续缺口随
-  Roadmap 迭代再补记。
+- **v0.45.2 已完成**：文档一致性收敛——README 支持语言表补 Dart 行（v0.40.0 遗漏）、
+  docs/languages.md 补 RubyAdapter 行（v0.11.0 遗漏）、docs/faq.md 内置适配器清单更新为
+  13 种语言；docs/best-practices.md 移除对已精简 README“长期规划”章节的过时引用，改为
+  指向已落地事实（security.yml 漏洞扫描 / fuzz 基准 / 供应链示例）；`query` CLI 版本标注
+  统一为 v0.45.1（help / docstring / api.md / orchestrator-hooks.md）；历史博客加更新注记。
+
+## 待办 / 已知缺口（截至 v0.45.2）
+- 暂无缺陷 / 功能缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活，
+  Windows/macOS 并发写入缺陷（v0.42.1 / v0.43.1）已修复并补回归测试。
+- 后续规划（未承诺版本）：第三方插件仓库自动轮询（`phase-barrier-plugin-index`）尚未实现，
+  插件收录仍走 Issue 模板 + 插件仓库自带 Plugin CI（见 docs/plugins.md）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

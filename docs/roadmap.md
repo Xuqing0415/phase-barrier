@@ -164,7 +164,12 @@
 - **v0.41.1 / v0.41.2 已完成（coverage 门禁修复）**：v0.40.0 / v0.41.0 全量 CI 覆盖率 88% < 90%，暴露 gRPC 业务代码未被实测的盲区 —— gRPC handler 跑在 worker 线程，默认 coverage 不按线程追踪（`[tool.coverage.run]` 增加 `concurrency = "thread"`），并新增 `tests/test_grpc_service_direct.py` 8 个主线程直调用例（`grpc_service.py` 覆盖率 17% -> 92%）；进一步定位 v0.39.0 起 gRPC 测试在 CI 一直静默跳过的根因：pb2 生成代码依赖 `google.protobuf`，但 `grpc` / `dev` extra 未声明，已补 `protobuf>=7.35.1`，且两个 gRPC 测试模块对非 grpcio 缺失的导入异常直接抛出。修复后 CI coverage job 为 `850 passed, 0 skipped`、`grpc_service.py` 92%、TOTAL 90% 过门禁。
 - **v0.42.0 已完成**：Windows CI 真实工具链激活与回归门禁时间戳修复 —— `test-windows` job（Python 3.10-3.14 矩阵）更名为 `pytest (Windows ...)`，安装 Node 20 / Go 1.22 / Rust stable / Ruby 3.3 / PHP 8.3 / JDK 17 + kotlinc 2.2.0 / .NET 8 / Scala 2.13.18 / Dart 工具链并加入 PATH（PowerShell 下载 kotlinc / scala zip），Windows 上 JS/Go/Rust/Ruby/PHP/Java/Kotlin/.NET/Scala/Dart 适配器真实工具用例不再跳过；Swift 无 Windows 工具链，对应真实用例按 skipif 跳过。同时修复回归门禁的时间戳并发平台差异（Windows CI 偶发失败）：测试运行与源码修改落在同一时钟粒度时门禁失败关闭（`validate_retest` 比较改 `ran_at <= changed_at`，`advance_stage` 4->6 直达分支改 `ran_at > changed_at`），`mark_source_change` 支持注入 `at_epoch` 使顺序单测确定性化，并新增同时间戳失败关闭边界用例。
 
-## 待办 / 已知缺口（截至 v0.42.0）
+- **v0.42.1 已完成**：Windows 状态文件并发写入修复 —— `StateManager.__init__` / `reload()`
+  改为持伴生文件锁读取（Windows 读句柄默认不共享删除，无锁读会阻塞并发写线程的
+  `os.replace`，表现为 CI 偶发 `test_bench_state_contention_smoke` 23/24）；
+  `os.replace` 增加短退避重试抵御瞬时共享冲突。
+
+## 待办 / 已知缺口（截至 v0.42.1）
 - **CI 平台矩阵**：Linux / Windows（v0.36.0 起入矩阵、v0.42.0 起激活真实工具链）/ macOS（v0.38.0 起）核心 pytest 均入 CI；Linux 与 Windows job 全量安装真实语言工具链（Python/JS/Go/Rust/Ruby/PHP/JDK/Kotlin/.NET/Scala/Dart，Windows 无 Swift 工具链按 skip 跳过），macOS 原生 swiftc 激活 SwiftAdapter 真实用例，其余真实工具链未装（对应真实用例按 skip 跳过）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

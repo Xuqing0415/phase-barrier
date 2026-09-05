@@ -36,8 +36,9 @@ dev = [
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
     "grpcio>=1.83.1",
+    "protobuf>=7.35.1",
 ]
-grpc = ["grpcio>=1.83.1"]
+grpc = ["grpcio>=1.83.1", "protobuf>=7.35.1"]
 
 [project.scripts]
 anti-shortcut = "anti_shortcut.__main__:main"

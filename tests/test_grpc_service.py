@@ -17,9 +17,14 @@ try:
     from anti_shortcut.proto import sidecar_pb2, sidecar_pb2_grpc
 
     _HAVE_GRPC = True
-except Exception:  # pragma: no cover - grpcio 未安装（可选依赖）
-    grpc = None  # type: ignore[assignment]
-    _HAVE_GRPC = False
+except ModuleNotFoundError as exc:  # pragma: no cover - 可选依赖缺失
+    if getattr(exc, 'name', '') == 'grpc':
+        grpc = None  # type: ignore[assignment]
+        _HAVE_GRPC = False
+    else:
+        raise
+except Exception:  # pragma: no cover - 其他导入异常直接暴露，避免 CI 静默跳过
+    raise
 
 from anti_shortcut.sidecar import GateSidecar
 from conftest import GOOD_IMPL, GOOD_TESTS, SPEC

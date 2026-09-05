@@ -2,6 +2,12 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.41.2] - 2026-09-05
+
+- **根因修复：grpc extra 补上 protobuf 依赖（v0.41.2）**：v0.39.0 起 gRPC 测试在 CI 一直静默跳过 —— pb2 生成代码依赖 `google.protobuf`（`sidecar_pb2.py` 要求运行时 protobuf>=7.35.1），但 pyproject 的 `grpc` / `dev` extra 未声明 protobuf，CI 全新环境安装后 `from anti_shortcut.proto import sidecar_pb2` 抛 ModuleNotFoundError 被测试文件吞掉（表现为 skipif 跳过），导致 `grpc_service.py` 覆盖率仅 17%、coverage 门禁 88% < 90%。本版本在 `grpc` / `dev` extra 增加 `protobuf>=7.35.1`。
+- **导入失败显式化（v0.41.2）**：`tests/test_grpc_service.py` 与 `tests/test_grpc_service_direct.py` 的导入块改为 —— 仅 `grpcio` 缺失时按可选依赖跳过，其他导入异常（如缺 protobuf）直接抛出，杜绝再次静默跳过；直调模块的 skip 原因会携带具体导入错误。
+- 保留 v0.41.1 的 `concurrency = "thread"` 与主线程直调补测；修复后 gRPC 用例将在 CI ubuntu 全工具链矩阵真实执行。
+
 ## [0.41.1] - 2026-09-05
 
 - **coverage 门禁修复（v0.41.1）**：CI coverage job 曾漏测 gRPC worker 线程 —— `anti_shortcut/grpc_service.py` 在 CI 实测仅 17%（本地 69%），导致 v0.40.0 / v0.41.0 全量 CI 覆盖率 88% < 90% 门禁失败；`[tool.coverage.run]` 增加 `concurrency = "thread"`，按线程追踪多线程代码（gRPC handler / 审计队列），恢复门禁一致性。

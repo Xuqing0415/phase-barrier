@@ -9,7 +9,7 @@
           "foo"
         ]
       },
-      "last_verified": "2026-09-05T09:13:39Z",
+      "last_verified": "2026-09-05T09:20:23Z",
       "status": "passed",
       "auto_discovered": false,
       "last_commit_sha": null
@@ -26,10 +26,33 @@
           "deny_vendor"
         ]
       },
-      "last_verified": "2026-09-05T09:13:39Z",
+      "last_verified": "2026-09-05T09:20:23Z",
       "status": "passed",
       "auto_discovered": false,
       "last_commit_sha": null
+    },
+    {
+      "name": "Xuqing0415/phase-barrier-plugin-template",
+      "repo": "https://github.com/Xuqing0415/phase-barrier-plugin-template",
+      "install": "git+https://github.com/Xuqing0415/phase-barrier-plugin-template.git#egg=phase-barrier-plugin-template",
+      "entry_points": {
+        "anti_shortcut.integrations": [
+          "demo_integration"
+        ],
+        "phase_barrier.interceptors": [
+          "deny_vendor"
+        ],
+        "phase_barrier.languages": [
+          "demo"
+        ],
+        "phase_barrier.validators": [
+          "require_design_review"
+        ]
+      },
+      "last_verified": "2026-09-05T09:20:23Z",
+      "status": "passed",
+      "auto_discovered": true,
+      "last_commit_sha": "6208a4e6f36769dbd158c86b408f3a07b18fe57c"
     }
   ],
   "auto_discovery": {

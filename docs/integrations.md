@@ -75,9 +75,11 @@ wrapped_commands = install(gate, my_command_registry)
   CHANGELOG 中补一条说明。
 - 查询命令：`gh pr view 3 -R Xuqing0415/alpha-swe`（状态为外部仓库属性，
   不受本仓库发布节奏控制）。
-- 当前状态（截至 v0.48.0）：**open（待上游合入 / 反馈）**。
-- 若上游长期无响应：可在该 PR 下友好 ping 一次，或在社区渠道提醒；
-  若上游明确不接受，本仓库的 `docs/orchestrator-hooks.md` 与示例仍可独立演进。
+- 当前状态（更新于 v0.48.0 之后）：**merged（上游已合入 master）**。
+- 合并信息：2026-08-30 由 Xuqing0415 合入，合并提交 `128e6a4`（PR #3，`feat/phase-barrier-gate`）；
+  quality-gate（flake8 / pytest / docker build）与 chaos-stage 检查全部 SUCCESS。
+- 后续动作：本仓库 `docs/orchestrator-hooks.md` 与示例保持独立演进；若上游新版本
+  行为有变化，在此更新状态并在 CHANGELOG 补一条说明。
 
 ## K8s sidecar 部署
 

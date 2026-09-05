@@ -130,6 +130,7 @@ anti-shortcut advance --workspace . --to 2                         # 推进阶�
 | PHP | PhpAdapter | PHPUnit |
 | C / C++ | CppAdapter | GoogleTest / Catch2 / CTest |
 | C# / .NET | CSharpAdapter / DotNetAdapter | xUnit / NUnit / VSTest / dotnet test |
+| Dart | DartAdapter | package:test / flutter test |
 
 自动检测规则、自定义适配器与各语言语法检查方式见 [docs/languages.md](docs/languages.md)。
 

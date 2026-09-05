@@ -1,7 +1,7 @@
 # 最佳实践
 
 本页汇总 phase-barrier 在生产与日常使用中的推荐做法，覆盖阶段建模、证据设计、配置、
-Agent 集成选型、常见坑，以及 README 长期规划中的性能与安全加固清单。
+Agent 集成选型、常见坑，以及已落地的性能与安全加固清单（对应 Roadmap v0.31.0）。
 
 ## 阶段建模
 
@@ -72,21 +72,22 @@ audit_remote_url: ${AUDIT_URL}   # 审计远程推送（SIEM / webhook）
 - **Windows 端口占用**：本地跑 sidecar 测试时 `0.0.0.0:8080` 可能被占用/受限，
   CI 使用 ubuntu runner 无此问题。
 
-## 性能与安全加固清单（v0.29.0 Roadmap）
+## 性能与安全加固清单（v0.31.0 起已落地）
 
-对应 README 长期规划中的“性能与安全加固（依赖漏洞扫描 / 模糊测试）”：
+对应 Roadmap v0.31.0 已落地的“性能与安全加固（解析器模糊测试 / 依赖漏洞扫描）”：
 
 - **多 Agent 并发**：状态文件已支持跨进程文件锁（POSIX `flock` / Windows `msvcrt.locking`）
   与原子替换（temp + rename）；基准脚本 `benchmarks/bench.py` 默认 100 线程 × 20 轮，
   CI `bench` job 以 p95 阈值做回归门禁。
-- **依赖漏洞扫描**：发布前跑 `pip-audit` / `pip-audit -r requirements`（或 Dependabot）；
-  建议纳入 CI，阻止含已知 CVE 的依赖进入发布。
-- **模糊测试**：对 `parse_test_output` / 配置加载 / `verify-evidence` 的命令输出解析
-  做异常输入测试；项目内 `tests/test_v0160_edge_cases.py` 已覆盖大部分解析边界，
-  新语言适配器请同步补边界用例。
+- **依赖漏洞扫描**：已纳入 CI——`.github/workflows/security.yml` 每周一 06:00 UTC + 每次
+  push / PR 触发，`pip-audit` 审计完整安装环境 + `osv-scanner` 扫描 `pyproject.toml`
+  （v0.31.0）；发布前仍可额外跑 `pip-audit -r requirements` 双保险。
+- **模糊测试**：已脚本化——`benchmarks/fuzz_parsers.py` 对 8 个解析 / 识别纯函数做
+  确定性模糊测试（固定种子可复现），CI `bench` job 以 `--fail-fast --iterations 1000`
+  门禁（v0.31.0）；新语言适配器请同步补边界用例。
 - **供应链**：发布已启用 PyPI trusted publishing（OIDC），Release 附带 sigstore 签名与
   attestation；验证命令：
 
   ```bash
-  gh release view v0.29.1 --json assets   # 查看 .sigstore.json / .publish.attestation
+  gh release view v0.45.1 --json assets   # 查看 .sigstore.json / .publish.attestation
   ```

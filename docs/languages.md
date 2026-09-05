@@ -55,6 +55,7 @@ test_commands:
 | `CSharpAdapter` | `*Test.cs` / `*Tests.cs` / `**/Tests/**` 为测试，`*.cs` 为实现 | 项目级 `dotnet build`（查找 `.csproj` / `.sln` 项目根，带指纹缓存；无项目根或工具缺失返回明确错误） | 启发式：`[Fact]` / `[Theory]` / `[Test]` 特性数 + `Assert.*` 断言；输出解析：VSTest `Passed! - Failed: F, Passed: P` / NUnit |
 | `CppAdapter` | `test_*.cpp` / `*_test.cpp` / `tests/**` 为测试，`*.cpp` / `*.cc` / `*.cxx` / `*.c` / `*.h` / `*.hpp` 为实现 | C++：`g++ -fsyntax-only`（`clang++` 回退）；C：`gcc -fsyntax-only`（`clang` / `cc` 回退）；编译器缺失返回明确错误 | 启发式：GoogleTest `TEST(` / `TEST_F(` 与 Catch2 `TEST_CASE(` / `SCENARIO(` 宏数 + `EXPECT_*` / `ASSERT_*` / `REQUIRE*` / `CHECK*` 断言；输出解析：`[  PASSED  ]` / `[  FAILED  ]` / ctest / Catch2（`All tests passed` / `FAILED:`） |
 | `DotNetAdapter` | 同 `CSharpAdapter`（`name="dotnet"`） | 同 `CSharpAdapter` | 同 `CSharpAdapter`（显式 `language: dotnet` 启用） |
+| `RubyAdapter` | `*_spec.rb` / `**/*_spec.rb` / `spec/**` / `*_test.rb` / `**/*_test.rb` / `test/**` 为测试，`*.rb` / `app/**` / `lib/**` / `config/**` / `db/**` 为实现 | `ruby -c`（Ruby 工具链缺失返回明确错误） | 启发式：RSpec `describe` / `context` / `it` / `specify` + `expect(...).to` 断言，Minitest `def test_*` + `assert_*`；输出解析：RSpec `N examples, M failures` / Minitest `N runs, M assertions, F failures` |
 | `PhpAdapter` | `*Test.php` / `tests/**` / `spec/**` 为测试，`*.php` / `src/**` / `app/**` 为实现 | `php -l`（PHP CLI 缺失返回明确错误） | 启发式：PHPUnit `public function testXxx` 方法 + `#[Test]` 属性数 + `assert*()` / `expectException()` 断言；输出解析：`OK (N tests, M assertions)` / `Tests: N, Failures: M, Errors: K` / `FAILURES!` |
 
 ### 自定义适配器

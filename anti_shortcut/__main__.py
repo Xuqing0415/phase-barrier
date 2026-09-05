@@ -193,7 +193,7 @@ def _cmd_check(args: argparse.Namespace) -> int:
 
 
 def _cmd_query(args: argparse.Namespace) -> int:
-    """编排器辅助查询（v0.45.0）：证据库存 / 最近测试 / 阶段历史 / git 变更（只读）。
+    """编排器辅助查询（v0.45.1）：证据库存 / 最近测试 / 阶段历史 / git 变更（只读）。
 
     与 SDK ``PhaseBarrier`` 的 ``get_required_evidence`` / ``get_last_test_run`` /
     ``get_stage_history`` / ``has_uncommitted_changes`` 等价，供编排器与脚本在
@@ -560,7 +560,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_check.set_defaults(func=_cmd_check)
 
     p_query = sub.add_parser(
-        "query", parents=[common], help="编排器辅助查询：证据库存 / 最近测试 / 阶段历史 / git 变更（v0.45.0）"
+        "query", parents=[common], help="编排器辅助查询：证据库存 / 最近测试 / 阶段历史 / git 变更（v0.45.1）"
     )
     qmode = p_query.add_mutually_exclusive_group(required=True)
     qmode.add_argument(

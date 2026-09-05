@@ -59,7 +59,7 @@ pip install phase-barrier        # import anti_shortcut
 | `anti-shortcut advance` | 声明完成当前阶段并推进（校验证据） |
 | `anti-shortcut sidecar` | 启动 HTTP 门禁服务（`--port` / `--tls-*` mTLS） |
 | `python -m anti_shortcut.grpc_service` | 启动 gRPC 门禁服务（v0.39.0；`--port` / `--tls-*` mTLS） |
-| `anti-shortcut query` | 编排器辅助查询：证据库存 / 最近测试 / 阶段历史 / git 变更（v0.45.0，`--json`） |
+| `anti-shortcut query` | 编排器辅助查询：证据库存 / 最近测试 / 阶段历史 / git 变更（v0.45.1，`--json`） |
 | `anti-shortcut plugin-verify` | 插件自动验证 |
 | `anti-shortcut verify-evidence` / `export-evidence` | 证据清单校验 / 导出 |
 | `anti-shortcut rotate-key` | HMAC 密钥轮换 |

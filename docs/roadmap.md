@@ -207,10 +207,18 @@
   指向已落地事实（security.yml 漏洞扫描 / fuzz 基准 / 供应链示例）；`query` CLI 版本标注
   统一为 v0.45.1（help / docstring / api.md / orchestrator-hooks.md）；历史博客加更新注记。
 
-## 待办 / 已知缺口（截至 v0.45.2）
+- **v0.46.0 已完成**：第三方插件仓库自动轮询——`plugins.json` 顶层升级为容器
+  （`plugins` + `auto_discovery`，旧顶层数组格式兼容读入 / 写回自动升级，条目新增
+  `auto_discovered` / `last_commit_sha`），新增 `scripts/auto_discover_plugins.py`
+  （按 GitHub topic `phase-barrier-plugin` 搜索 -> 去重 -> `git clone --depth 1`
+  -> `pip install -e` -> `plugin-verify --json`，`--dry-run` / `--update` 收录 +
+  docs 同步，过滤 fork / archived，Search 限流 403 可降级不中断），周期 workflow
+  `plugin-verification.yml` 改为每周一 03:00 UTC「先自动发现再全量验证」两步并上传
+  双报告；docs/plugins.md / CONTRIBUTING.md 补自动收录流程，17 个自动发现单测。
+
+## 待办 / 已知缺口（截至 v0.46.0）
 - 暂无缺陷 / 功能缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活，
-  Windows/macOS 并发写入缺陷（v0.42.1 / v0.43.1）已修复并补回归测试。
-- 后续规划（未承诺版本）：第三方插件仓库自动轮询（`phase-barrier-plugin-index`）尚未实现，
-  插件收录仍走 Issue 模板 + 插件仓库自带 Plugin CI（见 docs/plugins.md）。
+  Windows/macOS 并发写入缺陷（v0.42.1 / v0.43.1）已修复并补回归测试；第三方插件仓库
+  自动轮询（v0.46.0）已落地，插件可通过 GitHub topic 自动进入索引。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

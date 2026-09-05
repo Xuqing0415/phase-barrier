@@ -18,9 +18,9 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import shutil
 import subprocess
-import tomllib
 import uuid
 from pathlib import Path
 from urllib.parse import urlparse
@@ -49,10 +49,28 @@ def _load_module():
 ad = _load_module()
 
 
+_SECTION_RE = re.compile(r'^\[project\.entry-points\.("(?:[^"]+)")\]\s*$')
+_ENTRY_RE = re.compile(r'^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"')
+
+
 def fixture_groups() -> dict[str, list[str]]:
-    data = tomllib.loads((FIXTURE / "pyproject.toml").read_text(encoding="utf-8"))
-    eps = data["project"]["entry-points"]
-    return {key: sorted(eps[key]) for key in GROUP_KEYS if key in eps}
+    """从 fixture pyproject.toml 解析入口点组（正则实现，兼容 Python 3.10）。"""
+    text = (FIXTURE / "pyproject.toml").read_text(encoding="utf-8")
+    groups: dict[str, list[str]] = {}
+    current: str | None = None
+    for raw in text.splitlines():
+        line = raw.strip()
+        section = _SECTION_RE.match(line)
+        if section:
+            current = section.group(1)[1:-1]
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            current = None
+            continue
+        entry = _ENTRY_RE.match(line) if current is not None else None
+        if entry and current in GROUP_KEYS:
+            groups.setdefault(current, []).append(entry.group(1))
+    return {key: sorted(names) for key, names in groups.items()}
 
 
 def _git(cwd: Path, *args: str) -> subprocess.CompletedProcess:

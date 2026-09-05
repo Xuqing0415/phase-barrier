@@ -1,8 +1,9 @@
 # v0.45.0: 插件索引自动验证（plugins.json 驱动）
 # 每周二 05:00 UTC + 手动触发（与 plugin-check.yml 周一 06:00 错开）。
 # 读取 plugins.json，安装索引条目并运行 plugin-verify（子进程），把最新
-# status / last_verified 写回 plugins.json；有变更则自动提交到 main，
-# 验证报告作为 artifact 上传。第三方插件仓库仍由其自带 Plugin CI 验证。
+# status / last_verified 写回 plugins.json，并把状态表同步到 docs/plugins.md
+#（--sync-docs）；有变更则自动提交到 main，验证报告作为 artifact 上传。
+# 第三方插件仓库仍由其自带 Plugin CI 验证。
 name: Plugin Verification
 
 on:
@@ -42,7 +43,7 @@ jobs:
         continue-on-error: true
         run: |
           set +e
-          python scripts/verify_plugins.py --update --json > plugin-verification-report.json
+          python scripts/verify_plugins.py --update --sync-docs --json > plugin-verification-report.json
           rc=$?
           set -e
           echo "verify_rc=${rc}" >> "$GITHUB_OUTPUT"
@@ -64,7 +65,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add plugins.json
+          git add plugins.json docs/plugins.md
           if git diff --cached --quiet; then
             echo "plugins.json 无变更，跳过提交"
           else

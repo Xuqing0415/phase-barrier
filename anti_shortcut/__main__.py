@@ -191,6 +191,58 @@ def _cmd_check(args: argparse.Namespace) -> int:
     return 0 if result["allowed"] else 1
 
 
+
+def _cmd_query(args: argparse.Namespace) -> int:
+    """编排器辅助查询（v0.45.0）：证据库存 / 最近测试 / 阶段历史 / git 变更（只读）。
+
+    与 SDK ``PhaseBarrier`` 的 ``get_required_evidence`` / ``get_last_test_run`` /
+    ``get_stage_history`` / ``has_uncommitted_changes`` 等价，供编排器与脚本在
+    CLI 层快速查询。``--json`` 输出即 SDK 返回结构（可序列化）。退出码恒为 0
+    （查询成功），不通过与否由调用方按字段判断。
+    """
+    ws = Path(args.workspace).resolve()
+    if not ws.is_dir():
+        raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
+    barrier = PhaseBarrier(workspace=ws, config=args.config)
+    try:
+        if args.required_evidence is not None:
+            payload = barrier.get_required_evidence(args.required_evidence)
+        elif args.last_test_run:
+            payload = barrier.get_last_test_run()
+        elif args.stage_history:
+            payload = barrier.get_stage_history(args.stage)
+        else:
+            payload = barrier.has_uncommitted_changes()
+    finally:
+        barrier.close()
+    if args.json:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    elif args.required_evidence is not None:
+        for item in payload:
+            files = ", ".join(item["files"]) if item["files"] else "（记录型 / 无文件）"
+            mark = "满足" if item["satisfied"] else "未满足"
+            print(f"阶段 {item['stage']} {item['name']} [{item['kind']}] {mark}: {files}")
+    elif args.last_test_run:
+        if payload is None:
+            print("last_test_run: None（从未登记测试运行）")
+        else:
+            print(
+                f"last_test_run: passed={payload.get('passed')} "
+                f"exit_code={payload.get('exit_code')} at={payload.get('at')}"
+            )
+    elif args.stage_history:
+        if not payload:
+            print("stage_history: 无记录")
+        for item in payload:
+            print(f"阶段 {item['stage']} {item['name']} @ {item['timestamp']}")
+    else:
+        if payload is None:
+            print("has_uncommitted_changes: None（非 Git 仓库或 git 不可用）")
+        else:
+            print("has_uncommitted_changes: " + ("True" if payload else "False"))
+    return 0
+
+
 def _git_changed_files(ws: Path, git_base: str) -> list[str]:
     """返回当前分支相对 git_base 改动的文件（``git diff --name-only <base>...HEAD``）。"""
     proc = subprocess.run(
@@ -506,6 +558,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_check.add_argument("--stage", type=int, required=True, help="Agent 声称的阶段号（0-6）")
     p_check.set_defaults(func=_cmd_check)
+
+    p_query = sub.add_parser(
+        "query", parents=[common], help="编排器辅助查询：证据库存 / 最近测试 / 阶段历史 / git 变更（v0.45.0）"
+    )
+    qmode = p_query.add_mutually_exclusive_group(required=True)
+    qmode.add_argument(
+        "--required-evidence",
+        type=int,
+        metavar="STAGE",
+        help="返回完成指定阶段（0-6）的证据库存 [{stage, name, evidence, kind, files, satisfied}]",
+    )
+    qmode.add_argument("--last-test-run", action="store_true", help="返回最近一次测试运行详情（dict | null）")
+    qmode.add_argument("--stage-history", action="store_true", help="返回阶段完成历史 [{stage, name, timestamp, evidence}]")
+    qmode.add_argument("--has-uncommitted-changes", action="store_true", help="Git 未提交变更检查（bool | null）")
+    p_query.add_argument("--stage", type=int, default=None, help="--stage-history 的阶段过滤（默认全部，可选）")
+    p_query.set_defaults(func=_cmd_query)
 
     p_verify = sub.add_parser(
         "verify-evidence", parents=[common], help="对照工作区校验证据签名清单"

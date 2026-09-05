@@ -719,3 +719,71 @@ class TestPhaseBarrierAuxQueries:
             assert barrier.has_uncommitted_changes() is False
         finally:
             barrier.close()
+# ---------- v0.45.1：CLI query 辅助查询 ----------
+
+class TestQueryCli:
+    """python -m anti_shortcut query 辅助查询（v0.45.0 CLI 化）。"""
+
+    def _run(self, tmp_path: Path, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "anti_shortcut",
+                "query",
+                *args,
+                "--workspace",
+                str(tmp_path),
+                "--json",
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+
+    def test_cli_query_required_evidence_missing(self, tmp_path):
+        _prepare(tmp_path)
+        proc = self._run(tmp_path, "--required-evidence", "1")
+        assert proc.returncode == 0, proc.stderr
+        payload = json.loads(proc.stdout)
+        assert payload[0]["stage"] == 1
+        assert payload[0]["kind"] == "spec"
+        assert payload[0]["files"] == [] and payload[0]["satisfied"] is False
+
+    def test_cli_query_required_evidence_with_spec(self, tmp_path):
+        _prepare(tmp_path)
+        _write_spec(tmp_path)
+        proc = self._run(tmp_path, "--required-evidence", "1")
+        assert proc.returncode == 0, proc.stderr
+        payload = json.loads(proc.stdout)
+        assert payload[0]["files"] == ["spec.md"] and payload[0]["satisfied"] is True
+
+    def test_cli_query_last_test_run_null(self, tmp_path):
+        _prepare(tmp_path)
+        proc = self._run(tmp_path, "--last-test-run")
+        assert proc.returncode == 0, proc.stderr
+        assert json.loads(proc.stdout) is None
+
+    def test_cli_query_stage_history(self, tmp_path):
+        _prepare(tmp_path)
+        proc = self._run(tmp_path, "--stage-history")
+        assert proc.returncode == 0, proc.stderr
+        history = json.loads(proc.stdout)
+        assert [e["stage"] for e in history] == [0]
+        # 阶段过滤
+        proc = self._run(tmp_path, "--stage-history", "--stage", "0")
+        assert [e["stage"] for e in json.loads(proc.stdout)] == [0]
+        proc = self._run(tmp_path, "--stage-history", "--stage", "1")
+        assert json.loads(proc.stdout) == []
+
+    def test_cli_query_has_uncommitted_changes(self, tmp_path):
+        _prepare(tmp_path)
+        proc = self._run(tmp_path, "--has-uncommitted-changes")
+        assert proc.returncode == 0, proc.stderr
+        assert json.loads(proc.stdout) in (True, False, None)
+
+    def test_cli_query_requires_one_mode(self, tmp_path):
+        _prepare(tmp_path)
+        proc = self._run(tmp_path)
+        assert proc.returncode == 2
+        assert "required" in proc.stderr or "--required-evidence" in proc.stderr

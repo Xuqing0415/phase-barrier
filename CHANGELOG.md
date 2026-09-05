@@ -2,6 +2,21 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.45.1] - 2026-09-05
+
+- **编排器辅助查询 CLI 化（v0.45.1）**：新增 `anti-shortcut query` 子命令，把
+  v0.45.0 的 SDK 辅助查询方法暴露到 CLI——互斥模式 `--required-evidence <stage>` /
+  `--last-test-run` / `--stage-history`（可选 `--stage` 过滤）/ `--has-uncommitted-changes`；
+  `--json` 输出即 SDK 返回结构（可序列化），非 JSON 模式打印人类可读摘要，查询成功
+  退出码恒 0；`docs/api.md` 工具表与 `docs/orchestrator-hooks.md` CLI 等价调用同步
+  更新；新增 6 个 CLI 单测（`tests/test_sdk.py::TestQueryCli`）。
+- **插件索引状态表自动同步（v0.45.1）**：`scripts/verify_plugins.py` 新增 `--sync-docs`，
+  把 `plugins.json` 渲染为 `docs/plugins.md` 中两个 `<!-- plugins-index:start/end -->`
+  标记之间的“当前索引状态”表格（插件 / 来源 / 入口点 / 状态 / 最近验证，入口点组短名化），
+  无标记时报错防误改；周期 workflow `plugin-verification.yml` 改为 `--update --sync-docs`，
+  有变更时连同 `docs/plugins.md` 一起自动提交；新增 4 个脚本单测
+  （`tests/test_verify_plugins_index.py::TestSyncDocs`）。
+
 ## [0.45.0] - 2026-09-05
 
 - **编排器 SDK 辅助查询扩展（v0.45.0）**：`PhaseBarrier` 新增四个只读辅助查询

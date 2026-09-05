@@ -34,5 +34,7 @@ if not result["success"]:
 - `get_stage_history(stage=None)`：阶段完成历史，每条 `{stage, name, timestamp, evidence}`，可按阶段过滤（v0.45.0）。
 - `has_uncommitted_changes()`：Git 未提交变更检查：有变更 `True` / 干净 `False` / 非仓库或 git 不可用 `None`（v0.45.0）。
 
-CLI 等价调用：`python -m anti_shortcut check --workspace . --stage 2 --json`。
+CLI 等价调用：`python -m anti_shortcut check --workspace . --stage 2 --json`；
+辅助查询可用 `python -m anti_shortcut query --required-evidence 3 --json` /
+`--last-test-run` / `--stage-history` / `--has-uncommitted-changes`（v0.45.0）。
 完整示例见 `examples/orchestrator_hooks/`。

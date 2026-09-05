@@ -180,6 +180,7 @@ jobs:
 ```bash
 python scripts/verify_plugins.py                  # 验证并打印摘要（0 = 全通过）
 python scripts/verify_plugins.py --update         # 把 status / last_verified 写回
+python scripts/verify_plugins.py --update --sync-docs  # 写回状态并同步 docs/plugins.md 索引表
 python scripts/verify_plugins.py --json           # 结构化报告（stdout）
 python scripts/verify_plugins.py --no-install     # 跳过安装（插件须已安装）
 ```
@@ -187,7 +188,7 @@ python scripts/verify_plugins.py --no-install     # 跳过安装（插件须已�
 ### 周期自动验证（plugin-verification.yml）
 
 `.github/workflows/plugin-verification.yml` 每周二 05:00 UTC（可与周一 06:00 的
-`plugin-check.yml` 区分）自动运行：安装官方索引插件 -> `verify_plugins.py --update`
+`plugin-check.yml` 区分）自动运行：安装官方索引插件 -> `verify_plugins.py --update --sync-docs`（同步 `plugins.json` 与文档索引表）
 -> 上传 JSON 报告 artifact（`plugin-verification-report.json`）-> 若有变更自动
 提交到 main。验证失败不会静默：失败状态写回 `plugins.json` 并随提交 / 报告
 暴露给维护者处置。
@@ -195,3 +196,14 @@ python scripts/verify_plugins.py --no-install     # 跳过安装（插件须已�
 `plugin-check.yml` 继续保留，负责官方示例插件的固定断言；`plugins.json` 驱动的
 验证是它的推广形态，第三方插件若提供 `install` 目标并通过维护者审核，即可加入
 `plugins.json` 纳入周期自动核查。
+### 当前索引状态（由 scripts/verify_plugins.py --sync-docs 自动同步）
+
+运行 `python scripts/verify_plugins.py --sync-docs`（或周期 workflow）后，
+下表由 `plugins.json` 自动生成并随提交更新；手动修改会被下一次同步覆盖。
+
+<!-- plugins-index:start -->
+| 插件 | 来源 | 入口点 | 状态 | 最近验证 |
+|------|------|--------|------|----------|
+| phase-barrier-foo-adapter | `./examples/custom_adapter` | languages: foo | passed | 2026-09-05T04:40:30Z |
+| phase-barrier-plugin-example | `./examples/plugin_rules` | validators: strict_design; interceptors: deny_vendor | passed | 2026-09-05T04:40:30Z |
+<!-- plugins-index:end -->

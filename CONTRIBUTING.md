@@ -79,6 +79,24 @@ python -m flake8 --jobs=1 <files> # 风格检查（Windows 下需 --jobs=1）
 > 维护 `plugins.json` 时请用 `python scripts/verify_plugins.py --update --sync-docs`
 > 保持状态表同步；手动编辑 `docs/plugin-status.md` 的索引状态表会被下一次同步覆盖。
 
+## 文档站 / 状态页 / 域名（v0.48.0）
+
+- 文档站构建（`.github/workflows/docs.yml`）每次先执行
+  `python scripts/verify_plugins.py --sync-only`，把 `plugins.json` 最新状态
+  渲染进 `docs/plugin-status.md` 再 `mkdocs build`：状态页始终与索引一致，
+  无需（也不应）手动编辑其表格（会被覆盖）。
+- 一致性由 `tests/test_docs_consistency.py` 守护：`docs/plugins.md` 只作
+  指南、不内嵌同步表；状态页表格须覆盖全部索引条目。
+- 自定义域名 `docs.phase-barrier.dev` 为可选：见 `docs/custom-domain.md`；
+  `scripts/check_custom_domain.py` 在 docs CI 中做非阻塞检查（未启用仅警告）。
+
+## 制作视频教程 / 社区推广（可选）
+
+- 视频脚本大纲与录制工具见 `docs/video-tutorial-template.md`（可直接套用，
+  2-5 分钟成片）。
+- 各平台发帖模板与核心数据见 `docs/promotion/README.md`（发布前刷新数字）。
+- 发布后欢迎把链接补回文档站 / README，并更新推广包数据。
+
 ## 代码风格与测试要求
 
 - 遵循 PEP 8；新代码尽量保持 flake8 干净（既有 E501 历史问题可不改）。

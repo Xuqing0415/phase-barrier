@@ -31,6 +31,7 @@ theme:
 
 exclude_docs: |
   blog/
+  promotion/
 
 markdown_extensions:
   - admonition
@@ -55,6 +56,7 @@ nav:
       - 拦截规则与安全加固: security-rules.md
       - 架构与设计: architecture.md
       - API 参考: api.md
+      - 自定义域名部署（可选）: custom-domain.md
   - 集成与生态:
       - Agent 框架集成: integrations.md
       - 插件与生态: plugins.md
@@ -66,6 +68,7 @@ nav:
       - K8s sidecar 加固与 gRPC 接口（v0.39.0 已实现）: tutorials/k8s-sidecar-grpc.md
       - SWE-bench 门禁基准: tutorials/swe-bench-gate.md
       - SWE-bench 真实评测 harness: tutorials/swe-bench-real.md
+      - 视频教程模板: video-tutorial-template.md
   - FAQ: faq.md
   - Roadmap: roadmap.md
   - 发布与供应链安全: release.md

@@ -42,6 +42,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
+      - name: Sync plugin status page from plugins.json
+        run: python scripts/verify_plugins.py --sync-only
+
+      - name: Check optional custom domain (docs.phase-barrier.dev, non-blocking)
+        run: |
+          python scripts/check_custom_domain.py --strict \
+            || echo "::warning::docs.phase-barrier.dev 自定义域名未启用（可选），启用方法见 docs/custom-domain.md"
+
       - name: Build site
         run: mkdocs build --strict --site-dir site
 

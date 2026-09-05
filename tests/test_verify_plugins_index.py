@@ -331,3 +331,19 @@ class TestSyncDocs:
         assert rc == 0
         assert len(calls) == 1
         assert calls[0][0]["name"] == "demo-plugin"
+
+    def test_main_sync_only_flag(self, tmp_path, monkeypatch):
+        """v0.48.0：--sync-only 只渲染状态页，不执行安装 / 验证（文档站构建用）。"""
+        index_path = tmp_path / "plugins.json"
+        index_path.write_text(json.dumps([_entry()], ensure_ascii=False), encoding="utf-8")
+
+        def boom(*a, **k):
+            raise AssertionError("--sync-only 不应执行 verify_index")
+
+        monkeypatch.setattr(vp, "verify_index", boom)
+        calls: list[list[dict]] = []
+        monkeypatch.setattr(vp, "sync_index_docs", lambda index: calls.append(index))
+        rc = vp.main(["--index", str(index_path), "--sync-only"])
+        assert rc == 0
+        assert len(calls) == 1
+        assert calls[0][0]["name"] == "demo-plugin"

@@ -69,6 +69,16 @@ wrapped_commands = install(gate, my_command_registry)
 - 编排器钩子 SDK（v0.22.0）已接入 alpha-swe：任务启动 `barrier.check(stage)`、
   阶段切换 `barrier.advance(to_stage)`（[alpha-swe#3](https://github.com/Xuqing0415/alpha-swe/pull/3)）。
 
+### 上游状态跟踪（v0.48.0）
+
+- 记录位置：本页即权威跟踪记录；合并 / 关闭后在此更新状态，并在
+  CHANGELOG 中补一条说明。
+- 查询命令：`gh pr view 3 -R Xuqing0415/alpha-swe`（状态为外部仓库属性，
+  不受本仓库发布节奏控制）。
+- 当前状态（截至 v0.48.0）：**open（待上游合入 / 反馈）**。
+- 若上游长期无响应：可在该 PR 下友好 ping 一次，或在社区渠道提醒；
+  若上游明确不接受，本仓库的 `docs/orchestrator-hooks.md` 与示例仍可独立演进。
+
 ## K8s sidecar 部署
 
 ```bash

@@ -250,6 +250,15 @@ python scripts/auto_discover_plugins.py --update --json   # 结构化摘要（st
 `plugin-check.yml` 继续保留，负责官方示例插件的固定断言；`plugins.json` 驱动的
 验证 + topic 自动发现是它的推广形态，第三方插件无需人工合并即可被周期收录
 （自动收录只校验入口点可用性）。
+> **成为第一个第三方插件（v0.48.0）**：目前索引中的自动收录条目为官方
+> 模板仓库；给真实插件仓库打上 `phase-barrier-plugin` topic 并通过插件 CI，
+> 即可成为第一个由社区贡献、每周自动验证的第三方条目（流程见上文「提交到
+> 索引 / 自动收录」）。
+>
+> 仓库内置了不依赖真实第三方的端到端演练：`tests/fixtures/plugin_alpha/`
+> （模拟插件）+ `tests/test_auto_discover_e2e.py`（真实 git 仓库下验证
+> 发现 / 增量刷新 / 失败重试）。
+
 ## 插件状态页（自动同步）
 
 已收录插件（官方示例 + 自动发现第三方）的实时状态表见

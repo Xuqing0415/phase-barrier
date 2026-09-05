@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phase-barrier-plugin-alpha"
+version = "0.1.0"
+description = "模拟第三方插件 fixture（四类入口点，仅测试用，不发布）"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["phase-barrier>=0.43.0"]
+
+[project.entry-points."phase_barrier.languages"]
+alpha = "plugin_alpha.language:AlphaLanguageAdapter"
+
+[project.entry-points."phase_barrier.validators"]
+require_alpha_spec = "plugin_alpha.validators:require_alpha_spec"
+
+[project.entry-points."phase_barrier.interceptors"]
+deny_alpha_tmp = "plugin_alpha.rules:deny_alpha_tmp_writes"
+
+[project.entry-points."anti_shortcut.integrations"]
+alpha_integration = "plugin_alpha.integration:install_alpha"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["plugin_alpha*"]

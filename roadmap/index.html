@@ -1,0 +1,1901 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="反捷径校验 Skill：阶段门禁 + 证据校验 + 工具拦截，强制编码 Agent 遵循标准工程师 SOP">
+      
+      
+      
+        <link rel="canonical" href="https://xuqing0415.github.io/phase-barrier/roadmap/">
+      
+      
+        <link rel="prev" href="../faq/">
+      
+      
+        <link rel="next" href="../release/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Roadmap - phase-barrier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#roadmap" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href=".." title="phase-barrier" class="md-header__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            phase-barrier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Roadmap
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../quickstart/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  快速开始
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../usage/" class="md-tabs__link">
+          
+  
+  
+  使用指南
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../integrations/" class="md-tabs__link">
+          
+  
+  
+  集成与生态
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tutorials/ci-incremental-gate/" class="md-tabs__link">
+          
+  
+  
+  教程
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../release/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  发布与供应链安全
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  贡献指南
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  更新日志
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="phase-barrier" class="md-nav__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    phase-barrier
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速开始
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    使用指南
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    使用指南
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI 使用
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    配置指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../semantic-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语义级校验（v0.49.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../languages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语言适配器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../github-action/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../publish-to-marketplace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 上架
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../orchestrator-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    编排器钩子 SDK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audit-logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    状态与审计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    拦截规则与安全加固
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    架构与设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom-domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    自定义域名部署（可选）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    集成与生态
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    集成与生态
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent 框架集成
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件与生态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugin-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件状态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../k8s/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    最佳实践
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    教程
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    教程
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/ci-incremental-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI 增量门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/k8s-sidecar-grpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s sidecar 加固与 gRPC 接口（v0.39.0 已实现）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/swe-bench-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 门禁基准
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/swe-bench-real/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 真实评测 harness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../video-tutorial-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    视频教程模板
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v0500" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        待办 / 已知缺口（截至 v0.50.0）
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    发布与供应链安全
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    贡献指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    更新日志
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="roadmap">Roadmap（规划）<a class="headerlink" href="#roadmap" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>迁移自 README 精简版主页；已发布版本的完整条目见 <a href="../changelog/">更新日志</a>。<a href="https://github.com/Xuqing0415/phase-barrier#readme">返回 README</a></p>
+</blockquote>
+<ul>
+<li><strong>v0.6.0 已完成</strong>：JavaScript 真实解析（acorn / <code>jest --listTests --json</code>）、Java 项目级编译（<code>mvn test-compile</code> / <code>gradle compileTestJava</code>，<code>mvnw</code> / <code>gradlew</code> 优先 + 指纹缓存）、Go / Rust GitHub Action 门禁示例与项目配置模板。</li>
+<li><strong>v0.7.0 已完成</strong>：JS 输出解析覆盖 Vitest / Playwright、覆盖率门禁 <code>coverage_threshold</code>（pytest-cov / <code>go test -cover</code> / istanbul 表）、K8s sidecar 部署模板与 HTTP 门禁服务（<code>anti_shortcut.sidecar</code>）。</li>
+<li><strong>v0.8.0 已完成</strong>：Java 输出解析增强（Surefire <code>Skipped</code> / Gradle / JUnit Console）、状态签名 HMAC（<code>state_hmac_key</code> / <code>PHASE_BARRIER_HMAC_KEY</code>）、GitHub Action 市场发布（tag 即 Release）。</li>
+<li><strong>v0.9.0 已完成</strong>：审计日志远程推送（SIEM：<code>audit_remote_url</code> + 异步批量 + 队列保护）、证据签名（<code>evidence_manifest.json</code> + <code>verify-evidence</code>）、HMAC 密钥轮换（<code>state_hmac_keys</code> / <code>rotate-key</code>，含无签名-&gt;启用签名迁移）。</li>
+<li><strong>v0.10.0 已完成</strong>：审计远程推送增强（<code>audit_remote_ca_bundle</code> TLS 自定义 CA、<code>audit_remote_retries</code> 指数退避重试）、证据清单导出（<code>export-evidence</code>）、sigstore 供应链签名（release 工作流 + <code>cosign verify-blob</code>）、Go / Rust 测试输出解析增强（失败用例名提取，<code>summarize_test_output</code> 接入语言适配器）。</li>
+<li><strong>v0.11.0 已完成</strong>：审计远程推送增强（<code>audit_remote_client_cert</code> / <code>audit_remote_client_key</code> mTLS
+  双向 TLS、<code>audit_remote_headers</code> 自定义请求头、<code>audit_remote_spool_dir</code> 持久化重试队列）、证据清单
+  Git 门禁（<code>verify-evidence --git-base &lt;ref&gt;</code> + <code>examples/github-action/evidence-gate.yml</code>）、
+  Ruby / C# 语言适配器（<code>ruby -c</code> / <code>dotnet build</code> + RSpec / Minitest / xUnit / NUnit 输出解析）。</li>
+<li><strong>v0.12.0 已完成</strong>：自定义校验器与拦截规则入口点（<code>phase_barrier.validators</code> / <code>phase_barrier.interceptors</code>，
+  含进程内 <code>register_validator</code> / <code>register_rule</code>，可覆盖内置校验 / 追加拦截规则）、审计远程推送 mTLS
+  端到端集成示例（<code>examples/mtls_audit/</code>）、GitHub Action Marketplace 上架确认（Phase-Barrier Gate）。</li>
+<li><strong>v0.13.0 已完成</strong>：拦截器边界与 CLI 错误处理补强（命令注入变体、路径特殊字符、
+  门禁目录全写路径防护——含 <code>&amp;&gt;</code> / <code>&amp;&gt;&gt;</code> / <code>&gt;|</code> / <code>dd of=</code> / 引号包裹路径；CLI 对损坏状态、
+  越界阶段号、证据缺失 / 语法错误给出明确报错；新增 16 个边界测试）、
+  自定义校验器 / 拦截规则插件文档与可运行示例（<code>examples/plugin_rules/</code>）。</li>
+<li><strong>v0.14.0 已完成</strong>：脚本类写入检测（<code>python -c</code> / <code>node -e</code> / <code>bash -c</code> 参数内的 <code>open()</code> / <code>Path().write_text</code> / <code>fs.writeFileSync</code> / 重定向写入路径，脚本改代码
+  同样受阶段门禁约束）、<code>verify-evidence</code> / <code>export-evidence</code> 的 CLI 错误处理补强
+  （损坏 / 缺字段清单、签名密钥不匹配、缺失工作区、嵌套 <code>--out</code> 自动建目录）、
+  GitHub Action 门禁输入校验（mode / expected_stage / to / workspace）与 CI 自测扩展。</li>
+<li><strong>v0.15.0 已完成</strong>：审计远程推送故障告警（<code>RemoteAuditSink</code> 新增 <code>on_failure</code> 回调与 <code>metrics()</code>，<code>AntiShortcutSkill</code> 自动把 <code>audit_remote_failed</code> 告警写入本地 <code>audit.log</code>，避免自喂循环）；<code>sidecar</code> HTTP 门禁服务输入校验（bool / 越界阶段号、<code>output</code> 类型、<code>.agent_gate</code> 路径）。</li>
+<li>
+<p><strong>v0.16.0 已完成</strong>：CI 矩阵安装 Node.js / Go / Rust / Ruby 真实工具链，激活 JS/Go/Rust/Ruby 适配器真实工具测试（消除环境跳过盲区）；输出解析与覆盖率门禁边界补强（ANSI 剥离、istanbul 千分位、阈值临界与非法配置值校验、sidecar CLI、Ruby/Rust 真实路径 mock 覆盖，共 29 个新用例）；CI 新增 coverage job（<code>--fail-under=90</code>，核心包覆盖率 90%），项目自身吃自己的狗粮。</p>
+</li>
+<li>
+<p><strong>v0.17.0 已完成</strong>：K8s sidecar 透明代理——sidecar 新增 <code>POST /api/write</code> / <code>POST /api/exec</code>，路径限定工作区 / 拒绝 <code>.agent_gate</code> / 按阶段拦截写入与测试命令，exec 自动记录测试摘要；超时后终止进程树并立即返回；新增 Agent 侧 <code>GateClient</code>（仅标准库 urllib）与 <code>examples/k8s_proxy/</code> 最小示例；<code>deploy/k8s/</code> 清单更新（镜像 0.17.0）；新增 30 个透明代理测试（415 -&gt; 445）。</p>
+</li>
+<li>
+<p><strong>v0.18.0 已完成</strong>：CLI 透明代理命令 <code>write</code> / <code>exec</code>（经门禁写文件 / 执行命令，测试命令自动记录，被拦截退出码 2，<code>--json</code> 结构化输出）；GitHub Action 新增 <code>mode: exec</code> 与 <code>command</code> 输入，可在 CI 经门禁执行测试命令；新增 16 个 CLI 门禁测试（445 -&gt; 461）与 CI action 自测扩展。</p>
+</li>
+<li>
+<p><strong>v0.19.0 已完成</strong>：透明代理审计事件（5 类：写成功 / 写拒绝 / 执行成功 / 执行拒绝 / 执行超时），每条事件携带阶段摘要写入本地 <code>audit.log</code> 并推送远端 SIEM（原 <code>proxy_file_written</code> 更名为 <code>proxy_write_ok</code>）；CLI <code>exec</code>、sidecar <code>/api/exec</code>、<code>GateClient</code> 三端支持 <code>cwd</code> 工作目录参数（限定工作区内）；新增 12 个代理审计与 cwd 测试（461 -&gt; 473）。</p>
+</li>
+<li>
+<p><strong>v0.20.0 已完成</strong>：sidecar 审计查询 API（<code>GET /api/audit?limit=50&amp;event=...</code>，按时间倒序 + 数量上限 + 事件过滤）与 <code>GateClient.audit()</code>；新增 <code>python -m anti_shortcut sidecar</code> 统一 CLI 入口（K8s 清单 / 文档切换，镜像 0.20.0）；端到端审计链测试（HTTP 写拒绝 -&gt; 本地 audit.log -&gt; /api/audit -&gt; 远端 SIEM）；新增 11 个测试（473 -&gt; 484）。</p>
+</li>
+<li>
+<p><strong>v0.21.0 已完成</strong>：审计查询分页（<code>offset</code>）与时间范围过滤（<code>since</code> / <code>until</code>，ISO 时间戳，含端点），<code>GET /api/audit</code> 响应增加 <code>total</code> / <code>offset</code> 元信息；<code>GET /api/verify-evidence</code> 与 <code>GateClient.verify_evidence()</code> 远程校验证据清单；sidecar 入站 mTLS 访问控制（<code>--tls-cert</code> / <code>--tls-key</code> / <code>--tls-client-ca</code>，<code>GateClient(cert=..., ca=...)</code>），示例 <code>examples/mtls_sidecar/</code>；新增 10 个测试（484 -&gt; 494）。</p>
+</li>
+<li>
+<p><strong>v0.22.0 已完成</strong>：编排器钩子 SDK（<code>PhaseBarrier</code>，供 Alpha-SWE 等平台在任务启动 / 阶段切换钩子调用：<code>check</code> 只读校验放行 / 拦截 / 跳步，<code>advance</code> 复用 <code>advance_stage</code> 证据校验，<code>record_test_run</code> 登记测试结果，<code>verify_evidence</code> 统一 <code>ok=False</code> 异常处理）；CLI 新增 <code>check</code> 子命令；编排器集成示例 <code>examples/orchestrator_hooks/</code>；README 交叉引用 alpha-swe；新增 28 个测试（494 -&gt; 522）。</p>
+</li>
+<li><strong>v0.23.0 已完成</strong>：Java 适配器输出解析增强——失败用例提取（Surefire <code>&lt;&lt;&lt; FAILURE!</code> / Gradle <code>&gt; FAILED</code> / JUnit Console <code>MethodSource</code>，去重上限 50）与 Gradle <code>skipped</code> 统计；GitHub Action 元数据增强——新增 <code>mode: check</code> 只读门禁校验（<code>stage</code> 输入）、<code>exec</code> 模式 <code>cwd</code> 工作目录输入；CI 自测新增 check 模式放行 / 拒绝 / 缺参路径；新增 6 个 Java 解析测试（522 -&gt; 528）。</li>
+<li><strong>v0.24.0 已完成</strong>：Java 输出解析剩余项——Surefire 参数化用例（displayName 含逗号 / <code>[N]</code> 序号）与
+  <code>&lt;&lt;&lt; ERROR!</code> 超时 / 异常细分（<code>TimeoutException</code> / <code>timed out</code> 判定「超时」）；Gradle <code>&gt; SKIPPED</code> 兜底计数、
+  <code>BUILD SUCCESSFUL</code> 汇总与多模块 reactor 聚合（<code>N tests completed, M failed</code> 求和）；JUnit Platform Console
+  <code>MethodSource</code> 嵌套格式（<code>Class.method(ParameterizedTest)[N]</code>）；测试命令识别补充 Windows wrapper
+  （<code>mvnw.cmd test</code> / <code>gradlew.bat test</code> / <code>.\mvnw</code>）；新增 10 个 Java 解析边界测试（528 -&gt; 538）。</li>
+<li><strong>v0.25.0 已完成</strong>：GitHub Action 市场元数据增强——<code>action.yml</code> 增加 <code>outputs</code> 声明（<code>workspace</code> / <code>stage</code> / <code>allowed</code>），门禁步骤可通过 <code>steps.gate.outputs.*</code> 供下游复用；示例更新至 <code>@v0.25.0</code> 并补充 outputs 用法与参数联动说明；CI 升级 checkout@v7 / setup-python@v7 / setup-node@v7 / setup-go@v7 / upload-artifact@v7 与 action-gh-release@v3（消除 Node 20 弃用告警）并新增 gate outputs 断言；新增发布到 GitHub Marketplace 的流程文档 <code>docs/publish-to-marketplace.md</code> 与 action 元数据测试 <code>tests/test_action_meta.py</code>。</li>
+<li><strong>v0.25.1 已完成</strong>：composite action <code>outputs</code> 修复——三个输出（<code>workspace</code> / <code>stage</code> / <code>allowed</code>）补上 <code>value: ${{ steps.gate.outputs.* }}</code> 映射（仅写 <code>$GITHUB_OUTPUT</code> 不会传播到调用方，v0.25.0 的 gate-action 自测因此读到空值）；action 内部 <code>setup-python@v7</code> 消除 Node 20 弃用告警；README 示例同步至 <code>@v0.25.1</code>。</li>
+<li><strong>v0.26.0 已完成</strong>：产品化与生态建设——<code>python -m anti_shortcut init</code> 配置脚手架与全字段配置指南 <code>docs/configuration.md</code>；Docker 一键体验镜像（<code>ghcr.io/xuqing0415/phase-barrier-demo</code>）；C++ / .NET 适配器（<code>CppAdapter</code> / <code>DotNetAdapter</code>，含 GoogleTest / VSTest 输出解析与自动检测）；PR 增量校验（<code>verify-evidence --git-base</code> 的 <code>git_impact</code> 映射 + Action <code>mode: verify</code> / <code>git_base</code> 输入，示例 <code>examples/github-action/gate-pr.yml</code>）；内置安全规则包（<code>no_shell_injection</code> / <code>no_path_traversal</code> / <code>no_hardcoded_secrets</code> / <code>require_license_header</code>）；插件索引 <code>docs/plugins.md</code>、贡献指南 <code>CONTRIBUTING.md</code> 与 Issue 模板。</li>
+<li><strong>v0.26.3 已完成</strong>：多 Agent 并发任务共享门禁状态——<code>StateManager</code> 跨进程文件锁
+  （POSIX <code>flock</code> / Windows <code>msvcrt</code>）+ 写前重载 + 唯一临时文件原子替换，并发推进不丢更新、
+  状态文件不损坏；<code>PhaseBarrier.refresh()</code> 重载状态与证据清单，编排器轮询可见他人推进结果；
+  新增多 Agent 并发示例 <code>examples/orchestrator_hooks/multi_agent.py</code>
+  （3 个并发 Agent 协作 + 6 路并发 <code>record_test_run</code> 写入压力演示，CI 端到端执行）。</li>
+<li><strong>v0.26.2 已完成</strong>：编排器 SDK 辅助查询——<code>PhaseBarrier.list_stages()</code>（阶段清单：编号 / 名称 / 准入门槛 / 必需证据，元数据集中定义于 <code>config.STAGE_META</code>）与 <code>PhaseBarrier.stage_of(path)</code>（spec-&gt;1 / test-&gt;2 / source-&gt;3 / other-&gt;None，与 <code>verify-evidence --git-base</code> 的 <code>git_impact</code> 分类一致）；<code>docs/plugins.md</code> 收录第一批官方示例插件索引。</li>
+<li>
+<p><strong>v0.27.0 已完成</strong>：K8s 生产级部署 —— <code>deploy/helm/phase-barrier/</code> Helm chart（sidecar + agent 双容器、PVC/emptyDir、mTLS / HMAC / 审计、gate-keeper Job）与 <code>kind</code> 端到端测试进 CI；LangChain / AutoGPT / SWE-agent 框架集成示例（<code>examples/*_integration/</code> + <code>docs/integrations.md</code>）；性能基准 <code>benchmarks/bench.py</code>（并发状态写入 + sidecar HTTP 写/执行延迟与吞吐，CI 性能回归门禁）。</p>
+</li>
+<li>
+<p><strong>v0.28.0 已完成</strong>：新增 PHP 适配器（<code>PhpAdapter</code>，<code>php -l</code> 语法检查 + PHPUnit 启发式，
+  <code>OK (N tests)</code> / <code>Tests: N, Failures: M</code> 输出解析，<code>composer.json</code> 自动检测）；C/C++ 适配器增强
+  （支持 <code>.c</code> 文件与 <code>gcc -fsyntax-only</code>、Catch2 <code>TEST_CASE</code> / <code>SCENARIO</code> 宏与 <code>REQUIRE*</code> / <code>CHECK*</code>
+  断言、Catch2 输出解析）；现有适配器测试框架增强（Java TestNG <code>Total tests run:</code> 汇总、
+  Python <code>unittest.TestCase</code> 的 <code>self.assert*</code> 断言计数、JS Cypress <code>cy.should</code> 断言与
+  <code>npx cypress run</code> 命令 / <code>All specs passed!</code> 输出）；CI 安装 PHP 激活真实工具用例。</p>
+</li>
+<li>
+<p><strong>v0.29.0 已完成</strong>：插件生态自动化——<code>python -m anti_shortcut plugin-verify</code> 自动验证四类插件
+  入口点（语言适配器 / 校验器 / 拦截规则 / 集成插件），CLI <code>--json</code> 供 CI 断言；插件 CI 模板
+  <code>.github/actions/plugin-test/</code>（composite action）+ 参考工作流 <code>.github/workflows/plugin-test.yml</code>，
+  插件仓库复制即用；CI 新增 <code>plugin-verify</code> 自测 job（本地安装示例插件端到端验证）。
+  官方文档站：MkDocs + Material 主题（<code>docs/</code> 下 index / quickstart / usage / configuration /
+  integrations / plugins / k8s / contributing / changelog），<code>.github/workflows/docs.yml</code>
+  构建并推送 <code>gh-pages</code> 分支，启用 Pages 后访问 https://xuqing0415.github.io/phase-barrier/ 。</p>
+</li>
+<li>
+<p><strong>v0.30.0 已落地</strong>：SWE-bench 门禁基准脚本化——新增 <code>benchmarks/swe_bench_gate.py</code> 模拟 SWE-bench 风格任务驱动 <code>AntiShortcutSkill</code>，统计 SOP 合规率 / 跳步拦截率 / 证据修复率 / resolve 率，支持 <code>--json</code> / <code>--fail-fast</code> 阈值门禁并纳入 CI bench job；配套冒烟测试 6 个与教程“脚本化基准”章节。</p>
+</li>
+<li>
+<p><strong>v0.31.0 已落地</strong>：性能与安全加固——新增解析器模糊测试基准 <code>benchmarks/fuzz_parsers.py</code>（8 个目标：输出摘要 / 覆盖率提取 / 写路径提取 / 门禁目录探测 / Java 解析器 / 适配器文件识别 / 测试命令识别，确定性种子复现），并纳入 CI bench job；新增 <code>.github/workflows/security.yml</code> 依赖漏洞扫描（<code>pip-audit</code> 完整环境 + <code>osv-scanner</code> manifest，每周定时 + push/PR 触发）；配套冒烟测试 7 个。</p>
+</li>
+<li>
+<p><strong>v0.32.0 已完成</strong>：主流 Agent 框架集成收尾——LangChain 新增 <code>PhaseBarrierTool</code>（<code>BaseTool</code> 子类，
+  <code>examples/langchain_integration/phase_barrier_tool.py</code>）与最小演示 <code>demo.py</code>，CI 新增 <code>integration-langchain</code>
+  job（固定安装 <code>langchain-core&gt;=0.3,&lt;0.5</code> 验证真实 BaseTool 路径）；新增 Kotlin 语言适配器
+  （<code>KotlinAdapter</code>：<code>kotlinc</code> 语法检查 + JUnit5/kotlin.test 启发式，复用 Java Gradle/Surefire 输出解析，
+  注册 <code>language: kotlin</code> 与 <code>src/main/kotlin</code> 自动探测）；文档站新增 API 参考页；多语言文档清单同步。</p>
+</li>
+<li>
+<p><strong>v0.32.1 已完成</strong>：文档站部署并发修复（<code>.github/workflows/docs.yml</code> 改为全工作流共享静态锁
+  <code>docs-deploy</code>，消除 main 推送与 v* 标签推送并发抢推 gh-pages 的撞车）。</p>
+</li>
+<li>
+<p><strong>v0.32.2 已完成</strong>：README 精简重构（约 150 行）并按主题迁移到 9 个新 docs 页，MkDocs 导航重组；
+  全仓 emoji / 符号字形 ASCII 清理。</p>
+</li>
+<li>
+<p><strong>v0.33.0 已完成</strong>：官方插件模板仓库 <a href="https://github.com/Xuqing0415/phase-barrier-plugin-template">phase-barrier-plugin-template</a> 落地——独立仓库提供四类入口点示例
+  （.demo 语言适配器 / 阶段 1 校验器 / vendor 拦截规则 / 集成插件）、<code>examples/demo.py</code> 端到端演示、
+  CI（plugin-verify + pytest）；<code>docs/plugins.md</code> 收录模板仓库并更新提交流程与 CI pin 版本。</p>
+</li>
+<li>
+<p><strong>v0.33.1 已完成</strong>：Kotlin 真实工具链进 CI——test / coverage job 安装 JDK 17 + kotlinc 2.2.0，
+  <code>tests/test_kotlin_adapter.py</code> 的真实语法用例（kotlinc 成功 / 报错两条路径）在 CI 强制运行，
+  不再按环境跳过。</p>
+</li>
+<li>
+<p><strong>v0.33.2 已完成</strong>：修复 v0.33.1 误用不存在的 <code>actions/setup-java@v7</code> 导致 job 无法解析的问题，
+  回退到长期稳定的 <code>actions/setup-java@v4</code>（temurin 17），kotlinc 安装与真实语法用例照常执行。</p>
+</li>
+<li>
+<p><strong>v0.33.3 已完成</strong>：修复 kotlinc 安装步骤的假自检——<code>$GITHUB_PATH</code> 只对后续 step 生效，
+  安装 step 内裸调 <code>kotlinc -version</code> 打印的是 runner 预装 kotlinc（2.4.10）而非下载的 2.2.0；
+  改为解压前 <code>sudo rm -rf /opt/kotlinc</code> 清理 + 绝对路径 <code>/opt/kotlinc/bin/kotlinc -version</code> 打印 
+  并 grep 断言 <code>2.2.0</code>；test / coverage job 的 <code>actions/setup-java@v4</code> 同步升级 <code>@v5</code>。</p>
+</li>
+<li>
+<p><strong>v0.34.0 已完成</strong>：新增 Scala 语言适配器（<code>ScalaAdapter</code>：scalac 单文件语法检查 + JUnit / ScalaTest / 
+  MUnit / spec2 启发式统计，输出解析 ScalaTest 优先、回退 Java Surefire / Gradle / JUnit Console；
+  <code>build.sbt</code> 自动探测）；C# / .NET 与 Scala 真实工具链进 CI（.NET SDK 8 + scala-2.13.18，绝对路径
+  版本断言），激活 CSharpAdapter / ScalaAdapter 真实语法用例；解析器模糊测试目标 8 -&gt; 10
+  （新增 C# / Scala 输出解析目标）。</p>
+</li>
+<li>
+<p><strong>v0.34.1 已完成</strong>：gRPC 教程降级为规划草案（顶部醒目警告 + MkDocs 导航 / 首页标题标注
+  「规划中」，与代码事实一致）；新增 <code>.github/workflows/plugin-check.yml</code> 每周一自动对
+  <code>examples/custom_adapter</code> 与 <code>examples/plugin_rules</code> 两个官方示例插件运行
+  <code>plugin-verify --json</code> 并上传报告 artifact；<code>.gitattributes</code> 显式列出常见文本类型统一 LF，
+  CONTRIBUTING 记录 Windows <code>git add</code> 换行规范化提示属正常现象。</p>
+</li>
+<li>
+<p><strong>v0.35.0 已完成</strong>：sidecar HTTP 边界模糊 + 多进程并发锁压力基准 <code>benchmarks/fuzz_sidecar.py</code>
+  （真实 HTTP 服务器随机请求 0 崩溃；持锁原子递增 + 持锁异常退出验证 OS 自动释放锁）并纳入
+  CI bench job；修复模糊暴露的 sidecar HTML 501（<code>send_error</code> 改 JSON）与
+  <code>execute_command</code> Popen 启动失败未捕获（转 <code>ProxyError</code>）两个问题；<code>benchmarks/bench.py</code>
+  新增可选 p99 阈值门禁并在 CI 启用（报告 artifact 上传）。</p>
+</li>
+<li>
+<p><strong>v0.36.0 已完成</strong>：Windows CI 核心测试矩阵——<code>windows-latest</code> × Python 3.12/3.13 新增
+  <code>test-windows</code> job 运行全量 pytest（真实工具链不额外安装、对应用例按 skipif 自动跳过，
+  ubuntu job 全量激活），覆盖 <code>msvcrt</code> 文件锁、路径分隔符与 CLI / sidecar / audit 等核心路径；
+  Windows 本机全量 pytest 预演通过（0 失败）。</p>
+</li>
+<li>
+<p><strong>v0.37.0 已完成</strong>：新增 Swift 语言适配器（<code>SwiftAdapter</code>：<code>swiftc -typecheck</code> 单文件
+  语法检查——脚本模式对 <code>@main</code> 文件报错自动以 <code>-parse-as-library</code> 重试、跨文件/依赖缺失
+  降级为“需完整项目编译验证”、swiftc 缺失返回明确错误；文件识别排除 <code>Package.swift</code> 清单；
+  XCTest <code>func testXxx()</code> + swift-testing <code>@Test</code> 启发式统计，先剥离注释/字符串避免误判；
+  输出解析 XCTest <code>Executed N tests, with M failures</code> / swift-testing <code>Test run with N tests
+  passed|failed</code> / xcodebuild <code>** TEST SUCCEEDED/FAILED **</code>）；<code>Package.swift</code> 自动探测；
+  解析器模糊测试目标 10 -&gt; 11（新增 Swift 输出解析目标）；CI 安装 swift.org ubuntu24.04
+  工具链（swift-6.1.2，绝对路径版本断言），激活 SwiftAdapter 真实语法用例；补齐 v0.34.0
+  遗漏的 <code>scala</code> 语言入口点并新增 <code>swift</code> 入口点；<code>.build</code>（SwiftPM 构建产物）加入
+  工作区遍历跳过目录。</p>
+</li>
+<li>
+<p><strong>v0.38.0 已完成</strong>：macOS CI 核心测试矩阵——<code>test-macos</code> job（<code>macos-latest</code> ×
+  Python 3.12/3.13）运行全量 pytest；macOS runner 自带 Xcode CLT，<code>swiftc</code> 开箱可用，
+  SwiftAdapter 真实语法用例在 macOS 天然激活（无需下载工具链）；其余真实工具链不装、
+  按 skipif 跳过（ubuntu 全量激活）。核心 pytest 现覆盖 Linux / Windows / macOS 三平台
+  （POSIX flock 与 msvcrt 文件锁均在 CI 实测）。</p>
+</li>
+<li>
+<p><strong>v0.39.0 已完成</strong>：K8s sidecar gRPC 服务——<code>anti_shortcut/proto/sidecar.proto</code> 定义
+  <code>service PhaseBarrier</code>（8 个 RPC 与 HTTP API 一一对应：GetState / Advance / RecordTestRun /
+  RecordSourceChange / WriteFile / ExecCommand / VerifyEvidence / QueryAudit）；生成代码随包分发
+  （<code>anti_shortcut/proto/</code>，重生成脚本 <code>scripts/gen_grpc.sh</code>）；<code>anti_shortcut.grpc_service</code> 实现
+  servicer 并复用 GateSidecar 业务逻辑（状态推进 / 证据校验 / 透明代理拦截 / 审计），拦截返回
+  <code>PERMISSION_DENIED</code>、参数非法返回 <code>INVALID_ARGUMENT</code>、推进未通过返回 <code>FAILED_PRECONDITION</code>；
+  可选依赖 <code>phase-barrier[grpc]</code>（dev extra 同步引入，CI 全量跑 gRPC 测试）；新增
+  <code>tests/test_grpc_service.py</code> 8 个 in-process gRPC 用例；教程
+  <code>docs/tutorials/k8s-sidecar-grpc.md</code> 由“规划草案”改写为“已实现”。</p>
+</li>
+<li>
+<p><strong>v0.40.0 已完成</strong>：Dart 语言适配器——<code>DartAdapter</code>（<code>anti_shortcut/languages/dart.py</code>）：
+  <code>*.dart</code> / <code>lib/**</code> / <code>bin/**</code> / <code>web/**</code> 为实现，<code>*_test.dart</code> / <code>test/**</code> /
+  <code>integration_test/**</code> 为测试；语法检查 <code>dart format --output=none</code>（纯解析不落盘，
+  SDK 缺失返回明确错误）；package:test 启发式统计（<code>test()</code> / <code>testWidgets()</code> 声明 +
+  <code>expect</code> 断言，剥离注释与字符串）；测试命令 <code>dart test</code> / <code>flutter test</code> /
+  <code>dart run test</code> / <code>pub run test</code>；输出解析 <code>+N: All tests passed!</code> /
+  <code>+N -M: Some tests failed.</code>（含 <code>~K</code> 跳过）。<code>pubspec.yaml</code> 自动探测，注册表 /
+  入口点 / 文档同步；解析器模糊测试目标 11 -&gt; 12；CI test / coverage job 安装
+  <code>dart-lang/setup-dart</code> 激活真实语法用例（通过 / 报错两条路径）；新增
+  <code>tests/test_dart_adapter.py</code> 19 个用例（2 个真实用例按 dart 是否安装启用）。</p>
+</li>
+<li><strong>v0.41.0 已完成</strong>：真实 SWE-bench 评测 harness —— 新增 <code>benchmarks/swebench_runner.py</code>（官方同构实例清单 + 基线 / 门禁双组命令模板 + stdout 标记聚合 resolve 率 / 拦截率 / 耗时；<code>--synthetic</code> 确定性冒烟与 <code>--fail-fast</code> 阈值门禁；不内置官方 swebench 容器与隐藏测试打分，真实运行需用户环境，教程见 <code>docs/tutorials/swe-bench-real.md</code>）；新增 <code>tests/test_swebench_runner.py</code> 11 个用例；CI bench job 追加合成冒烟步骤。Alpha-SWE 上游接入同步落地（<code>Xuqing0415/alpha-swe</code> PR #3 已合并，原待办移除）。</li>
+<li><strong>v0.41.1 / v0.41.2 已完成（coverage 门禁修复）</strong>：v0.40.0 / v0.41.0 全量 CI 覆盖率 88% &lt; 90%，暴露 gRPC 业务代码未被实测的盲区 —— gRPC handler 跑在 worker 线程，默认 coverage 不按线程追踪（<code>[tool.coverage.run]</code> 增加 <code>concurrency = "thread"</code>），并新增 <code>tests/test_grpc_service_direct.py</code> 8 个主线程直调用例（<code>grpc_service.py</code> 覆盖率 17% -&gt; 92%）；进一步定位 v0.39.0 起 gRPC 测试在 CI 一直静默跳过的根因：pb2 生成代码依赖 <code>google.protobuf</code>，但 <code>grpc</code> / <code>dev</code> extra 未声明，已补 <code>protobuf&gt;=7.35.1</code>，且两个 gRPC 测试模块对非 grpcio 缺失的导入异常直接抛出。修复后 CI coverage job 为 <code>850 passed, 0 skipped</code>、<code>grpc_service.py</code> 92%、TOTAL 90% 过门禁。</li>
+<li>
+<p><strong>v0.42.0 已完成</strong>：Windows CI 真实工具链激活与回归门禁时间戳修复 —— <code>test-windows</code> job（Python 3.10-3.14 矩阵）更名为 <code>pytest (Windows ...)</code>，安装 Node 20 / Go 1.22 / Rust stable / Ruby 3.3 / PHP 8.3 / JDK 17 + kotlinc 2.2.0 / .NET 8 / Scala 2.13.18 / Dart 工具链并加入 PATH（PowerShell 下载 kotlinc / scala zip），Windows 上 JS/Go/Rust/Ruby/PHP/Java/Kotlin/.NET/Scala/Dart 适配器真实工具用例不再跳过；Swift 无 Windows 工具链，对应真实用例按 skipif 跳过。同时修复回归门禁的时间戳并发平台差异（Windows CI 偶发失败）：测试运行与源码修改落在同一时钟粒度时门禁失败关闭（<code>validate_retest</code> 比较改 <code>ran_at &lt;= changed_at</code>，<code>advance_stage</code> 4-&gt;6 直达分支改 <code>ran_at &gt; changed_at</code>），<code>mark_source_change</code> 支持注入 <code>at_epoch</code> 使顺序单测确定性化，并新增同时间戳失败关闭边界用例。</p>
+</li>
+<li>
+<p><strong>v0.42.1 已完成</strong>：Windows 状态文件并发写入修复 —— <code>StateManager.__init__</code> / <code>reload()</code>
+  改为持伴生文件锁读取（Windows 读句柄默认不共享删除，无锁读会阻塞并发写线程的
+  <code>os.replace</code>，表现为 CI 偶发 <code>test_bench_state_contention_smoke</code> 23/24）；
+  <code>os.replace</code> 增加短退避重试抵御瞬时共享冲突。</p>
+</li>
+<li>
+<p><strong>v0.43.0 已完成</strong>：macOS CI 真实工具链激活 —— <code>test-macos</code> job（Python 3.12 / 3.13）
+  更名为 <code>pytest (macOS ...)</code>，安装 Node 20 / Go 1.22 / Rust stable / Ruby 3.3 / PHP 8.3 / 
+  JDK 17 + kotlinc 2.2.0 / .NET 8 / Scala 2.13.18 / Dart（kotlinc / scala 下载到 runner temp 
+  并加入 PATH）；Swift 由 Xcode CLT（swiftc）原生激活。JS/Go/Rust/Ruby/PHP/Java/Kotlin/
+  C#/.NET/Scala/Dart 适配器真实工具用例在 macOS CI 强制执行。至此 Linux（v0.16.0 起）/ 
+  Windows（v0.42.0 起）/ macOS（v0.43.0 起）三平台真实工具链全量激活。</p>
+</li>
+<li>
+<p><strong>v0.43.1 已完成</strong>：Windows 证据清单并发读写修复 —— v0.43.0 CI <code>pytest (Windows 3.12)</code>
+  偶发 <code>test_run_fuzz_http_only_smoke</code> 500，根因同 v0.42.1：<code>EvidenceManifest</code> 无锁读
+  <code>evidence_manifest.json</code> 会阻塞并发推进线程的 <code>os.replace</code>；修复为初始加载 / <code>reload()</code> /
+  <code>record()</code> 写前重载 / 查询快照全部持伴生文件锁（<code>evidence_manifest.json.lock</code>）并改用
+  <code>_replace_with_retry</code> 重试；新增并发回归测试 <code>test_concurrent_record_reload_safe</code>。</p>
+</li>
+<li>
+<p><strong>v0.44.0 已完成</strong>：Java 适配器输出解析剩余项与框架矩阵
+  回归（修正 Surefire <code>[INFO]</code> 前罀 / TestNG 拼写差异 / Gradle 括号与参数化
+  行 / JUnit Console 判定，新增 10 组 fixtures 矩阵测试）+ GitHub Action
+  Marketplace 元数据增强（英文关键词描述 / author / 参数说明 +
+  元数据测试）。</p>
+</li>
+<li>
+<p><strong>v0.45.0 已完成</strong>：编排器 SDK 辅助查询扩展（<code>PhaseBarrier</code> 新增
+  <code>get_required_evidence</code> / <code>get_last_test_run</code> / <code>get_stage_history</code> /
+  <code>has_uncommitted_changes</code> 四个只读查询，demo / API 文档 / 13 个单测同步）+ 插件
+  生态自动验证流程（根目录 <code>plugins.json</code> 索引 + <code>scripts/verify_plugins.py</code>
+  （安装 -&gt; 子进程 plugin-verify -&gt; 断言入口点 -&gt; <code>--update</code> 写回状态）+
+  <code>plugin-verification.yml</code> 每周二自动验证并提交变更 + 20 个脚本单测）。</p>
+</li>
+<li>
+<p><strong>v0.45.1 已完成</strong>：编排器辅助查询 CLI 化（<code>anti-shortcut query</code> 子命令：
+  <code>--required-evidence</code> / <code>--last-test-run</code> / <code>--stage-history</code> /
+  <code>--has-uncommitted-changes</code>，<code>--json</code> 即 SDK 返回结构，API / hooks 文档同步）+ 插件索引
+  状态表自动同步（<code>verify_plugins.py --sync-docs</code> 渲染 <code>docs/plugins.md</code> 表格，
+  <code>plugin-verification.yml</code> 联动提交）。</p>
+</li>
+<li>
+<p><strong>v0.45.2 已完成</strong>：文档一致性收敛——README 支持语言表补 Dart 行（v0.40.0 遗漏）、
+  docs/languages.md 补 RubyAdapter 行（v0.11.0 遗漏）、docs/faq.md 内置适配器清单更新为
+  13 种语言；docs/best-practices.md 移除对已精简 README“长期规划”章节的过时引用，改为
+  指向已落地事实（security.yml 漏洞扫描 / fuzz 基准 / 供应链示例）；<code>query</code> CLI 版本标注
+  统一为 v0.45.1（help / docstring / api.md / orchestrator-hooks.md）；历史博客加更新注记。</p>
+</li>
+<li>
+<p><strong>v0.46.0 已完成</strong>：第三方插件仓库自动轮询——<code>plugins.json</code> 顶层升级为容器
+  （<code>plugins</code> + <code>auto_discovery</code>，旧顶层数组格式兼容读入 / 写回自动升级，条目新增
+  <code>auto_discovered</code> / <code>last_commit_sha</code>），新增 <code>scripts/auto_discover_plugins.py</code>
+  （按 GitHub topic <code>phase-barrier-plugin</code> 搜索 -&gt; 去重 -&gt; <code>git clone --depth 1</code>
+  -&gt; <code>pip install -e</code> -&gt; <code>plugin-verify --json</code>，<code>--dry-run</code> / <code>--update</code> 收录 +
+  docs 同步，过滤 fork / archived，Search 限流 403 可降级不中断），周期 workflow
+  <code>plugin-verification.yml</code> 改为每周一 03:00 UTC「先自动发现再全量验证」两步并上传
+  双报告；docs/plugins.md / CONTRIBUTING.md 补自动收录流程，17 个自动发现单测。</p>
+</li>
+<li>
+<p><strong>v0.46.1 已完成</strong>：自动发现入口点归属修复——手动触发工作流首次实跑（不等周一
+  cron）暴露 <code>clone_verify</code> 会把环境中 phase-barrier 内置语言适配器入口点误归属给
+  候选插件；新增按 <code>direct_url.json</code> 定位候选发行版的 <code>_entry_points_of_workdir()</code>，
+  只统计候选自声明入口点并与 plugin-verify ok 结果求交（+3 单测，共 20 个全绿），
+  据此重新收录首个自动条目。</p>
+</li>
+<li>
+<p><strong>v0.47.0 已完成</strong>：插件状态页接入文档站（新增 <code>docs/plugin-status.md</code>，
+  <code>--sync-docs</code> 默认同步目标迁移，状态表加「收录 / 提交」列，plugins.md 改指南并
+  链接）+ 自动发现条目增量刷新（<code>git ls-remote</code> 对比 <code>last_commit_sha</code>，SHA 变化
+  才重新验证并更新入口点；失败标记 <code>failed</code> 且保留旧 SHA 供重试；+7 单测）。</p>
+</li>
+<li>
+<p><strong>v0.48.0 已完成（遗留项一次性收口）</strong>：自定义域名文档 + 非阻塞 CI 检查
+  （<code>docs/custom-domain.md</code> / <code>scripts/check_custom_domain.py</code>，当前未启用属可选）；
+  模拟第三方插件 fixture（<code>tests/fixtures/plugin_alpha/</code>）+ 自动发现 E2E 4 用例
+  （发现收录 / 新提交刷新 / 失败保留 SHA 并重试 / 失败不收录）；
+  <code>verify_plugins.py --sync-only</code> 接入 docs 构建（状态页与索引自动一致）+
+  文档一致性测试 4 用例；视频教程模板 <code>docs/video-tutorial-template.md</code>；
+  社区推广包 <code>docs/promotion/README.md</code>；Alpha-SWE #3 上游跟踪记录；
+  新增 14 个单测，全量 953 用例通过。</p>
+</li>
+<li>
+<p><strong>v0.49.0 已完成</strong>：语义级校验（结构校验之上的可选语义增强）——新增
+  <code>anti_shortcut/semantic.py</code> 与第 5 类插件入口点组 <code>phase_barrier.semantic_validators</code>：
+  需求追踪校验器（spec <code>REQ-001</code> 声明 -&gt; 测试 <code># REQ-001</code> 注释关联，阶段 2 推进时
+  校验覆盖率，防 spec 与测试脱节）、Python AST 变异测试校验器（运算符 / 比较 /
+  布尔确定性变异 + 工作区测试逐个运行变异体，阶段 4 推进时要求突变分数 &gt;= 阈值，
+  防空测试 / 假断言）、语义校验器插件契约与进程内注册 /
+  <code>run_semantic_checks</code> 汇总（任一失败即阻止推进，插件异常按失败留痕不拖垮门禁）；
+  官方 LLM 语义审查参考插件（<code>examples/semantic_llm_check/</code>，仅标准库、
+  离线降级跳过、<code>network_required</code> 才阻断）；默认全部关闭不改变既有门禁行为；
+  新增 <code>docs/semantic-validation.md</code> 与配置示例；tests/test_semantic.py 56 个用例。</p>
+</li>
+<li>
+<p><strong>v0.50.0 已完成</strong>：深度补全第一层——spec 具体性与测试断言质量内置校验器。
+  <code>spec_specificity</code>（阶段 1）五维分析（具体实体 / 接口签名 / 技术决策 /
+  需求锚点命中 / 套话句式上限），直接拦截“307 字套话 spec”（套话样本实体 0 /
+  签名 0 / 决策 0 / 套话 6 / 锚点 0，五个维度全灭并逐维度给出可操作消息）；
+  需求锚点从用户原始需求提取 latin 标识符与中文双字领域词，过滤“实现 / 函数”等
+  泛指词；用户需求缺失时锚点子检查自动关闭。<code>test_assertion_quality</code>（阶段 2，
+  仅 Python）AST 识别纯常数断言（<code>assert True</code> / <code>assert 1 == 1</code>），strict 模式
+  拒绝弱测试函数（消息含 <code>文件:函数</code> 与行号）；默认全部关闭不改变既有门禁；
+  tests/test_semantic_depth.py 28 个用例，semantic 模块覆盖率 95%。</p>
+</li>
+</ul>
+<h2 id="v0500">待办 / 已知缺口（截至 v0.50.0）<a class="headerlink" href="#v0500" title="Permanent link">&para;</a></h2>
+<ul>
+<li>内部可执行项已清零：除既有批次（CI 平台矩阵真实工具链全量激活、插件自动发现 /
+  增量刷新 / 状态页自动维护、E2E 演练、推广与视频模板、上游跟踪记录）外，
+  v0.49.0 补齐“语义级验证”（需求追踪 + 变异测试 + 语义校验器插件组 + LLM 参考插件），
+  结构 / 形式校验之上的语义增强缺口闭合；v0.50.0 补上“深度补全第一层”（spec
+  具体性五维拦截套话、AST 拒绝纯常数断言），278 字量级套话 spec 与 <code>assert True</code>
+  空壳测试不再能仅靠结构合规通过。</li>
+<li>仍属外部 / 资源依赖、无法在本仓库单方面清零：</li>
+<li>自定义域名 <code>docs.phase-barrier.dev</code> 需用户先注册 / 解析域名再配置 DNS
+    （截至 v0.48.3 公网 NXDOMAIN，未启用，可选）；</li>
+<li>真实第三方插件数量依赖社区采用（工具与流程就绪，索引目前含官方模板仓库 1 条
+    自动条目）；</li>
+<li>Alpha-SWE 上游 PR #3 已合入（2026-08-30，合并提交 128e6a4，见 docs/integrations.md），
+    该项不再阻塞，剩余仅为跨仓库推广执行；</li>
+<li>大规模 SWE-bench 评测与视频 / 推广实际执行为资源型长期项（harness / 模板已备）。</li>
+</ul>
+<p>发布为里程碑驱动：日常改动累积在 main，仅用户可感知里程碑 / 紧急修复才打 tag
+（同日不重复发布）；发版前把累积变化汇总进 CHANGELOG（详见 <a href="../release/">发布流程</a>）。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.top", "navigation.tabs", "toc.integrate", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

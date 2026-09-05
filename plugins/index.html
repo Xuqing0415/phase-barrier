@@ -1,0 +1,2018 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="反捷径校验 Skill：阶段门禁 + 证据校验 + 工具拦截，强制编码 Agent 遵循标准工程师 SOP">
+      
+      
+      
+        <link rel="canonical" href="https://xuqing0415.github.io/phase-barrier/plugins/">
+      
+      
+        <link rel="prev" href="../integrations/">
+      
+      
+        <link rel="next" href="../plugin-status/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>插件与生态 - phase-barrier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#v0260" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href=".." title="phase-barrier" class="md-header__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            phase-barrier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              插件与生态
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../quickstart/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  快速开始
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../usage/" class="md-tabs__link">
+          
+  
+  
+  使用指南
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../integrations/" class="md-tabs__link">
+          
+  
+  
+  集成与生态
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tutorials/ci-incremental-gate/" class="md-tabs__link">
+          
+  
+  
+  教程
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../release/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  发布与供应链安全
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  贡献指南
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  更新日志
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="phase-barrier" class="md-nav__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    phase-barrier
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速开始
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    使用指南
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    使用指南
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI 使用
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    配置指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../semantic-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语义级校验（v0.49.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../languages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语言适配器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../github-action/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../publish-to-marketplace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 上架
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../orchestrator-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    编排器钩子 SDK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audit-logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    状态与审计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    拦截规则与安全加固
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    架构与设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom-domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    自定义域名部署（可选）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    集成与生态
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    集成与生态
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent 框架集成
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件与生态
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件与生态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        开发模板
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v0290" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        自动验证（v0.29.0）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="自动验证（v0.29.0）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        插件 CI 模板（一键接入）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        提交到索引 / 自动收录
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        官方模板仓库（非插件，用于生成插件）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v0262" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        第一批索引（官方示例，v0.26.2）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        社区第三方插件
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v0341" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        索引自动检查（v0.34.1）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v0450-v0460" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        索引数据文件与自动验证（v0.45.0 / v0.46.0）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="索引数据文件与自动验证（v0.45.0 / v0.46.0）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        验证脚本
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto_discover_pluginspyv0460" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        自动发现脚本（auto_discover_plugins.py，v0.46.0）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plugin-verificationyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        周期自动验证（plugin-verification.yml）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        插件状态页（自动同步）
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugin-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件状态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../k8s/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    最佳实践
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    教程
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    教程
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/ci-incremental-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI 增量门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/k8s-sidecar-grpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s sidecar 加固与 gRPC 接口（v0.39.0 已实现）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/swe-bench-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 门禁基准
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/swe-bench-real/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 真实评测 harness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../video-tutorial-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    视频教程模板
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    发布与供应链安全
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    贡献指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    更新日志
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="v0260">插件与生态索引（v0.26.0）<a class="headerlink" href="#v0260" title="Permanent link">&para;</a></h1>
+<p>phase-barrier 通过 Python 入口点（entry points）支持五类插件：</p>
+<table>
+<thead>
+<tr>
+<th>入口点组</th>
+<th>作用</th>
+<th>参考实现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>phase_barrier.languages</code></td>
+<td>自定义语言适配器</td>
+<td><code>examples/custom_adapter/</code></td>
+</tr>
+<tr>
+<td><code>phase_barrier.validators</code></td>
+<td>自定义阶段校验器（覆盖内置）</td>
+<td><code>examples/plugin_rules/</code></td>
+</tr>
+<tr>
+<td><code>phase_barrier.interceptors</code></td>
+<td>自定义拦截规则</td>
+<td><code>examples/plugin_rules/</code></td>
+</tr>
+<tr>
+<td><code>phase_barrier.semantic_validators</code></td>
+<td>语义级校验器（需求追踪 / 变异测试 / spec 具体性 / 断言质量 / LLM 审查等，v0.49.0 起）</td>
+<td><code>examples/semantic_llm_check/</code></td>
+</tr>
+<tr>
+<td><code>anti_shortcut.integrations</code></td>
+<td>Agent 集成插件（自动装回包装后的工具）</td>
+<td><code>examples/orchestrator_hooks/</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>自动收录（v0.46.0）</strong>：索引数据由 <code>plugins.json</code> 承载、每周自动验证工作流维护，
+已收录插件的实时状态表见<a href="../plugin-status/">插件状态页</a>。若希望你的插件被自动收录，
+请给仓库添加 <code>phase-barrier-plugin</code> 主题，并确保可通过
+<code>python -m anti_shortcut plugin-verify</code> 验证（入口点全部通过）；详见下文
+「提交到索引 / 自动收录」与「自动发现脚本」。</p>
+</blockquote>
+<h2 id="_1">开发模板<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>推荐：官方模板仓库</strong>
+独立模板仓库 <a href="https://github.com/Xuqing0415/phase-barrier-plugin-template">phase-barrier-plugin-template</a>
+点 GitHub 右上角 <strong>Use this template</strong> 一键生成插件仓库，内置五类入口点示例、
+CI（<code>plugin-verify</code> + pytest）与冒烟测试；下文片段为最小示例，完整模板以该仓库为准。</p>
+</blockquote>
+<p>最小语言适配器插件：</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># pyproject.toml</span>
+<span class="k">[project.entry-points.</span><span class="s2">"phase_barrier.languages"</span><span class="k">]</span>
+<span class="n">my_language</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"my_package:MyLanguageAdapter"</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="c1"># my_package/__init__.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">anti_shortcut</span><span class="w"> </span><span class="kn">import</span> <span class="n">LanguageAdapter</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyLanguageAdapter</span><span class="p">(</span><span class="n">LanguageAdapter</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"my_language"</span>
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">".xyz"</span><span class="p">]</span>
+    <span class="n">source_file_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"*.xyz"</span><span class="p">]</span>
+    <span class="n">test_file_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"test_*.xyz"</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_syntax</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"语法检查通过（示例插件）"</span>
+</code></pre></div>
+<p>安装插件包后，用 <code>language: my_language</code> 或 <code>language_adapter: "my_package:MyLanguageAdapter"</code> 启用。</p>
+<p>自定义拦截规则插件：</p>
+<div class="highlight"><pre><span></span><code><span class="k">[project.entry-points.</span><span class="s2">"phase_barrier.interceptors"</span><span class="k">]</span>
+<span class="n">my_rules</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"my_package:rules"</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="c1"># my_package/__init__.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">deny_uploads</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"write"</span> <span class="ow">and</span> <span class="s2">"uploads/"</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"禁止写入 uploads/（我的规则）"</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+<span class="n">rules</span> <span class="o">=</span> <span class="p">[</span><span class="n">deny_uploads</span><span class="p">]</span>
+</code></pre></div>
+<h2 id="v0290">自动验证（v0.29.0）<a class="headerlink" href="#v0290" title="Permanent link">&para;</a></h2>
+<p>安装插件包后，<code>python -m anti_shortcut plugin-verify</code> 会自动加载并冒烟验证
+全部五类入口点：语言适配器（<code>name</code> + 必需方法）、校验器（映射 / 工厂）、
+拦截规则（可调用规则）、语义校验器（<code>name</code> + <code>stages</code> + <code>check()</code>）、
+集成插件（可调用 / <code>install()</code>）。返回码 0 = 全部通过。</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>phase-barrier<span class="w"> </span>my-plugin
+python<span class="w"> </span>-m<span class="w"> </span>anti_shortcut<span class="w"> </span>plugin-verify<span class="w">          </span><span class="c1"># 全部通过时退出码 0</span>
+python<span class="w"> </span>-m<span class="w"> </span>anti_shortcut<span class="w"> </span>plugin-verify<span class="w"> </span>--json<span class="w">   </span><span class="c1"># 结构化结果（CI 断言用）</span>
+</code></pre></div>
+<h3 id="ci">插件 CI 模板（一键接入）<a class="headerlink" href="#ci" title="Permanent link">&para;</a></h3>
+<p>把下面工作流复制到插件仓库 <code>.github/workflows/ci.yml</code>，每次 push / PR 自动验证：</p>
+<div class="highlight"><pre><span></span><code><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Plugin CI</span>
+
+<span class="nt">on</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">push</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">branches</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">main</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">master</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">pull_request</span><span class="p">:</span>
+
+<span class="nt">jobs</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">plugin-test</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
+<span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v7</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Xuqing0415/phase-barrier/.github/actions/plugin-test@v0.32.2</span>
+<span class="w">        </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">plugin-path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span><span class="w">            </span><span class="c1"># 插件包目录（包含 pyproject.toml）</span>
+<span class="w">          </span><span class="nt">python-version</span><span class="p">:</span><span class="w"> </span><span class="s">'3.12'</span>
+<span class="w">          </span><span class="nt">phase-barrier-version</span><span class="p">:</span><span class="w"> </span><span class="s">''</span><span class="w"> </span><span class="c1"># 留空 = 最新发布版；可固定如 0.29.0</span>
+</code></pre></div>
+<p>验证通过后可在 README 添加徽章：</p>
+<div class="highlight"><pre><span></span><code>[<span class="nt">![Plugin CI</span>](<span class="na">https://github.com/&lt;owner&gt;/&lt;repo&gt;/actions/workflows/ci.yml/badge.svg</span>)](https://github.com/&lt;owner&gt;/&lt;repo&gt;/actions/workflows/ci.yml)
+</code></pre></div>
+<h2 id="_2">提交到索引 / 自动收录<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>第三方插件推荐走<strong>自动发现</strong>（v0.46.0）：不再依赖人工合并，满足条件即被每周
+workflow 自动收录：</p>
+<ol>
+<li>用官方模板仓库 <a href="https://github.com/Xuqing0415/phase-barrier-plugin-template">phase-barrier-plugin-template</a> 生成插件仓库（Use this template）。</li>
+<li>给仓库添加 GitHub topic：<code>phase-barrier-plugin</code>。</li>
+<li>接入上面的 <strong>插件 CI 模板</strong>，保证 <code>python -m anti_shortcut plugin-verify</code> 全绿
+   （入口点可加载、类型与必需接口通过）。</li>
+<li>等待周期自动发现（每周一 03:00 UTC，或提 <code>workflow_dispatch</code> 手动触发）；
+   验证通过的插件以 <code>auto_discovered: true</code> 自动进入 <code>plugins.json</code>，并同步到「插件状态页」（见文末链接）。
+   自动收录只校验入口点可用性，不审查代码质量（质量由社区 / Issue 反馈约束）。</li>
+</ol>
+<p>不打 topic 的插件仍可走人工提交：</p>
+<ol>
+<li>在 <a href="https://github.com/Xuqing0415/phase-barrier/issues">GitHub Issues</a> 选择
+   「插件提交（Plugin Submission）」模板，附上：包名 / 仓库链接、支持的入口点组、
+   CI 状态链接、一段使用示例。</li>
+<li>维护者审核后合并到 <code>plugins.json</code>，并运行
+   <code>python scripts/verify_plugins.py --update --sync-docs</code> 刷新插件状态页。</li>
+</ol>
+<h2 id="_3">官方模板仓库（非插件，用于生成插件）<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://github.com/Xuqing0415/phase-barrier-plugin-template">phase-barrier-plugin-template</a>：
+  独立模板仓库，Use this template 即可生成；含四类入口点示例（.demo 语言适配器 / 阶段 1 校验器 /
+  vendor 拦截规则 / 集成插件）与语义校验器参考实现（<code>examples/semantic_llm_check/</code>）、<code>examples/demo.py</code> 端到端演示、CI（plugin-verify + pytest）。</li>
+</ul>
+<h2 id="v0262">第一批索引（官方示例，v0.26.2）<a class="headerlink" href="#v0262" title="Permanent link">&para;</a></h2>
+<p>以下为本仓库自带的官方示例插件，均可直接复用 / 作为提交模板：</p>
+<table>
+<thead>
+<tr>
+<th>插件</th>
+<th>类型</th>
+<th>作者</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>phase-barrier-foo-adapter</code>（<code>examples/custom_adapter/</code>）</td>
+<td><code>phase_barrier.languages</code></td>
+<td>phase-barrier 官方示例</td>
+<td>虚构 <code>.foo</code> 语言适配器：文件识别 / 语法检查 / 测试统计 / 测试命令识别；演示打包与入口点注册，安装后 <code>language: foo</code> 直接启用</td>
+</tr>
+<tr>
+<td><code>phase-barrier-plugin-example</code>（<code>examples/plugin_rules/</code>）</td>
+<td><code>phase_barrier.validators</code> + <code>phase_barrier.interceptors</code></td>
+<td>phase-barrier 官方示例</td>
+<td>自定义校验器（<code>strict_design</code>）+ 拦截规则（<code>deny_vendor_writes</code>），安装后自动参与门禁</td>
+</tr>
+<tr>
+<td>编排器钩子集成（<code>examples/orchestrator_hooks/</code>）</td>
+<td><code>anti_shortcut.integrations</code></td>
+<td>phase-barrier 官方示例</td>
+<td>任务启动 / 阶段切换钩子调用 <code>PhaseBarrier</code>，把包装后的工具装回 Agent</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">社区第三方插件<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>插件</th>
+<th>类型</th>
+<th>作者</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>（等待自动发现 / 人工提交）</td>
+<td></td>
+<td></td>
+<td>打 <code>phase-barrier-plugin</code> 主题或提 Issue，见「提交到索引 / 自动收录」</td>
+</tr>
+</tbody>
+</table>
+<h2 id="v0341">索引自动检查（v0.34.1）<a class="headerlink" href="#v0341" title="Permanent link">&para;</a></h2>
+<p>主仓库新增 <code>.github/workflows/plugin-check.yml</code>：每周一 06:00 UTC 自动运行
+（也可手动 <code>workflow_dispatch</code> 触发），安装 <code>examples/custom_adapter</code> 与
+<code>examples/plugin_rules</code> 两个官方示例插件后执行 <code>python -m anti_shortcut plugin-verify --json</code>，
+断言 <code>foo</code>（语言适配器）/ <code>strict_design</code>（校验器）/ <code>deny_vendor</code>（拦截规则）等入口点全部通过，
+并把 JSON 报告作为 artifact（<code>plugin-check-report.json</code>）上传供人工抽查。</p>
+<p>说明：</p>
+<ul>
+<li>该检查针对<strong>本仓库官方示例插件</strong>，防止示例随代码演进失效。</li>
+<li><strong>第三方插件</strong> 的收录（v0.46.0 起）优先走自动发现：GitHub topic
+  <code>phase-barrier-plugin</code> + 插件 CI 全绿 -&gt; <code>plugin-verification.yml</code>（每周一
+  03:00 UTC）自动 clone / 安装 / <code>plugin-verify</code>，通过即以
+  <code>auto_discovered: true</code> 写入 <code>plugins.json</code> 并同步插件状态页；不打 topic 的仍走
+  Issue 模板人工提交。</li>
+</ul>
+<h2 id="v0450-v0460">索引数据文件与自动验证（v0.45.0 / v0.46.0）<a class="headerlink" href="#v0450-v0460" title="Permanent link">&para;</a></h2>
+<p>从 v0.45.0 起，索引不只靠文档表格人工维护，还新增了机器可读的
+<code>plugins.json</code>（仓库根目录）与自动验证脚本，方便维护者周期核查已收录插件的
+兼容性；v0.46.0 起顶层改为容器结构并支持按 GitHub topic 自动发现新插件：</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"plugins"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"owner/repo"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"repo"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://github.com/owner/repo"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"install"</span><span class="p">:</span><span class="w"> </span><span class="s2">"git+https://github.com/owner/repo.git#egg=repo"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"entry_points"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"phase_barrier.languages"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"my_language"</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">"last_verified"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-09-05T00:00:00Z"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passed"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"auto_discovered"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"last_commit_sha"</span><span class="p">:</span><span class="w"> </span><span class="s2">"abc123..."</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">"auto_discovery"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"github_topic"</span><span class="p">:</span><span class="w"> </span><span class="s2">"phase-barrier-plugin"</span><span class="p">,</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<ul>
+<li><code>plugins</code>：条目列表（v0.45.x 的顶层数组旧格式仍可读取，写回时自动升级为容器）。</li>
+<li><code>auto_discovery</code>：自动发现开关与使用的 GitHub topic（置 <code>enabled: false</code> 可停用）。</li>
+<li><code>name</code>：插件标识（官方示例用包名，自动收录的第三方用 <code>owner/repo</code>）。</li>
+<li><code>repo</code>：仓库地址（本地示例用相对路径，第三方用 URL）。</li>
+<li><code>install</code>：可被 <code>pip install -e</code> 的目标（本地相对路径 / <code>git+https</code> URL）；
+  缺省回退到 <code>repo</code>。无 <code>install</code> / <code>repo</code> 的占位条目不会自动判定状态。</li>
+<li><code>entry_points</code>：声明该插件应提供的入口点，<code>{入口点组: [名称列表]}</code>；
+  也可用 <code>["phase_barrier.languages", ...]</code> 简写（只断言组内有可用入口点）。</li>
+<li><code>last_verified</code> / <code>status</code>：最近一次自动验证时间与结果（<code>passed</code> /
+  <code>failed</code> / <code>unverified</code>），由验证脚本按 <code>--update</code> 写回。</li>
+<li><code>auto_discovered</code> / <code>last_commit_sha</code>：是否由自动发现收录 / 收录时验证的
+  提交 SHA（用于后续增量判断），官方示例为 <code>false</code> / <code>null</code>。</li>
+</ul>
+<h3 id="_5">验证脚本<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p><code>scripts/verify_plugins.py</code> 负责“索引层”验证：逐个安装索引条目（新进程注册
+入口点），再在全新子进程中运行 <code>python -m anti_shortcut plugin-verify --json</code>，
+断言每个条目声明的入口点全部可用：</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>scripts/verify_plugins.py<span class="w">                  </span><span class="c1"># 验证并打印摘要（0 = 全通过）</span>
+python<span class="w"> </span>scripts/verify_plugins.py<span class="w"> </span>--update<span class="w">         </span><span class="c1"># 把 status / last_verified 写回</span>
+python<span class="w"> </span>scripts/verify_plugins.py<span class="w"> </span>--update<span class="w"> </span>--sync-docs<span class="w">  </span><span class="c1"># 写回状态并同步 docs/plugin-status.md 插件状态页</span>
+python<span class="w"> </span>scripts/verify_plugins.py<span class="w"> </span>--json<span class="w">           </span><span class="c1"># 结构化报告（stdout）</span>
+python<span class="w"> </span>scripts/verify_plugins.py<span class="w"> </span>--no-install<span class="w">     </span><span class="c1"># 跳过安装（插件须已安装）</span>
+</code></pre></div>
+<h3 id="auto_discover_pluginspyv0460">自动发现脚本（auto_discover_plugins.py，v0.46.0）<a class="headerlink" href="#auto_discover_pluginspyv0460" title="Permanent link">&para;</a></h3>
+<p><code>scripts/auto_discover_plugins.py</code> 负责“发现并收录”：按 GitHub topic 搜索
+（Search API，token 取 <code>GH_TOKEN</code> / <code>GITHUB_TOKEN</code> / <code>--token</code>），过滤已在
+<code>plugins.json</code> 中的仓库；对候选执行 <code>git clone --depth 1</code> -&gt; <code>pip install -e</code>
+-&gt; <code>plugin-verify --json</code> 全链路验证，通过则以 <code>auto_discovered: true</code> +
+<code>last_commit_sha</code> 收录并同步插件状态页；失败只记录原因、不收录（不审查代码）。
+v0.47.0 起，已收录的自动条目还会用 <code>git ls-remote</code> 检测远端 HEAD，与
+<code>last_commit_sha</code> 不一致时增量重新验证并更新入口点（含新增入口点）：</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>scripts/auto_discover_plugins.py<span class="w">               </span><span class="c1"># dry-run：搜索并打印候选</span>
+python<span class="w"> </span>scripts/auto_discover_plugins.py<span class="w"> </span>--update<span class="w">      </span><span class="c1"># 验证候选 / 刷新自动条目并写回 + 同步状态页</span>
+python<span class="w"> </span>scripts/auto_discover_plugins.py<span class="w"> </span>--update<span class="w"> </span>--json<span class="w">   </span><span class="c1"># 结构化摘要（stdout）</span>
+</code></pre></div>
+<h3 id="plugin-verificationyml">周期自动验证（plugin-verification.yml）<a class="headerlink" href="#plugin-verificationyml" title="Permanent link">&para;</a></h3>
+<p><code>.github/workflows/plugin-verification.yml</code> 每周一 03:00 UTC（可与周一 06:00 的
+<code>plugin-check.yml</code> 区分）自动运行两步：</p>
+<ol>
+<li><code>auto_discover_plugins.py --update</code>：按 topic 自动发现并收录新第三方插件，并
+   对已收录自动条目的新提交做增量刷新；</li>
+<li><code>verify_plugins.py --update --sync-docs</code>：全量安装并验证 <code>plugins.json</code> 全部
+   条目（含新收录），刷新状态与插件状态页；</li>
+</ol>
+<p>随后上传 JSON 报告 artifact（<code>plugin-verification-report.json</code> /
+<code>plugin-discovery-report.json</code>），有变更自动提交到 main。验证失败不会静默：
+失败状态写回 <code>plugins.json</code> 并随提交 / 报告暴露给维护者处置。</p>
+<p><code>plugin-check.yml</code> 继续保留，负责官方示例插件的固定断言；<code>plugins.json</code> 驱动的
+验证 + topic 自动发现是它的推广形态，第三方插件无需人工合并即可被周期收录
+（自动收录只校验入口点可用性）。</p>
+<blockquote>
+<p><strong>成为第一个第三方插件（v0.48.0）</strong>：目前索引中的自动收录条目为官方
+模板仓库；给真实插件仓库打上 <code>phase-barrier-plugin</code> topic 并通过插件 CI，
+即可成为第一个由社区贡献、每周自动验证的第三方条目（流程见上文「提交到
+索引 / 自动收录」）。</p>
+<p>仓库内置了不依赖真实第三方的端到端演练：<code>tests/fixtures/plugin_alpha/</code>
+（模拟插件）+ <code>tests/test_auto_discover_e2e.py</code>（真实 git 仓库下验证
+发现 / 增量刷新 / 失败重试）。</p>
+</blockquote>
+<h2 id="_6">插件状态页（自动同步）<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>已收录插件（官方示例 + 自动发现第三方）的实时状态表见
+<a href="../plugin-status/">插件状态页</a>：由 <code>scripts/verify_plugins.py --sync-docs</code>
+从 <code>plugins.json</code> 自动渲染，随周期 workflow 提交更新，无需人工维护。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.top", "navigation.tabs", "toc.integrate", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

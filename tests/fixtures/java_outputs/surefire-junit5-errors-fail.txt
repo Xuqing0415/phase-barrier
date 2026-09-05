@@ -1,0 +1,10 @@
+[INFO] Running com.example.CalcTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.09 s
+[INFO] Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.03 s
+addNegative(com.example.CalcTest)  Time elapsed: 0.03 s  <<< ERROR!
+java.lang.AssertionError: expected:<1> but was:<2>
+addOverflow(com.example.CalcTest)  Time elapsed: 0.01 s  <<< ERROR!
+java.lang.ArithmeticException: / by zero
+[INFO] Results:
+[INFO] Tests run: 6, Failures: 0, Errors: 2, Skipped: 0
+[INFO] BUILD FAILURE

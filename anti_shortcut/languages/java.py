@@ -10,7 +10,9 @@
 - 测试统计：按 ``@Test`` 注解数量 + JUnit/Hamcrest 断言关键字（启发式）
 - 测试命令：``mvn test`` / ``gradle test`` / ``./mvnw test`` / ``./gradlew test`` 等
 - 输出解析：Maven Surefire（``Tests run: N, Failures: M, Errors: K, Skipped: S``）、
-  Gradle（``N tests completed, M failed``）、JUnit Platform Console
+  TestNG（``Total tests run: N, Failures: M, Skips: K, Configuration Failures: C``）、
+  Gradle（``N tests completed, M failed``，含 ``Class > method() FAILED``与参数化
+  ``Class > [N] method(args) FAILED`` 行）、JUnit Platform Console
   （``[ N tests successful / failed ]``）与 ``BUILD SUCCESS / FAILURE``
 
 语法检查依赖外部工具（JDK）；缺失时校验失败并提示安装，不会静默放行。
@@ -71,7 +73,7 @@ _JUNIT_CONSOLE_AGG_RE = re.compile(
 # TestNG 汇总：``Total tests run: 5, Failures: 1, Skips: 0, Configuration Failures: 0``
 _TESTNG_AGG_RE = re.compile(
     r"Total tests run:\s*(?P<run>\d+)(?:,\s*Failures:\s*(?P<fail>\d+))?"
-    r"(?:,\s*Skips:\s*(?P<skip>\d+))?"
+    r"(?:,\s*Skip(?:s|ped):\s*(?P<skip>\d+))?"
     r"(?:,\s*Configuration Failures:\s*(?P<cfg>\d+))?",
     re.M,
 )
@@ -90,8 +92,10 @@ _JAVA_SUREFIRE_FAILURE_RE = re.compile(
     r"^\s*(?:\[ERROR\]\s*)?(\w+(?:\[[^\]]*\])?\([^)]*\))\s+.*<<<\s*(?:FAILURE|ERROR)!",
     re.M,
 )
+# Gradle：``com.example.Class > methodName FAILED``；JUnit5 方法可带括号与参数化索引（v0.44.0）
+#   ``com.example.CalcTest > addBasic() FAILED`` / ``com.example.CalcTest > [1] add(int) FAILED``
 _JAVA_GRADLE_FAILURE_RE = re.compile(
-    r"^\s*([\w.$]+\s+>\s+\w+)\s+FAILED\b",
+    r"^\s*([\w.$]+\s+>\s+(?:\[[^\]]*\]\s*)?[\w$]+(?:\([^)]*\))?)\s+FAILED\b",
     re.M,
 )
 _JAVA_CONSOLE_FAILURE_RE = re.compile(
@@ -113,8 +117,9 @@ _JAVA_TIMEOUT_MARKERS = (
 )
 
 # Gradle 跳过用例行：`com.example.CalcTest > testSkipped SKIPPED`
+# Gradle 跳过用例行（含括号 / 参数化）：``CalcTest > testSkipped SKIPPED``
 _JAVA_GRADLE_SKIPPED_RE = re.compile(
-    r"^\s*([\w.$]+\s+>\s+\w+)\s+SKIPPED\b",
+    r"^\s*([\w.$]+\s+>\s+(?:\[[^\]]*\]\s*)?[\w$]+(?:\([^)]*\))?)\s+SKIPPED\b",
     re.M,
 )
 
@@ -418,6 +423,8 @@ class JavaAdapter(LanguageAdapter):
             )
             if not ok:
                 names = _TESTNG_FAILURE_RE.findall(text)
+                # Gradle 下运行 TestNG 时失败行为 ``Class > method FAILED`` 风格（v0.44.0）
+                names += [m.group(1) for m in _JAVA_GRADLE_FAILURE_RE.finditer(text)]
                 if names:
                     detail += "；失败用例: " + "、".join(dict.fromkeys(names))[:400]
             return ok, detail
@@ -427,8 +434,15 @@ class JavaAdapter(LanguageAdapter):
             ok = failures == 0 and not failed
             detail = summary or _gradle_summary(agg)
             return ok, detail + ("" if ok else suffix)
-        m = _JUNIT_CONSOLE_AGG_RE.search(text)
-        if m and m.group("status") == "failed":
+        # JUnit Platform Console 通常先打印 successful 再打印 failed 行，
+        # 须以 failed 行且计数>0 为准，避免误用首行 successful（v0.44.0）
+        console_failed = [
+            mm
+            for mm in _JUNIT_CONSOLE_AGG_RE.finditer(text)
+            if mm.group("status") == "failed" and int(mm.group("n")) > 0
+        ]
+        if console_failed:
+            m = console_failed[-1]
             return False, (summary or m.group(0)) + suffix
         if "BUILD FAILURE" in text or "BUILD FAILED" in text:
             return False, (summary or "BUILD FAILURE") + suffix
@@ -458,24 +472,47 @@ def _extract_build_errors(output: str) -> list[str]:
 
 
 def _extract_test_summary(text: str) -> str:
-    """提取 Maven Surefire / Gradle / JUnit Console 的测试汇总行。"""
+    """提取 Maven Surefire / TestNG / Gradle / JUnit Console 的测试汇总行。"""
     lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
-    # Surefire：取最后一次出现的 ``Tests run:``（通常是 Results: 后的最终汇总）
-    tests_run = [ln for ln in lines if re.match(r"Tests run:\s*\d+", ln)]
+    # Surefire：取最后一次出现的 ``Tests run:``（同时允许 Maven ``[INFO]`` 前缀，v0.44.0）
+    tests_run = [
+        ln
+        for ln in lines
+        if re.match(r"(?:\[INFO\]\s*)?Tests run:\s*\d+", ln)
+    ]
     if tests_run:
         return tests_run[-1][:300]
-    # TestNG：``Total tests run: N, Failures: M, Skips: K``
-    testng = [ln for ln in lines if re.match(r"Total tests run:\s*\d+", ln)]
+    # TestNG：``Total tests run: N, Failures: M, Skips: K``（允许 [INFO] 前缀）
+    testng = [
+        ln
+        for ln in lines
+        if re.match(r"(?:\[INFO\]\s*)?Total tests run:\s*\d+", ln)
+    ]
     if testng:
         return testng[-1][:300]
     # Gradle：`3 tests completed, 1 failed`（多模块 reactor 时聚合汇总）
     agg = _gradle_aggregate(text)
     if agg is not None:
         return _gradle_summary(agg)[:300]
-    # JUnit Console：``tests successful`` / ``tests failed``
-    for ln in reversed(lines):
-        if re.search(r"\[\s*\d+\s+tests?\s+(successful|failed)\s*\]", ln, re.IGNORECASE):
-            return ln[:300]
+    # JUnit Console：``tests successful`` / ``tests failed``；无失败时优先显示 successful 行（v0.44.0）
+    console = [
+        ln
+        for ln in lines
+        if re.search(r"\[\s*\d+\s+tests?\s+(successful|failed)\s*\]", ln, re.IGNORECASE)
+    ]
+    if console:
+        failed_nonzero = [
+            ln
+            for ln in console
+            if re.search(r"tests?\s+failed", ln, re.IGNORECASE)
+            and int(re.search(r"\d+", ln).group()) > 0
+        ]
+        if failed_nonzero:
+            return failed_nonzero[-1][:300]
+        successful = [ln for ln in console if re.search(r"tests?\s+successful", ln, re.IGNORECASE)]
+        if successful:
+            return successful[-1][:300]
+        return console[-1][:300]
     if "BUILD SUCCESSFUL" in text or "BUILD SUCCESS" in text:
         return "BUILD SUCCESS"
     if "BUILD FAILURE" in text or "BUILD FAILED" in text:

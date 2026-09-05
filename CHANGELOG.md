@@ -2,6 +2,24 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.44.0] - 2026-09-05
+
+- **Java 适配器输出解析剩余项与框架矩阵回归（v0.44.0）**：
+  完善 Maven Surefire 汇总行引擎（支持 `[INFO]` 前罀）、TestNG
+  `Skips` / `Skipped` 拼写差异与 Gradle 下 `Class > method FAILED` 失败名并入、
+  Gradle JUnit5 括号 / 参数化行（`method()` / `[N] method(args)`）提取、
+  JUnit Platform Console 先 successful 后 failed 行的判定修正（failed>0 才算失败）。
+  新增 `tests/fixtures/java_outputs/` 10 组真实风格样例（Surefire /
+  TestNG×Maven+Gradle / Gradle JUnit5 / JUnit Console × 通过/失败/版本差异）与
+  `tests/test_java_output_parsing_matrix.py` 参数化矩阵回归；语言适配器说明
+  同步更新（`docs/languages.md`）。
+- **GitHub Action Marketplace 元数据增强（v0.44.0）**：`action.yml`
+  `description` 改为英文关键词描述（stage gate / coding agent / SOP / CI，
+  50-200 字符）、`author` 指向 `Xuqing0415`、全部 inputs/outputs 补全单语句
+  英文用途说明；`tests/test_action_meta.py` 新增描述长度 / 关键词 /
+  author / 参数描述约束测试；`docs/publish-to-marketplace.md` 新增元数据最佳
+  实践章节。
+
 ## [0.43.1] - 2026-09-05
 
 - **Windows 证据清单并发读写修复（v0.43.1）**：v0.43.0 全矩阵 CI 中 `pytest (Windows 3.12)`

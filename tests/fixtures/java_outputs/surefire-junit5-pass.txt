@@ -1,0 +1,7 @@
+[INFO] Running com.example.CalcTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.12 s
+[INFO] Running com.example.AuthTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.08 s
+[INFO] Results:
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS

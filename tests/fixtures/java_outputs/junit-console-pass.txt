@@ -1,0 +1,5 @@
+Test run finished after 412 ms
+[         5 containers found      ]
+[         8 tests found           ]
+[         8 tests successful      ]
+[         0 tests failed          ]

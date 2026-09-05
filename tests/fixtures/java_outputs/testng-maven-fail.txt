@@ -1,0 +1,6 @@
+[INFO] Running TestSuite
+[TestNG] Running: testng.xml
+[ERROR] testLogin(com.example.AuthTest)  FAILED
+[ERROR] org.testng.Assert.fail(Assert.java:97)
+Total tests run: 4, Failures: 1, Skips: 0, Configuration Failures: 0
+[INFO] BUILD FAILURE

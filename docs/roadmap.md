@@ -182,7 +182,17 @@
   `record()` 写前重载 / 查询快照全部持伴生文件锁（`evidence_manifest.json.lock`）并改用
   `_replace_with_retry` 重试；新增并发回归测试 `test_concurrent_record_reload_safe`。
 
-## 待办 / 已知缺口（截至 v0.43.1）
+- **v0.44.0 已完成**：Java 适配器输出解析剩余项与框架矩阵
+  回归（修正 Surefire `[INFO]` 前罀 / TestNG 拼写差异 / Gradle 括号与参数化
+  行 / JUnit Console 判定，新增 10 组 fixtures 矩阵测试）+ GitHub Action
+  Marketplace 元数据增强（英文关键词描述 / author / 参数说明 +
+  元数据测试）。
+
+## 待办 / 已知缺口（截至 v0.44.0）
+- 规划中（v0.45.0）：编排器 SDK 辅助查询扩展（必需证据 /
+  最近测试 / 阶段历史 / git 未提交检查）+ 插件生态自动验证
+  流程（plugins.json + scripts/verify_plugins.py + 周期 workflow）。
+- 暂无已知缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活。
 - 暂无已知缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活；
   v0.43.0 暴露的 Windows 偶发 `evidence_manifest.json` 并发写入缺陷已在 v0.43.1 修复并补
   回归测试；后续缺口随 Roadmap 迭代再补记。

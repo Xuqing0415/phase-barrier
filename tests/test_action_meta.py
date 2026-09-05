@@ -27,7 +27,26 @@ def test_action_description_nonempty(action_meta):
 
 
 def test_action_author(action_meta):
-    assert action_meta["author"]
+    assert action_meta["author"] == "Xuqing0415"
+
+
+def test_action_description_marketplace_ready(action_meta):
+    """Marketplace 展示描述：长度 50-200 字符且含核心关键词（v0.44.0）。"""
+    desc = action_meta["description"].strip()
+    assert 50 <= len(desc) <= 200, f"description 长度 {len(desc)} 超出 50-200"
+    lowered = desc.lower()
+    for kw in ("stage gate", "coding agent", "SOP", "CI"):
+        assert kw.lower() in lowered, f"description 缺少关键词: {kw}"
+
+
+def test_action_all_inputs_have_descriptions(action_meta):
+    """每个 input 都有清晰用途说明，方便 Marketplace 参数引用与工作流编辑器提示。"""
+    inputs = action_meta["inputs"]
+    assert len(inputs) == 12
+    for name, meta in inputs.items():
+        desc = (meta.get("description") or "").strip()
+        assert len(desc) >= 20, f"inputs.{name} 描述过短"
+        assert meta.get("required") is False
 
 
 def test_action_branding(action_meta):

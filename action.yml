@@ -1,69 +1,68 @@
 name: "Phase-Barrier Gate"
-description: "阶段门禁检查：强制编码 Agent 的产出按 需求->spec->测试->实现->测试->交付 推进；未达到期望阶段则 CI 失败"
-author: "Anti-Shortcut Team"
+description: "Stage gate for coding agents: enforce the engineer SOP (spec -> tests -> implementation -> tests -> delivery) and fail CI when the expected stage is not reached."
+author: "Xuqing0415"
 branding:
   icon: "shield"
   color: "blue"
 
 outputs:
   workspace:
-    description: "检查的工作区路径（与 inputs.workspace 一致），供下游步骤复用"
+    description: "Workspace path checked by the gate (mirrors inputs.workspace); reusable by downstream steps."
     value: ${{ steps.gate.outputs.workspace }}
   stage:
-    description: "阶段号：inspect=当前阶段，check=输入 stage，advance=目标 to；exec 模式为空"
+    description: "Stage number: current stage for inspect, inputs.stage for check, target --to for advance; empty in exec mode."
     value: ${{ steps.gate.outputs.stage }}
   allowed:
-    description: "是否通过门禁/允许执行（true/false），失败时固定为 false"
+    description: "Whether the gate passed / execution is allowed (true/false); always false on failure."
     value: ${{ steps.gate.outputs.allowed }}
 
 inputs:
   workspace:
-    description: "工作区路径（相对仓库根）"
+    description: "Workspace path relative to the repository root."
     required: false
     default: "."
   config:
-    description: "phase-barrier YAML 配置文件路径（可选）"
+    description: "Optional phase-barrier YAML configuration file path."
     required: false
     default: ""
   mode:
-    description: "inspect（检查当前阶段，低于 expected_stage 失败）/ advance（推进到 --to 阶段）/ exec（门禁执行 command 并自动记录测试结果）/ check（只读校验是否放行进入 --stage 阶段，v0.22.0）"
+    description: "Gate mode: inspect / advance / exec / check / verify (details in docs/github-action.md)."
     required: false
     default: "inspect"
   expected_stage:
-    description: "inspect 模式期望达到的阶段号（0-6）"
+    description: "Expected stage (0-6) that must be reached in inspect mode."
     required: false
     default: "6"
   to:
-    description: "advance 模式的目标阶段（必须等于当前阶段 + 1）"
+    description: "Target stage for advance mode (must equal current stage + 1)."
     required: false
     default: ""
   stage:
-    description: "check 模式的阶段号（0-6）：校验是否放行进入该阶段（v0.22.0）"
+    description: "Stage number (0-6) to validate in check mode (v0.22.0)."
     required: false
     default: ""
   user_request:
-    description: "advance 首次初始化时记录的用户需求原文（可选）"
+    description: "Optional original user request recorded when advance initializes the workspace."
     required: false
     default: ""
-
   command:
-    description: "exec 模式的测试/校验命令（例如 pytest -q；仅 mode=exec 时必填）"
+    description: "Test / validation command for exec mode (required when mode=exec)."
     required: false
     default: ""
   cwd:
-    description: "exec 模式的工作目录（相对 workspace，可选；v0.19.0）"
+    description: "Working directory for exec mode, relative to workspace (optional)."
     required: false
     default: ""
   git_base:
-    description: "verify 模式的 Git 基线 ref（如 origin/main 或 github.event.pull_request.base.sha），仅 mode=verify 必填（v0.26.0）"
+    description: "Git base ref for verify mode (e.g. origin/main or github.event.pull_request.base.sha); required when mode=verify (v0.26.0)."
     required: false
     default: "${{ github.event.pull_request.base.sha }}"
   version:
-    description: "安装的 phase-barrier 版本（留空表示最新版）"
+    description: "phase-barrier version to install (empty = latest release)."
     required: false
     default: ""
   local:
-    description: "安装本地仓库代码而非 PyPI（CI 自测用）"
+    description: "Install from the local repository instead of PyPI (CI self-test only)."
     required: false
     default: "false"
 

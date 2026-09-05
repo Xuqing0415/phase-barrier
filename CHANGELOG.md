@@ -2,6 +2,18 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.42.1] - 2026-09-05
+
+- **Windows 状态文件并发写入修复（v0.42.1）**：定位 Windows CI 偶发失败
+  `test_bench_state_contention_smoke`（8 线程 x 3 轮得到 23/24）的根因 ——
+  `StateManager.__init__` / `reload()` 无锁读取 `state.json`，Windows 读句柄默认不共享删除，
+  会阻塞并发写线程的 `os.replace`（PermissionError WinError 5）。修复：初始加载 / 引导写入与
+  `reload()` 均改为持有伴生文件锁（`state.json.lock`），并新增 `_replace_with_retry`（短退避
+  重试 5 次）抵御反病毒扫描等瞬时共享冲突。本地验证：修复前小规模竞争复现约 1/200，修复后
+  300 次小规模 + 20 次 100 线程 x 20 轮（共 4 万次写）0 失败。
+- **测试与文档（v0.42.1）**：`tests/test_benchmarks.py` / `tests/test_state_concurrency.py`
+  等并发用例本地全量通过；CHANGELOG / Roadmap 记录 v0.42.1 已落地。
+
 ## [0.42.0] - 2026-09-05
 
 - **Windows CI 真实工具链激活（v0.42.0）**：`test-windows` job（Python 3.10-3.14 矩阵）

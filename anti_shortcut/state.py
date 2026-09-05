@@ -127,6 +127,23 @@ def _parse_rotation_keys(value: str | None) -> list[str]:
     return [k for k in re.split(r"[\s,]+", value) if k]
 
 
+def _state_lock_path(state_file: Path) -> Path:
+    """返回状态文件的伴生锁文件路径（同目录 state.json.lock）。"""
+    return state_file.with_name(state_file.name + ".lock")
+
+
+def _replace_with_retry(src: Path, dst: Path, *, attempts: int = 5) -> None:
+    """原子替换并带短退避重试：Windows 上反病毒扫描 / 短暂共享冲突会使 os.replace 偶发失败。"""
+    for attempt in range(attempts):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(0.01 * (attempt + 1))
+
+
 class StateManager:
     """阶段状态机：负责状态的初始化、原子持久化与阶段推进。"""
 
@@ -147,11 +164,13 @@ class StateManager:
         # 轮换期接受的旧密钥（仅用于验证；签名始终使用 _hmac_key）
         self._rotation_keys = [k for k in (hmac_keys or []) if k]
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
-        if self.state_file.exists():
-            self._data = self._load()
-        else:
-            self._data = self._bootstrap(user_request, initial_stage)
-            self._atomic_write()
+        # 初始加载 / 引导写入须持锁：Windows 无共享删除的读句柄会阻塞并发 os.replace
+        with _file_lock(_state_lock_path(self.state_file)):
+            if self.state_file.exists():
+                self._data = self._load()
+            else:
+                self._data = self._bootstrap(user_request, initial_stage)
+                self._atomic_write()
         # 初始启动时确保阶段 0（需求接收）已被记录
         if user_request and not self.get_evidence("user_request"):
             self.record_user_request(user_request)
@@ -247,7 +266,7 @@ class StateManager:
                 json.dump(self._data, fh, ensure_ascii=False, indent=2)
                 fh.flush()
                 os.fsync(fh.fileno())
-            os.replace(tmp_name, self.state_file)
+            _replace_with_retry(tmp_name, self.state_file)
         except BaseException:
             try:
                 os.unlink(tmp_name)
@@ -264,8 +283,7 @@ class StateManager:
         - 写前重载保证在他人写入的基础上修改（不丢更新）；
         - 唯一临时文件 + ``os.replace`` 保证磁盘上始终是完整文件。
         """
-        lock_path = self.state_file.with_name(self.state_file.name + ".lock")
-        with _file_lock(lock_path):
+        with _file_lock(_state_lock_path(self.state_file)):
             if reload and self.state_file.exists():
                 self._data = self._load()
             yield
@@ -279,11 +297,13 @@ class StateManager:
     def reload(self) -> None:
         """从磁盘重新加载最新状态（多 Agent / 多进程共享时读取他人写入，v0.26.3）。
 
-        读取不持锁（原子替换保证磁盘上始终是完整文件）；签名密钥配置不变，
+        读取持锁以避免与并发写入的 os.replace 冲突（Windows 上读句柄会阻塞替换）；
+        签名密钥配置不变，
         若文件被篡改仍会在 :meth:`_load` 中抛出 :class:`TamperedStateError`。
         """
-        if self.state_file.exists():
-            self._data = self._load()
+        with _file_lock(_state_lock_path(self.state_file)):
+            if self.state_file.exists():
+                self._data = self._load()
 
     # ---------- 查询 ----------
 

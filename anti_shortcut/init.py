@@ -189,6 +189,16 @@ def render_config(
         "#   rules_options:",
         "#     license_header: \"Copyright (c) 2026 Example Corp.\"",
         "",
+        "# ---- 语义级校验（可选，v0.49.0，默认关闭）----",
+        "# 结构校验之上的语义增强，启用后不满足即阻止阶段推进（见 docs/semantic-validation.md）",
+        "# semantic:",
+        "#   requirement_coverage:    # spec 用 REQ-001 声明需求，测试文件用 # REQ-001 关联",
+        "#     enabled: true",
+        "#     min_coverage: 100",
+        "#   mutation_score:          # Python AST 变异测试，防“空测试 / 假断言”",
+        "#     enabled: true",
+        "#     min_score: 80",
+        "",
     ]
     return "\n".join(lines)
 

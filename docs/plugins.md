@@ -1,12 +1,13 @@
 # 插件与生态索引（v0.26.0）
 
-phase-barrier 通过 Python 入口点（entry points）支持四类插件：
+phase-barrier 通过 Python 入口点（entry points）支持五类插件：
 
 | 入口点组 | 作用 | 参考实现 |
 |----------|------|----------|
 | `phase_barrier.languages` | 自定义语言适配器 | `examples/custom_adapter/` |
 | `phase_barrier.validators` | 自定义阶段校验器（覆盖内置） | `examples/plugin_rules/` |
 | `phase_barrier.interceptors` | 自定义拦截规则 | `examples/plugin_rules/` |
+| `phase_barrier.semantic_validators` | 语义级校验器（需求追踪 / 变异测试 / LLM 审查等，v0.49.0） | `examples/semantic_llm_check/` |
 | `anti_shortcut.integrations` | Agent 集成插件（自动装回包装后的工具） | `examples/orchestrator_hooks/` |
 
 > **自动收录（v0.46.0）**：索引数据由 `plugins.json` 承载、每周自动验证工作流维护，
@@ -19,7 +20,7 @@ phase-barrier 通过 Python 入口点（entry points）支持四类插件：
 
 > **推荐：官方模板仓库**
 > 独立模板仓库 [phase-barrier-plugin-template](https://github.com/Xuqing0415/phase-barrier-plugin-template)
-> 点 GitHub 右上角 **Use this template** 一键生成插件仓库，内置四类入口点示例、
+> 点 GitHub 右上角 **Use this template** 一键生成插件仓库，内置五类入口点示例、
 > CI（`plugin-verify` + pytest）与冒烟测试；下文片段为最小示例，完整模板以该仓库为准。
 
 最小语言适配器插件：
@@ -67,8 +68,9 @@ rules = [deny_uploads]
 ## 自动验证（v0.29.0）
 
 安装插件包后，`python -m anti_shortcut plugin-verify` 会自动加载并冒烟验证
-全部四类入口点：语言适配器（`name` + 必需方法）、校验器（映射 / 工厂）、
-拦截规则（可调用规则）、集成插件（可调用 / `install()`）。返回码 0 = 全部通过。
+全部五类入口点：语言适配器（`name` + 必需方法）、校验器（映射 / 工厂）、
+拦截规则（可调用规则）、语义校验器（`name` + `stages` + `check()`）、
+集成插件（可调用 / `install()`）。返回码 0 = 全部通过。
 
 ```bash
 pip install phase-barrier my-plugin
@@ -131,7 +133,7 @@ workflow 自动收录：
 
 - [phase-barrier-plugin-template](https://github.com/Xuqing0415/phase-barrier-plugin-template)：
   独立模板仓库，Use this template 即可生成；含四类入口点示例（.demo 语言适配器 / 阶段 1 校验器 /
-  vendor 拦截规则 / 集成插件）、`examples/demo.py` 端到端演示、CI（plugin-verify + pytest）。
+  vendor 拦截规则 / 集成插件）与语义校验器参考实现（`examples/semantic_llm_check/`）、`examples/demo.py` 端到端演示、CI（plugin-verify + pytest）。
 
 ## 第一批索引（官方示例，v0.26.2）
 

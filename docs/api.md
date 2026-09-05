@@ -28,6 +28,22 @@ pip install phase-barrier        # import anti_shortcut
 | `anti_shortcut.rules` | 内置安全拦截规则包（shell 注入 / 路径穿越 / 硬编码密钥等） |
 | `anti_shortcut.plugins.verify_plugins` | 入口点插件自动验证（`plugin-verify`） |
 
+
+## 语义级校验（v0.49.0）
+
+| 符号 | 说明 |
+|------|------|
+| `anti_shortcut.semantic.SemanticValidator` | 语义校验器抽象基类（`name` / `stages` / `check(workspace, config, state, adapter=None) -> SemanticCheckResult`） |
+| `anti_shortcut.semantic.SemanticCheckResult` | 单次检查结果（`ok` / `message` / `evidence`） |
+| `anti_shortcut.semantic.RequirementCoverageValidator` | 需求追踪：spec `REQ-001` -> 测试 `# REQ-001` 引用（阶段 2） |
+| `anti_shortcut.semantic.MutationScoreValidator` | Python AST 变异测试：存活变异体过多即测试质量不足（阶段 4） |
+| `anti_shortcut.semantic.register_semantic_validator` / `load_semantic_plugins` | 进程内注册 / 加载入口点语义校验器（`phase_barrier.semantic_validators`） |
+| `anti_shortcut.semantic.run_semantic_checks` | 汇总执行启用的语义校验器，任一失败即阻止推进；返回 `(ok, message, evidence)` |
+| `anti_shortcut.semantic.extract_requirement_ids` / `extract_test_references` | REQ 条目 / 测试引用提取（供自定义校验器复用） |
+| `anti_shortcut.semantic.generate_mutations` / `run_mutation_suite` | 变异体生成（确定性种子）与批量执行统计（killed / survived / error） |
+
+完整用法与配置见 [语义级校验](semantic-validation.md)。
+
 ## 语言适配层
 
 | 符号 | 说明 |

@@ -1,10 +1,12 @@
 """插件发现与自动验证（v0.29.0）。
 
-phase-barrier 支持四类插件入口点（entry points）：
+phase-barrier 支持五类插件入口点（entry points）：
 
 - ``phase_barrier.languages``：自定义语言适配器
 - ``phase_barrier.validators``：自定义阶段校验器（覆盖内置）
 - ``phase_barrier.interceptors``：自定义拦截规则
+- ``phase_barrier.semantic_validators``：语义级校验器（v0.49.0，需求追踪 /
+  变异测试 / LLM 审查等，见 ``anti_shortcut.semantic``）
 - ``anti_shortcut.integrations``：Agent 集成插件（自动装回包装后的工具）
 
 ``verify_plugins()`` 对当前环境已安装的全部插件做冒烟验证（加载、类型、
@@ -28,6 +30,7 @@ PLUGIN_GROUPS: tuple[str, ...] = (
     "phase_barrier.languages",
     "phase_barrier.validators",
     "phase_barrier.interceptors",
+    "phase_barrier.semantic_validators",
     "anti_shortcut.integrations",
 )
 
@@ -126,6 +129,23 @@ def _verify_entry(group: str, ep: Any) -> tuple[bool, list[str]]:
         callable_rules = [r for r in candidates if callable(r)]
         if not callable_rules:
             errors.append("拦截规则入口点未提供任何可调用规则（规则函数 / 规则列表 / 工厂）")
+    elif group == "phase_barrier.semantic_validators":
+        # 语义校验器契约（v0.49.0）：name + stages + check()
+        if isinstance(obj, type):
+            try:
+                obj = obj()
+            except Exception as exc:
+                errors.append(f"语义校验器类实例化失败: {exc.__class__.__name__}: {exc}")
+        name = getattr(obj, "name", None)
+        if not isinstance(name, str) or not name.strip():
+            errors.append("语义校验器必须提供非空 name 字符串")
+        stages = getattr(obj, "stages", None)
+        if not stages or not all(
+            isinstance(s, int) and not isinstance(s, bool) and 0 <= s <= 6 for s in stages
+        ):
+            errors.append("语义校验器 stages 必须是非空 0-6 整数列表（在哪些当前阶段推进时运行）")
+        if not callable(getattr(obj, "check", None)):
+            errors.append("语义校验器必须提供 check(workspace, config, state, adapter=None) 方法")
     elif group == "anti_shortcut.integrations":
         # 集成插件：可调用（如安装函数）或提供 install 方法
         install = getattr(obj, "install", None)

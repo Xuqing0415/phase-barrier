@@ -48,6 +48,7 @@ nav:
   - 使用指南:
       - CLI 使用: usage.md
       - 配置指南: configuration.md
+      - 语义级校验（v0.49.0）: semantic-validation.md
       - 语言适配器: languages.md
       - GitHub Action 门禁: github-action.md
       - GitHub Action 上架: publish-to-marketplace.md

@@ -26,6 +26,17 @@ from .interceptors import (
 )
 from .remote_audit import RemoteAuditSink
 from .rules import BUILTIN_RULES, RULE_DESCRIPTIONS
+from .semantic import (
+    BUILTIN_SEMANTIC_VALIDATORS,
+    SEMANTIC_VALIDATOR_ENTRY_POINT_GROUP,
+    MutationScoreValidator,
+    RequirementCoverageValidator,
+    SemanticCheckResult,
+    SemanticValidator,
+    load_semantic_plugins,
+    register_semantic_validator,
+    run_semantic_checks,
+)
 from .languages import (
     CppAdapter,
     CSharpAdapter,
@@ -62,6 +73,15 @@ __all__ = [
     "EvidenceManifestError",
     "EvidenceTamperedError",
     "EVIDENCE_MANIFEST_NAME",
+    "SemanticValidator",
+    "SemanticCheckResult",
+    "RequirementCoverageValidator",
+    "MutationScoreValidator",
+    "BUILTIN_SEMANTIC_VALIDATORS",
+    "SEMANTIC_VALIDATOR_ENTRY_POINT_GROUP",
+    "register_semantic_validator",
+    "load_semantic_plugins",
+    "run_semantic_checks",
     "RemoteAuditSink",
     "GateConfig",
     "STAGES",

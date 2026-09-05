@@ -1,0 +1,17 @@
+# -*- coding: utf-8 -*-
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phase-barrier-semantic-llm-check"
+version = "0.1.0"
+description = "Reference LLM semantic-review validator plugin for phase-barrier (entry: phase_barrier.semantic_validators)"
+requires-python = ">=3.10"
+
+# v0.49.0 新增第 5 类入口点：语义校验器（需求追踪 / 变异测试 / LLM 审查等）
+[project.entry-points."phase_barrier.semantic_validators"]
+llm_semantic_check = "llm_semantic_check:LLMSemanticCheck"
+
+[tool.setuptools]
+packages = ["llm_semantic_check"]

@@ -1,0 +1,29 @@
+[
+  {
+    "name": "phase-barrier-foo-adapter",
+    "repo": "./examples/custom_adapter",
+    "install": "./examples/custom_adapter",
+    "entry_points": {
+      "phase_barrier.languages": [
+        "foo"
+      ]
+    },
+    "last_verified": "2026-09-05T04:40:30Z",
+    "status": "passed"
+  },
+  {
+    "name": "phase-barrier-plugin-example",
+    "repo": "./examples/plugin_rules",
+    "install": "./examples/plugin_rules",
+    "entry_points": {
+      "phase_barrier.validators": [
+        "strict_design"
+      ],
+      "phase_barrier.interceptors": [
+        "deny_vendor"
+      ]
+    },
+    "last_verified": "2026-09-05T04:40:30Z",
+    "status": "passed"
+  }
+]

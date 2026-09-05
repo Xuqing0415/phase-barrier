@@ -33,6 +33,10 @@ JSON 可序列化的 dict，字段稳定，编排器可直接透传 / 落日志 
 - ``verify_evidence()`` -> {ok, violations, signed}
 - ``list_stages()``      -> [{stage, name, entry, evidence}, ...]（v0.26.2）
 - ``stage_of(path)``    -> {file, stage, stage_name, kind, requires}（v0.26.2）
+- ``get_required_evidence(stage)`` -> [{stage, name, evidence, kind, files, satisfied}, ...]（v0.45.0）
+- ``get_last_test_run()`` -> dict | None，最近一次测试运行详情（v0.45.0）
+- ``get_stage_history(stage=None)`` -> [{stage, name, timestamp, evidence}, ...]（v0.45.0）
+- ``has_uncommitted_changes()`` -> bool | None，Git 未提交变更检查（v0.45.0）
 
 向后兼容：``PhaseBarrier`` 包装 ``AntiShortcutSkill``，后者全部行为与历史
 版本一致；``PhaseBarrier()`` 无参调用默认使用当前工作目录。
@@ -45,6 +49,7 @@ from typing import Any
 from .config import STAGES, STAGE_META, GateConfig
 from .evidence import EvidenceManifestError
 from .languages import LanguageAdapter
+from .paths import iter_workspace_files
 from .skill import AntiShortcutSkill
 from .validators import get_validator
 
@@ -121,6 +126,140 @@ class PhaseBarrier:
         self.skill.state.reload()
         self.skill.evidence_manifest.reload()
         return self.inspect()
+
+    # ---------- 辅助查询（v0.45.0）----------
+
+    def get_required_evidence(self, stage: int) -> list[dict]:
+        """证据库存（只读，v0.45.0）：返回完成 ``stage`` 所需证据项的当前满足情况。
+
+        与 ``list_stages()`` 的静态描述互补：本方法结合工作区当前文件与状态记录，
+        给出每项证据“现有文件 / 是否已满足”的库存视图，便于编排器决定还要 Agent
+        补哪些证据。仅做存在性判断，不执行完整门禁校验——放行判定请用
+        ``check(stage)`` / ``advance(to_stage)``。
+
+        :param stage: 阶段号 0-6（非法值返回空列表）
+        :return: ``[{stage, name, evidence, kind, files, satisfied}]``，JSON 可序列化
+        """
+        if isinstance(stage, bool) or not isinstance(stage, int) or not 0 <= stage <= 6:
+            return []
+        kind, files, satisfied = self._evidence_inventory(stage)
+        return [
+            {
+                "stage": stage,
+                "name": STAGES.get(stage, str(stage)),
+                "evidence": STAGE_META[stage]["evidence"],
+                "kind": kind,
+                "files": files,
+                "satisfied": satisfied,
+            }
+        ]
+
+    def _evidence_inventory(self, stage: int) -> tuple[str, list[str], bool]:
+        """计算单个阶段的证据库存：返回 (kind, 现有证据文件相对路径, 是否满足)。"""
+        state = self.skill.state
+        if stage == 0:
+            return "user_request", [], bool(state.get_evidence("user_request"))
+        if stage == 1:
+            spec_rel = self.config.spec_file.replace("\\", "/")
+            present = (self.workspace / self.config.spec_file).is_file()
+            return "spec", ([spec_rel] if present else []), present
+        if stage == 2:
+            files = self._evidence_files("tests")
+            return "tests", files, bool(files)
+        if stage == 3:
+            files = self._evidence_files("source")
+            return "source", files, bool(files)
+        if stage == 4:
+            tr = state.get_evidence("last_test_run") or {}
+            ok = bool(tr) and tr.get("passed") is True
+            return "test_run", [], ok
+        if stage == 5:
+            tr = state.get_evidence("last_test_run") or {}
+            changed_at = state.get_evidence("last_source_change_at_epoch")
+            ran_at = tr.get("at_epoch") if tr else None
+            ok = (
+                bool(tr)
+                and tr.get("passed") is True
+                and (changed_at is None or (ran_at is not None and ran_at >= changed_at))
+            )
+            return "regression", [], ok
+        # stage 6：交付总结可选 / 用户确认，无强制文件证据
+        return "delivery", [], True
+
+    def _evidence_files(self, kind: str) -> list[str]:
+        """遍历工作区，返回测试 / 源代码证据文件的相对路径（posix 分隔，按路径排序）。"""
+        spec_rel = self.config.spec_file.replace("\\", "/")
+        files: list[str] = []
+        for path in iter_workspace_files(self.workspace, self.config):
+            rel = path.relative_to(self.workspace).as_posix()
+            if kind == "tests":
+                if self.skill.adapter.is_test_file(path, self.config):
+                    files.append(rel)
+            else:  # source：排除 spec 文件本身
+                if rel == spec_rel or rel.endswith("/" + spec_rel):
+                    continue
+                if self.skill.adapter.is_source_file(path, self.config):
+                    files.append(rel)
+        return sorted(set(files))
+
+    def get_last_test_run(self) -> dict | None:
+        """最近一次测试运行详情（只读，v0.45.0）。
+
+        deep copy 状态机中的 ``evidence.last_test_run``（命令 / 退出码 / 是否通过 /
+        摘要 / 时间戳等），返回 ``None`` 表示从未登记测试运行。
+        """
+        import copy
+
+        tr = self.skill.state.get_evidence("last_test_run") or {}
+        return copy.deepcopy(tr) if tr else None
+
+    def get_stage_history(self, stage: int | None = None) -> list[dict]:
+        """阶段推进历史（只读，v0.45.0）：返回阶段完成记录。
+
+        记录字段与状态机 ``stage_history`` 一致：``{stage, name, timestamp,
+        evidence}``；``stage=None``（默认）返回全部历史，指定阶段号时仅返回
+        该阶段被完成的记录（每次完成追加一条）。非法 ``stage`` 返回空列表。
+        """
+        if stage is not None and (
+            isinstance(stage, bool) or not isinstance(stage, int) or not 0 <= stage <= 6
+        ):
+            return []
+        history = self.skill.state.snapshot().get("stage_history", [])
+        return [
+            {
+                "stage": e.get("stage"),
+                "name": e.get("name"),
+                "timestamp": e.get("timestamp"),
+                "evidence": e.get("evidence"),
+            }
+            for e in history
+            if stage is None or e.get("stage") == stage
+        ]
+
+    def has_uncommitted_changes(self) -> bool | None:
+        """工作区是否有未提交的 Git 变更（只读，v0.45.0）。
+
+        - 在 Git 仓库内且 ``git status --porcelain`` 为空 -> ``False``
+        - 在 Git 仓库内且有未提交 / 未跟踪变更 -> ``True``
+        - 非 Git 仓库或 git 不可用 -> ``None``（无法判断，不抛异常）
+        """
+        import subprocess
+
+        try:
+            proc = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=self.workspace,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=10,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return None
+        if proc.returncode != 0:
+            return None
+        return bool(proc.stdout.strip())
 
     # ---------- 钩子校验 ----------
 

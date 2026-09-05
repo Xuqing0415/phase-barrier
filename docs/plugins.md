@@ -144,3 +144,54 @@ jobs:
 - 该检查针对**本仓库官方示例插件**，防止示例随代码演进失效。
 - **第三方插件** 的收录仍走 Issue 模板 + 插件仓库自带 Plugin CI（见上文模板），状态由作者仓库徽章体现；
   自动轮询第三方插件仓库（`phase-barrier-plugin-index`）属于后续规划，尚未实现。
+## 索引数据文件与自动验证（v0.45.0）
+
+从 v0.45.0 起，索引不只靠文档表格人工维护，还新增了机器可读的
+`plugins.json`（仓库根目录）与自动验证脚本，方便维护者周期核查已收录插件的
+兼容性：
+
+```json
+[
+  {
+    "name": "phase-barrier-foo-adapter",
+    "repo": "./examples/custom_adapter",
+    "install": "./examples/custom_adapter",
+    "entry_points": { "phase_barrier.languages": ["foo"] },
+    "last_verified": "2026-09-05T00:00:00Z",
+    "status": "passed"
+  }
+]
+```
+
+- `name`：插件包名；`repo`：仓库地址（本地示例用相对路径，第三方用 URL）。
+- `install`：可被 `pip install -e` 的目标（本地相对路径 / git+https URL）；
+  缺省回退到 `repo`。无 `install` / `repo` 的占位条目不会自动判定状态。
+- `entry_points`：声明该插件应提供的入口点，`{入口点组: [名称列表]}`；
+  也可用 `["phase_barrier.languages", ...]` 简写（只断言组内有可用入口点）。
+- `last_verified` / `status`：最近一次自动验证时间与结果（`passed` /
+  `failed` / `unverified`），由验证脚本按 `--update` 写回。
+
+### 验证脚本
+
+`scripts/verify_plugins.py` 负责“索引层”验证：逐个安装索引条目（新进程注册
+入口点），再在全新子进程中运行 `python -m anti_shortcut plugin-verify --json`，
+断言每个条目声明的入口点全部可用：
+
+```bash
+python scripts/verify_plugins.py                  # 验证并打印摘要（0 = 全通过）
+python scripts/verify_plugins.py --update         # 把 status / last_verified 写回
+python scripts/verify_plugins.py --json           # 结构化报告（stdout）
+python scripts/verify_plugins.py --no-install     # 跳过安装（插件须已安装）
+```
+
+### 周期自动验证（plugin-verification.yml）
+
+`.github/workflows/plugin-verification.yml` 每周二 05:00 UTC（可与周一 06:00 的
+`plugin-check.yml` 区分）自动运行：安装官方索引插件 -> `verify_plugins.py --update`
+-> 上传 JSON 报告 artifact（`plugin-verification-report.json`）-> 若有变更自动
+提交到 main。验证失败不会静默：失败状态写回 `plugins.json` 并随提交 / 报告
+暴露给维护者处置。
+
+`plugin-check.yml` 继续保留，负责官方示例插件的固定断言；`plugins.json` 驱动的
+验证是它的推广形态，第三方插件若提供 `install` 目标并通过维护者审核，即可加入
+`plugins.json` 纳入周期自动核查。

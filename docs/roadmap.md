@@ -188,13 +188,16 @@
   Marketplace 元数据增强（英文关键词描述 / author / 参数说明 +
   元数据测试）。
 
-## 待办 / 已知缺口（截至 v0.44.0）
-- 规划中（v0.45.0）：编排器 SDK 辅助查询扩展（必需证据 /
-  最近测试 / 阶段历史 / git 未提交检查）+ 插件生态自动验证
-  流程（plugins.json + scripts/verify_plugins.py + 周期 workflow）。
-- 暂无已知缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活。
-- 暂无已知缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活；
-  v0.43.0 暴露的 Windows 偶发 `evidence_manifest.json` 并发写入缺陷已在 v0.43.1 修复并补
-  回归测试；后续缺口随 Roadmap 迭代再补记。
+- **v0.45.0 已完成**：编排器 SDK 辅助查询扩展（`PhaseBarrier` 新增
+  `get_required_evidence` / `get_last_test_run` / `get_stage_history` /
+  `has_uncommitted_changes` 四个只读查询，demo / API 文档 / 13 个单测同步）+ 插件
+  生态自动验证流程（根目录 `plugins.json` 索引 + `scripts/verify_plugins.py`
+  （安装 -> 子进程 plugin-verify -> 断言入口点 -> `--update` 写回状态）+
+  `plugin-verification.yml` 每周二自动验证并提交变更 + 20 个脚本单测）。
+
+## 待办 / 已知缺口（截至 v0.45.0）
+- 暂无已知缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活，
+  Windows/macOS 并发写入缺陷（v0.42.1 / v0.43.1）已修复并补回归测试；后续缺口随
+  Roadmap 迭代再补记。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

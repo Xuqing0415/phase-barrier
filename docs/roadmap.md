@@ -216,9 +216,16 @@
   `plugin-verification.yml` 改为每周一 03:00 UTC「先自动发现再全量验证」两步并上传
   双报告；docs/plugins.md / CONTRIBUTING.md 补自动收录流程，17 个自动发现单测。
 
-## 待办 / 已知缺口（截至 v0.46.0）
+- **v0.46.1 已完成**：自动发现入口点归属修复——手动触发工作流首次实跑（不等周一
+  cron）暴露 `clone_verify` 会把环境中 phase-barrier 内置语言适配器入口点误归属给
+  候选插件；新增按 `direct_url.json` 定位候选发行版的 `_entry_points_of_workdir()`，
+  只统计候选自声明入口点并与 plugin-verify ok 结果求交（+3 单测，共 20 个全绿），
+  据此重新收录首个自动条目。
+
+## 待办 / 已知缺口（截至 v0.46.1）
 - 暂无缺陷 / 功能缺口：CI 平台矩阵（Linux / Windows / macOS）真实语言工具链维持全量激活，
   Windows/macOS 并发写入缺陷（v0.42.1 / v0.43.1）已修复并补回归测试；第三方插件仓库
-  自动轮询（v0.46.0）已落地，插件可通过 GitHub topic 自动进入索引。
+  自动轮询（v0.46.0）已落地，插件可通过 GitHub topic 自动进入索引，
+  首次实跑已收录官方模板仓库（入口点归属修复 v0.46.1）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

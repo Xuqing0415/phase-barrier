@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import types
 import urllib.error
 from pathlib import Path
 
@@ -191,9 +192,13 @@ class TestCloneVerify:
         monkeypatch.setattr(ad, "_run", fake_run)
         return calls
 
+    def _stub_own(self, monkeypatch, groups: dict) -> None:
+        monkeypatch.setattr(ad, "_entry_points_of_workdir", lambda workdir: groups)
+
     def test_ok_entry(self, tmp_path, monkeypatch):
         payload = self._plugin_payload({"phase_barrier.languages": ["demo_lang"]})
         self._fake_run(monkeypatch, payload)
+        self._stub_own(monkeypatch, {"phase_barrier.languages": ["demo_lang"]})
         _fake_tmp(monkeypatch, tmp_path)
         ok, entry, reason = ad.clone_verify(_repo())
         assert ok and not reason
@@ -207,14 +212,29 @@ class TestCloneVerify:
     def test_no_entry_points(self, tmp_path, monkeypatch):
         payload = json.dumps({"ok": True, "plugins": {}, "discovered": {}}, ensure_ascii=False)
         self._fake_run(monkeypatch, payload)
+        self._stub_own(monkeypatch, {})
         _fake_tmp(monkeypatch, tmp_path)
         ok, entry, reason = ad.clone_verify(_repo())
         assert not ok and not entry
-        assert "未发现任何" in reason
+        assert "未发现任何属于该仓库" in reason
+
+    def test_builtin_env_entries_not_credited(self, tmp_path, monkeypatch):
+        """v0.46.1 regression: 环境中 phase-barrier 内置适配器也是
+        phase_barrier.languages 入口点，但不应归属给候选仓库。"""
+        payload = self._plugin_payload(
+            {"phase_barrier.languages": ["python", "go", "rust", "demo_lang"]}
+        )
+        self._fake_run(monkeypatch, payload)
+        self._stub_own(monkeypatch, {"phase_barrier.languages": ["demo_lang"]})
+        _fake_tmp(monkeypatch, tmp_path)
+        ok, entry, reason = ad.clone_verify(_repo())
+        assert ok and not reason
+        assert entry["entry_points"] == {"phase_barrier.languages": ["demo_lang"]}
 
     def test_broken_entry_rejected(self, tmp_path, monkeypatch):
         payload = self._plugin_payload({"phase_barrier.validators": ["strict_design"]}, broken=["strict_design"])
         self._fake_run(monkeypatch, payload)
+        self._stub_own(monkeypatch, {"phase_barrier.validators": ["strict_design"]})
         _fake_tmp(monkeypatch, tmp_path)
         ok, _entry, reason = ad.clone_verify(_repo())
         assert not ok
@@ -232,6 +252,50 @@ class TestCloneVerify:
         monkeypatch.setattr(ad, "_run", fake_run)
         ok, _entry, reason = ad.clone_verify(_repo())
         assert not ok and "pip install 失败" in reason
+
+
+
+class TestEntryPointAttribution:
+    class _FakeDist:
+        def __init__(self, url: str, eps: list[tuple[str, str]]):
+            self._url = url
+            self._eps = eps
+
+        def read_text(self, name: str):
+            if name == "direct_url.json":
+                return json.dumps({"url": self._url, "dir_info": {"editable": True}})
+            return None
+
+        @property
+        def entry_points(self):
+            return [types.SimpleNamespace(group=g, name=n) for g, n in self._eps]
+
+    def test_matches_by_direct_url_and_filters_groups(self, tmp_path):
+        workdir = tmp_path / "repo"
+        dist = self._FakeDist(
+            workdir.as_uri(),
+            [
+                ("phase_barrier.languages", "demo"),
+                ("phase_barrier.validators", "require_design_review"),
+                ("anti_shortcut.integrations", "demo_integration"),
+                ("other.group", "ignored"),
+            ],
+        )
+        got = ad._entry_points_of_workdir(workdir, dists=[dist])
+        assert got == {
+            "phase_barrier.languages": ["demo"],
+            "phase_barrier.validators": ["require_design_review"],
+            "anti_shortcut.integrations": ["demo_integration"],
+        }
+
+    def test_ignores_other_dist_and_missing_direct_url(self, tmp_path):
+        workdir = tmp_path / "repo"
+        other = self._FakeDist(
+            (tmp_path / "other").as_uri(),
+            [("phase_barrier.languages", "demo")],
+        )
+        assert ad._entry_points_of_workdir(workdir, dists=[other]) == {}
+        assert ad._entry_points_of_workdir(workdir, dists=[]) == {}
 
 
 class TestDiscover:

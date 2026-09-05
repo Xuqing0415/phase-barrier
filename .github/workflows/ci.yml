@@ -590,7 +590,7 @@ jobs:
           if-no-files-found: error
 
   test-windows:
-    name: pytest core (Windows ${{ matrix.python-version }})
+    name: pytest (Windows ${{ matrix.python-version }})
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -607,9 +607,57 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      # v0.36.0: Windows 核心测试（不额外安装 JS/Go/Rust/Ruby/PHP/JDK/kotlinc/dotnet/scala
-      # 真实工具链；对应真实工具用例按 skipif 自动跳过，ubuntu job 全量激活）。
-      # 覆盖 Windows 专属路径：msvcrt 文件锁、路径分隔符、CLI / sidecar / proxy / audit 等。
+      # v0.42.0: Windows 真实工具链激活——安装 Node/Go/Rust/Ruby/PHP/JDK/kotlinc/.NET/Scala/Dart，
+      # 与 ubuntu 全量矩阵对齐（Swift 无官方 Windows 工具链，对应真实用例按 skipif 跳过）。
+      # 继续覆盖 Windows 专属路径：msvcrt 文件锁、路径分隔符、CLI / sidecar / proxy / audit 等。
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.22'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Kotlin compiler (kotlinc 2.2.0)
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP 'kotlin-compiler.zip'
+          curl.exe -fsSL -o $zip https://github.com/JetBrains/kotlin/releases/download/v2.2.0/kotlin-compiler-2.2.0.zip
+          $dest = 'D:\kotlinc'
+          Remove-Item -Recurse -Force $dest -ErrorAction SilentlyContinue
+          Expand-Archive -Path $zip -DestinationPath $dest -Force
+          $bin = Join-Path $dest 'kotlinc\bin'
+          Add-Content -Path $env:GITHUB_PATH -Value $bin
+          $ver = & (Join-Path $bin 'kotlinc.bat') -version 2>&1 | Out-String
+          if ($ver -notmatch '2\.2\.0') { Write-Error ('kotlinc version mismatch: ' + $ver); exit 1 }
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install Scala compiler (scala-2.13.18)
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP 'scala.zip'
+          curl.exe -fsSL -o $zip https://github.com/scala/scala/releases/download/v2.13.18/scala-2.13.18.zip
+          $dest = 'D:\scala-2.13.18'
+          Remove-Item -Recurse -Force $dest -ErrorAction SilentlyContinue
+          Expand-Archive -Path $zip -DestinationPath 'D:\' -Force
+          Add-Content -Path $env:GITHUB_PATH -Value (Join-Path $dest 'bin')
+          $ver = & (Join-Path $dest 'bin\scalac.bat') -version 2>&1 | Out-String
+          if ($ver -notmatch '2\.13\.18') { Write-Error ('scalac version mismatch: ' + $ver); exit 1 }
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Show Dart SDK
+        run: dart --version
+
       - name: Install package and dev deps
         run: |
           python -m pip install --upgrade pip

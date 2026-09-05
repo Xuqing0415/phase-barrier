@@ -243,7 +243,8 @@
   - 自定义域名 `docs.phase-barrier.dev` 需用户持有域名并配置 DNS（未启用，可选）；
   - 真实第三方插件数量依赖社区采用（工具与流程就绪，索引目前含官方模板仓库 1 条
     自动条目）；
-  - Alpha-SWE 上游 PR #3 需上游仓库合入（状态 open，见 docs/integrations.md）；
+  - Alpha-SWE 上游 PR #3 已合入（2026-08-30，合并提交 128e6a4，见 docs/integrations.md），
+    该项不再阻塞，剩余仅为跨仓库推广执行；
   - 大规模 SWE-bench 评测与视频 / 推广实际执行为资源型长期项（harness / 模板已备）。
 
 版本按 tag 驱动发布（`git tag vX.Y.Z && git push origin vX.Y.Z`），每次发版更新 CHANGELOG。

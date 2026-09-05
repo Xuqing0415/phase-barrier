@@ -2,6 +2,13 @@
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
 
+## [0.48.2] - 2026-09-05
+
+- **docs: Alpha-SWE #3 上游跟踪状态更新（open -> merged）**：PR 已于 2026-08-30
+  合入 alpha-swe `master`（合并提交 `128e6a4`，quality-gate 与 chaos-stage 全部
+  SUCCESS）；`docs/integrations.md` 与 `docs/roadmap.md` 同步为 merged，待办 / 已知
+  缺口移除该项（不再阻塞）。无库代码改动。
+
 ## [0.48.1] - 2026-09-05
 
 - **fix: E2E 测试兼容 Python 3.10（v0.48.1）**：`tests/test_auto_discover_e2e.py`

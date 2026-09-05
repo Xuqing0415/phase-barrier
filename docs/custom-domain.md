@@ -16,6 +16,20 @@ MkDocs 会把 `docs/` 目录下除 Markdown 外的文件原样复制到站点根
 （`.github/workflows/docs.yml`）推送到 `gh-pages` 分支后，GitHub Pages
 读取站点根目录的 `CNAME` 即自动应用自定义域名。
 
+## 前置检查（约 2 分钟）
+
+- 1. 确认域名已注册且公网可解析（替换为你的域名）：
+   ```powershell
+   nslookup phase-barrier.dev 8.8.8.8
+   ```
+   apex 返回 NXDOMAIN 表示域名未注册或未接入公网 DNS，需先到注册商完成注册，
+   GitHub Pages 无法为不存在的域名签发证书。
+- 2. 确认 `docs.` 子域当前无冲突记录：
+   ```powershell
+   Resolve-DnsName docs.phase-barrier.dev -ErrorAction SilentlyContinue
+   ```
+   期望无记录（可新建 CNAME）；若已有记录，先确认归属再覆盖。
+
 ## 配置步骤（约 10 分钟）
 
 1. **DNS 解析**：到域名服务商添加一条 CNAME 记录
@@ -81,6 +95,7 @@ Pages 设置里的自定义域名，在 `Settings -> Pages` 中清除即可。
 | GitHub Pages 提示 "domain does not resolve" | DNS 记录值写错或指向了 `github.io` 之外的地址 |
 | 配置后默认地址 `xuqing0415.github.io/...` 暂时 404 | 自定义域名证书签发中，属正常现象，等待完成 |
 | `check_custom_domain.py --strict` 退出 1 | 仓库内尚无 `CNAME` 或内容与期望域名不一致 |
+| `nslookup phase-barrier.dev 8.8.8.8` 返回 NXDOMAIN | 域名未注册或未接入公网 DNS：先完成注册与实名，再继续后续步骤 |
 
 > **状态（截至 v0.48.0）**：本仓库**未启用**自定义域名，`docs/CNAME` 不存在，
 > CI 检查输出非阻塞警告属预期；待域名与 DNS 就绪后按本文启用。

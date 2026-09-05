@@ -27,6 +27,7 @@ from .interceptors import (
 )
 from .languages import get_adapter
 from .remote_audit import RemoteAuditSink
+from .semantic import run_semantic_checks
 from .state import StateManager
 from .validators import (
     get_validator,
@@ -406,6 +407,18 @@ class AntiShortcutSkill:
             self.logger.warning("stage_advance_rejected", stage=cur, reason=msg, evidence=ev)
             return {"success": False, "stage": cur, "error": msg, "evidence": ev}
 
+        # 语义级校验（v0.49.0，默认关闭）：结构校验通过后，再运行启用的
+        # 语义校验器（需求追踪 / 变异测试 / 第三方），失败即阻止阶段推进
+        sem_ok, sem_msg, sem_ev = run_semantic_checks(
+            self.workspace, self.config, self.state, cur, self.adapter
+        )
+        if not sem_ok:
+            self.logger.warning(
+                "stage_advance_semantic_rejected", stage=cur, reason=sem_msg, evidence=sem_ev
+            )
+            return {"success": False, "stage": cur, "error": sem_msg, "evidence": sem_ev}
+        if sem_ev:
+            ev = {**(ev or {}), "semantic": sem_ev}
         # 阶段 4 的特殊分支：按测试结果决定进入 5 还是跳过到 6
         if cur == 4:
             tr = self.state.get_evidence("last_test_run") or {}

@@ -4,6 +4,39 @@
 发布为里程碑驱动：日常改动累积于 main，仅在用户可感知里程碑或紧急修复时发版，
 同日不重复发布（详见 [docs/release.md](docs/release.md) 发布节奏）。
 
+## [0.49.0] - 2026-09-05
+
+- **feat: 语义级校验（v0.49.0）**：在结构校验之上提供可选的语义增强门禁，防
+  “形式上完整但内容空泛”的产物（空泛 spec / 无断言测试 / 永远通过的测试）绕过。
+- **需求追踪校验器**（`requirement_coverage`）：spec 以 `REQ-001` 声明需求条目，
+  测试文件以 `# REQ-001` 注释显式关联；阶段 2 推进时校验每个需求至少被一个测试
+  引用，默认覆盖率阈值 100%（`min_coverage` 可调）；spec 无 REQ 自动跳过；失败
+  消息直接列出缺失 REQ 与覆盖率，给 Agent 可操作提示。
+- **变异测试校验器**（`mutation_score`）：对 Python 实现做确定性 AST 变异
+  （运算符 / 比较 / 布尔翻转、`not` 删除、字符串拼接豁免；seed 可复现），在
+  工作区临时副本逐个运行变异体，统计 killed / survived / error，阶段 4 推进时
+  要求突变分数 >= `min_score`（默认 80）；非 Python / 无源码或测试 / 测试未通过
+  时温和跳过；超时与执行错误按 error 计并给出环境提示。
+- **第 5 类插件入口点**：新增入口点组 `phase_barrier.semantic_validators` 与
+  进程内 `register_semantic_validator`；`SemanticValidator` 契约（name / stages /
+  check）+ `run_semantic_checks` 汇总（任一失败即阻止阶段推进，插件异常按失败
+  留痕不拖垮门禁）；`plugin-verify` 增加语义校验器组契约冒烟校验；第三方校验器
+  经 `semantic.plugin_options.<name>.enabled` 启用。
+- **官方 LLM 语义审查参考插件**：`examples/semantic_llm_check/`（入口点示例 +
+  `demo.py`），仅标准库 urllib 调用 OpenAI 兼容 `/chat/completions`，结构化
+  JSON 输出（consistent / reason / gaps），未配置 api_key / 网络失败时离线降级
+  跳过，`network_required: true` 才阻断。
+- **配置与默认行为**：`GateConfig.semantic` 新增 `requirement_coverage` /
+  `mutation_score` / `plugin_options`，默认全部关闭，不影响既有门禁；`anti_shortcut init`
+  渲染注释模板同步；`docs/semantic-validation.md` 新增（校验层级回顾 / 配置示例 /
+  插件契约 / 定位与边界），mkdocs 导航、`docs/configuration.md`、`docs/plugins.md`
+  （四类 -> 五类）同步更新。
+- **测试**：新增 `tests/test_semantic.py` 56 个用例（REQ 提取 / 引用 / 覆盖阈值、
+  AST 变异算子矩阵与确定性采样、run_mutation_suite 三态统计、真实 pytest 工作区
+  强 / 弱测试对比、注册与入口点加载去重、run_semantic_checks 开关与失败聚合、
+  plugin-verify 契约、Skill 端到端需求追踪与变异门禁拒绝 / 放行），本地全量相关
+  测试通过；语义模块自身覆盖 97%。
+
 ## [0.48.3] - 2026-09-05
 
 - **docs: 自定义域名启用前置检查与 NXDOMAIN 结论（v0.48.3）**：`docs/custom-domain.md`

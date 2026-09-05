@@ -62,6 +62,83 @@ DEFAULT_TEST_FILE_PATTERNS: list[str] = [
 DEFAULT_SOURCE_FILE_PATTERNS: list[str] = ["*.py"]
 
 
+class RequirementCoverageOptions(BaseModel):
+    """需求追踪语义校验配置（v0.49.0）：spec REQ-xxx 须被测试引用。"""
+
+    enabled: bool = False
+    min_coverage: float = 100.0
+    stages: list[int] = Field(default_factory=lambda: [2])
+
+    @field_validator("min_coverage")
+    @classmethod
+    def _check_coverage_range(cls, value: float) -> float:
+        if not (0 <= value <= 100):
+            raise ValueError(f"semantic.requirement_coverage.min_coverage 必须是 0-100 的百分比，得到 {value}")
+        return value
+
+    @field_validator("stages")
+    @classmethod
+    def _check_stages(cls, value: list[int]) -> list[int]:
+        if not value:
+            raise ValueError("semantic 校验器 stages 不能为空")
+        bad = [s for s in value if not isinstance(s, int) or isinstance(s, bool) or not (0 <= s <= 6)]
+        if bad:
+            raise ValueError(f"semantic 校验器 stages 必须是 0-6 的整数，得到 {bad}")
+        return value
+
+
+class MutationScoreOptions(BaseModel):
+    """变异测试语义校验配置（v0.49.0，仅 Python）：存活变异体过多即测试质量不足。"""
+
+    enabled: bool = False
+    min_score: float = 80.0
+    max_mutants: int = 20
+    timeout_per_mutant: float = 60.0
+    seed: int = 42
+    python_bin: str | None = None
+    command: list[str] | None = None
+    stages: list[int] = Field(default_factory=lambda: [4])
+
+    @field_validator("min_score")
+    @classmethod
+    def _check_score_range(cls, value: float) -> float:
+        if not (0 <= value <= 100):
+            raise ValueError(f"semantic.mutation_score.min_score 必须是 0-100 的百分比，得到 {value}")
+        return value
+
+    @field_validator("max_mutants")
+    @classmethod
+    def _check_max_mutants(cls, value: int) -> int:
+        if value < 1:
+            raise ValueError("semantic.mutation_score.max_mutants 必须 >= 1")
+        return value
+
+    @field_validator("timeout_per_mutant")
+    @classmethod
+    def _check_timeout(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError("semantic.mutation_score.timeout_per_mutant 必须 > 0")
+        return value
+
+    @field_validator("stages")
+    @classmethod
+    def _check_stages(cls, value: list[int]) -> list[int]:
+        if not value:
+            raise ValueError("semantic 校验器 stages 不能为空")
+        bad = [s for s in value if not isinstance(s, int) or isinstance(s, bool) or not (0 <= s <= 6)]
+        if bad:
+            raise ValueError(f"semantic 校验器 stages 必须是 0-6 的整数，得到 {bad}")
+        return value
+
+
+class SemanticOptions(BaseModel):
+    """语义级校验总配置（v0.49.0，默认全部关闭，不影响既有门禁行为）。"""
+
+    requirement_coverage: RequirementCoverageOptions = Field(default_factory=RequirementCoverageOptions)
+    mutation_score: MutationScoreOptions = Field(default_factory=MutationScoreOptions)
+    # 第三方语义校验器的自由配置（校验器按 config.semantic.<name>.enabled 开关）
+    plugin_options: dict[str, Any] = Field(default_factory=dict)
+
 class GateConfig(BaseModel):
     """反捷径校验 Skill 的可配置项。所有字段都有合理默认值，YAML 可部分覆盖。"""
 
@@ -136,6 +213,10 @@ class GateConfig(BaseModel):
     rules: list[str] = Field(default_factory=list)
     # 传递给内置规则的额外选项（如 require_license_header 的 license_header 文本）
     rules_options: dict[str, Any] = Field(default_factory=dict)
+    # ---- 语义级校验（v0.49.0，默认关闭）----
+    # 结构校验之上的语义增强：需求追踪（REQ -> 测试引用）与 Python 变异测试；
+    # 默认全部 disabled，启用后不满足即阻止阶段推进（详见 docs/semantic-validation.md）
+    semantic: SemanticOptions = Field(default_factory=SemanticOptions)
 
     @model_validator(mode="after")
     def _expand_workspace(self) -> "GateConfig":

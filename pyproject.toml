@@ -67,6 +67,10 @@ dart = "anti_shortcut.languages.dart:DartAdapter"
 
 [project.entry-points."phase_barrier.interceptors"]
 
+# 语义级校验器入口点（v0.49.0）：第三方可注册语义校验器（需求追踪 / LLM 审查等）
+#   [project.entry-points."phase_barrier.semantic_validators"]
+#   my_semantic = "my_package.module:MySemanticValidator"
+
 [project.urls]
 Homepage = "https://github.com/Xuqing0415/phase-barrier"
 Repository = "https://github.com/Xuqing0415/phase-barrier"

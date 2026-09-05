@@ -61,9 +61,36 @@ python -m anti_shortcut init --with-coverage --rules no_path_traversal,no_shell_
 | `audit_remote_spool_dir` | Union | `None` / 空 |  |
 | `protect_gate_dir` | bool | `True` |  |
 | `allow_other_files_any_stage` | bool | `True` |  |
+| `semantic` | dict | 全关 | 语义级校验总配置（v0.49.0）：`requirement_coverage` / `mutation_score` / `plugin_options`，见「语义级校验（v0.49.0）」 |
 
 > 说明：`rules`（内置安全规则包列表）与 `rules_options`（规则选项，如
 > `license_header`）是 v0.26.0 新增字段，见下文「内置安全规则包」。
+
+
+
+## 语义级校验（v0.49.0）
+
+结构校验之上的可选语义增强（需求追踪 + Python 变异测试），默认全部关闭，
+启用后不满足即阻止阶段推进。完整说明见 [语义级校验](semantic-validation.md)。
+
+```yaml
+semantic:
+  requirement_coverage:      # spec 用 REQ-001 声明需求，测试文件用 # REQ-001 关联
+    enabled: true
+    min_coverage: 100        # 0-100
+    stages: [2]
+  mutation_score:            # Python AST 变异测试，防“空测试 / 假断言”
+    enabled: true
+    min_score: 80            # 0-100
+    max_mutants: 20
+    timeout_per_mutant: 60
+    seed: 42
+    # python_bin / command 可覆盖测试命令
+    stages: [4]
+  plugin_options:            # 第三方语义校验器配置（按 name 开关）
+    my_semantic:
+      enabled: true
+```
 
 ## 按场景分组
 

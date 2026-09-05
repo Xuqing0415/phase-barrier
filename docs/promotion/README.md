@@ -1,4 +1,4 @@
-# 社区推广内容包（v0.48.0）
+# 社区推广内容包（v0.48.3）
 
 任何人可直接复制本目录内容发布到对应平台。发布前请刷新下方“核心数据”中的数字：
 
@@ -23,7 +23,7 @@ GitHub Action、K8s sidecar（gRPC/HTTP）、Docker 一键体验与插件自动�
 
 | 指标 | 数值 | 备注 |
 |------|------|------|
-| 最新版本 | v0.48.0 | PyPI `phase-barrier`，tag 驱动发布 |
+| 最新版本 | v0.48.3 | PyPI `phase-barrier`，里程碑驱动发布（见 release.md） |
 | 支持语言 | 13 | Python/JS/TS/Java/Go/Rust/Ruby/C#/C++/.NET/PHP/Kotlin/Scala/Swift/Dart 等 |
 | CI 矩阵 | Linux / Windows / macOS × Python 3.11-3.14 | 真实语言工具链全量激活 |
 | 测试 | 900+（发布前以 collect-only 为准） | 覆盖率门禁 ≥90% |

@@ -104,9 +104,13 @@ python -m flake8 --jobs=1 <files> # 风格检查（Windows 下需 --jobs=1）
 - 提交信息遵循 Conventional Commits（`feat:` / `fix:` / `docs:` / `test:` / `refactor:`）。
 - 提交前运行 `python -m pytest`，确保全绿。
 
-## 发布流程（tag 驱动）
+## 发布流程（里程碑驱动）
 
-1. 更新 `CHANGELOG.md`，补充版本条目。
+日常改动（功能 / 修复 / 文档 / 测试）直接合入 main 累积，**不打 tag**；只有形成
+用户可感知的里程碑或紧急修复时才发布（同日不重复发布），节奏政策详见
+[docs/release.md](docs/release.md)。
+
+1. 更新 `CHANGELOG.md`，把累积的用户可见变化汇总为一条版本条目。
 2. 提交并推送 main。
 3. 打 tag 触发 release 工作流：
 

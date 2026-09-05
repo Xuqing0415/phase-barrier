@@ -1,6 +1,8 @@
 # Changelog
 
 版本号由 git tag 驱动（`setuptools-scm`）：打 `vX.Y.Z` tag 后构建的发行包即为 `X.Y.Z`。
+发布为里程碑驱动：日常改动累积于 main，仅在用户可感知里程碑或紧急修复时发版，
+同日不重复发布（详见 [docs/release.md](docs/release.md) 发布节奏）。
 
 ## [0.48.3] - 2026-09-05
 

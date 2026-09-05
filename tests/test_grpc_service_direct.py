@@ -24,14 +24,24 @@ try:
     from anti_shortcut.proto import sidecar_pb2
 
     _HAVE_GRPC = True
-except Exception:  # pragma: no cover - grpcio 未安装（可选依赖）
+    _GRPC_IMPORT_ERROR = None
+except ModuleNotFoundError as exc:  # pragma: no cover - 可选依赖缺失
+    if getattr(exc, "name", "") == "grpc":
+        grpc = None  # type: ignore[assignment]
+        _HAVE_GRPC = False
+        _GRPC_IMPORT_ERROR = "grpcio 未安装，跳过 gRPC 直调用例"
+    else:
+        raise
+except Exception as exc:  # pragma: no cover - 其他导入异常直接暴露，避免 CI 静默跳过
     grpc = None  # type: ignore[assignment]
     _HAVE_GRPC = False
+    _GRPC_IMPORT_ERROR = "grpc/proto 导入异常: " + repr(exc)
 
 from anti_shortcut.sidecar import GateSidecar
 from conftest import GOOD_IMPL, GOOD_TESTS, SPEC
 
-pytestmark = pytest.mark.skipif(not _HAVE_GRPC, reason="grpcio 未安装，跳过 gRPC 直调用例")
+_GRPC_SKIP_REASON = _GRPC_IMPORT_ERROR if isinstance(_GRPC_IMPORT_ERROR, str) else 'grpcio 已安装，不跳过'
+pytestmark = pytest.mark.skipif(not _HAVE_GRPC, reason=_GRPC_SKIP_REASON)
 
 
 class _AbortError(Exception):

@@ -94,6 +94,9 @@ runs:
     - name: Run phase-barrier gate
       id: gate
       shell: bash
+      env:
+        # 经 env 传递，避免 command 含引号时破坏 shell 拼串（${{ }} 直接内插会语法错误）
+        PB_COMMAND: ${{ inputs.command }}
       run: |
         set -euo pipefail
         EXPECT_FAIL_ACTION="${{ inputs.expected_failure }}"
@@ -146,7 +149,7 @@ runs:
         fi
 
         if [ "$MODE" == "exec" ]; then
-          COMMAND="${{ inputs.command }}"
+          COMMAND="$PB_COMMAND"
           if [ -z "$COMMAND" ]; then
             echo "::error::exec 模式必须提供 command"
             exit 1

@@ -10,7 +10,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/phase-barrier.svg)](https://pypi.org/project/phase-barrier/)
 [![Marketplace](https://img.shields.io/badge/Marketplace-Phase%20Barrier%20Gate-blue.svg?logo=github&logoColor=white)](https://github.com/marketplace/actions/phase-barrier-gate)
 
-> 文档站托管于 GitHub Pages；可选自定义域名 `docs.phase-barrier.dev`
+> 文档站托管于 GitHub Pages；可选自定义域名 `docs.xshayncka.dev`
 > 当前**未启用**（配置方法见 [custom-domain.md](custom-domain.md)）。
 
 ## 特性

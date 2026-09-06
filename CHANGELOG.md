@@ -85,10 +85,10 @@
 ## [0.48.3] - 2026-09-05
 
 - **docs: 自定义域名启用前置检查与 NXDOMAIN 结论（v0.48.3）**：`docs/custom-domain.md`
-  新增「前置检查（约 2 分钟）」：apex 公网解析自检（`nslookup phase-barrier.dev 8.8.8.8`，
+  新增「前置检查（约 2 分钟）」：apex 公网解析自检（`nslookup xshayncka.dev 8.8.8.8`，
   NXDOMAIN = 域名未注册 / 未接入公网 DNS，GitHub Pages 无法为不存在的域名签发证书）
   与 `docs.` 子域冲突检查；故障排查表补充 NXDOMAIN 行。`docs/roadmap.md` 待办项注明
-  截至 v0.48.3 `phase-barrier.dev` 公网 NXDOMAIN，需用户先注册域名（未启用，可选）。
+  截至 v0.48.3 `xshayncka.dev` 公网 NXDOMAIN，需用户先注册域名（未启用，可选）。
   无库代码改动。
 
 ## [0.48.2] - 2026-09-05
@@ -110,7 +110,7 @@
 ## [0.48.0] - 2026-09-05
 
 - **自定义域名文档与检查（任务 1）**：新增 `docs/custom-domain.md`（把
-  `docs.phase-barrier.dev` 指向 GitHub Pages：DNS CNAME、`docs/CNAME`、
+  `docs.xshayncka.dev` 指向 GitHub Pages：DNS CNAME、`docs/CNAME`、
   Pages 设置、强制 HTTPS、回滚与故障排查）；新增纯标准库脚本
   `scripts/check_custom_domain.py`（默认非阻塞警告、`--strict` 失败退出）；
   `docs.yml` 每次构建前运行一次检查（未启用仅 `::warning::`，不影响部署）；

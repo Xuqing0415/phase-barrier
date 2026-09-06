@@ -3,9 +3,9 @@
 phase-barrier 官方文档站默认托管在 GitHub Pages：
 
 - 默认地址：<https://xuqing0415.github.io/phase-barrier/>
-- 可选域名：`docs.phase-barrier.dev`（**未启用**时为可选项，不配置不影响任何功能）
+- 可选域名：`docs.xshayncka.dev`（**未启用**时为可选项，不配置不影响任何功能）
 
-本文说明如何把 `docs.phase-barrier.dev` 指向 GitHub Pages，并提供自动化检查脚本。
+本文说明如何把 `docs.xshayncka.dev` 指向 GitHub Pages，并提供自动化检查脚本。
 配置前请确认你拥有该域名的 DNS 控制权；**在 DNS 生效前不要提交 `CNAME` 文件**，
 否则 GitHub Pages 会因无法校验域名而暂时中断默认地址访问。
 
@@ -20,13 +20,13 @@ MkDocs 会把 `docs/` 目录下除 Markdown 外的文件原样复制到站点根
 
 - 1. 确认域名已注册且公网可解析（替换为你的域名）：
    ```powershell
-   nslookup phase-barrier.dev 8.8.8.8
+   nslookup xshayncka.dev 8.8.8.8
    ```
    apex 返回 NXDOMAIN 表示域名未注册或未接入公网 DNS，需先到注册商完成注册，
    GitHub Pages 无法为不存在的域名签发证书。
 - 2. 确认 `docs.` 子域当前无冲突记录：
    ```powershell
-   Resolve-DnsName docs.phase-barrier.dev -ErrorAction SilentlyContinue
+   Resolve-DnsName docs.xshayncka.dev -ErrorAction SilentlyContinue
    ```
    期望无记录（可新建 CNAME）；若已有记录，先确认归属再覆盖。
 
@@ -41,9 +41,9 @@ MkDocs 会把 `docs/` 目录下除 Markdown 外的文件原样复制到站点根
 2. **添加 CNAME 文件**：在仓库根目录执行
 
    ```bash
-   echo docs.phase-barrier.dev > docs/CNAME
+   echo docs.xshayncka.dev > docs/CNAME
    git add docs/CNAME
-   git commit -m "chore: enable docs.phase-barrier.dev custom domain"
+   git commit -m "chore: enable docs.xshayncka.dev custom domain"
    git push origin main
    ```
 
@@ -54,13 +54,13 @@ MkDocs 会把 `docs/` 目录下除 Markdown 外的文件原样复制到站点根
    ```
 
 3. **GitHub Pages 设置**：仓库 `Settings -> Pages -> Custom domain` 填入
-   `docs.phase-barrier.dev` 并保存。GitHub 会校验 DNS 并为该域名签发 HTTPS
+   `docs.xshayncka.dev` 并保存。GitHub 会校验 DNS 并为该域名签发 HTTPS
    证书（通常几分钟，最长约 24 小时）。
 4. **强制 HTTPS**：证书签发成功后勾选 `Enforce HTTPS`。
 5. **验证**：
 
    ```bash
-   curl -I https://docs.phase-barrier.dev/plugin-status/   # 期望 HTTP 200
+   curl -I https://docs.xshayncka.dev/plugin-status/   # 期望 HTTP 200
    python scripts/check_custom_domain.py --strict           # 期望 exit 0
    ```
 
@@ -91,11 +91,12 @@ Pages 设置里的自定义域名，在 `Settings -> Pages` 中清除即可。
 
 | 现象 | 原因与处理 |
 |------|------------|
-| `curl https://docs.phase-barrier.dev` 报 DNS 解析失败 | CNAME 未生效：检查 DNS 记录与解析传播（`nslookup docs.phase-barrier.dev`） |
+| `curl https://docs.xshayncka.dev` 报 DNS 解析失败 | CNAME 未生效：检查 DNS 记录与解析传播（`nslookup docs.xshayncka.dev`） |
 | GitHub Pages 提示 "domain does not resolve" | DNS 记录值写错或指向了 `github.io` 之外的地址 |
 | 配置后默认地址 `xuqing0415.github.io/...` 暂时 404 | 自定义域名证书签发中，属正常现象，等待完成 |
 | `check_custom_domain.py --strict` 退出 1 | 仓库内尚无 `CNAME` 或内容与期望域名不一致 |
-| `nslookup phase-barrier.dev 8.8.8.8` 返回 NXDOMAIN | 域名未注册或未接入公网 DNS：先完成注册与实名，再继续后续步骤 |
+| `nslookup xshayncka.dev 8.8.8.8` 返回 NXDOMAIN | 域名未注册或未接入公网 DNS：先完成注册与实名，再继续后续步骤 |
 
-> **状态（截至 v0.48.0）**：本仓库**未启用**自定义域名，`docs/CNAME` 不存在，
-> CI 检查输出非阻塞警告属预期；待域名与 DNS 就绪后按本文启用。
+> **状态（截至 2026-09-06）**：目标域名改为 `docs.xshayncka.dev`（`xshayncka.dev`
+> 已注册）；DNS CNAME 与 `docs/CNAME` 尚未配置，CI 检查输出非阻塞警告属预期；
+> DNS 就绪后按本文启用。

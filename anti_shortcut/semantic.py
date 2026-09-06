@@ -18,7 +18,9 @@
   拒绝只含章节标题的“278 字套话”式 spec。
 - ``TestAssertionQualityValidator``（断言质量，v0.50.0）：AST 检查测试断言是否
   引用真实值 / 调用（非 `assert True` 等纯常数断言），防空壳测试；v0.51.0 起
-  可配 ``min_assert_targets`` 要求每个测试覆盖多个不同行为目标。
+  可配 ``min_assert_targets`` 要求每个测试覆盖多个不同行为目标；另提供可选
+  ``require_meaningful_names`` 命名语义档（函数名需含行为动词或 spec 功能
+  关键词，拦截 test_1 / test_a 式占位命名）。
 - ``ImplementationTraceabilityValidator``（实现-文档双向追踪，v0.51.0）：阶段 3
   推进时核对 spec 承诺的具体实体（函数 / 类 / API 路径）是否在实现源码中落地，
   防“spec 写了接口、实现却答非所问”；实现里 spec 未承诺的公共符号仅提示不拦截。
@@ -45,7 +47,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, Sequence
 
 from .config import GateConfig, SemanticOptions
 from .languages import LanguageAdapter, get_adapter
@@ -812,7 +814,72 @@ def _assert_root_targets(expr: ast.AST) -> set[str]:
     }
 
 
-def analyze_test_assertion_quality(py_source: str, min_assert_targets: int = 0) -> dict[str, Any]:
+
+# 可选“命名语义”严格档（累积 main，未发版）：行为动词 allowlist（含常见第三人称）。
+# 命中任一动词词元即视为“说明行为”的测试名；allowlist 保守，宁可漏报不强报。
+DEFAULT_BEHAVIORAL_VERBS: frozenset[str] = frozenset({
+    "should", "return", "returns", "raise", "raises", "accept", "accepts",
+    "reject", "rejects", "parse", "parses", "validate", "validates", "convert",
+    "converts", "handle", "handles", "escape", "escapes", "block", "blocks",
+    "allow", "allows", "deny", "denies", "limit", "limits", "compute",
+    "computes", "load", "loads", "save", "saves", "store", "stores", "update",
+    "updates", "create", "creates", "delete", "deletes", "remove", "removes",
+    "add", "adds", "format", "formats", "encode", "encodes", "decode",
+    "decodes", "render", "renders", "sort", "sorts", "filter", "filters",
+    "merge", "merges", "split", "splits", "lock", "locks", "unlock", "unlocks",
+    "expire", "expires", "rotate", "rotates", "reset", "resets", "truncate",
+    "truncates", "append", "appends", "prepend", "prepends", "replace",
+    "replaces", "notify", "notifies", "log", "logs", "retry", "retries",
+    "authenticate", "authenticates", "authorize", "authorizes", "fetch",
+    "fetches", "cache", "caches", "aggregate", "aggregates", "normalize",
+    "normalizes", "increment", "increments", "decrement", "decrements",
+    "grant", "grants", "revoke", "revokes", "register", "registers", "sign",
+    "signs", "verify", "verifies", "refresh", "refreshes", "close", "closes",
+    "open", "opens", "cancel", "cancels", "confirm", "confirms", "publish",
+    "publishes", "subscribe", "subscribes", "connect", "connects",
+    "disconnect", "disconnects", "start", "starts", "stop", "stops", "pause",
+    "pauses", "resume", "resumes",
+})
+
+# 实体提取器从签名 / 类型声明中捕获、但不应作为“功能关键词”计入命名映射的泛化词元
+_NAME_GENERIC_SPEC_TOKENS: frozenset[str] = frozenset({
+    "str", "int", "float", "bool", "none", "true", "false", "dict", "list",
+    "tuple", "set", "any", "req", "api", "http", "rest", "endpoint", "param",
+    "params", "input", "output", "value", "values", "data", "file", "files",
+    "key", "keys", "item", "items", "name", "names", "id", "ids", "type",
+    "types", "class", "function", "func", "def", "return", "returns",
+})
+
+
+def _keyword_tokens(entity: str) -> set[str]:
+    """把 spec 实体拆成小写关键词元（下划线 / 路径 / 驼峰边界），过滤泛化词。"""
+    name = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", entity).lower()
+    parts = re.split(r"[^a-z0-9]+", name)
+    tokens = {p for p in parts if len(p) >= 2 and not p.isdigit()}
+    return tokens - _NAME_GENERIC_SPEC_TOKENS
+
+
+def _test_name_is_generic(name: str, spec_entities: Sequence[str]) -> bool:
+    """名称无行为动词且未映射任何 spec 功能关键词时返回 True（可读性弱）。"""
+    body = name[5:] if name.startswith("test_") else name
+    name_tokens = {
+        p for p in re.split(r"[^a-z0-9]+", body.lower())
+        if len(p) >= 2 and not p.isdigit()
+    }
+    if name_tokens & DEFAULT_BEHAVIORAL_VERBS:
+        return False
+    for entity in spec_entities:
+        if name_tokens & _keyword_tokens(entity):
+            return False
+    return True
+
+
+def analyze_test_assertion_quality(
+    py_source: str,
+    min_assert_targets: int = 0,
+    spec_entities: Sequence[str] = (),
+    require_meaningful_names: bool = False,
+) -> dict[str, Any]:
     """AST 分析测试源码的断言质量。
 
     - **纯常数断言**（不引用任何名称 / 调用，如 ``assert True``）→ 弱函数，
@@ -820,6 +887,10 @@ def analyze_test_assertion_quality(py_source: str, min_assert_targets: int = 0) 
     - 可选严格档（``min_assert_targets > 0``）：某 test 函数的“真实断言目标数”
       （各非纯常数断言引用的根目标并集）少于阈值 → 弱函数，
       ``reason="too_few_targets"``。
+    - 可选命名严格档（``require_meaningful_names=True``）：test 函数名需含
+      行为动词（``should`` / ``returns`` / ``raises`` 等）或
+      ``spec_entities`` 中的功能关键词，否则 -> 弱函数，
+      ``reason="generic_name"``。
 
     返回结构：``{"ok", "weak_functions": [{"name","line","assert_lines",
     "targets","reason"}], "test_functions", "parse_error"}``
@@ -853,6 +924,8 @@ def analyze_test_assertion_quality(py_source: str, min_assert_targets: int = 0) 
             reason = "constant_only"
         elif min_assert_targets > 0 and len(real_targets) < min_assert_targets:
             reason = "too_few_targets"
+        elif require_meaningful_names and _test_name_is_generic(node.name, spec_entities):
+            reason = "generic_name"
         if reason:
             weak.append({
                 "name": node.name,
@@ -869,7 +942,8 @@ class TestAssertionQualityValidator(SemanticValidator):
 
     “纯常数断言”指断言表达式中不引用任何名称 / 属性 / 调用 / 下标（即不来自被测
     代码的变量或返回值）。默认关闭；strict 模式（默认）下任何 test 函数含纯常数
-    断言即拒绝。
+    断言即拒绝。可选 ``require_meaningful_names``：函数名需含行为动词或 spec
+    承诺的功能关键词（防 test_1 / test_a 式占位命名），默认关闭。
     """
 
     name = "test_assertion_quality"
@@ -892,12 +966,24 @@ class TestAssertionQualityValidator(SemanticValidator):
         opts = config.semantic.test_assertion_quality
         if not opts.strict:
             return SemanticCheckResult(True, "断言质量校验未启用 strict，跳过", {"skipped": "not_strict"})
+        spec_entities: list[str] = []
+        if opts.require_meaningful_names:
+            spec_path = workspace / config.spec_file
+            if spec_path.exists():
+                spec_entities = extract_concrete_entities(
+                    spec_path.read_text(encoding="utf-8", errors="replace")
+                )
         failures: list[dict[str, Any]] = []
         for tf in iter_workspace_files(workspace, config):
             if not adapter.is_test_file(tf, config):
                 continue
             text = tf.read_text(encoding="utf-8", errors="replace")
-            info = analyze_test_assertion_quality(text, min_assert_targets=opts.min_assert_targets)
+            info = analyze_test_assertion_quality(
+                text,
+                min_assert_targets=opts.min_assert_targets,
+                spec_entities=spec_entities,
+                require_meaningful_names=opts.require_meaningful_names,
+            )
             if info.get("parse_error"):
                 continue  # 语法问题由结构校验拦截
             for fn in info["weak_functions"]:
@@ -917,14 +1003,22 @@ class TestAssertionQualityValidator(SemanticValidator):
                     f"{f['file']}:{f['name']}(L{f['line']}) 断言目标 {len(f['targets'])}"
                     f" < {opts.min_assert_targets}（{', '.join(f['targets']) or '无'}）"
                 )
+            elif f.get("reason") == "generic_name":
+                detail_parts.append(
+                    f"{f['file']}:{f['name']}(L{f['line']}) 函数名无行为动词且未映射 spec 功能关键词"
+                )
             else:
                 detail_parts.append(
                     f"{f['file']}:{f['name']}(L{f['line']}) 纯常数断言行 {f['assert_lines']}"
                 )
+        need_name_hint = any(f.get("reason") == "generic_name" for f in failures)
         hint = "。请让断言比较真实的函数返回值 / 状态，例如 `assert fib(10) == 55`"
         if need_target_hint:
             hint += (f"；并让每个测试覆盖至少 {opts.min_assert_targets} 个不同行为目标"
                      "（如分别断言多个函数 / 字段，而非重复同一目标）")
+        if need_name_hint:
+            hint += ("；并让测试函数名说明被验证的行为（如 test_should_return_fib /\n"
+                     "test_raises_on_negative），或包含 spec 承诺的函数 / 类关键词")
         return SemanticCheckResult(
             False,
             "断言质量未通过：" + "；".join(detail_parts) + hint,

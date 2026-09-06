@@ -4,7 +4,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/phase-barrier.svg)](https://pypi.org/project/phase-barrier/)
 [![Python versions](https://img.shields.io/pypi/pyversions/phase-barrier.svg)](https://pypi.org/project/phase-barrier/)
 [![Marketplace](https://img.shields.io/badge/Marketplace-Phase%20Barrier%20Gate-blue.svg?logo=github&logoColor=white)](https://github.com/marketplace/actions/phase-barrier-gate)
-[![Docs](https://img.shields.io/badge/Docs-MkDocs-blue.svg)](https://xuqing0415.github.io/phase-barrier/)
+[![Docs](https://img.shields.io/badge/Docs-MkDocs-blue.svg)](https://docs.xshayncka.dev/)
 
 强制编码 Agent（如 Alpha-SWE）遵循标准工程师 SOP 的**阶段门禁（Stage Gate）**框架。
 
@@ -139,7 +139,7 @@ anti-shortcut advance --workspace . --to 2                         # 推进阶�
 - 使用问题 / 功能建议 / Bug：[GitHub Issues](https://github.com/Xuqing0415/phase-barrier/issues)（内置模板）
 - 插件提交与生态索引：[docs/plugins.md](docs/plugins.md)
 - Roadmap：[docs/roadmap.md](docs/roadmap.md) ｜ 更新日志：[CHANGELOG.md](CHANGELOG.md)
-- 官方文档站：[https://xuqing0415.github.io/phase-barrier/](https://xuqing0415.github.io/phase-barrier/)
+- 官方文档站：[https://docs.xshayncka.dev/](https://docs.xshayncka.dev/)
 - 与 [alpha-swe](https://github.com/Xuqing0415/alpha-swe) 双向关联（编排器钩子 SDK 已合并接入）
 
 ## License

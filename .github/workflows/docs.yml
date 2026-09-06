@@ -1,7 +1,7 @@
 # 官方文档站（MkDocs -> GitHub Pages，v0.29.0）
 # 构建 docs/ 站点并推送 gh-pages 分支；在仓库 Settings -> Pages 选择
 # "Deploy from a branch: gh-pages / (root)" 后即可访问：
-#   https://xuqing0415.github.io/phase-barrier/
+#   https://docs.xshayncka.dev/
 name: docs
 
 on:
@@ -45,10 +45,10 @@ jobs:
       - name: Sync plugin status page from plugins.json
         run: python scripts/verify_plugins.py --sync-only
 
-      - name: Check optional custom domain (docs.xshayncka.dev, non-blocking)
+      - name: Check custom domain CNAME (docs.xshayncka.dev, non-blocking)
         run: |
           python scripts/check_custom_domain.py --strict \
-            || echo "::warning::docs.xshayncka.dev 自定义域名未启用（可选），启用方法见 docs/custom-domain.md"
+            || echo "::warning::docs.xshayncka.dev CNAME 缺失或与期望域名不一致（非阻塞），见 docs/custom-domain.md"
 
       - name: Build site
         run: mkdocs build --strict --site-dir site

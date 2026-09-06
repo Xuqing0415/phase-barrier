@@ -699,7 +699,7 @@
     k8s / contributing / changelog；dev extras 增加 `mkdocs>=1.6` / `mkdocs-material>=9.5`。
   - `.github/workflows/docs.yml`：main push / tag 时构建站点并推送 `gh-pages` 分支；
     在仓库 Settings -> Pages 选择 "Deploy from a branch: gh-pages" 后即可访问
-    https://xuqing0415.github.io/phase-barrier/ 。
+    https://docs.xshayncka.dev/ 。
   - README 增加 Docs 徽章与文档站链接。
 - 测试：新增 `tests/test_plugin_verify.py`（28 个：discover / 语言适配器校验 / 各类插件
   验证 / summarize / CLI 三态）与 `tests/test_docs_site.py`（MkDocs `--strict` 构建冒烟，

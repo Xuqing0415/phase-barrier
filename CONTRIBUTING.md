@@ -87,8 +87,9 @@ python -m flake8 --jobs=1 <files> # 风格检查（Windows 下需 --jobs=1）
   无需（也不应）手动编辑其表格（会被覆盖）。
 - 一致性由 `tests/test_docs_consistency.py` 守护：`docs/plugins.md` 只作
   指南、不内嵌同步表；状态页表格须覆盖全部索引条目。
-- 自定义域名 `docs.xshayncka.dev` 为可选：见 `docs/custom-domain.md`；
-  `scripts/check_custom_domain.py` 在 docs CI 中做非阻塞检查（未启用仅警告）。
+- 自定义域名 `docs.xshayncka.dev` 已启用：DNS / CNAME / HTTPS 配置与回滚见
+  `docs/custom-domain.md`；`scripts/check_custom_domain.py` 在 docs CI 中做
+  非阻塞检查（CNAME 缺失或内容不一致仅警告，不影响部署）。
 
 ## 制作视频教程 / 社区推广（可选）
 

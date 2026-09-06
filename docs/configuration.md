@@ -61,18 +61,18 @@ python -m anti_shortcut init --with-coverage --rules no_path_traversal,no_shell_
 | `audit_remote_spool_dir` | Union | `None` / 空 |  |
 | `protect_gate_dir` | bool | `True` |  |
 | `allow_other_files_any_stage` | bool | `True` |  |
-| `semantic` | dict | 全关 | 语义级校验总配置（v0.50.0）：`requirement_coverage` / `mutation_score` / `spec_specificity` / `test_assertion_quality` / `plugin_options`，见「语义级校验（v0.50.0）」 |
+| `semantic` | dict | 全关 | 语义级校验总配置（v0.51.0）：`requirement_coverage` / `mutation_score` / `spec_specificity` / `test_assertion_quality` / `implementation_traceability` / `plugin_options`，见「语义级校验（v0.51.0）」 |
 
 > 说明：`rules`（内置安全规则包列表）与 `rules_options`（规则选项，如
 > `license_header`）是 v0.26.0 新增字段，见下文「内置安全规则包」。
 
 
 
-## 语义级校验（v0.50.0）
+## 语义级校验（v0.51.0）
 
 结构校验之上的可选语义增强（需求追踪 + Python 变异测试 + spec 具体性 +
-测试断言质量），默认全部关闭，启用后不满足即阻止阶段推进。完整说明见
-[语义级校验](semantic-validation.md)。
+测试断言质量 + 实现追踪），默认全部关闭，启用后不满足即阻止阶段推进。
+完整说明见 [语义级校验](semantic-validation.md)。
 
 ```yaml
 semantic:
@@ -100,7 +100,14 @@ semantic:
   test_assertion_quality:    # 测试断言质量（阶段 2，仅 Python），防 assert True
     enabled: true
     strict: true             # true=弱函数即拒绝；false=仅警告
+    min_assert_targets: 0    # 可选严格档：每测试覆盖 >= N 个不同断言目标（0 关闭）
     stages: [2]
+  implementation_traceability:  # 实现-文档双向追踪（阶段 3，仅 Python），防答非所问
+    enabled: true
+    min_entities: 1          # spec 可追踪实体少于该值自动跳过
+    max_missing: 0           # 允许缺失实体上限（0=spec 承诺的每个实体都须实现）
+    report_undeclared: true  # 实现里 spec 未承诺的公共符号提示（不拦截）
+    stages: [3]
   plugin_options:            # 第三方语义校验器配置（按 name 开关）
     my_semantic:
       enabled: true

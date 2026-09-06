@@ -189,12 +189,63 @@ class SpecSpecificityOptions(BaseModel):
 
 
 class TestAssertionQualityOptions(BaseModel):
-    """测试断言质量语义校验配置（v0.50.0，仅 Python）：拒绝 `assert True` 等常数断言。"""
+    """测试断言质量语义校验配置（v0.50.0，仅 Python）：拒绝 `assert True` 等常数断言。
+
+    断言目标 = 断言表达式引用的根标识符 / 被调函数（如 `fib(10)` 的目标是 `fib`、
+    `user.age == 18` 的目标是 `user`）。v0.51.0 起提供可选严格档
+    ``min_assert_targets``：每个 test 函数必须覆盖至少 N 个不同目标。
+    """
 
     enabled: bool = False
     # True：任何 test 函数只要含断言且全部为“纯常数断言”（不引用任何名称/调用）即拒绝
     strict: bool = True
+    # 每个 test 函数断言需覆盖至少 N 个不同目标（根标识符/被调函数）；0 关闭该子检查
+    min_assert_targets: int = 0
     stages: list[int] = Field(default_factory=lambda: [2])
+
+    @field_validator("min_assert_targets")
+    @classmethod
+    def _check_min_assert_targets(cls, value: int) -> int:
+        if isinstance(value, bool) or value < 0:
+            raise ValueError("semantic.test_assertion_quality.min_assert_targets 必须 >= 0，得到 %r" % value)
+        return value
+
+    @field_validator("stages")
+    @classmethod
+    def _check_stages(cls, value: list[int]) -> list[int]:
+        if not value:
+            raise ValueError("semantic 校验器 stages 不能为空")
+        bad = [s for s in value if not isinstance(s, int) or isinstance(s, bool) or not (0 <= s <= 6)]
+        if bad:
+            raise ValueError(f"semantic 校验器 stages 必须是 0-6 的整数，得到 {bad}")
+        return value
+
+
+class ImplementationTraceabilityOptions(BaseModel):
+    """实现-文档双向追踪语义校验配置（v0.51.0，仅 Python）。
+
+    阶段 3 推进时核对：spec 承诺的具体实体（函数 / 类 / API 路径）必须在实现中
+    有对应标识符，防“spec 写了 login，代码却没有实现”的答非所问。
+    """
+
+    enabled: bool = False
+    # spec 中可追踪实体少于该数量时自动跳过（防“空 spec 也能过”的边际场景由
+    # spec_specificity 单独把关；此处避免对无实体 spec 误报）
+    min_entities: int = 1
+    # 允许缺失的实体数量上限（0 = spec 承诺的每个实体都必须落地实现）
+    max_missing: int = 0
+    # 反向提示：实现里的公共函数 / 类若 spec 未承诺，仅写入 evidence 不拦截
+    report_undeclared: bool = True
+    stages: list[int] = Field(default_factory=lambda: [3])
+
+    @field_validator("min_entities", "max_missing")
+    @classmethod
+    def _check_nonneg_int(cls, value: int, info) -> int:
+        if isinstance(value, bool) or value < 0:
+            raise ValueError(
+                f"semantic.implementation_traceability.{info.field_name} 必须 >= 0 的整数，得到 {value}"
+            )
+        return value
 
     @field_validator("stages")
     @classmethod
@@ -214,6 +265,9 @@ class SemanticOptions(BaseModel):
     mutation_score: MutationScoreOptions = Field(default_factory=MutationScoreOptions)
     spec_specificity: SpecSpecificityOptions = Field(default_factory=SpecSpecificityOptions)
     test_assertion_quality: TestAssertionQualityOptions = Field(default_factory=TestAssertionQualityOptions)
+    implementation_traceability: ImplementationTraceabilityOptions = Field(
+        default_factory=ImplementationTraceabilityOptions
+    )
     # 第三方语义校验器的自由配置（校验器按 config.semantic.<name>.enabled 开关）
     plugin_options: dict[str, Any] = Field(default_factory=dict)
 

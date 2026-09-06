@@ -4,6 +4,28 @@
 发布为里程碑驱动：日常改动累积于 main，仅在用户可感知里程碑或紧急修复时发版，
 同日不重复发布（详见 [docs/release.md](docs/release.md) 发布节奏）。
 
+## [0.51.0] - 2026-09-06
+
+- **feat: 深度补全第二层（v0.51.0）**：把“需求 -> spec -> 测试 -> 实现”的关联链
+  补到实现侧——spec 承诺的实体必须在代码里真正落地，并对“断言覆盖多个行为目标”
+  提供可选严格档。
+- **实现-文档双向追踪校验器**（`implementation_traceability`，阶段 3，仅 Python）：
+  从 spec 提取可追踪实体（函数 / 类 / 字段标识符 + REST 端点路径，过滤单字符
+  形参与 REQ 编号），整词 / 路径子串核对实现源码；缺失数超过 `max_missing`
+  （默认 0）即拒绝并列出缺失 / 已覆盖清单；实现里 spec 未承诺的公共函数 / 类
+  默认写入 evidence 提示（`report_undeclared: false` 可关闭），不拦截。
+- **测试断言质量严格档**（`test_assertion_quality.min_assert_targets`，默认 0 关闭）：
+  开启后每个 test 函数必须覆盖至少 N 个不同“断言目标”（根标识符 / 被调函数；
+  属性链只计根对象，如 `user.age` 计 `user`），低于阈值按 `too_few_targets` 拒绝
+  并给出目标清单。
+- **配置与默认行为**：`GateConfig.semantic` 新增 `implementation_traceability` 与
+  `test_assertion_quality.min_assert_targets`（默认全关 / 0，不影响既有门禁）；
+  `anti_shortcut init` 注释模板同步；字段校验齐全（阈值非负 / stages 0-6）。
+- **测试**：新增 `tests/test_semantic_trace.py` 24 个用例（双向追踪解析与整词边界、
+  API 路径子串匹配、validator 跳过 / 通过 / 拒绝 / max_missing / report_undeclared、
+  断言目标数严格档、Skill 端到端“spec 承诺 fib_fast 但实现缺失 -> 拦截 -> 补全放行”），
+  本地全量相关测试通过；semantic 模块覆盖率 95%。
+
 ## [0.50.0] - 2026-09-05
 
 - **feat: 深度补全第一层（v0.50.0）**：把“语义防穿”落到内置校验器，直接拦截

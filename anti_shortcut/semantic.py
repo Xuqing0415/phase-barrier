@@ -4,7 +4,7 @@
 ----
 内置阶段校验器检查的是“结构 / 形式”证据（章节存在、测试函数、语法、测试退出码、
 覆盖率），理论上可以被“形式上完整但内容空泛”的产物绕过：空泛 spec、无断言测试、
-永远通过的测试。本模块引入**语义级校验器**接口与两个内置实现，把
+永远通过的测试。本模块引入**语义级校验器**接口与多级内置实现，把
 “需求 ↔ 测试 ↔ 实现”的关联质量纳入阶段推进门禁：
 
 - ``RequirementCoverageValidator``（需求追踪，v0.49.0）：spec 以 ``REQ-001``
@@ -17,7 +17,11 @@
   具体实体密度 / 接口签名 / 明确技术决策 / 用户需求锚点 / 套话句式命中上限，
   拒绝只含章节标题的“278 字套话”式 spec。
 - ``TestAssertionQualityValidator``（断言质量，v0.50.0）：AST 检查测试断言是否
-  引用真实值 / 调用（非 `assert True` 等纯常数断言），防空壳测试。
+  引用真实值 / 调用（非 `assert True` 等纯常数断言），防空壳测试；v0.51.0 起
+  可配 ``min_assert_targets`` 要求每个测试覆盖多个不同行为目标。
+- ``ImplementationTraceabilityValidator``（实现-文档双向追踪，v0.51.0）：阶段 3
+  推进时核对 spec 承诺的具体实体（函数 / 类 / API 路径）是否在实现源码中落地，
+  防“spec 写了接口、实现却答非所问”；实现里 spec 未承诺的公共符号仅提示不拦截。
 
 第三方（含 LLM 审查）语义校验器通过入口点组
 ``phase_barrier.semantic_validators`` 注册（与语言适配器 / 阶段校验器 /
@@ -69,6 +73,10 @@ __all__ = [
     "extract_interface_signatures",
     "count_decision_phrases",
     "count_filler_hits",
+    "ImplementationTraceabilityValidator",
+    "analyze_implementation_traceability",
+    "extract_traceable_spec_entities",
+    "extract_public_symbols",
 ]
 
 SEMANTIC_VALIDATOR_ENTRY_POINT_GROUP = "phase_barrier.semantic_validators"
@@ -790,10 +798,31 @@ class SpecSpecificityValidator(SemanticValidator):
         )
 
 
-def analyze_test_assertion_quality(py_source: str) -> dict[str, Any]:
-    """AST 分析测试源码的断言质量：纯常数断言（不引用任何名称 / 调用）即弱断言。
+def _assert_root_targets(expr: ast.AST) -> set[str]:
+    """收集断言表达式引用的“根目标”：根标识符与被调函数名。
 
-    返回结构：{"ok": bool, "weak_functions": [{"name","line","assert_lines":[...]}], "test_functions": n}
+    - ``fib(10) == 55`` -> ``{"fib"}``；
+    - ``user.age == 18`` -> ``{"user"}``（属性链只算根对象）；
+    - ``cache[key] == 1`` -> ``{"cache"}``（下标只算根容器）。
+    纯常数（如 ``True`` / ``1 == 1``）没有任何名称引用，返回空集。
+    """
+    return {
+        n.id for n in ast.walk(expr)
+        if isinstance(n, ast.Name) and not isinstance(n.ctx, ast.Store)
+    }
+
+
+def analyze_test_assertion_quality(py_source: str, min_assert_targets: int = 0) -> dict[str, Any]:
+    """AST 分析测试源码的断言质量。
+
+    - **纯常数断言**（不引用任何名称 / 调用，如 ``assert True``）→ 弱函数，
+      ``reason="constant_only"``；
+    - 可选严格档（``min_assert_targets > 0``）：某 test 函数的“真实断言目标数”
+      （各非纯常数断言引用的根目标并集）少于阈值 → 弱函数，
+      ``reason="too_few_targets"``。
+
+    返回结构：``{"ok", "weak_functions": [{"name","line","assert_lines",
+    "targets","reason"}], "test_functions", "parse_error"}``
     """
     try:
         tree = ast.parse(py_source)
@@ -806,19 +835,31 @@ def analyze_test_assertion_quality(py_source: str) -> dict[str, Any]:
             continue
         count += 1
         asserts = [n for n in ast.walk(node) if isinstance(n, ast.Assert)]
-        weak_lines: list[int] = []
+        if not asserts:
+            continue
+        constant_lines: list[int] = []
+        real_targets: set[str] = set()
         for a in asserts:
             references = [
                 n for n in ast.walk(a)
                 if isinstance(n, (ast.Name, ast.Attribute, ast.Call, ast.Subscript))
             ]
-            if not references:
-                weak_lines.append(getattr(a, "lineno", 0))
-        if asserts and len(weak_lines) == len(asserts):
+            if references:
+                real_targets.update(_assert_root_targets(a.test))
+            else:
+                constant_lines.append(getattr(a, "lineno", 0))
+        reason: str | None = None
+        if len(constant_lines) == len(asserts):
+            reason = "constant_only"
+        elif min_assert_targets > 0 and len(real_targets) < min_assert_targets:
+            reason = "too_few_targets"
+        if reason:
             weak.append({
                 "name": node.name,
                 "line": getattr(node, "lineno", 0),
-                "assert_lines": weak_lines,
+                "assert_lines": constant_lines,
+                "targets": sorted(real_targets),
+                "reason": reason,
             })
     return {"ok": not weak, "weak_functions": weak, "test_functions": count, "parse_error": False}
 
@@ -856,24 +897,190 @@ class TestAssertionQualityValidator(SemanticValidator):
             if not adapter.is_test_file(tf, config):
                 continue
             text = tf.read_text(encoding="utf-8", errors="replace")
-            info = analyze_test_assertion_quality(text)
+            info = analyze_test_assertion_quality(text, min_assert_targets=opts.min_assert_targets)
             if info.get("parse_error"):
                 continue  # 语法问题由结构校验拦截
             for fn in info["weak_functions"]:
                 failures.append({"file": str(tf.relative_to(workspace)), **fn})
         if not failures:
             return SemanticCheckResult(
-                True, "断言质量通过：所有 test 函数的断言均引用实际值 / 调用", {"weak_functions": []}
+                True,
+                "断言质量通过：所有 test 函数的断言均引用实际值 / 调用且目标数达标",
+                {"weak_functions": []},
             )
-        detail = "；".join(
-            f"{f['file']}:{f['name']}(L{f['line']}) 纯常数断言行 {f['assert_lines']}" for f in failures
-        )
+        detail_parts: list[str] = []
+        need_target_hint = False
+        for f in failures:
+            if f.get("reason") == "too_few_targets":
+                need_target_hint = True
+                detail_parts.append(
+                    f"{f['file']}:{f['name']}(L{f['line']}) 断言目标 {len(f['targets'])}"
+                    f" < {opts.min_assert_targets}（{', '.join(f['targets']) or '无'}）"
+                )
+            else:
+                detail_parts.append(
+                    f"{f['file']}:{f['name']}(L{f['line']}) 纯常数断言行 {f['assert_lines']}"
+                )
+        hint = "。请让断言比较真实的函数返回值 / 状态，例如 `assert fib(10) == 55`"
+        if need_target_hint:
+            hint += (f"；并让每个测试覆盖至少 {opts.min_assert_targets} 个不同行为目标"
+                     "（如分别断言多个函数 / 字段，而非重复同一目标）")
         return SemanticCheckResult(
             False,
-            "断言质量未通过：以下测试函数只含纯常数断言（如 `assert True`），未引用被测代码："
-            + detail + "。请让断言比较真实的函数返回值 / 状态，例如 `assert fib(10) == 55`",
+            "断言质量未通过：" + "；".join(detail_parts) + hint,
             {"weak_functions": failures},
         )
+
+
+# ---------- 深度补全第二层（v0.51.0）：实现-文档双向追踪 ----------
+
+_IDENT_ONLY_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def extract_traceable_spec_entities(spec_text: str) -> list[str]:
+    """从 spec 提取可追踪实体：纯标识符（函数 / 类 / 字段）+ API 路径。
+
+    复用具体实体提取（``extract_concrete_entities``），只保留实现侧可判定的两类：
+    整词标识符与含 ``/`` 的端点路径（如 ``POST /api/v1/login``）。单字符标识符
+    （常为 ``fib(n)`` 之类形参名，如 ``n`` / ``x``）不作为承诺实体，避免误报。
+    """
+    entities: list[str] = []
+    for token in extract_concrete_entities(spec_text):
+        if not token or "REQ-" in token:
+            continue
+        is_ident = _IDENT_ONLY_RE.match(token) and len(token) >= 2
+        if is_ident or "/" in token:
+            if token not in entities:
+                entities.append(token)
+    return entities
+
+
+def extract_public_symbols(source_text: str) -> list[str]:
+    """提取 Python 源码顶层公共函数 / 类名（去重保序；跳过 ``_`` 前缀私有符号）。"""
+    try:
+        tree = ast.parse(source_text)
+    except SyntaxError:
+        return []
+    names: list[str] = []
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if node.name.startswith("_"):
+                continue
+            if node.name not in names:
+                names.append(node.name)
+    return names
+
+
+def analyze_implementation_traceability(
+    spec_text: str, source_snippets: list[str]
+) -> dict[str, Any]:
+    """核对 spec 承诺实体是否在实现中出现（正向），并报告实现里 spec 未承诺的公共符号（反向）。
+
+    - 标识符实体：以整词形式出现在任一实现源码（def / 类 / 调用 / 导入均可命中）；
+    - API 路径实体：取 ``POST /api/v1/login`` 的路径段 ``/api/v1/login`` 作子串匹配。
+
+    返回：``{"ok", "entities", "resolved", "missing", "undeclared", "total"}``
+    """
+    entities = extract_traceable_spec_entities(spec_text)
+    blob = "\n".join(source_snippets)
+    resolved: list[str] = []
+    missing: list[str] = []
+    for entity in entities:
+        if _IDENT_ONLY_RE.match(entity):
+            hit = re.search(
+                r"(?<![A-Za-z0-9_])" + re.escape(entity) + r"(?![A-Za-z0-9_])", blob
+            )
+        elif " " in entity:
+            hit = entity.split(" ", 1)[1] in blob
+        else:
+            hit = entity in blob
+        (resolved if hit else missing).append(entity)
+    declared = set(entities)
+    undeclared: list[str] = []
+    for snippet in source_snippets:
+        for sym in extract_public_symbols(snippet):
+            if sym not in declared and sym not in undeclared:
+                undeclared.append(sym)
+    return {
+        "ok": not missing,
+        "entities": entities,
+        "resolved": resolved,
+        "missing": missing,
+        "undeclared": undeclared,
+        "total": len(entities),
+    }
+
+
+class ImplementationTraceabilityValidator(SemanticValidator):
+    """实现-文档双向追踪：spec 承诺实体须在实现源码中落地（防“答非所问”）。
+
+    阶段 3 推进时检查（仅 Python，默认关闭）：spec 中承诺的函数 / 类 / API 端点
+    必须在任一实现文件里以整词 / 路径出现；缺失数量超过 ``max_missing`` 即阻止。
+    反向：实现里 spec 未承诺的公共符号写入 evidence 提示，不拦截。
+    """
+
+    name = "implementation_traceability"
+    description = "实现-文档双向追踪：spec 承诺实体须在实现源码中落地（仅 Python）"
+    stages = (3,)
+
+    def check(
+        self,
+        workspace: Path,
+        config: GateConfig,
+        state: Any,
+        adapter: LanguageAdapter | None = None,
+    ) -> SemanticCheckResult:
+        adapter = adapter or get_adapter(config, workspace)
+        if getattr(adapter, "name", "") != "python":
+            return SemanticCheckResult(
+                True, f"实现追踪仅支持 Python（当前 {getattr(adapter, 'name', '?')}），跳过",
+                {"skipped": "not_python"},
+            )
+        spec_path = workspace / config.spec_file
+        if not spec_path.exists():
+            return SemanticCheckResult(
+                True, "spec 文件不存在，实现追踪跳过（结构校验会先行拦截）", {"skipped": "no_spec"}
+            )
+        opts = config.semantic.implementation_traceability
+        spec_text = spec_path.read_text(encoding="utf-8", errors="replace")
+        source_files = [
+            p for p in iter_workspace_files(workspace, config) if adapter.is_source_file(p, config)
+        ]
+        snippets = [p.read_text(encoding="utf-8", errors="replace") for p in source_files]
+        analysis = analyze_implementation_traceability(spec_text, snippets)
+        evidence: dict[str, Any] = {
+            **analysis,
+            "files": [str(p.relative_to(workspace)) for p in source_files],
+            "undeclared": analysis["undeclared"] if opts.report_undeclared else [],
+        }
+        if len(analysis["entities"]) < opts.min_entities:
+            return SemanticCheckResult(
+                True,
+                f"spec 可追踪实体仅 {len(analysis['entities'])} 个（< min_entities="
+                f"{opts.min_entities}），跳过",
+                {"skipped": "too_few_entities", **evidence},
+            )
+        if len(analysis["missing"]) > opts.max_missing:
+            covered = "、".join(analysis["resolved"]) or "无"
+            return SemanticCheckResult(
+                False,
+                "实现未覆盖 spec 承诺实体（缺失 {m}/{t}）：{miss}。请在实现中提供对应"
+                " 函数 / 类 / 接口（或在 spec 中移除未落地的承诺）；已覆盖：{covered}".format(
+                    m=len(analysis["missing"]),
+                    t=analysis["total"],
+                    miss="、".join(analysis["missing"]),
+                    covered=covered,
+                ),
+                evidence,
+            )
+        msg = "实现覆盖 spec 承诺实体 {r}/{t}（缺失 {m}）".format(
+            r=len(analysis["resolved"]), t=analysis["total"], m=len(analysis["missing"])
+        )
+        if evidence["undeclared"]:
+            msg += "；实现含 spec 未承诺的公共符号 {n} 个（仅提示）：{u}".format(
+                n=len(evidence["undeclared"]), u="、".join(evidence["undeclared"])
+            )
+        return SemanticCheckResult(True, msg, evidence)
 
 
 # ---------- 注册表与运行 ----------
@@ -883,6 +1090,7 @@ BUILTIN_SEMANTIC_VALIDATORS: list[SemanticValidator] = [
     MutationScoreValidator(),
     SpecSpecificityValidator(),
     TestAssertionQualityValidator(),
+    ImplementationTraceabilityValidator(),
 ]
 
 # 进程内自定义语义校验器

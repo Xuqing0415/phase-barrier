@@ -35,6 +35,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: '1.22'
+          cache: false
       - uses: dtolnay/rust-toolchain@stable
       - uses: ruby/setup-ruby@v1
         with:
@@ -133,6 +134,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: '1.22'
+          cache: false
       - uses: dtolnay/rust-toolchain@stable
       - uses: ruby/setup-ruby@v1
         with:
@@ -248,15 +250,15 @@ jobs:
 
       - name: Gate should fail at expected_stage=6
         id: gate_fail
-        continue-on-error: true
         uses: ./
         with:
           workspace: ci_gate_ws
           expected_stage: 6
           local: "true"
+          expected_failure: "true"
 
       - name: Assert gate failed as expected
-        if: steps.gate_fail.outcome == 'success'
+        if: steps.gate_fail.outputs.allowed != 'false'
         run: |
           echo "::error::phase-barrier 门禁应失败但通过了"
           exit 1
@@ -271,31 +273,31 @@ jobs:
 
       - name: Gate check mode denies entering stage 6 (evidence missing)
         id: gate_check_fail
-        continue-on-error: true
         uses: ./
         with:
           workspace: ci_gate_ws
           mode: check
           stage: 6
           local: "true"
+          expected_failure: "true"
 
       - name: Assert check mode failed as expected
-        if: steps.gate_check_fail.outcome == 'success'
+        if: steps.gate_check_fail.outputs.allowed != 'false'
         run: |
           echo "::error::phase-barrier check 门禁应失败但通过了"
           exit 1
 
       - name: Gate check mode rejects missing stage
         id: gate_check_missing_stage
-        continue-on-error: true
         uses: ./
         with:
           workspace: ci_gate_ws
           mode: check
           local: "true"
+          expected_failure: "true"
 
       - name: Assert missing stage failed as expected
-        if: steps.gate_check_missing_stage.outcome == 'success'
+        if: steps.gate_check_missing_stage.outputs.allowed != 'false'
         run: |
           echo "::error::phase-barrier check 缺少 stage 应失败但通过了"
           exit 1
@@ -359,16 +361,16 @@ jobs:
 
       - name: Gate verify mode rejects invalid git_base
         id: gate_verify_bad
-        continue-on-error: true
         uses: ./
         with:
           workspace: ci_gate_ws
           mode: verify
           git_base: no_such_ref_for_gate_self_test
           local: "true"
+          expected_failure: "true"
 
       - name: Assert invalid git_base failed as expected
-        if: steps.gate_verify_bad.outcome == 'success'
+        if: steps.gate_verify_bad.outputs.allowed != 'false'
         run: |
           echo "::error::phase-barrier verify 非法 git_base 应失败但通过了"
           exit 1
@@ -383,75 +385,75 @@ jobs:
 
       - name: Gate exec mode fails when command fails
         id: gate_exec_fail
-        continue-on-error: true
         uses: ./
         with:
           workspace: ci_gate_ws
           mode: exec
           command: python -c "import sys; sys.exit(5)"
           local: "true"
+          expected_failure: "true"
 
       - name: Assert failing exec command failed as expected
-        if: steps.gate_exec_fail.outcome == 'success'
+        if: steps.gate_exec_fail.outputs.allowed != 'false'
         run: |
           echo "::error::phase-barrier 应因命令失败而失败但通过了"
           exit 1
 
       - name: Gate exec mode rejects missing command
         id: gate_bad_command
-        continue-on-error: true
         uses: ./
         with:
           workspace: ci_gate_ws
           mode: exec
           local: "true"
+          expected_failure: "true"
 
       - name: Assert missing command failed as expected
-        if: steps.gate_bad_command.outcome == 'success'
+        if: steps.gate_bad_command.outputs.allowed != 'false'
         run: |
           echo "::error::phase-barrier 应拒绝 exec 模式缺 command 但通过了"
           exit 1
 
       - name: Gate rejects invalid mode
         id: gate_bad_mode
-        continue-on-error: true
         uses: ./
         with:
           workspace: ci_gate_ws
           mode: bogus
           local: "true"
+          expected_failure: "true"
 
       - name: Assert invalid mode failed as expected
-        if: steps.gate_bad_mode.outcome == 'success'
+        if: steps.gate_bad_mode.outputs.allowed != 'false'
         run: |
           echo "::error::phase-barrier 应拒绝非法 mode 但通过了"
           exit 1
 
       - name: Gate rejects invalid expected_stage
         id: gate_bad_stage
-        continue-on-error: true
         uses: ./
         with:
           workspace: ci_gate_ws
           expected_stage: abc
           local: "true"
+          expected_failure: "true"
 
       - name: Assert invalid expected_stage failed as expected
-        if: steps.gate_bad_stage.outcome == 'success'
+        if: steps.gate_bad_stage.outputs.allowed != 'false'
         run: |
           echo "::error::phase-barrier 应拒绝非法 expected_stage 但通过了"
           exit 1
 
       - name: Gate rejects missing workspace
         id: gate_bad_ws
-        continue-on-error: true
         uses: ./
         with:
           workspace: no_such_dir
           local: "true"
+          expected_failure: "true"
 
       - name: Assert missing workspace failed as expected
-        if: steps.gate_bad_ws.outcome == 'success'
+        if: steps.gate_bad_ws.outputs.allowed != 'false'
         run: |
           echo "::error::phase-barrier 应拒绝缺失工作区但通过了"
           exit 1
@@ -616,6 +618,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: '1.22'
+          cache: false
       - uses: dtolnay/rust-toolchain@stable
       - uses: ruby/setup-ruby@v1
         with:
@@ -694,6 +697,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: '1.22'
+          cache: false
       - uses: dtolnay/rust-toolchain@stable
       - uses: ruby/setup-ruby@v1
         with:

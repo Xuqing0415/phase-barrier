@@ -1,4 +1,4 @@
-"""docs.phase-barrier.dev 自定义域名检查（v0.48.0，纯标准库）。
+"""docs.xshayncka.dev 自定义域名检查（v0.48.0，纯标准库）。
 
 检查 ``docs/CNAME`` 是否存在且内容与期望域名一致（MkDocs 会把该文件
 复制到站点根目录，GitHub Pages 据此应用自定义域名）。
@@ -11,7 +11,7 @@
 
     python scripts/check_custom_domain.py
     python scripts/check_custom_domain.py --strict
-    python scripts/check_custom_domain.py --cname docs/CNAME --domain docs.phase-barrier.dev
+    python scripts/check_custom_domain.py --cname docs/CNAME --domain docs.xshayncka.dev
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CNAME = REPO_ROOT / "docs" / "CNAME"
-DEFAULT_DOMAIN = "docs.phase-barrier.dev"
+DEFAULT_DOMAIN = "docs.xshayncka.dev"
 
 
 def check_cname(cname: Path, domain: str) -> tuple[bool, str]:
@@ -41,10 +41,10 @@ def check_cname(cname: Path, domain: str) -> tuple[bool, str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="检查 GitHub Pages 自定义域名 CNAME（docs.phase-barrier.dev，v0.48.0）"
+        description="检查 GitHub Pages 自定义域名 CNAME（docs.xshayncka.dev，v0.48.0）"
     )
     parser.add_argument("--cname", default=str(DEFAULT_CNAME), help="CNAME 文件路径（默认 docs/CNAME）")
-    parser.add_argument("--domain", default=DEFAULT_DOMAIN, help="期望域名（默认 docs.phase-barrier.dev）")
+    parser.add_argument("--domain", default=DEFAULT_DOMAIN, help="期望域名（默认 docs.xshayncka.dev）")
     parser.add_argument(
         "--strict",
         action="store_true",

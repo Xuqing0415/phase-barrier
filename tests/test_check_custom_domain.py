@@ -32,11 +32,11 @@ class TestCheckCname:
 
     def test_matching_cname_ok(self, tmp_path, capsys):
         cname = tmp_path / "CNAME"
-        cname.write_text("docs.phase-barrier.dev\n", encoding="utf-8")
+        cname.write_text("docs.xshayncka.dev\n", encoding="utf-8")
         rc = ccd.main(["--cname", str(cname)])
         assert rc == 0
         out = capsys.readouterr().out
-        assert "OK" in out and "docs.phase-barrier.dev" in out
+        assert "OK" in out and "docs.xshayncka.dev" in out
 
     def test_mismatch_warns_default_and_fails_strict(self, tmp_path, capsys):
         cname = tmp_path / "CNAME"

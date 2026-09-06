@@ -42,7 +42,7 @@ def test_action_description_marketplace_ready(action_meta):
 def test_action_all_inputs_have_descriptions(action_meta):
     """每个 input 都有清晰用途说明，方便 Marketplace 参数引用与工作流编辑器提示。"""
     inputs = action_meta["inputs"]
-    assert len(inputs) == 12
+    assert len(inputs) == 13   # 含 expected_failure（CI 自测专用）
     for name, meta in inputs.items():
         desc = (meta.get("description") or "").strip()
         assert len(desc) >= 20, f"inputs.{name} 描述过短"

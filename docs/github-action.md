@@ -28,6 +28,7 @@ Agent 产出的工作区未达到期望阶段时，CI 直接失败。
 | `user_request` | 空 | advance 首次初始化时记录的用户需求原文 |
 | `version` | 空 | 安装的 phase-barrier 版本（留空取最新版） |
 | `local` | `false` | 安装本地仓库代码而非 PyPI（CI 自测用） |
+| `expected_failure` | `false` | CI 自测专用：把“门禁应拒绝”当作预期结果（allowed=false、exit 0，不产生 `::error::` 注释） |
 
 **参数联动（v0.25.0）**：`mode` 决定需要哪些参数——`advance` 需配 `to`，`check` 需配 `stage`，`exec` 需配 `command`；不满足时门禁直接失败并输出 `::error::`。
 

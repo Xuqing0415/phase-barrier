@@ -65,6 +65,10 @@ inputs:
     description: "Install from the local repository instead of PyPI (CI self-test only)."
     required: false
     default: "false"
+  expected_failure:
+    description: "CI self-test only: treat a rejected gate as the expected outcome (allowed=false, exit 0, suppress ::error:: annotations)."
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -91,6 +95,10 @@ runs:
       id: gate
       shell: bash
       run: |
+        set -euo pipefail
+        EXPECT_FAIL_ACTION="${{ inputs.expected_failure }}"
+
+        run_gate() {
         set -euo pipefail
         WS="${{ inputs.workspace }}"
         MODE="${{ inputs.mode }}"
@@ -215,3 +223,18 @@ runs:
           echo "allowed=true" >> "$GITHUB_OUTPUT"
           echo "phase-barrier 门禁通过：当前阶段 $STAGE >= 期望阶段 $EXPECTED"
         fi
+        }
+
+        if [ "$EXPECT_FAIL_ACTION" == "true" ]; then
+          set +e
+          ( run_gate ) 2>&1 | sed 's/^::error::/[gate-error] /'
+          RC=${PIPESTATUS[0]}
+          set -e
+          if [ "$RC" -eq 0 ]; then
+            echo "::error::phase-barrier expected_failure=true 自测：门禁意外通过（RC=0）"
+            exit 1
+          fi
+          echo "phase-barrier 门禁按预期失败（expected_failure 自测模式，allowed=false）"
+          exit 0
+        fi
+        run_gate

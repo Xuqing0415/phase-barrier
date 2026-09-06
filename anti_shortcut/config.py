@@ -201,6 +201,11 @@ class TestAssertionQualityOptions(BaseModel):
     strict: bool = True
     # 每个 test 函数断言需覆盖至少 N 个不同目标（根标识符/被调函数）；0 关闭该子检查
     min_assert_targets: int = 0
+    # 可选命名语义严格档（累积在 main，未发版）：test 函数名需含行为动词
+    # （should / returns / raises 等 allowlist）或 spec 承诺的功能关键词之一，
+    # 拒绝 test_1 / test_a / test_one 式占位命名；仅对含断言的 test 函数生效。
+    # 默认关，避免误伤既有命名风格。
+    require_meaningful_names: bool = False
     stages: list[int] = Field(default_factory=lambda: [2])
 
     @field_validator("min_assert_targets")

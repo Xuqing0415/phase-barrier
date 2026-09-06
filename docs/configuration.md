@@ -101,6 +101,7 @@ semantic:
     enabled: true
     strict: true             # true=弱函数即拒绝；false=仅警告
     min_assert_targets: 0    # 可选严格档：每测试覆盖 >= N 个不同断言目标（0 关闭）
+    require_meaningful_names: false  # 可选命名严格档：名称需含行为动词 / spec 功能关键词
     stages: [2]
   implementation_traceability:  # 实现-文档双向追踪（阶段 3，仅 Python），防答非所问
     enabled: true

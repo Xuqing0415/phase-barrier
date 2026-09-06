@@ -107,6 +107,11 @@ spec 未声明任何 REQ 时该校验自动跳过（不强制所有项目使用�
 - `min_assert_targets`（v0.51.0，默认 0 关闭）：开启后每个 test 函数必须覆盖至少
   N 个不同“断言目标”（根标识符 / 被调函数；属性链只计根对象，如 `user.age` 计
   `user`），低于阈值按 `too_few_targets` 拒绝并给出目标清单；
+- `require_meaningful_names`（默认 false 关闭）：开启后 test 函数名需含
+  行为动词（`should` / `returns` / `raises` 等 allowlist）或 spec 承诺的
+  功能关键词之一，否则按 `generic_name` 拒绝——拦截 `test_1` / `test_a` /
+  `test_one` 式占位命名；仅对含断言的 test 函数生效。动词清单为保守
+  allowlist（宁可漏报不强报），启用前建议先在小范围试点；
 - 仅支持 Python（其他语言自动跳过）；语法错误文件跳过不误伤。
 
 ## 内置校验器五：实现-文档双向追踪（implementation_traceability）
@@ -160,6 +165,7 @@ semantic:
     enabled: true            # 默认 false
     strict: true             # true=弱函数即拒绝；false=仅警告
     min_assert_targets: 0    # 可选严格档：每测试覆盖 >= N 个不同断言目标（0 关闭）
+    require_meaningful_names: false  # 可选命名严格档：名称需含行为动词 / spec 功能关键词
     stages: [2]              # 在阶段 2（测试用例编写）推进时校验
   implementation_traceability:  # 实现-文档双向追踪：spec 承诺实体须落地（阶段 3，仅 Python）
     enabled: true            # 默认 false

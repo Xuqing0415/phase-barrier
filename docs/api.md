@@ -38,7 +38,7 @@ pip install phase-barrier        # import anti_shortcut
 | `anti_shortcut.semantic.RequirementCoverageValidator` | 需求追踪：spec `REQ-001` -> 测试 `# REQ-001` 引用（阶段 2） |
 | `anti_shortcut.semantic.MutationScoreValidator` | Python AST 变异测试：存活变异体过多即测试质量不足（阶段 4） |
 | `anti_shortcut.semantic.SpecSpecificityValidator` | spec 具体性五维校验：实体 / 签名 / 技术决策 / 需求锚点 / 套话句式（阶段 1） |
-| `anti_shortcut.semantic.TestAssertionQualityValidator` | 测试断言质量：拒绝 `assert True` 等纯常数断言，仅 Python；可配 `min_assert_targets` 严格档（阶段 2） |
+| `anti_shortcut.semantic.TestAssertionQualityValidator` | 测试断言质量：拒绝 `assert True` 等纯常数断言，仅 Python；可配 `min_assert_targets` / `require_meaningful_names` 严格档（阶段 2） |
 | `anti_shortcut.semantic.ImplementationTraceabilityValidator` | 实现-文档双向追踪：spec 承诺实体须在实现源码中落地，仅 Python（阶段 3） |
 | `anti_shortcut.semantic.analyze_implementation_traceability` / `extract_traceable_spec_entities` / `extract_public_symbols` | 双向追踪分析入口与提取辅助（可追踪实体 / 实现公共符号） |
 | `anti_shortcut.semantic.extract_request_anchors` / `extract_concrete_entities` / `extract_interface_signatures` | spec 具体性提取辅助（需求锚点 / 具体实体 / 接口签名，供自定义校验器复用） |

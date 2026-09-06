@@ -208,6 +208,7 @@ def render_config(
         "#   test_assertion_quality:  # 断言质量：拒绝 assert True 等纯常数断言",
         "#     enabled: true",
         "#     min_assert_targets: 2  # 可选严格档：每测试覆盖 >= N 个不同行为目标",
+        "#     require_meaningful_names: true  # 可选命名严格档：名称需含行为动词 / spec 关键词",
         "#   implementation_traceability:  # 实现-文档双向追踪：spec 承诺实体须落地",
         "#     enabled: true",
         "#     max_missing: 0",

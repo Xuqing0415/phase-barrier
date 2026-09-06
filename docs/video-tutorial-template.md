@@ -35,7 +35,7 @@
    - 插件生态：GitHub topic `phase-barrier-plugin` 自动收录
 
 [2:50-3:00] 行动号召
-   Star / 文档站（xuqing0415.github.io/phase-barrier）/ 插件投稿 / 提 Issue
+   Star / 文档站（docs.xshayncka.dev）/ 插件投稿 / 提 Issue
 ```
 
 ## 3. 录制环境准备

@@ -28,7 +28,7 @@ GitHub Action、K8s sidecar（gRPC/HTTP）、Docker 一键体验与插件自动�
 | CI 矩阵 | Linux / Windows / macOS × Python 3.11-3.14 | 真实语言工具链全量激活 |
 | 测试 | 900+（发布前以 collect-only 为准） | 覆盖率门禁 ≥90% |
 | 分发 | PyPI + GitHub Release（sigstore 签名）| GitHub Action Marketplace |
-| 文档站 | <https://xuqing0415.github.io/phase-barrier/> | MkDocs |
+| 文档站 | <https://docs.xshayncka.dev/> | MkDocs |
 | 一键体验 | `docker run --rm -it ghcr.io/xuqing0415/phase-barrier-demo` | 零安装 |
 
 ## 平台帖子模板
@@ -94,7 +94,7 @@ Repo: https://github.com/Xuqing0415/phase-barrier
 ## 截图素材建议
 
 - 拦截演示：运行 `python -m anti_shortcut inspect` 与一次被拦截的推进，截取终端。
-- 状态页：<https://xuqing0415.github.io/phase-barrier/plugin-status/>。
+- 状态页：<https://docs.xshayncka.dev/plugin-status/>。
 - CI 徽章：仓库 README 顶部（CI / PyPI / Coverage）。
 - Docker 演示：`docker run --rm -it ghcr.io/xuqing0415/phase-barrier-demo` 录屏首帧。
 

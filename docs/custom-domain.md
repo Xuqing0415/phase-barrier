@@ -1,12 +1,12 @@
-# 自定义域名部署（可选）
+# 自定义域名（docs.xshayncka.dev）
 
-phase-barrier 官方文档站默认托管在 GitHub Pages：
+phase-barrier 官方文档站托管在 GitHub Pages，当前启用自定义域名：
 
-- 默认地址：<https://xuqing0415.github.io/phase-barrier/>
-- 可选域名：`docs.xshayncka.dev`（**未启用**时为可选项，不配置不影响任何功能）
+- 正式地址：<https://docs.xshayncka.dev/>（2026-09-06 启用：DNS / CNAME / HTTPS 均已配置完成）
+- 默认地址：<https://xuqing0415.github.io/phase-barrier/>（GitHub Pages 默认地址，配置自定义域名后自动 301 重定向）
 
-本文说明如何把 `docs.xshayncka.dev` 指向 GitHub Pages，并提供自动化检查脚本。
-配置前请确认你拥有该域名的 DNS 控制权；**在 DNS 生效前不要提交 `CNAME` 文件**，
+本文记录如何把 `docs.xshayncka.dev` 指向 GitHub Pages，并提供自动化检查脚本；
+迁移新域名或回滚时可参照本文步骤。DNS 校验通过前不要提交 `CNAME` 文件，
 否则 GitHub Pages 会因无法校验域名而暂时中断默认地址访问。
 
 ## 工作原理
@@ -97,6 +97,6 @@ Pages 设置里的自定义域名，在 `Settings -> Pages` 中清除即可。
 | `check_custom_domain.py --strict` 退出 1 | 仓库内尚无 `CNAME` 或内容与期望域名不一致 |
 | `nslookup xshayncka.dev 8.8.8.8` 返回 NXDOMAIN | 域名未注册或未接入公网 DNS：先完成注册与实名，再继续后续步骤 |
 
-> **状态（截至 2026-09-06）**：目标域名改为 `docs.xshayncka.dev`（`xshayncka.dev`
-> 已注册）；DNS CNAME 与 `docs/CNAME` 尚未配置，CI 检查输出非阻塞警告属预期；
-> DNS 就绪后按本文启用。
+> **状态（截至 2026-09-06）**：`docs.xshayncka.dev` 已启用——DNS CNAME、`docs/CNAME`、
+> GitHub Pages 自定义域名与 HTTPS 证书均配置完成，`https://docs.xshayncka.dev/` 返回 200，
+> 旧默认地址 301 重定向至新域名。

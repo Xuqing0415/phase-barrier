@@ -66,7 +66,7 @@
   插件仓库复制即用；CI 新增 `plugin-verify` 自测 job（本地安装示例插件端到端验证）。
   官方文档站：MkDocs + Material 主题（`docs/` 下 index / quickstart / usage / configuration /
   integrations / plugins / k8s / contributing / changelog），`.github/workflows/docs.yml`
-  构建并推送 `gh-pages` 分支，启用 Pages 后访问 https://xuqing0415.github.io/phase-barrier/ 。
+  构建并推送 `gh-pages` 分支，启用 Pages 后访问 https://docs.xshayncka.dev/ 。
 
 - **v0.30.0 已落地**：SWE-bench 门禁基准脚本化——新增 `benchmarks/swe_bench_gate.py` 模拟 SWE-bench 风格任务驱动 `AntiShortcutSkill`，统计 SOP 合规率 / 跳步拦截率 / 证据修复率 / resolve 率，支持 `--json` / `--fail-fast` 阈值门禁并纳入 CI bench job；配套冒烟测试 6 个与教程“脚本化基准”章节。
 
@@ -276,9 +276,11 @@
   空壳测试不再能仅靠结构合规通过；v0.51.0 补上“深度补全第二层”（spec 承诺实体
   须在实现中落地，防答非所问；断言目标数严格档），需求 / spec / 测试 / 实现之间的
   可验证关联链闭合。
+- 自定义域名 `docs.xshayncka.dev` 已启用（2026-09-06：注册 `xshayncka.dev`、
+    DNS CNAME、`docs/CNAME` 与 GitHub Pages HTTPS 证书均配置完成，站点上线，
+    旧默认地址 301 重定向；配置与回滚见 [custom-domain.md](custom-domain.md)），
+    该项已清零。
 - 仍属外部 / 资源依赖、无法在本仓库单方面清零：
-  - 自定义域名 `docs.xshayncka.dev`：`xshayncka.dev` 已于 2026-09-06 注册，
-    DNS CNAME 与 `docs/CNAME` 待配置（未启用，可选）；
   - 真实第三方插件数量依赖社区采用（工具与流程就绪，索引目前含官方模板仓库 1 条
     自动条目）；
   - Alpha-SWE 上游 PR #3 已合入（2026-08-30，合并提交 128e6a4，见 docs/integrations.md），

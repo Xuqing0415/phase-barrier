@@ -83,7 +83,10 @@ jobs:
           if-no-files-found: error
 
       - name: Commit updated plugins.json
-        if: always()
+        # 只允许 main 自动提交：schedule 始终在默认分支（main）运行，但
+        # workflow_dispatch 可从任意分支手动触发——此时若直接 push HEAD:main，
+        # 会把该分支的 plugins.json / 状态页内容误推到 main。
+        if: always() && github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

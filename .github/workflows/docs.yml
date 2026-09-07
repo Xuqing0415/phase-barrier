@@ -25,6 +25,9 @@ concurrency:
 jobs:
   deploy:
     name: Build and deploy MkDocs site
+    # workflow_dispatch 可从任意分支手动触发，若不加保护会把非 main 分支内容
+    # 部署到生产 gh-pages（docs.xshayncka.dev）；push（main / tags）不受影响。
+    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

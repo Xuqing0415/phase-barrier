@@ -96,3 +96,122 @@ python benchmarks/swebench_runner.py \
   包装脚本完成（推荐复用官方 harness 的 `run_evaluation`）。
 - 建议从小样本（20–50 实例）开始，控制 Docker 与算力成本；补丁通过率等细粒度指标
   可由包装脚本继续扩展标记（本 harness 已对额外 `PB_*` 行保持透传兼容）。
+
+
+## 六、实测记录（2026-09-06：Windows 本机跑通官方 harness 并产出首批数据）
+
+数据：官方 `SWE-bench/SWE-bench_Lite` dev 分片（避开公共 test），3 个实例、跨两个仓库：
+`marshmallow-code__marshmallow-1343` / `-1359` 与 `pydicom__pydicom-1256`。
+评分用官方 `run_evaluation`（swebench 5.0.2）+ 官方 Docker 评测镜像，gold patch 对照
+resolved=1（链路自检通过）。Agent 为 DeepSeek `deepseek-v4-flash`，
+同实例同环境跑 baseline / gated 双组。
+
+| 实例 | 组别 | resolve | 门禁终态 | 说明 |
+|---|---|---|---|---|
+| marshmallow-1343 | baseline | 1 | - | 33 轮 / 152s |
+| marshmallow-1343 | gated | 1 | 阶段 6 | 37 轮，推进被拒 1 次（证据不足），写/执行拦截 0 |
+| marshmallow-1359 | baseline | 1 | - | 32 轮 / 156s；补丁与 gold 逐行等价 |
+| marshmallow-1359 | gated | 1 | 阶段 6 | 33 轮，推进被拒 1 次，写/执行拦截 0 |
+| pydicom-1256 | baseline | 1 | - | 33 轮 / 136s；`jsonrep.py` 向 `from_json` 补传 bulk handler |
+| pydicom-1256 | gated | 1 | 阶段 6 | 27 轮 / 87s；推进/写/执行拦截均 0，证据链完整 |
+
+要点：
+- 门禁组均完整走通 spec → 复现测试（修复前红）→ 实现 → 测试通过 → 交付；先测后码顺序真实成立。
+- 存量仓库需配置 `require_assert_per_test: false`（仓库历史测试无断言会误伤阶段 2）与
+  `min_test_functions: 1`，属产品既有配置项。
+- pydicom-1256 gated 组 0 拦截即通关：模型在门禁提示下自觉按 spec → 复现测试 → 实现 →
+  测试通过 → 交付的顺序行动，未尝试越权；新增复现测试 `tests/test_pb_repro.py` 为带
+  真实断言的先红后绿用例（SQ 内 BulkDataURI 交给 handler），与 baseline 走同一修复点，
+  官方 F2P 均通过。
+- 数据质量备注：`pydicom-1413` gold 在官方镜像上自身 unresolved（patch 可应用、F2P
+  3/3 通过，但 PASS_TO_PASS 有 2 例回归），属实例镜像环境不匹配，已排除出 Agent 评测。
+- Windows 侧工程问题与修复：swebench 5.x 需用带 `image` 列的 `SWE-bench/SWE-bench_Lite`；
+  数据集与 harness 写文件需 CRLF→LF（容器内 eval.sh 带 CR 行尾会全挂）；Docker Hub 不通时经镜像站拉取后 `docker tag` 回官方名；`PYTHONUTF8=1`。
+- 样本仍小（3 实例 × 2 组，跨 marshmallow / pydicom 两生态）且实例偏易：本组实验门禁对
+  resolve 无负作用（3/3 双组全过）且留下完整合规证据链；量化影响需扩至 10-30 实例
+  （django / sympy 等更难点）。完整记录见
+  `.pytest_tmp/bench_data/report.md`（本地实验产物，未入库）。
+
+## 七、批量扩展：选任务 + 双组编排脚本（2026-09）
+
+单实例手工跑通后，仓库新增两个脚本把“3 实例 → 10-30 实例”的启动门槛降到一条命令：
+
+### 7.1 选任务：`scripts/select_swe_tasks.py`
+
+按仓库分层抽样，可指定必须覆盖的仓库、排除已知数据质量问题实例（如 `pydicom__pydicom-1413`），
+固定随机种子保证可复现：
+
+```bash
+# dev 分片（23 实例，6 仓库）抽 12 个
+python scripts/select_swe_tasks.py --dataset swebench_dev.json --count 12 \
+    --exclude pydicom__pydicom-1413 --out tasks_dev12.json
+
+# 含 django/sympy 的 Lite test 抽 20 个，django 与 sympy 各至少 2 个
+python scripts/select_swe_tasks.py --dataset swebench_test.json --count 20 \
+    --must-repo django/django sympy/sympy --per-repo 2 --out tasks_lite20.json
+```
+
+注意：dev 分片只有 marshmallow / pvlib / pydicom / astroid / pyvista / sqlfluff，**没有
+django / sympy**；要覆盖高难度仓库需用含 `image` 列的 `SWE-bench/SWE-bench_Lite` test 分片。
+test 分片与公共榜单重叠——本仓库只做内部 baseline-vs-gated 相对对比，不提交榜单；若介意，
+可改用 `SWE-bench_Verified` 等非重叠分片（数据列结构一致即可）。
+
+### 7.2 批量运行：`scripts/run_swebench_batch.py`
+
+对任务清单逐实例执行 baseline / gated Agent 运行并接官方评分，追加写 `results.csv`。
+PowerShell 请用**单行**执行（下方示例已展平）；bash 可用 `\` 续行。任务清单/数据集在
+`.pytest_tmp/bench_data/` 下，命令里要带该前缀：
+
+```powershell
+python scripts/run_swebench_batch.py --tasks .pytest_tmp/bench_data/tasks_dev12.json --dataset .pytest_tmp/bench_data/swebench_dev.json --agent-python .pytest_tmp/venv312/Scripts/python.exe --agent-script .pytest_tmp/bench_data/run_agent.py --grade-python .pytest_tmp/sweb_venv/Scripts/python.exe --grade-script .pytest_tmp/bench_data/grade.py --workdir-root .pytest_tmp/bench_data/wd --venv-map .pytest_tmp/bench_data/venv_map.json --modes baseline,gated --max-turns 60 --prepare-workdir --skip-existing --outdir .pytest_tmp/bench_data/results
+```
+
+前置条件与注意点（沿用第六节踩坑结论）：
+
+- 每个实例的官方 Docker 评测镜像须已拉取并 tag 回官方名（Docker Hub 不通时经镜像站拉取，
+  如 `docker.1panel.live`）；`run_evaluation` 会按 `image` 列自动找镜像。
+- 每个仓库需要一个装好依赖的 venv（py3.12 + pytest；marshmallow 2.x 需 setuptools 兼容层，
+  pydicom 2.1 需 `setuptools<81` 提供 `pkg_resources`）；多仓库用 `--venv-map` 传 JSON 文件，
+  例如 `{"marshmallow-code/marshmallow": ".../mm_venv/Scripts/python.exe",
+  "pydicom/pydicom": ".../pd_venv/Scripts/python.exe"}`（键支持 repo 或 instance_id）。
+- 预检与断点续跑：默认先检查 venv 与 Docker 镜像，缺失的 (实例, 组别) 直接跳过并打印缺什么，
+  不会白跑 Agent（`--no-preflight` 关闭）；`results.csv` 已记录的行默认跳过（`--rerun` 强制重跑）。
+- `--prepare-workdir` 用 `git init + fetch --depth 1 <base_commit>` 自动建工作区；数据集与
+  harness 写文件 CRLF→LF 修复、`PYTHONUTF8=1` 见第六节。
+- 单实例可加 `--instance <iid>` 调试。
+- `--venv-map` 指向 JSON（键为 repo 或 instance_id，值为该环境 python 绝对/仓库相对路径）；
+  每新备好一个仓库的 venv 就往 JSON 加一行再重跑，未映射的行会被预检跳过。
+  本仓库示例见 `.pytest_tmp/bench_data/venv_map.json`（marshmallow-1343/1359、pydicom-1256）。
+
+### 7.3 新增实例的环境准备（Windows PowerShell 操作序列）
+
+批量脚本只会运行“venv 已映射 + Docker 镜像已就绪”的 (实例, 组别)。给一个新实例开跑的操作：
+
+```powershell
+# 1) 共享 bench venv（一次性；仓库代码从工作区直接导入，venv 只需 pytest + 常见依赖）
+python -m venv .pytest_tmp/bench_data/bench_venv
+.pytest_tmp/bench_data/bench_venv/Scripts/python.exe -m pip install -U pip
+.pytest_tmp/bench_data/bench_venv/Scripts/python.exe -m pip install pytest numpy pandas "setuptools<81"
+
+# 2) 往 .pytest_tmp/bench_data/venv_map.json 追加一行（示例：sqlfluff-1517）
+#    "sqlfluff__sqlfluff-1517": ".pytest_tmp/bench_data/bench_venv/Scripts/python.exe"
+
+# 3) 拉官方评测镜像（直连 Docker Hub 不通时经镜像站拉取后 tag 回官方名）
+docker pull docker.1panel.live/swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-1517:latest
+docker tag docker.1panel.live/swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-1517:latest swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-1517:latest
+
+# 4) 可选：先在工作区确认测试可收集（避免 Agent 白跑），测试目录以仓库为准
+python -m pytest --collect-only -q
+
+# 5) 重跑 7.2 的批量命令——已完成自动跳过，新备好的实例开始执行
+```
+
+各仓库要点：
+
+- 纯 Python（sqlfluff / astroid）：bench_venv 即可；astroid 测试还依赖 pylint 等，按报错补装。
+- pvlib：需要 numpy / pandas / scipy（bench_venv 已含前两者，缺 scipy 补装）。
+- pyvista：依赖 VTK，环境重，建议放最后或从任务清单剔除。
+- pydicom-1256 已用 pd_venv（py3.12 + numpy + setuptools<81）；同版本其他实例可复用它，
+  版本不同需确认依赖后再映射。
+
+

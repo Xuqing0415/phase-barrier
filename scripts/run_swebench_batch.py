@@ -209,6 +209,7 @@ def main() -> int:
                 try:
                     proc = run([
                         str(args.agent_python), str(args.agent_script),
+                        "--dataset", str(args.dataset),
                         "--instance", iid, "--workdir", str(wd),
                         "--venv", venv_py, "--mode", mode,
                         "--label", label,

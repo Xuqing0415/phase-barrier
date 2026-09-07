@@ -285,7 +285,13 @@
     自动条目）；
   - Alpha-SWE 上游 PR #3 已合入（2026-08-30，合并提交 128e6a4，见 docs/integrations.md），
     该项不再阻塞，剩余仅为跨仓库推广执行；
-  - 大规模 SWE-bench 评测与视频 / 推广实际执行为资源型长期项（harness / 模板已备）。
+  - 大规模 SWE-bench 评测与视频 / 推广实际执行为资源型长期项（harness / 模板已备）；
+  2026-09-06 已在 marshmallow×2 + pydicom×1 共 3 个真实实例上跑通官方 harness 双组
+  实测（全部 resolve=1，记录与结论见 [swe-bench-real.md](tutorials/swe-bench-real.md)），
+  扩至 10-30 实例规模化仍待资源投入。
+- SWE-bench 批量扩展工具已入库：`scripts/select_swe_tasks.py`（按仓库分层抽样、
+  must-repo / exclude / 固定种子）与 `scripts/run_swebench_batch.py`（双组编排 + 官方评分 +
+  results.csv），10-30 实例规模化实验已收敛为“准备镜像/venv → 一条命令”的流程。
 
 发布为里程碑驱动：日常改动累积在 main，仅用户可感知里程碑 / 紧急修复才打 tag
 （同日不重复发布）；发版前把累积变化汇总进 CHANGELOG（详见 [发布流程](release.md)）。

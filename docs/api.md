@@ -50,6 +50,21 @@ pip install phase-barrier        # import anti_shortcut
 
 完整用法与配置见 [语义级校验](semantic-validation.md)。
 
+## 五道防线（v0.52.0）
+
+| 符号 | 说明 |
+|------|------|
+| `anti_shortcut.defense.run_defense_checks` | 汇总执行触发且启用的防线；任一失败即阻止推进，返回 `(ok, message, evidence)` |
+| `anti_shortcut.defense.DefenseCheckResult` / `DefenseLine` | 防线检查结果与基类契约（`name` / `trigger` / `run(...)`） |
+| `anti_shortcut.defense.requirement_template.RequirementTemplateLine` | 防线 1：需求模板（目标 / 禁止行为 / 接口 / 验收），`strict` 拒绝自由文本 |
+| `anti_shortcut.defense.dual_review.DualReviewLine` | 防线 2：双模型交叉复核（正向覆盖 A + 反向篡改 B），fail-closed |
+| `anti_shortcut.defense.formal_check.FormalCheckLine` | 防线 3：约束 DSL 静态区间矛盾检测 + 可选 TLC 模型检查 |
+| `anti_shortcut.defense.behavior_audit.BehaviorAuditLine` | 防线 4：trace.jsonl 与 spec 禁止操作比对（交付前审计） |
+| `anti_shortcut.defense.human_review.HumanReviewLine` / `compute_risk_score` / `approve_request` | 防线 5：风险评分 + 确定性抽样 + 人工批准 |
+| `anti_shortcut.skill.AntiShortcutSkill._record_trace` | 防线 4 trace 采集（仅 `defense.behavior_audit.enabled` 时写入门禁目录） |
+
+配置与验收对照见 [五道防线](five-lines.md)；防线证据落盘 `.agent_gate/defense/`。
+
 ## 语言适配层
 
 | 符号 | 说明 |

@@ -44,6 +44,14 @@ from .evidence import (
 )
 from .paths import sha256_file
 from .languages import get_adapter
+from .defense._common import evidence_path, read_json
+from .defense.human_review import approve_request
+from .defense.requirement_template import (
+    TEMPLATE_SKELETON,
+    build_requirement,
+    format_template_yaml,
+    validate_requirement,
+)
 from .plugins import discover_plugins, summarize_plugin_verification, verify_plugins
 from .proxy import ExecDenied, GateProxy, ProxyError, WriteDenied
 from .sdk import PhaseBarrier, classify_stage_path
@@ -122,6 +130,75 @@ def _cmd_init(args: argparse.Namespace) -> int:
         print(f"OK: 已生成配置 {out}")
         print(f"    语言: {args.language or '自动检测'}")
         print("    下一步：python -m anti_shortcut inspect --workspace . --config " + str(out))
+    return 0
+
+
+def _cmd_init_requirement(args: argparse.Namespace) -> int:
+    """防线 1：生成需求模板（v0.52.0）。"""
+    ws = Path(args.workspace).resolve()
+    if not ws.is_dir():
+        raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
+    out_path = ws / (args.output or "requirement.yaml")
+    if args.example:
+        text = TEMPLATE_SKELETON.format(
+            goal_max_chars=args.goal_max_chars or 200,
+            min_forbidden=args.min_forbidden or 1,
+            min_interfaces=args.min_interfaces or 2,
+            min_acceptance=args.min_acceptance or 2,
+        )
+        if out_path.exists() and not args.force:
+            raise FileExistsError(f"模板文件已存在: {out_path}（使用 --force 覆盖）")
+        out_path.write_text(text, encoding="utf-8")
+        if args.json:
+            print(json.dumps({"ok": True, "output": str(out_path)}, ensure_ascii=False, indent=2))
+        else:
+            print(f"OK: 已生成需求模板 {out_path}")
+            print("    按文件内注释填写四个区块后即可进入防线 1 校验")
+        return 0
+    data = build_requirement(
+        args.goal or "",
+        [s.strip() for s in (args.forbidden or "").split(";") if s.strip()],
+        [s.strip() for s in (args.interfaces or "").split(";") if s.strip()],
+        [s.strip() for s in (args.acceptance or "").split(";") if s.strip()],
+    )
+    cfg = load_config(args.config)
+    opts = cfg.defense.requirement_template
+    ok, issues, _stats = validate_requirement(data, opts)
+    if not ok and not args.force:
+        print("ERROR: 需求模板校验未通过：" + "；".join(issues), file=sys.stderr)
+        print("       仍想写入请使用 --force（后续防线 1 在推进阶段时会拒绝）", file=sys.stderr)
+        return 1
+    if out_path.exists() and not args.force:
+        raise FileExistsError(f"模板文件已存在: {out_path}（使用 --force 覆盖）")
+    out_path.write_text(format_template_yaml(data) + "\n", encoding="utf-8")
+    if args.json:
+        print(json.dumps({"ok": True, "output": str(out_path), "valid": ok}, ensure_ascii=False, indent=2))
+    else:
+        print(f"OK: 已写入需求模板 {out_path}")
+        print(f"    校验：{'通过' if ok else '未通过（--force 强制写入，推进阶段将被防线 1 拦截）'}")
+    return 0
+
+
+def _cmd_review_approve(args: argparse.Namespace) -> int:
+    """防线 5：人工批准抽样复核（v0.52.0）。"""
+    ws = Path(args.workspace).resolve()
+    if not ws.is_dir():
+        raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
+    cfg = load_config(args.config)
+    request_id = args.request_id
+    if not request_id:
+        payload = read_json(evidence_path(ws, cfg, "human_review_request.json"))
+        if not payload or not payload.get("request_id"):
+            raise FileNotFoundError(
+                ".agent_gate/defense/human_review_request.json 不存在或无 request_id；"
+                "请先触发一次推进以生成复核请求，或显式传 --request-id"
+            )
+        request_id = str(payload["request_id"])
+    approve_request(ws, cfg, request_id, reason=args.reason or "")
+    if args.json:
+        print(json.dumps({"ok": True, "request_id": request_id}, ensure_ascii=False, indent=2))
+    else:
+        print(f"OK: 复核请求 {request_id} 已批准，可重新推进阶段（将放行交付）")
     return 0
 
 
@@ -545,6 +622,33 @@ def build_parser() -> argparse.ArgumentParser:
     p_init.add_argument("--audit-url", type=str, default="", help="审计远程推送端点（SIEM / webhook）")
     p_init.add_argument("--rules", type=str, default="", help="内置安全规则，逗号分隔（如 no_path_traversal,no_shell_injection）")
     p_init.set_defaults(func=_cmd_init)
+
+    p_req = sub.add_parser(
+        "init-requirement",
+        parents=[common],
+        help="防线 1：生成需求模板（目标/禁止行为/接口/验收，v0.52.0）",
+    )
+    p_req.add_argument("--output", type=str, default="requirement.yaml", help="输出文件路径")
+    p_req.add_argument("--goal", type=str, default="", help="目标（<=200 字）")
+    p_req.add_argument("--forbidden", type=str, default="", help="禁止行为清单，分号分隔")
+    p_req.add_argument("--interfaces", type=str, default="", help="输出接口签名，分号分隔")
+    p_req.add_argument("--acceptance", type=str, default="", help="验收判定标准，分号分隔")
+    p_req.add_argument("--example", action="store_true", help="生成带注释的模板骨架（人工填写）")
+    p_req.add_argument("--force", action="store_true", help="覆盖已存在的模板文件")
+    p_req.add_argument("--goal-max-chars", type=int, default=0, help="目标字数上限（默认 200）")
+    p_req.add_argument("--min-forbidden", type=int, default=0, help="禁止行为最低条数（默认 1）")
+    p_req.add_argument("--min-interfaces", type=int, default=0, help="接口签名最低条数（默认 2）")
+    p_req.add_argument("--min-acceptance", type=int, default=0, help="验收标准最低条数（默认 2）")
+    p_req.set_defaults(func=_cmd_init_requirement)
+
+    p_review = sub.add_parser(
+        "review-approve",
+        parents=[common],
+        help="防线 5：人工批准抽样复核请求（v0.52.0）",
+    )
+    p_review.add_argument("--request-id", type=str, default="", help="复核请求 ID（缺省取最新请求）")
+    p_review.add_argument("--reason", type=str, default="", help="批准原因（写入审计）")
+    p_review.set_defaults(func=_cmd_review_approve)
 
     p_inspect = sub.add_parser("inspect", parents=[common], help="查看当前门禁状态")
     p_inspect.set_defaults(func=_cmd_inspect)

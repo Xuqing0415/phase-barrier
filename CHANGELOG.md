@@ -4,6 +4,34 @@
 发布为里程碑驱动：日常改动累积于 main，仅在用户可感知里程碑或紧急修复时发版，
 同日不重复发布（详见 [docs/release.md](docs/release.md) 发布节奏）。
 
+## [0.52.0] - 2026-09-09
+
+- **feat: 五道防线（v0.52.0）**：在既有语义校验之上叠加“约束忠诚度”防线，
+  针对 Agent 的**隐性约束篡改**（spec / 实现中擅自弱化、删除、替换关键限制）。
+- **防线 1 需求模板**（`defense.requirement_template`，首个推进点 1->2）：自由文本
+  需求规范化为「目标 / 禁止行为清单 / 输出接口定义 / 验收判定标准」；`strict: true`
+  时缺模板即拒绝并列出缺失区块；模板写入状态证据作为后续防线比对基准；CLI 新增
+  `python -m anti_shortcut init-requirement`（骨架 / 参数两种模式）。
+- **防线 2 双模型交叉复核**（`defense.dual_review`）：实例 A 正向覆盖核查 + 实例 B
+  反向篡改核查（新增 / 删减 / 替换约束），OpenAI 兼容端点 + 独立 API key；两侧
+  同时 pass 才放行，调用失败默认拒绝（`fail_closed`），置信度不足拒绝；结论落盘
+  `.agent_gate/defense/dual_review.json`。
+- **防线 3 形式化校验**（`defense.formal_check`）：`constraints.yaml` 约束 DSL
+  （range / eq / neq / min_count / max_count）→ 静态区间矛盾检测（无外部依赖拦截
+  “密码 >= 8 且 <= 6”）+ 可选 TLC 模型检查；支持手写 `.tla`；无约束文件时降级
+  为警告不拦截。
+- **防线 4 运行时行为审计**（`defense.behavior_audit`）：Skill 包装工具把脱敏后的
+  调用写入 `.agent_gate/defense/trace.jsonl`；交付前比对 spec / 模板禁止操作
+  （db_schema / network / file_delete / secret + 自定义正则），命中即拒绝交付；
+  trace 缺测试命令默认警告、可配置拒绝。
+- **防线 5 概率人工复核**（`defense.human_review`）：风险评分（复杂度 / 双模型置信度 /
+  形式化缺口 / 审计偏离 / 变更规模）+ 确定性抽样；高风险必抽、低风险自动放行；抽样
+  生成 `.agent_gate/defense/human_review_request.json`，CLI `review-approve` 批准后放行。
+- **文档**：新增 `docs/five-lines.md`（配置 / 验收对照 / 证据位置），mkdocs 导航与
+  `init` 配置模板同步补充 `defense:` 注释块。
+- **测试**：新增 `tests/test_defense_lines.py` 27 个用例（配置默认值 / L1-L5 单层
+  与 Skill 端到端 / CLI），相关核心回归全绿。
+
 ## [0.51.0] - 2026-09-06
 
 - **feat: 深度补全第二层（v0.51.0）**：把“需求 -> spec -> 测试 -> 实现”的关联链

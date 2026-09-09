@@ -198,6 +198,7 @@ class StateManager:
                 "implementation": {},
                 "last_test_run": {},
                 "last_source_change_at_epoch": None,
+                "delivery_confirmed_at_epoch": None,
             },
         }
 
@@ -338,6 +339,9 @@ class StateManager:
                 raise ValueError(f"不允许跳跃阶段: {cur} -> {new_stage}")
             self._data["current_stage"] = new_stage
             self._data["completed_stages"].append(cur)
+            if new_stage == 6:
+                # 记录进入交付（阶段 6）的确认时间（审计用途；收尾判定见 delivery_clean）
+                self._data["evidence"]["delivery_confirmed_at_epoch"] = time.time()
             now = _now_iso()
             self._data["stage_history"].append(
                 {
@@ -369,6 +373,37 @@ class StateManager:
             result.setdefault("at", _now_iso())
             self._data["evidence"]["last_test_run"] = result
             self._atomic_write()
+
+    def mark_delivery_confirmed(self, *, at_epoch: float | None = None) -> None:
+        """显式记录交付确认时间戳（审计用途；幂等，可随时重算收尾状态）。"""
+        with self._mutate():
+            self._data["evidence"]["delivery_confirmed_at_epoch"] = (
+                time.time() if at_epoch is None else at_epoch
+            )
+            self._atomic_write()
+
+    def delivery_clean(self) -> bool:
+        """交付收尾校验：仅当到达阶段 6 且「最终测试全绿并覆盖最新代码」时为真。
+
+        判定规则（与阶段 5 回归校验同构，但可随时重算，防止进入交付后才发生的
+        红测 / 改码被遗漏）：
+        - current_stage >= 6；
+        - 最近一次测试运行 passed=True；
+        - 该次运行时间晚于最后一次源码 / 测试变更时间（若存在变更）。
+        任一不满足即视为「交付前最终测试未全绿」，不应计入已完成交付。
+        """
+        if self.current_stage < 6:
+            return False
+        tr = self._data["evidence"].get("last_test_run") or {}
+        if not tr.get("passed"):
+            return False
+        ran_at = tr.get("at_epoch")
+        if ran_at is None:
+            return False
+        changed_at = self._data["evidence"].get("last_source_change_at_epoch")
+        if changed_at is not None and ran_at <= changed_at:
+            return False
+        return True
 
     # ---------- 密钥轮换（v0.9.0） ----------
 

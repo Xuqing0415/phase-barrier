@@ -32,6 +32,18 @@
 - **测试**：新增 `tests/test_defense_lines.py` 27 个用例（配置默认值 / L1-L5 单层
   与 Skill 端到端 / CLI），相关核心回归全绿。
 
+## [0.53.0] - 2026-09-09
+
+- **feat: 交付收尾校验「最终测试全绿」（v0.53.0）**：阶段 6 只代表“交付阶段”，
+  不再自动等于“已交付”。`StateManager.delivery_clean()` 要求最近一次测试运行
+  passed=True 且晚于最后一次源码 / 测试变更；`GateSidecar.state()` 新增
+  `delivery_clean` 字段（`is_complete` 保持阶段单调语义不变）。修复真实评测
+  （seaborn-2848 gated）观测到的「进入阶段 6 后继续改码 / 红测仍计 completed」
+  盲点：收尾提取 / 计交付时须通过最终全绿校验。
+- **测试**：新增 `tests/test_delivery_final_green.py` 8 个用例（State 收尾判定 /
+  阶段 6 后红测与改码失效 / 重测恢复 / 跨重载持久化 / Sidecar 字段 / 端到端
+  红-绿恢复流），state / sidecar / proxy / sdk / grpc 回归全绿。
+
 ## [0.51.0] - 2026-09-06
 
 - **feat: 深度补全第二层（v0.51.0）**：把“需求 -> spec -> 测试 -> 实现”的关联链

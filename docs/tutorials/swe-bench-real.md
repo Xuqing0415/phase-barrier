@@ -250,7 +250,8 @@ gated 有 3 个实例完整走到阶段 6 并交付（sympy-11400、flask-4045�
   seaborn-2848 gated 因 Agent `git add` 后提取为空而误记 empty_patch；已改为
   `git diff HEAD` 并复核该实例（恢复补丁经官方 harness 重评分仍 0，行内 diff/note 已更正）。
 - 边界观测：seaborn-2848 gated 走到阶段 6 后，最后一轮 pytest 实为收集错误（exit 4）；
-  说明“阶段计数到 6”≠“交付前最终测试全绿”，与防线 4（事后行为审计）的动机一致，留待后续。
+  说明“阶段计数到 6”≠“交付前最终测试全绿”。该盲点已由 v0.53.0 交付收尾校验
+  （`delivery_clean()`：最近一次测试全绿且晚于最后一次源码/测试变更）闭环；
+  Scale-20 起，评测的 gate_completed 仅在最终全绿时才计 1。
 - 局限：60 轮上限 + flash 模型导致 resolve 偏低，baseline 与 gated 绝对数值均不具榜单意义，
   只用于**同条件下相对对比**；建议下一步换更强模型 / 提高轮数，或切 Verified 分片再测。
-

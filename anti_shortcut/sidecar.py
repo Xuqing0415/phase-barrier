@@ -86,6 +86,7 @@ class GateSidecar:
             "current_stage": self.skill.current_stage,
             "stage_name": self.skill.stage_name,
             "is_complete": self.skill.is_complete,
+            "delivery_clean": self.skill.state.delivery_clean(),
             "completed_stages": list(self.skill.state.completed_stages),
         }
 

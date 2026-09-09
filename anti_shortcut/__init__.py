@@ -11,6 +11,7 @@
 from importlib.metadata import PackageNotFoundError, version as _distribution_version
 
 from .config import STAGES, STAGE_META, GateConfig, load_config
+from .defense import DefenseCheckResult, run_defense_checks
 from .evidence import (
     EVIDENCE_MANIFEST_NAME,
     EvidenceManifest,
@@ -86,6 +87,8 @@ __all__ = [
     "SpecSpecificityValidator",
     "TestAssertionQualityValidator",
     "ImplementationTraceabilityValidator",
+    "DefenseCheckResult",
+    "run_defense_checks",
     "analyze_spec_specificity",
     "analyze_test_assertion_quality",
     "analyze_implementation_traceability",

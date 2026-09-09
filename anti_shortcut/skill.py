@@ -17,6 +17,8 @@ from typing import Any, Callable
 
 from .audit import get_audit_logger
 from .config import STAGES, GateConfig, load_config
+from .defense import run_defense_checks
+from .defense._common import append_jsonl, evidence_path, now_iso, redact_mapping
 from .evidence import EVIDENCE_MANIFEST_NAME, EvidenceManifest
 from .interceptors import (
     evaluate_rules,
@@ -248,6 +250,10 @@ class AntiShortcutSkill:
         def guarded(path: str | Path, content: Any, **kwargs: Any) -> Any:
             self.check_write_permission(path, content)
             result = original_write(path, content, **kwargs)
+            self._record_trace(
+                "write_file",
+                {"path": str(path), "content": content},
+            )
             kind = self._classify_path(Path(path))
             if kind in ("test", "source"):
                 self.state.mark_source_change(str(path))
@@ -268,6 +274,8 @@ class AntiShortcutSkill:
             cmd = command if isinstance(command, str) else " ".join(str(c) for c in command)
             self.check_exec_permission(command)
             result = original_exec(command, **kwargs)
+            exit_code = result.get("exit_code") if isinstance(result, dict) else None
+            self._record_trace("execute_command", {"command": cmd, "exit_code": exit_code})
             if is_language_test_command(cmd, self.config, self.adapter):
                 record = self._record_test_run(result)
                 self.state.mark_test_run(record)
@@ -301,6 +309,35 @@ class AntiShortcutSkill:
             max_tail=self.config.max_test_output_tail,
             adapter=self.adapter,
         )
+
+    # ---------- 防线 4：运行时 trace 采集（v0.52.0，默认关闭）----------
+
+    def _record_trace(self, tool: str, args: dict) -> None:
+        """记录一次工具调用到 ``.agent_gate/defense/trace.jsonl``（参数脱敏）。
+
+        仅在 ``config.defense.behavior_audit.enabled`` 时追加；写入门禁目录由
+        Skill 独占，Agent 侧工具无法伪造 / 篡改。任何异常都不影响主流程。
+        """
+        if not self.config.defense.behavior_audit.enabled:
+            return
+        try:
+            cfg = self.config.defense.behavior_audit
+            path = evidence_path(self.workspace, self.config, cfg.trace_file)
+            safe_args = redact_mapping(args)
+            if isinstance(safe_args.get("content"), str):
+                safe_args["content"] = safe_args["content"][:4000]
+            append_jsonl(
+                path,
+                {
+                    "ts": now_iso(),
+                    "event": "tool_call",
+                    "tool": tool,
+                    "args": safe_args,
+                    "stage": self.current_stage,
+                },
+            )
+        except Exception:  # pragma: no cover - trace 记录绝不影响门禁主流程
+            pass
 
     def install(self, tools: dict[str, Callable]) -> dict[str, Callable]:
         """把包装后的工具注入 Agent 的工具表（原地修改并返回）。
@@ -430,6 +467,23 @@ class AntiShortcutSkill:
             else:
                 new_stage = 5
                 msg = "测试未通过或代码在测试后被修改，进入修复与回归阶段"
+
+        # 五道防线（v0.52.0，默认全部关闭）：阶段推进路径确定后、写入状态前执行。
+        # 防线按 L1..L5 顺序 fail-fast：防线 4/5 只在真正进入交付（->6）时触发。
+        def_ok, def_msg, def_ev = run_defense_checks(
+            self.workspace, self.config, self.state, cur, new_stage
+        )
+        if not def_ok:
+            self.logger.warning(
+                "stage_advance_defense_rejected",
+                stage=cur,
+                to_stage=new_stage,
+                reason=def_msg,
+                evidence=def_ev,
+            )
+            return {"success": False, "stage": cur, "error": def_msg, "evidence": def_ev}
+        if def_ev:
+            ev = {**(ev or {}), "defense": def_ev}
 
         self.state.advance(new_stage, ev)
         self._record_evidence_signatures(cur, ev)

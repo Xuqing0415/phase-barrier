@@ -263,6 +263,166 @@ class ImplementationTraceabilityOptions(BaseModel):
         return value
 
 
+# ================= 五道防线配置（v0.52.0，全部默认关闭，不影响既有门禁行为） =================
+
+
+class RequirementTemplateOptions(BaseModel):
+    """防线 1：需求模板（阶段 0 -> 1）。把自由文本需求规范化为
+    「目标 / 禁止行为清单 / 输出接口定义 / 验收判定标准」四个必填区块，
+    作为后续所有防线的比对基准。
+
+    - ``enabled``：是否在阶段推进时执行本防线；
+    - ``strict``：为 true 时，自由文本需求（未提供模板文件）直接拒绝进入阶段 1，
+      并列出缺失区块；为 false 时缺失模板仅记录提示、不拦截。
+    """
+
+    enabled: bool = False
+    strict: bool = False
+    # 工作区根目录下的模板文件（YAML 或 JSON）
+    template_file: str = "requirement.yaml"
+    goal_max_chars: int = 200
+    min_forbidden_items: int = 1
+    min_interface_items: int = 2
+    min_acceptance_items: int = 2
+
+    @field_validator(
+        "goal_max_chars", "min_forbidden_items", "min_interface_items", "min_acceptance_items"
+    )
+    @classmethod
+    def _check_nonneg_int(cls, value: int, info) -> int:
+        if isinstance(value, bool) or value < 1:
+            raise ValueError(
+                f"defense.requirement_template.{info.field_name} 必须是 >= 1 的整数，得到 {value}"
+            )
+        return value
+
+
+class DualReviewModelOptions(BaseModel):
+    """防线 2 单侧模型配置（校验实例 A / B）。"""
+
+    endpoint: str = "https://api.openai.com/v1/chat/completions"
+    model: str = "gpt-4o-mini"
+    api_key_env: str = "OPENAI_API_KEY"
+    # 提示词文件路径；留空使用内置 prompts/coverage_check.txt（A）或 tamper_check.txt（B）
+    prompt_file: str = ""
+
+
+class DualReviewOptions(BaseModel):
+    """防线 2：双向语义校验（双模型交叉复核，阶段 1 -> 2）。
+
+    实例 A 做「正向覆盖核查」（需求条目在 spec 中是否有对应设计），
+    实例 B 做「反向篡改核查」（spec 是否新增 / 删减 / 替换了需求约束）。
+    两侧同时 pass 才放行；任一调用失败默认拒绝（``fail_closed``）。
+    """
+
+    enabled: bool = False
+    fail_closed: bool = True
+    timeout_seconds: float = 60.0
+    max_retries: int = 2
+    # 两侧置信度下限（0-1）；输出置信度低于该值视为不可靠 -> 拒绝
+    min_confidence: float = 0.0
+    reviewer_a: DualReviewModelOptions = Field(default_factory=DualReviewModelOptions)
+    reviewer_b: DualReviewModelOptions = Field(default_factory=DualReviewModelOptions)
+
+    @field_validator("timeout_seconds", "max_retries")
+    @classmethod
+    def _check_positive(cls, value, info):
+        if isinstance(value, bool) or value <= 0:
+            raise ValueError(f"defense.dual_review.{info.field_name} 必须 > 0，得到 {value}")
+        return value
+
+    @field_validator("min_confidence")
+    @classmethod
+    def _check_confidence(cls, value: float) -> float:
+        if not (0 <= value <= 1):
+            raise ValueError(f"defense.dual_review.min_confidence 必须是 0-1，得到 {value}")
+        return value
+
+
+class FormalCheckOptions(BaseModel):
+    """防线 3：形式化校验（阶段 1 -> 2）。
+
+    - 提供 ``constraints.yaml``（约束 DSL）或 ``.tla`` 模块时执行校验；
+    - DSL 先做静态区间矛盾检测（如「密码长度 >= 8」与「<= 6」互斥），
+      可配置 TLC（``tlc_bin``）对生成的 TLA+ 模块做模型检查；
+    - 未提供任何约束 / ``.tla`` 时降级为“警告不拦截”，保持向后兼容。
+    """
+
+    enabled: bool = False
+    constraints_file: str = "constraints.yaml"
+    tlc_bin: str | None = None
+    tlc_timeout_seconds: float = 60.0
+    # 为 true 时：DSL 已启用但没有可用 TLC -> 拒绝（而非降级警告）
+    require_tlc: bool = False
+
+    @field_validator("tlc_timeout_seconds")
+    @classmethod
+    def _check_timeout(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError(f"defense.formal_check.tlc_timeout_seconds 必须 > 0，得到 {value}")
+        return value
+
+
+class BehaviorAuditOptions(BaseModel):
+    """防线 4：事后链路审计（阶段 4/5 -> 6 交付前）。
+
+    读取 ``<workspace>/.agent_gate/defense/trace.jsonl`` 中的工具调用轨迹，
+    与 spec / 需求模板声明的「禁止操作」比对：
+    - 命中禁止操作 -> 拒绝交付；
+    - 交付前从未运行过测试命令 -> 默认警告（``deny_missing_test_command: true`` 时拒绝）。
+    """
+
+    enabled: bool = False
+    trace_file: str = "trace.jsonl"
+    deny_missing_test_command: bool = False
+    # 额外禁止操作映射：{类别名: [正则...]}，与内置类别合并
+    extra_forbidden_patterns: dict[str, list[str]] = Field(default_factory=dict)
+    # 是否扫描 write_file 内容（默认 true；为 false 时仅扫描工具名 / 路径 / 命令）
+    scan_write_content: bool = True
+
+
+class HumanReviewOptions(BaseModel):
+    """防线 5：概率人工复核（阶段 4/5 -> 6 交付前）。
+
+    依据风险分数抽样：``sample_rate`` 为最大抽样概率（0-1），
+    ``force_above_score`` 以上必抽，``auto_approve_below_score`` 以下自动放行。
+    ``deterministic`` 时以「需求 + 目标阶段」的哈希做种子，同一任务结果可复现。
+    """
+
+    enabled: bool = False
+    sample_rate: float = 0.3
+    force_above_score: int = 80
+    auto_approve_below_score: int = 20
+    deterministic: bool = True
+    approval_file: str = "human_review_approvals.json"
+
+    @field_validator("sample_rate")
+    @classmethod
+    def _check_sample_rate(cls, value: float) -> float:
+        if not (0 <= value <= 1):
+            raise ValueError(f"defense.human_review.sample_rate 必须是 0-1，得到 {value}")
+        return value
+
+    @field_validator("force_above_score", "auto_approve_below_score")
+    @classmethod
+    def _check_score(cls, value: int, info) -> int:
+        if isinstance(value, bool) or not (0 <= value <= 100):
+            raise ValueError(
+                f"defense.human_review.{info.field_name} 必须是 0-100 的整数，得到 {value}"
+            )
+        return value
+
+
+class DefenseOptions(BaseModel):
+    """五道防线总配置（v0.52.0）。全部默认关闭，启用后叠加于既有门禁之上。"""
+
+    requirement_template: RequirementTemplateOptions = Field(default_factory=RequirementTemplateOptions)
+    dual_review: DualReviewOptions = Field(default_factory=DualReviewOptions)
+    formal_check: FormalCheckOptions = Field(default_factory=FormalCheckOptions)
+    behavior_audit: BehaviorAuditOptions = Field(default_factory=BehaviorAuditOptions)
+    human_review: HumanReviewOptions = Field(default_factory=HumanReviewOptions)
+
+
 class SemanticOptions(BaseModel):
     """语义级校验总配置（v0.49.0 起，默认全部关闭，不影响既有门禁行为）。"""
 
@@ -354,6 +514,10 @@ class GateConfig(BaseModel):
     # 结构校验之上的语义增强：需求追踪（REQ -> 测试引用）与 Python 变异测试；
     # 默认全部 disabled，启用后不满足即阻止阶段推进（详见 docs/semantic-validation.md）
     semantic: SemanticOptions = Field(default_factory=SemanticOptions)
+    # ---- 五道防线（v0.52.0，默认全部关闭）----
+    # 需求模板 / 双模型交叉复核 / 形式化校验 / 运行时行为审计 / 概率人工复核
+    # 逐层叠加提升逃逸成本，详见 docs/five-lines.md
+    defense: DefenseOptions = Field(default_factory=DefenseOptions)
 
     @model_validator(mode="after")
     def _expand_workspace(self) -> "GateConfig":

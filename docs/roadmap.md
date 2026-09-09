@@ -2,6 +2,11 @@
 
 > 迁移自 README 精简版主页；已发布版本的完整条目见 [更新日志](changelog.md)。[返回 README](https://github.com/Xuqing0415/phase-barrier#readme)
 
+- **v0.52.0 已完成**：五道防线——需求模板（防线 1，`init-requirement` + strict 拒绝
+  自由文本）、双模型交叉复核（防线 2，正向覆盖 + 反向篡改，fail-closed）、形式化校验
+  （防线 3，约束 DSL 静态矛盾检测 + 可选 TLC）、运行时行为审计（防线 4，
+  `.agent_gate/defense/trace.jsonl` + 禁止操作比对）、概率人工复核（防线 5，风险评分 +
+  确定性抽样 + `review-approve`）；全部默认关闭，详见 [五道防线文档](five-lines.md)。
 - **v0.6.0 已完成**：JavaScript 真实解析（acorn / `jest --listTests --json`）、Java 项目级编译（`mvn test-compile` / `gradle compileTestJava`，`mvnw` / `gradlew` 优先 + 指纹缓存）、Go / Rust GitHub Action 门禁示例与项目配置模板。
 - **v0.7.0 已完成**：JS 输出解析覆盖 Vitest / Playwright、覆盖率门禁 `coverage_threshold`（pytest-cov / `go test -cover` / istanbul 表）、K8s sidecar 部署模板与 HTTP 门禁服务（`anti_shortcut.sidecar`）。
 - **v0.8.0 已完成**：Java 输出解析增强（Surefire `Skipped` / Gradle / JUnit Console）、状态签名 HMAC（`state_hmac_key` / `PHASE_BARRIER_HMAC_KEY`）、GitHub Action 市场发布（tag 即 Release）。

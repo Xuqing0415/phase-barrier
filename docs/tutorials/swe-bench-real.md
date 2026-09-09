@@ -214,4 +214,43 @@ python -m pytest --collect-only -q
 - pydicom-1256 已用 pd_venv（py3.12 + numpy + setuptools<81）；同版本其他实例可复用它，
   版本不同需确认依赖后再映射。
 
+### 7.4 Scale-10 真实双组实测（2026-09-09，SWE-bench Lite test 分片）
+
+把 §6 的 3 实例小样本扩到 10 实例。数据源 `SWE-bench/SWE-bench_Lite` **test 分片**
+（`swebench_test.json`，300 实例），按仓库分层抽 10 个：django×4 / sympy×4 / flask×1 /
+seaborn×1（`tasks_scale10.json`）。与 §6 同环境：Agent 为 DeepSeek `deepseek-v4-flash`，
+上限 60 轮；每仓库独立 venv；官方 eval 镜像 + swebench 5.0.2 `run_evaluation` 打分。
+冒烟 4 实例（django-10914/10924、sympy-11400/11870）先跑，其余 6 实例于当日续跑完成，
+共 10 实例 × 2 组 = 20 行，存 `results_scale10/results.csv`。
+
+| 实例 | baseline resolve | gated resolve | gated 拦截 / 终态 |
+|---|---|---|---|
+| django-10914 | 1（60轮/469s） | 0（60轮/581s） | 3 / 阶段2 |
+| django-10924 | 0（空补丁） | 0（60轮/484s） | 3 / 阶段2 |
+| sympy-11400 | 0（60轮/285s） | 0（32轮/81s） | 0 / 阶段6交付 |
+| sympy-11870 | 0（60轮/291s） | 0（60轮/408s） | 1 / 阶段4 |
+| django-11001 | 0（空补丁） | 0（空补丁） | 1 / 阶段2 |
+| django-11019 | 0（空补丁） | 0（空补丁） | 4 / 阶段2 |
+| sympy-11897 | 0（空补丁） | 0（空补丁） | 1 / 阶段2 |
+| sympy-12171 | 0（60轮/637s） | 0（60轮/512s） | 1 / 阶段5 |
+| flask-4045 | 0（60轮/296s） | 0（60轮/210s） | 0 / 阶段6交付 |
+| seaborn-2848 | 0（60轮/269s） | 0（60轮/336s） | 0 / 阶段6交付 |
+
+汇总：**baseline 1/10（10%）resolve；gated 0/10（0%）**；gated 全程拦截共 14 次；
+gated 有 3 个实例完整走到阶段 6 并交付（sympy-11400、flask-4045、seaborn-2848），
+其中 flask-4045 双组都产出非空补丁但均未过隐藏测试。
+
+结论与要点：
+- 门禁对“过程合规”有实质约束：gated 组只有走到阶段 6 才算放行，拦截集中在 spec/测试
+  不达标的实例（多数卡在阶段 2），未出现 baseline 那种 60 轮空转后直接空补丁的情况被放行。
+- 双组空补丁出现在同一批难点（django-11001/11019、sympy-11897），且 transcript 显示模型
+  60 轮内反复侦查（git log / python 探测）未落盘修改，属模型×任务难度问题，非门禁副作用；
+  sympy-11400 gated 32 轮即完成阶段 6，说明门禁不是简单“拖慢”。
+- 数据质量修正：批量期间发现 `run_agent.py` 提取补丁用 `git diff`（仅未暂存），
+  seaborn-2848 gated 因 Agent `git add` 后提取为空而误记 empty_patch；已改为
+  `git diff HEAD` 并复核该实例（恢复补丁经官方 harness 重评分仍 0，行内 diff/note 已更正）。
+- 边界观测：seaborn-2848 gated 走到阶段 6 后，最后一轮 pytest 实为收集错误（exit 4）；
+  说明“阶段计数到 6”≠“交付前最终测试全绿”，与防线 4（事后行为审计）的动机一致，留待后续。
+- 局限：60 轮上限 + flash 模型导致 resolve 偏低，baseline 与 gated 绝对数值均不具榜单意义，
+  只用于**同条件下相对对比**；建议下一步换更强模型 / 提高轮数，或切 Verified 分片再测。
 

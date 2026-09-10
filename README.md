@@ -41,7 +41,9 @@
 docker run --rm -it ghcr.io/xuqing0415/phase-barrier-demo
 ```
 
-演示“跳步被拦截 -> 按 SOP 补齐证据 -> 全通到交付”。
+演示“跳步被拦截 -> 按 SOP 补齐证据 -> 全通到交付”。不想装 Docker 也可以直接看
+[2.5 分钟演示视频](docs/media/phase-barrier-demo.mp4)：画面全部来自该演示脚本的真实
+运行输出（`python scripts/make_demo_video.py --out demo.mp4` 可一键复现）。
 
 ### pip 安装 + 初始化
 

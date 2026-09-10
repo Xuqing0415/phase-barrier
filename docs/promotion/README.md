@@ -168,5 +168,5 @@ Docker image for a zero-install demo.
 - [ ] B2：演示视频已生成（`docs/media/phase-barrier-demo.mp4`），剩余步骤是**上传**到
       B 站 / YouTube 并回填链接（需要维护者账号）。
 - [ ] B3：把本目录模板发布到 ≥3 个平台（Dev.to / Reddit / HN / V2EX / 知乎）。
-- [ ] C2：定向邀请（把 `docs/plugins.md` 的「5 分钟创建你的第一个插件」
-      发给编码 Agent 社区活跃者 / Alpha-SWE 相关开发者），邀请记录写在本文件。
+- [ ] C2：定向邀请 —— 可直接发送的文案（GitHub 留言 / 邮件 DM / 社区回复）与对象清单见
+      [outreach.md](outreach.md)；发送后把结果登记到该文件的跟踪表。

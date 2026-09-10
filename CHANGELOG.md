@@ -4,6 +4,22 @@
 发布为里程碑驱动：日常改动累积于 main，仅在用户可感知里程碑或紧急修复时发版，
 同日不重复发布（详见 [docs/release.md](docs/release.md) 发布节奏）。
 
+## [0.56.0] - 2026-09-10
+
+- **feat（插件生态）：5 分钟插件开发指南 + 可被自动收录的种子插件仓库**：`docs/plugins.md`
+  新增「5 分钟创建你的第一个插件」（第 0-4 步：模板仓库一键生成 -> 声明入口点 -> 本地
+  `plugin-verify` -> 打 `phase-barrier-plugin` topic 等自动收录 -> 校验 `last_commit_sha`
+  增量刷新），README 插件机制条目补上 topic 与官方模板仓库链接。同时新建独立仓库
+  [`Xuqing0415/phase-barrier-plugin-foo-adapter`](https://github.com/Xuqing0415/phase-barrier-plugin-foo-adapter)
+  （已打 topic `phase-barrier-plugin`，CI 走官方 `plugin-test` action），索引中的自动
+  发现条目由 1 个增至 2 个，`./examples/*` 官方样例之外首次出现独立仓库条目。
+- **docs（B1 端到端轮询实证）**：向该仓库推送新提交（`ec2a992` -> `175b000`）后手动触发
+  `plugin-verification.yml`（run `34477757527`，conclusion `success`）：日志显示
+  `auto_discover_plugins.py --update` 与 `verify_plugins.py --update --sync-docs` 均以
+  exit code 0 完成，机器人提交 `f6279c3` 把该条目的 `last_commit_sha` 由 `ec2a9921` 刷新为
+  `175b0002`。「第三方新提交 -> 自动发现 -> 索引增量刷新」链路已在真实仓库上闭环，
+  不再只有 `tests/test_auto_discover_e2e.py` 的模拟仓库验证。
+
 ## [0.55.0] - 2026-09-10
 
 - **fix（安全，fail-open）：防线 3 解析失败被静默放行**：`constraints.yaml` 若 YAML

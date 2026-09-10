@@ -30,7 +30,7 @@
 - **安全规则包**：shell 注入 / 路径穿越 / 硬编码密钥 / 许可证头等内置规则，YAML 一键启用。
 - **集成面广**：进程内包装、CLI 透明代理、GitHub Action、K8s sidecar（Helm）、Docker 一键体验。
 - **Agent 框架示例**：LangChain / AutoGPT / SWE-agent 开箱即用示例（`docs/integrations.md`）。
-- **插件机制**：语言适配器 / 校验器 / 拦截规则 / 集成插件四类入口点 + `plugin-verify` 自动验证。
+- **插件机制**：语言适配器 / 校验器 / 拦截规则 / 集成插件四类入口点 + `plugin-verify` 自动验证；打 `phase-barrier-plugin` topic 即被每周自动收录（[5 分钟创建你的第一个插件](docs/plugins.md)，或从[官方模板仓库](https://github.com/Xuqing0415/phase-barrier-plugin-template)一键生成）。
 - **自洽工程**：CI 全矩阵真实工具链、覆盖率门禁（≥90%）、模糊测试与性能 / SWE-bench 基准。
 
 ## 快速开始

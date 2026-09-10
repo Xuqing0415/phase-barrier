@@ -16,6 +16,79 @@ phase-barrier 通过 Python 入口点（entry points）支持五类插件：
 > `python -m anti_shortcut plugin-verify` 验证（入口点全部通过）；详见下文
 > 「提交到索引 / 自动收录」与「自动发现脚本」。
 
+## 5 分钟创建你的第一个插件
+
+目标：从零做出一个能被 `plugin-verify` 验证、并能被索引**自动收录**的插件。
+四类入口点（语言适配器 / 校验器 / 拦截规则 / 集成插件）任选一类即可开始。
+
+**第 0 步 · 生成骨架（30 秒）**
+
+推荐用官方模板仓库一键生成：打开
+[phase-barrier-plugin-template](https://github.com/Xuqing0415/phase-barrier-plugin-template)，
+点右上角 **Use this template** 创建你自己的仓库（模板已内置四类入口点示例与
+`plugin-verify` CI）。不想要模板也没关系——手写一个包目录 + `pyproject.toml`，
+下一步就是全部内容。
+
+**第 1 步 · 声明入口点（2 分钟）**
+
+```toml
+# pyproject.toml
+[project]
+name = "my-phase-barrier-plugin"
+version = "0.1.0"
+dependencies = ["phase-barrier>=0.52"]
+
+[project.entry-points."phase_barrier.languages"]
+mylang = "my_plugin:MylangAdapter"
+```
+
+```python
+# my_plugin/__init__.py
+from anti_shortcut import LanguageAdapter
+
+
+class MylangAdapter(LanguageAdapter):
+    name = "mylang"
+    file_extensions = [".mylang"]
+    source_file_patterns = ["*.mylang"]
+    test_file_patterns = ["test_*.mylang"]
+
+    def check_syntax(self, path):
+        return True, "语法检查通过（示例插件）"
+```
+
+**第 2 步 · 本地验证（1 分钟）**
+
+```bash
+pip install -e .
+python -m anti_shortcut plugin-verify --json     # 期望 "ok": true
+```
+
+`plugin-verify` 会扫描当前环境注册的**全部**入口点并逐个加载，失败时会直接指出
+是哪一类、哪个名字，比等到 Agent 跑起来才报错快得多。
+
+**第 3 步 · 让索引自动收录（1 分钟）**
+
+1. 给插件仓库加 topic：**Settings → Topics → `phase-barrier-plugin`**；
+2. 在插件仓库 CI 里跑 `python -m anti_shortcut plugin-verify`（模板仓库已内置）；
+3. 等每周一 03:00 UTC 的 `plugin-verification.yml` 自动执行
+   `git clone → pip install -e → plugin-verify`，通过后即以 `auto_discovered: true`
+   写入 `plugins.json` 并同步到[插件状态页](plugin-status.md)。
+   想立刻看到结果，可在主仓库 Actions 里手动 `workflow_dispatch` 触发一次。
+
+不想打 topic 也可以走人工提交，见下文「提交到索引 / 自动收录」。
+
+**第 4 步 · 校验收录结果（30 秒）**
+
+- `plugins.json` 中出现 `"name": "<owner>/<repo>"` 且 `"status": "passed"`；
+- [插件状态页](plugin-status.md) 的表格新增一行；
+- 之后每次向该仓库推新提交，下一个周期会用 `git ls-remote` 比对
+  `last_commit_sha` 做**增量刷新**（新增 / 变化的入口点也会同步）。
+
+> 收录没成功？失败原因会写进 `plugins.json` 的 `status: "failed"` 与发现报告
+> artifact（`plugin-discovery-report.json`）。常见原因：入口点名字写错、
+> `install` 目标与包名不一致、干净环境下 `pip install` 失败。
+
 ## 开发模板
 
 > **推荐：官方模板仓库**
@@ -149,6 +222,7 @@ workflow 自动收录：
 
 | 插件 | 类型 | 作者 | 说明 |
 |------|------|------|------|
+| [`Xuqing0415/phase-barrier-plugin-foo-adapter`](https://github.com/Xuqing0415/phase-barrier-plugin-foo-adapter) | `phase_barrier.languages` | 自动发现（种子插件，官方维护） | 独立仓库形态的 `.foo` 语言适配器，用于演示/验证「打 topic -> 自动收录 -> 增量刷新」全链路 |
 | （等待自动发现 / 人工提交） | | | 打 `phase-barrier-plugin` 主题或提 Issue，见「提交到索引 / 自动收录」 |
 
 ## 索引自动检查（v0.34.1）
@@ -252,12 +326,15 @@ python scripts/auto_discover_plugins.py --update --json   # 结构化摘要（st
 `plugin-check.yml` 继续保留，负责官方示例插件的固定断言；`plugins.json` 驱动的
 验证 + topic 自动发现是它的推广形态，第三方插件无需人工合并即可被周期收录
 （自动收录只校验入口点可用性）。
-> **成为第一个第三方插件（v0.48.0）**：目前索引中的自动收录条目为官方
-> 模板仓库；给真实插件仓库打上 `phase-barrier-plugin` topic 并通过插件 CI，
-> 即可成为第一个由社区贡献、每周自动验证的第三方条目（流程见上文「提交到
-> 索引 / 自动收录」）。
+> **端到端轮询实证（v0.56.0，实测）**：给插件仓库打上 `phase-barrier-plugin` topic
+> 并通过插件 CI，下一周期即被自动收录 —— 该链路已在真实仓库上闭环验证：
+> [`phase-barrier-plugin-foo-adapter`](https://github.com/Xuqing0415/phase-barrier-plugin-foo-adapter)
+> 被自动发现收录（`auto_discovered: true`、`status: passed`）；随后向其推送新提交
+> （`ec2a992` -> `175b000`）并触发 `plugin-verification.yml`（run `34477757527`，success），
+> 机器人提交把索引里的 `last_commit_sha` 刷新为 `175b0002`。全程无需人工介入，
+> 即「上游新提交 -> `git ls-remote` 比对 -> 重新 clone / 安装 / 验证 -> 写回索引」。
 >
-> 仓库内置了不依赖真实第三方的端到端演练：`tests/fixtures/plugin_alpha/`
+> 仓库另内置了不依赖真实第三方的端到端演练：`tests/fixtures/plugin_alpha/`
 > （模拟插件）+ `tests/test_auto_discover_e2e.py`（真实 git 仓库下验证
 > 发现 / 增量刷新 / 失败重试）。
 

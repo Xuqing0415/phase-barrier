@@ -102,7 +102,15 @@ def main() -> None:
     print("\n[规范流程] 步骤 4：运行测试 ...")
     run = tools["execute_command"]("python -m pytest test_fib.py -q")
     tail = (run.get("output") or "").strip().splitlines()
-    print(f"  pytest 退出码 {run.get('exit_code')}，{tail[-1] if tail else ''}")
+    # pytest 尾部可能是 warnings 的 "-- Docs: ..." 行，优先挑结论行展示
+    summary = next(
+        (line.strip() for line in reversed(tail)
+         if ("passed" in line or "failed" in line or "error" in line)
+         and not line.strip().startswith("--")),
+        "",
+    )
+    suffix = f"，{summary}" if summary else ""
+    print(f"  pytest 退出码 {run.get('exit_code')}{suffix}")
 
     result = tools["advance_stage"](5)
     print(f"  advance_stage(5) -> {result['message']}")

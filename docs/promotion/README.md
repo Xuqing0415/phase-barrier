@@ -146,21 +146,17 @@ Docker image for a zero-install demo.
 
 ## 视频素材（B2）
 
-- 脚本与录制清单：[docs/video-tutorial-template.md](../video-tutorial-template.md)
-  （含 0:00-3:00 分段时间轴、OBS 参数、成片检查清单）。
-- 3 分钟成片建议结构：钩子（0:15）→ 被拦截演示（0:35）→ 按 SOP 通过（0:50）
-  → 五道防线一句话（0:20）→ 快速开始 + 行动号召（0:30）。
-- 录制命令（均真实可复现，勿编造输出）：
+**成片已生成**：`docs/media/phase-barrier-demo.mp4`（1280x720 / 150 秒 / 约 0.9 MB）。
+画面来自 `docker/demo/agent_demo.py` 的真实运行输出，由
+`python scripts/make_demo_video.py` 自动生成，可一条命令重录。
 
-  ```bash
-  docker run --rm -it ghcr.io/xuqing0415/phase-barrier-demo
-  python -m anti_shortcut init
-  python -m anti_shortcut inspect
-  python -m anti_shortcut advance --stage 3      # 未写测试 -> 预期被拦截
-  ```
-
-- 上传后把链接填进下方「发布记录表」，并同步到 README「媒体与教程」。
-
+- 内容结构：标题钩子（0:00-0:15）→ 问题（0:09-0:15）→ **真实终端回放**（0:15-0:46，含
+  「跳步被拦截」红字与「按 SOP 全通到交付」绿字）→ 五道防线（0:46-1:12）→
+  13 语言 / SWE-bench 实测 / 插件生态（1:12-1:36）→ 快速开始（1:36-2:02）→ CTA（2:02-2:30）。
+- 成片为**无声**，可直接用平台自动字幕，或在 B 站/剪映配音后发布。
+- 录制与分镜清单（如需 OBS 真人讲解版）：
+  [docs/video-tutorial-template.md](../video-tutorial-template.md)。
+- 上传后把链接填进下方「发布记录表」，并同步到 README。
 ## 发布记录表
 
 | 日期 | 平台 | 链接 | 反馈 |
@@ -169,8 +165,8 @@ Docker image for a zero-install demo.
 
 ## 待办（需要维护者账号，无法自动完成）
 
-- [ ] B2：按 `docs/video-tutorial-template.md` 录制并上传 3 分钟演示视频
-      （YouTube / Bilibili），链接回填上表。
+- [ ] B2：演示视频已生成（`docs/media/phase-barrier-demo.mp4`），剩余步骤是**上传**到
+      B 站 / YouTube 并回填链接（需要维护者账号）。
 - [ ] B3：把本目录模板发布到 ≥3 个平台（Dev.to / Reddit / HN / V2EX / 知乎）。
 - [ ] C2：定向邀请（把 `docs/plugins.md` 的「5 分钟创建你的第一个插件」
       发给编码 Agent 社区活跃者 / Alpha-SWE 相关开发者），邀请记录写在本文件。

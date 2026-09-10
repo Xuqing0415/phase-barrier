@@ -19,7 +19,20 @@
   exit code 0 完成，机器人提交 `f6279c3` 把该条目的 `last_commit_sha` 由 `ec2a9921` 刷新为
   `175b0002`。「第三方新提交 -> 自动发现 -> 索引增量刷新」链路已在真实仓库上闭环，
   不再只有 `tests/test_auto_discover_e2e.py` 的模拟仓库验证。
-- **fix（一键体验崩溃，实测复现）：`docker run ... phase-barrier-demo` 最后一步 TypeError**：
+- **feat（B2 演示视频，可一键重录）：`scripts/make_demo_video.py` + 2.5 分钟成片**：新增
+  视频生成器，现场运行 `docker/demo/agent_demo.py` 并捕获其**真实输出**逐行回放，配上
+  分场景字幕，用 ffmpeg `drawtext` 合成 1280x720 H.264 视频；成片入仓
+  `docs/media/phase-barrier-demo.mp4`（150 秒 / 约 0.9 MB）。改 demo 后重录只需一条命令，
+  不再依赖 OBS 录屏。踩坑已固化：drawtext 必须 `expansion=none`（否则 `25%` 被当表达式
+  展开并吞内容）、场景时间窗必须互不重叠（否则叠字）、字体按平台探测并可
+  `PB_VIDEO_FONT_MONO/CJK` 覆盖。剩余人工步骤只有配音与上传。
+- **测试**：新增 `tests/test_make_demo_video.py`（9 例，纯函数）：时间轴必须递增且不重叠、
+  非法/空时间窗要报错、`has_cjk` 字体选择、`drawtext` 必带 `expansion=none`、
+  真实 demo 行必须原样进入视频、filtergraph 面板绘制顺序。
+- **fix（演示输出可读性）**：`docker/demo/agent_demo.py` 运行测试后打印的是 pytest 输出的
+  **最后一行**，实测常是 warnings 的 `-- Docs: https://docs.pytest.org/...`，看起来像
+  跑挂了。改为优先挑结论行（`passed`/`failed`/`error` 且非 `--` 开头），挑不到就只打印
+  退出码。- **fix（一键体验崩溃，实测复现）：`docker run ... phase-barrier-demo` 最后一步 TypeError**：
   `docker/demo/agent_demo.py` 的 `real_exec` 写成 `subprocess.run(..., text=True)` 却未指定
   `encoding`，文本模式于是按 **locale** 解码；在 Windows（GBK）等非 UTF-8 环境下，
   子进程 pytest 输出里只要出现无法解码的字节，`subprocess` 就把 `stdout`/`stderr` 置为

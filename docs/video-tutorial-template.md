@@ -3,6 +3,24 @@
 > 面向维护者 / 贡献者的宣传视频制作模板（v0.48.0）。目标：任何人在 30 分钟内
 > 按本模板产出一条 2-5 分钟可发布的教程视频，无需剪辑经验。
 
+## 0. 已生成的成片（v0.56.0）
+
+录屏不再是必需步骤——仓库内置了自动化生成器，直接把演示脚本的真实输出编译成视频：
+
+```bash
+python scripts/make_demo_video.py --out docs/media/phase-barrier-demo.mp4   # 2.5 分钟成片
+python scripts/make_demo_video.py --smoke                                  # 20 秒校验布局
+```
+
+- 成片：`docs/media/phase-barrier-demo.mp4`（1280x720 / H.264 / 150 秒 / 约 0.9 MB）。
+- 画面里的终端内容全部来自 `docker/demo/agent_demo.py` 的**真实运行输出**：生成器现场
+  执行该脚本并捕获 stdout 后逐行回放，不伪造任何命令行结果；旁白字幕由 ffmpeg
+  `drawtext` 叠加（已用 `expansion=none` 避免 `%` 被当表达式展开）。
+  这也意味着「重新录制」的成本只是一条命令——改了 demo 就重新生成一次。
+- 依赖：`ffmpeg`（需在 PATH）。字体按平台探测，可用 `PB_VIDEO_FONT_MONO` /
+  `PB_VIDEO_FONT_CJK` 覆盖；沙箱等受限 ACL 环境可加 `--workdir <dir>`。
+- **仍需人工完成**：配音 / 字幕校对、上传到 B 站 / YouTube，并把链接回填
+  `docs/promotion/README.md` 的发布记录表与 README。
 ## 1. 视频目标与定位
 
 - 受众：编码 Agent 使用者 / 关心“Agent 如何遵守开发流程”的工程师。

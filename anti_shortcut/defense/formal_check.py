@@ -211,12 +211,19 @@ class FormalCheckLine(DefenseLine):
             else:
                 import yaml
 
+                dsl_errors = []
                 try:
                     data = yaml.safe_load(cfile.read_text(encoding="utf-8", errors="replace")) or {}
                 except Exception as exc:  # noqa: BLE001
+                    # 解析失败必须拒绝（fail-closed）：早期实现会把原因覆盖掉，
+                    # 导致写坏的 constraints.yaml 被静默当成「无约束」放行。
                     data = {}
-                    dsl_errors = [f"constraints 文件解析失败: {exc}"]
-                constraints, dsl_errors = _parse_constraints(data) if isinstance(data, dict) else ([], [])
+                    dsl_errors.append(f"constraints 文件解析失败: {exc}")
+                if isinstance(data, dict):
+                    constraints, parse_errors = _parse_constraints(data)
+                else:
+                    constraints, parse_errors = [], ["constraints 文件顶层必须是映射（YAML / JSON 对象）"]
+                dsl_errors.extend(parse_errors)
                 static_contradictions = detect_static_contradictions(constraints)
                 module_text = generate_tla(constraints)
         else:

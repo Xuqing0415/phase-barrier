@@ -495,7 +495,10 @@ def test_line5_high_risk_forced_sampling_and_approval(tmp_path):
 
 def test_line5_low_risk_auto_approves(tmp_path):
     ws = tmp_path
-    cfg = _cfg({"human_review": {"enabled": True}})
+    # 注意：抽样种子取自 request_id = hash(workspace|需求|阶段)，而 tmp_path 每次运行
+    # 都不同；若沿用默认 auto_approve_below_score=20（本用例实际风险分 35），断言会依赖
+    # 伪随机数，约 12% 概率随机失败。这里显式把阈值抬到风险分之上，保证确定性。
+    cfg = _cfg({"human_review": {"enabled": True, "auto_approve_below_score": 100}})
     state = _StubState("", {})
     r = HumanReviewLine().run(ws, cfg, state, 5, 6)
     assert r.ok and r.evidence["sampled"] is False

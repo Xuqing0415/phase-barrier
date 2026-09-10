@@ -44,6 +44,24 @@
   阶段 6 后红测与改码失效 / 重测恢复 / 跨重载持久化 / Sidecar 字段 / 端到端
   红-绿恢复流），state / sidecar / proxy / sdk / grpc 回归全绿。
 
+## [0.54.0] - 2026-09-10
+
+- **feat(eval): 官方镜像容器内 SWE-bench 双组评测编排（v0.54.0）**：新增
+  `scripts/run_swebench_batch_container.py`，对每个实例 `docker run` 官方
+  `swebench/sweb.eval.x86_64.*` 镜像，在容器 `/testbed` 内运行 `run_agent.py`，
+  再把补丁交回宿主 `grade.py`（官方 harness + Docker）打分；`--skip-existing`
+  按 `(instance_id, mode)` 断点续跑，单点失败按行记录 note。
+- **门禁/测试解释器分工**：`phase-barrier` 需 py>=3.10，而老任务镜像 testbed 环境常为
+  py3.6/3.8/3.9；编排脚本用镜像 base conda python(3.11) 跑门禁，`--venv` 指向 testbed
+  解释器，使测试命令在实例真实环境执行——解决宿主 py3.14 与老仓库依赖不匹配导致的空转。
+- **实测（`docs/tutorials/swe-bench-real.md` §8/§9）**：Scale-20（Lite test）20 实例 ×
+  baseline/gated，总体 resolve 25% vs 25%，gated 19 次拦截、9 次阶段 6 交付；其中
+  官方容器内运行的 10 个新增实例 gated 50% > baseline 40%、空补丁更少。Verified 分片
+  4 实例复核 flash vs pro：resolve 同为 2/4(基线)、1/4(门禁)，但 pro 空补丁 0（flash 2）
+  且阶段 6 交付 3 次（flash 2）；同一 scikit-learn-10297 补丁在 Lite test 判 1、Verified
+  判 0，验证了「Verified 复核」能识别 Lite 分片的侥幸通过。
+- **测试**：`tests/test_swe_scripts.py` 新增 5 个用例（镜像名推导 / 宿主→容器路径翻译 /
+  docker run argv 组装 / 待跑清单过滤 / PB 标记解析），15 个脚本用例全绿。
 ## [0.51.0] - 2026-09-06
 
 - **feat: 深度补全第二层（v0.51.0）**：把“需求 -> spec -> 测试 -> 实现”的关联链
@@ -1296,3 +1314,4 @@
 ## [0.1.0] - 2026-08-29
 
 - 功能：需求->spec->测试->实现->测试->修复->交付的阶段门禁；`write_file` / `execute_command` 工具拦截；spec / 测试 AST / 实现语法 / 测试运行 / 回归证据校验；JSON 状态机 + 审计日志；Docker 只读卷部署示例。
+

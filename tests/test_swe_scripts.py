@@ -14,6 +14,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SEL = ROOT / "scripts" / "select_swe_tasks.py"
 BATCH = ROOT / "scripts" / "run_swebench_batch.py"
+CONTAINER = ROOT / "scripts" / "run_swebench_batch_container.py"
 
 
 def _load(script: Path):
@@ -26,6 +27,7 @@ def _load(script: Path):
 
 sel = _load(SEL)
 batch = _load(BATCH)
+container = _load(CONTAINER)
 
 
 def _row(iid: str, repo: str = "", diff: str = "", **extra) -> dict:
@@ -135,3 +137,52 @@ def test_batch_parse_pb():
     assert meta["PB_RESOLVED"] == "1"
     assert meta["PB_GATE_FINAL_STAGE"] == "6"
     assert "junk" not in meta
+
+
+
+def test_container_image_prefers_dataset_field():
+    assert container.container_image(
+        {"instance_id": "psf__requests-1963", "image": "swebench/x:latest"}) == "swebench/x:latest"
+    assert container.container_image({"instance_id": "astropy__astropy-12907"}) == \
+        "swebench/sweb.eval.x86_64.astropy_1776_astropy-12907:latest"
+
+
+def test_container_path_translation(tmp_path):
+    sub = tmp_path / "a" / "b.json"
+    sub.parent.mkdir(parents=True)
+    sub.write_text("{}", encoding="utf-8")
+    assert container.container_path(sub, tmp_path) == "/pb/a/b.json"
+    assert container.container_path(sub, tmp_path, mount_point="/mnt/repo") == "/mnt/repo/a/b.json"
+    with pytest.raises(ValueError):
+        container.container_path(tmp_path.parent / "outside.json", tmp_path)
+
+
+def test_build_agent_docker_command_shape(tmp_path):
+    argv = container.build_agent_docker_command(
+        image="swebench/sweb.eval.x86_64.x_1776_x-1:latest", repo_mount=tmp_path,
+        agent_script="/pb/bench/run_agent.py", dataset="/pb/bench/ds.json",
+        instance_id="x__x-1", mode="gated", label="x_x-1_gated", outdir="/pb/bench/runs",
+        testbed_python="/opt/miniconda3/envs/testbed/bin/python",
+        gate_python="/opt/miniconda3/bin/python", max_turns=60, exec_timeout=300,
+        extra_env={"DEEPSEEK_API_KEY": "k", "PB_DS_MODEL": "deepseek-v4-pro"})
+    assert argv[0] == "docker" and argv[1] == "run" and "--rm" in argv
+    assert f"{tmp_path}:/pb" in argv
+    assert "/testbed" in argv and "--entrypoint" in argv
+    assert "/opt/miniconda3/bin/python /pb/bench/run_agent.py" in argv[-1]
+    assert "--venv /opt/miniconda3/envs/testbed/bin/python" in argv[-1]
+    assert "--mode gated" in argv[-1] and "--max-turns 60" in argv[-1]
+    assert "DEEPSEEK_API_KEY=k" in argv and "PB_DS_MODEL=deepseek-v4-pro" in argv
+
+
+def test_pending_jobs_skips_recorded():
+    tasks = [{"instance_id": "a__a-1", "repo": "a/a"}, {"instance_id": "b__b-1", "repo": "b/b"}]
+    done = {("a__a-1", "baseline")}
+    jobs = container.pending_jobs(tasks, done, ["baseline", "gated"])
+    assert [(j["instance_id"], j["mode"]) for j in jobs] == \
+        [("a__a-1", "gated"), ("b__b-1", "baseline"), ("b__b-1", "gated")]
+
+
+def test_container_parse_pb_and_short_id():
+    assert container.short_id("pylint-dev__pylint-5859") == "pylint-dev_pylint-5859"
+    meta = container.parse_pb("PB_MODE=gated\nPB_GATE_COMPLETED=1\nnoise")
+    assert meta == {"PB_MODE": "gated", "PB_GATE_COMPLETED": "1"}

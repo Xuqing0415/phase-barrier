@@ -32,7 +32,16 @@
 - **fix（演示输出可读性）**：`docker/demo/agent_demo.py` 运行测试后打印的是 pytest 输出的
   **最后一行**，实测常是 warnings 的 `-- Docs: https://docs.pytest.org/...`，看起来像
   跑挂了。改为优先挑结论行（`passed`/`failed`/`error` 且非 `--` 开头），挑不到就只打印
-  退出码。- **fix（一键体验崩溃，实测复现）：`docker run ... phase-barrier-demo` 最后一步 TypeError**：
+  退出码。- **docs（C2 定向邀请素材包）**：新增 `docs/promotion/outreach.md`，给出目标对象清单与
+  三套可直接复制发送的文案（GitHub Issue/Discussion 留言、给 Agent 框架作者的邮件/DM、
+  社区帖回复），并附跟踪表与 C 组验收清单。发送动作需要维护者账号，无法自动完成；
+  可直接引用的事实（topic 自动收录、增量刷新实证、只校验入口点可用性）均已写进文案。
+- **审查（无「伪代码」/ 占位实现）**：全仓扫描 `TODO`/`FIXME`/`伪代码`/`placeholder`/
+  `fake|dummy|stub|mock` 与无条件的 `return True`：0 处 TODO/FIXME、0 处伪代码标记；
+  13 处 `NotImplementedError` 全部是抽象基类方法（`languages/base.py`、`defense/_base.py`、
+  `semantic.py`）或 protobuf 生成的 gRPC 桩；「占位」字样均为合法语境（版本回退占位、
+  占位测试名检测）；语言适配器的 `return True` 全部在真正执行了工具链（或明确报错）之后，
+  未发现「校验没做却报告通过」的 fail-open 实现。- **fix（一键体验崩溃，实测复现）：`docker run ... phase-barrier-demo` 最后一步 TypeError**：
   `docker/demo/agent_demo.py` 的 `real_exec` 写成 `subprocess.run(..., text=True)` 却未指定
   `encoding`，文本模式于是按 **locale** 解码；在 Windows（GBK）等非 UTF-8 环境下，
   子进程 pytest 输出里只要出现无法解码的字节，`subprocess` 就把 `stdout`/`stderr` 置为

@@ -165,8 +165,14 @@ def main() -> int:
         if not image:
             return None
         try:
-            probe = subprocess.run(["docker", "image", "inspect", image],
-                                   capture_output=True, text=True, timeout=30)
+            probe = subprocess.run(
+                ["docker", "image", "inspect", image],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=30,
+            )
         except Exception:
             return None
         return probe.returncode == 0

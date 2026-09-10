@@ -147,8 +147,16 @@ def demo() -> int:
 
     def real_exec(args):
         import subprocess
-        proc = subprocess.run(str(args["command"]), shell=True, cwd=ws, capture_output=True, text=True)
-        return proc.stdout + proc.stderr
+        proc = subprocess.run(
+            str(args["command"]),
+            shell=True,
+            cwd=ws,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",  # 兼容 Windows 控制台使用 GBK 等非 UTF-8 编码输出
+        )
+        return (proc.stdout or "") + (proc.stderr or "")
 
     commands = {"write_file": real_write, "execute_shell": real_exec}
     wrapped = install(gate, commands)

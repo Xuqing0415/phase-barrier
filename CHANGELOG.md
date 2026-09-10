@@ -4,6 +4,33 @@
 发布为里程碑驱动：日常改动累积于 main，仅在用户可感知里程碑或紧急修复时发版，
 同日不重复发布（详见 [docs/release.md](docs/release.md) 发布节奏）。
 
+## [0.55.0] - 2026-09-10
+
+- **fix（安全，fail-open）：防线 3 解析失败被静默放行**：`constraints.yaml` 若 YAML
+  语法错误、或顶层不是映射，旧实现虽在 `except` 中记录了「解析失败」，但紧接着
+  `constraints, dsl_errors = _parse_constraints(data) ...` 又把该变量覆盖回空列表，
+  于是「写坏的约束文件」被当成「没有约束」降级通过（`tla_check.json` 也看不到原因）。
+  现在解析失败 / 顶层非映射一律并入 `dsl_errors` 并拒绝推进阶段 2，同时保留证据。
+- **fix（flaky）：人工复核抽样用例约 12% 概率随机失败**：`test_line5_low_risk_auto_approves`
+  的断言依赖 `request_id = hash(workspace|需求|阶段)` 派生的伪随机数，而 pytest 的
+  `tmp_path` 每次运行都不同；该用例实际风险分 35、默认 `auto_approve_below_score=20`，
+  会走「概率抽样」分支，抽样概率 10.5% —— 即约 12% 的运行会失败（CI 只是运气好）。
+  改为显式把阈值抬到风险分之上，使断言确定化。
+- **fix：CI coverage 门禁回归（v0.52.0 起连续 4 次 CI 失败）**：最近 4 次 CI
+  （`d97cf24` / `803bc4c` / `323fb85` / `542bfbe`）全部挂在 `coverage (fail-under 90)`：
+  1125 个测试全绿，但 `TOTAL 6156 566 miss ... 89% < 90`。根因是五道防线新增代码
+  缺少错误 / 边界分支测试 —— `anti_shortcut/defense/*` 有 127 条语句与分支从未执行
+  （`dual_review.py` 70%、`formal_check.py` 68%、`human_review.py` 76%、`_common.py` 86%），
+  把全量覆盖率从 ≥90% 拖到 89%。
+- **测试**：新增 3 个测试文件共 70 个用例 —— `tests/test_defense_edge_cases.py`（39，
+  五道防线异常分支：提示词回退 / 模型调用失败与重试 / TLC 超时与执行异常 / 脱敏 /
+  trace 命令解析 / 风险打分 / 非确定性与降级路径）、`tests/test_cli_extra_commands.py`
+  （23，`init` / `init-requirement` / `review-approve` / `check` / `query` /
+  `export-evidence` / `rotate-key` / `sidecar` 转发 / 顶层 OSError 映射）、
+  `tests/test_config_boundaries.py`（8，语义与五道防线配置项的合法与非法取值）。
+  实测：`anti_shortcut/defense/*` 78% -> 99%，`anti_shortcut/__main__.py` 70% -> 98%，
+  `anti_shortcut/config.py` 89% -> 95%，本地全量覆盖率 88% -> 93%（CI 工具链齐全，略高）。
+
 ## [0.52.0] - 2026-09-09
 
 - **feat: 五道防线（v0.52.0）**：在既有语义校验之上叠加“约束忠诚度”防线，

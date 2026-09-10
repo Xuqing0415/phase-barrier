@@ -9,7 +9,7 @@
           "foo"
         ]
       },
-      "last_verified": "2026-09-10T12:33:19Z",
+      "last_verified": "2026-09-10T12:37:58Z",
       "status": "passed",
       "auto_discovered": false,
       "last_commit_sha": null
@@ -26,7 +26,7 @@
           "deny_vendor"
         ]
       },
-      "last_verified": "2026-09-10T12:33:19Z",
+      "last_verified": "2026-09-10T12:37:58Z",
       "status": "passed",
       "auto_discovered": false,
       "last_commit_sha": null
@@ -49,7 +49,7 @@
           "require_design_review"
         ]
       },
-      "last_verified": "2026-09-10T12:33:19Z",
+      "last_verified": "2026-09-10T12:37:58Z",
       "status": "passed",
       "auto_discovered": true,
       "last_commit_sha": "6208a4e6f36769dbd158c86b408f3a07b18fe57c"
@@ -63,10 +63,10 @@
           "foo"
         ]
       },
-      "last_verified": "2026-09-10T12:33:19Z",
+      "last_verified": "2026-09-10T12:37:58Z",
       "status": "passed",
       "auto_discovered": true,
-      "last_commit_sha": "ec2a9921104221740e1233de40db4c78277bf23b"
+      "last_commit_sha": "175b00021a576a99e3b71429c1d8a72751b0aebf"
     }
   ],
   "auto_discovery": {

@@ -24,7 +24,7 @@
 ## 核心特性
 
 - **阶段状态机**：需求 -> spec -> 测试 -> 实现 -> 测试 -> 修复 -> 交付，逐级放行、不可跳级。
-- **多语言适配**：Python / JavaScript / Java / Kotlin / Scala / Go / Rust / Ruby / PHP / C++ / C# / .NET。
+- **多语言适配**：13 种语言适配器——Python / JavaScript（含 TypeScript）/ Java / Kotlin / Scala / Go / Rust / Swift / Ruby / PHP / C#（.NET 别名）/ C++ / Dart。
 - **工具拦截**：包装 `write_file` / `execute_command`；shell 重定向、`python -c` / `node -e` 等脚本写入同样受控。
 - **防篡改**：HMAC 状态签名、证据清单（SHA-256）、`verify-evidence` Git 基线校验。
 - **安全规则包**：shell 注入 / 路径穿越 / 硬编码密钥 / 许可证头等内置规则，YAML 一键启用。

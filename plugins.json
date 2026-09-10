@@ -9,7 +9,7 @@
           "foo"
         ]
       },
-      "last_verified": "2026-09-07T07:43:06Z",
+      "last_verified": "2026-09-10T12:33:19Z",
       "status": "passed",
       "auto_discovered": false,
       "last_commit_sha": null
@@ -26,7 +26,7 @@
           "deny_vendor"
         ]
       },
-      "last_verified": "2026-09-07T07:43:06Z",
+      "last_verified": "2026-09-10T12:33:19Z",
       "status": "passed",
       "auto_discovered": false,
       "last_commit_sha": null
@@ -49,10 +49,24 @@
           "require_design_review"
         ]
       },
-      "last_verified": "2026-09-07T07:43:06Z",
+      "last_verified": "2026-09-10T12:33:19Z",
       "status": "passed",
       "auto_discovered": true,
       "last_commit_sha": "6208a4e6f36769dbd158c86b408f3a07b18fe57c"
+    },
+    {
+      "name": "Xuqing0415/phase-barrier-plugin-foo-adapter",
+      "repo": "https://github.com/Xuqing0415/phase-barrier-plugin-foo-adapter",
+      "install": "git+https://github.com/Xuqing0415/phase-barrier-plugin-foo-adapter.git#egg=phase-barrier-plugin-foo-adapter",
+      "entry_points": {
+        "phase_barrier.languages": [
+          "foo"
+        ]
+      },
+      "last_verified": "2026-09-10T12:33:19Z",
+      "status": "passed",
+      "auto_discovered": true,
+      "last_commit_sha": "ec2a9921104221740e1233de40db4c78277bf23b"
     }
   ],
   "auto_discovery": {

@@ -63,8 +63,16 @@ def write_file(path, content):
 
 
 def execute_command(command):
-    proc = subprocess.run(command, shell=True, capture_output=True, text=True, cwd=WORKSPACE)
-    return {"exit_code": proc.returncode, "output": proc.stdout + proc.stderr}
+    proc = subprocess.run(
+        command,
+        shell=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",  # 兼容 Windows 控制台使用 GBK 等非 UTF-8 编码输出
+        cwd=WORKSPACE,
+    )
+    return {"exit_code": proc.returncode, "output": (proc.stdout or "") + (proc.stderr or "")}
 
 
 def main() -> int:

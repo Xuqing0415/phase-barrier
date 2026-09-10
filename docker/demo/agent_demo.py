@@ -57,8 +57,16 @@ def real_write(path, content):
 
 
 def real_exec(command):
-    proc = subprocess.run(command, shell=True, cwd=WS, capture_output=True, text=True)
-    return {"exit_code": proc.returncode, "output": proc.stdout + proc.stderr}
+    proc = subprocess.run(
+        command,
+        shell=True,
+        cwd=WS,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",  # 兼容 Windows 控制台使用 GBK 等非 UTF-8 编码输出
+    )
+    return {"exit_code": proc.returncode, "output": (proc.stdout or "") + (proc.stderr or "")}
 
 
 def main() -> None:

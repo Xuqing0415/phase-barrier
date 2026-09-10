@@ -19,6 +19,20 @@
   exit code 0 完成，机器人提交 `f6279c3` 把该条目的 `last_commit_sha` 由 `ec2a9921` 刷新为
   `175b0002`。「第三方新提交 -> 自动发现 -> 索引增量刷新」链路已在真实仓库上闭环，
   不再只有 `tests/test_auto_discover_e2e.py` 的模拟仓库验证。
+- **fix（一键体验崩溃，实测复现）：`docker run ... phase-barrier-demo` 最后一步 TypeError**：
+  `docker/demo/agent_demo.py` 的 `real_exec` 写成 `subprocess.run(..., text=True)` 却未指定
+  `encoding`，文本模式于是按 **locale** 解码；在 Windows（GBK）等非 UTF-8 环境下，
+  子进程 pytest 输出里只要出现无法解码的字节，`subprocess` 就把 `stdout`/`stderr` 置为
+  `None`，紧接着 `proc.stdout + proc.stderr` 抛 `TypeError` —— 官方「零安装体验」主路径
+  直接中断在「步骤 4：运行测试」（实测复现）。现统一为仓库既有正确写法
+  `encoding="utf-8", errors="replace"` + `(proc.stdout or "")`，并修正同源的 3 处：
+  `deploy/seed_gate.py`、`examples/autogpt_integration/gate_command_wrapper.py`、
+  `scripts/run_swebench_batch.py`（docker image 探针）。
+- **测试**：新增 `tests/test_docker_demo.py`（2 例：demo 端到端跑通并同时出现「拦截」与
+  「阶段 6」、真实落盘 spec/测试/实现、`real_exec` 对不可解码字节返回字符串而非
+  TypeError）——该脚本此前**零覆盖**；新增 `tests/test_subprocess_locale_hygiene.py` 静态
+  守护，扫描全部受版本控制的 `subprocess.*` 调用，禁止文本模式漏写 `encoding=`
+  （已用注入 offender 验证守护确实会失败，非空转）。
 
 ## [0.55.0] - 2026-09-10
 

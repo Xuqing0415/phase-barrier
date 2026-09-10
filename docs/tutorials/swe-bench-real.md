@@ -255,3 +255,98 @@ gated 有 3 个实例完整走到阶段 6 并交付（sympy-11400、flask-4045�
   Scale-20 起，评测的 gate_completed 仅在最终全绿时才计 1。
 - 局限：60 轮上限 + flash 模型导致 resolve 偏低，baseline 与 gated 绝对数值均不具榜单意义，
   只用于**同条件下相对对比**；建议下一步换更强模型 / 提高轮数，或切 Verified 分片再测。
+
+## 八、Scale-20：改在官方 eval 容器内跑 Agent（2026-09-10）
+
+### 8.1 为什么从宿主 venv 换成容器内运行
+
+§7.4 的 Scale-10 用宿主 venv 跑通，但扩任务时暴露了两个环境问题：
+
+- 宿主 Python 太新（本机 venv 为 3.14），老仓库（astropy 1.x、老 sympy/scikit-learn）
+  的依赖装不上或行为不对，Agent 会把轮次耗在 numpy 兼容 shim 上而不是写真实补丁。
+- 官方评测镜像本身已把 `/testbed` 建到 `base_commit` 且依赖就绪（testbed conda 环境），
+  是最贴近官方评测的运行环境。
+
+于是新增 `scripts/run_swebench_batch_container.py`：对每个实例 `docker run` 其官方
+`swebench/sweb.eval.x86_64.*` 镜像，在容器内运行 `run_agent.py`，补丁落回宿主挂载目录
+后再用宿主 `grade.py`（官方 swebench harness + Docker）打分。
+
+门禁与测试解释器的分工（关键工程点）：
+
+- `phase-barrier` 的 `requires-python >= 3.10`，但不少老任务镜像的 testbed 环境是
+  py3.6/3.8/3.9（如 requests-1963=3.9、matplotlib-18869=3.8、scikit-learn-10297=3.6）。
+  直接在这些环境里 import 门禁会在 pydantic 解析 `str | None` 时报错。
+- 这些镜像的 **base conda python 是 3.11**，因此用 base conda python 跑 `run_agent.py`
+  （门禁逻辑），并把 `--venv` 指向 testbed 解释器——测试命令经 PATH 在该实例真实
+  环境里执行。两者互不影响。
+
+```powershell
+python scripts/run_swebench_batch_container.py --tasks .pytest_tmp/bench_data/tasks_lite20.json --dataset .pytest_tmp/bench_data/swebench_test.json --agent-script .pytest_tmp/bench_data/run_agent.py --grade-script .pytest_tmp/bench_data/grade.py --grade-python .pytest_tmp/sweb_venv/Scripts/python.exe --results .pytest_tmp/bench_data/results_scale20/results.csv --agent-runs .pytest_tmp/bench_data/agent_runs --eval-runs .pytest_tmp/bench_data/eval_runs --log-dir .pytest_tmp/bench_data/container_logs --modes baseline,gated --max-turns 60 --concurrency 2 --skip-existing
+```
+
+### 8.2 结果（Lite test 分片，20 实例 × 2 组）
+
+数据：`swebench_test.json`（Lite test，300 实例）按仓库分层抽 20 个（django 4 / sympy 4 /
+astropy 2 / matplotlib 2 / flask / seaborn / requests / xarray / pylint / pytest /
+scikit-learn / sphinx）。其中 10 个新实例在官方容器内运行，另 10 个为 §7.4 Scale-10
+结转（宿主 venv），CSV 见 `results_scale20/results.csv`，汇总见 `report.md`。
+
+| 组别 | n | resolved | resolve 率 | 门禁拦截 | 阶段6完成 | 空补丁 |
+|---|---|---|---|---|---|---|
+| baseline | 20 | 5 | 25.0% | 0 | 0 | 7 |
+| gated | 20 | 5 | 25.0% | 19 | 9 | 5 |
+
+按来源分组（方法学对照；容器组才是与 Scale-20 新增实例同环境的数据）：
+
+| 来源 | 组别 | n | resolved | resolve 率 | 拦截 | 空补丁 |
+|---|---|---|---|---|---|---|
+| scale10 结转（宿主 venv） | baseline | 10 | 1 | 10.0% | 0 | 4 |
+| scale10 结转（宿主 venv） | gated | 10 | 0 | 0.0% | 14 | 3 |
+| Scale-20 新增（官方容器） | baseline | 10 | 4 | 40.0% | 0 | 3 |
+| Scale-20 新增（官方容器） | gated | 10 | 5 | 50.0% | 5 | 2 |
+
+要点：
+
+- 容器组内 gated 50% > baseline 40%：在依赖正确的环境里，门禁组反而多解一例
+  （scikit-learn-10297 gated 过、baseline 不过），且空补丁更少（2 vs 3）；
+  而宿主 venv 结转组两组都接近 0，说明 **环境错配是此前 resolve 偏低的主因之一**。
+- 门禁确实在起作用：gated 组全程 19 次拦截、9 次走到阶段 6 交付；baseline 组无门禁概念。
+- 双组总体 25% vs 25% 持平，未观察到门禁对最终解决率的负作用；样本仍小（20 实例），
+  只作内部相对对比。
+- 观测到一次「补丁提取竞态」：astropy-14182 的两个容器在宿主休眠期间被墙钟暂停，
+  恢复后仍在推进；宿主侧 90 分钟看门狗触发并记为 `container_timeout`，随后单独重跑
+  得到正式数据。长跑批量评测建议关闭宿主休眠 / 放宽 `--agent-timeout`。
+
+## 九、Verified 分片复核（2026-09-10）
+
+用 canonical `SWE-bench/SWE-bench_Verified`（500 实例，含 harness 需要的 `eval_script`）
+复核本地已有官方镜像的 4 个实例（astropy-12907 / astropy-14182 / django-10914 /
+scikit-learn-10297），并对比 `deepseek-v4-flash`（默认）与更强的 `deepseek-v4-pro`。
+
+> 坑：HuggingFace 直连在本机 TLS 失败，用 `HF_ENDPOINT=https://hf-mirror.com` 走镜像；
+> 且 `princeton-nlp/SWE-bench_Verified` 镜像缺 `eval_script`，会令 harness
+> `make_test_spec` 抛 `KeyError: 'eval_script'`——必须用 `SWE-bench/SWE-bench_Verified`。
+
+| 实例 | flash b | flash g | pro b | pro g | gated 终态(flash/pro) | gated 拦截(flash/pro) |
+|---|---|---|---|---|---|---|
+| astropy__astropy-12907 | 1 | 1 | 1 | 1 | 6 / 6 | 1 / 1 |
+| astropy__astropy-14182 | 1 | 0 | 0 | 0 | 4 / 6 | 0 / 1 |
+| django__django-10914 | 0 | 0 | 1 | 0 | 2 / 2 | 2 / 1 |
+| scikit-learn__scikit-learn-10297 | 0 | 0 | 0 | 0 | 6 / 6 | 1 / 1 |
+
+Verified resolve：flash baseline 2/4、gated 1/4；pro baseline 2/4、gated 1/4。
+
+要点：
+
+- 换更强模型没有提高 resolve 数，但显著改善交付形态：pro 零空补丁（flash 2 个），
+  gated 走到阶段 6 的次数 3 次（flash 2 次）。说明「更强模型」的价值体现在补丁完整性，
+  而不是在小样本上的 resolve 计数。
+- **分片会翻转结论**：scikit-learn-10297 的同一份 1550 字符补丁（sha256 完全一致）在
+  Lite test 判 `resolved=1`、在 Verified 判 `resolved=0`，说明 Verified 的
+  FAIL_TO_PASS/PASS_TO_PASS 更严格——这正是「用 Verified 复核」能识别 Lite 分片
+  侥幸通过的直接证据。
+- gated 在 django-10914 上弱于 baseline（两个模型都 b=1/g=0）：门禁的
+  spec → 复现测试 → 实现 → 验证 流程要占轮次，在 60 轮预算下对需要长侦查的任务更紧；
+  后续可通过提高轮数上限或按难度放宽阶段证据要求来缓解。
+- 数据与复算脚本（本地实验产物，未入库）：`results_verified_flash/`、`results_verified_pro/`、
+  `results_verified_compare.md`。

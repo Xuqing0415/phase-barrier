@@ -170,15 +170,43 @@ jobs:
             exit 0
           fi
           branch="learning-loop/$run_date-${{ github.run_id }}"
+          base="${{ github.event.repository.default_branch }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
           git add anti_shortcut/defense/learned_rules.yaml
           git commit -m "feat(defense): 学习闭环候选规则（$run_date，人工审核后合入）"
           git push -u origin "$branch"
-          gh pr create \
-            --base "${{ github.event.repository.default_branch }}" \
-            --head "$branch" \
-            --title "学习闭环候选规则（$run_date）" \
+          # 仓库若没开 Settings -> Actions -> General 里的
+          # 「Allow GitHub Actions to create and approve pull requests」，
+          # GITHUB_TOKEN 建 PR 会被拒（GraphQL: not permitted to create or approve
+          # pull requests），分支却已经推上去了。这里降级为「issue + 一键建 PR 链接」，
+          # 既保留人工审核环节，也不把「环境开关没开」误报成代码缺陷。
+          if pr_error="$(gh pr create \
+              --base "$base" \
+              --head "$branch" \
+              --title "学习闭环候选规则（$run_date）" \
+              --body-file "$RUNNER_TEMP/pr_body.md" \
+              --label "defense,learning-loop" 2>&1)"; then
+            echo "$pr_error"
+            exit 0
+          fi
+          echo "::warning::自动建 PR 失败，降级为 issue（分支 $branch 已推送）：$pr_error"
+          compare="https://github.com/${GITHUB_REPOSITORY}/compare/${base}...${branch}?expand=1"
+          {
+            echo
+            echo "---"
+            echo "### ⚠️ 自动建 PR 失败，需要人工一键创建"
+            echo '```'
+            echo "$pr_error"
+            echo '```'
+            echo "候选规则分支 \`${branch}\` 已推送。若报的是 createPullRequest 权限问题，"
+            echo "可在 **Settings → Actions → General → Workflow permissions** 勾选 "
+            echo "**Allow GitHub Actions to create and approve pull requests** 后重跑本 workflow。"
+            echo
+            echo "👉 [点击创建 PR](${compare})"
+          } >> "$RUNNER_TEMP/pr_body.md"
+          gh issue create \
+            --title "学习闭环候选规则（$run_date，需人工开 PR）" \
             --body-file "$RUNNER_TEMP/pr_body.md" \
             --label "defense,learning-loop"

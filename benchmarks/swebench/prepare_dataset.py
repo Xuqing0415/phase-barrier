@@ -56,7 +56,8 @@ def local_images() -> set[str]:
     """本机 docker 已缓存的镜像名集合（含镜像站前缀的等价名）。"""
     try:
         proc = subprocess.run(["docker", "images", "--format", "{{.Repository}}:{{.Tag}}"],
-                              capture_output=True, text=True, timeout=120)
+                              capture_output=True, text=True, timeout=120,
+                              encoding="utf-8", errors="replace")
     except FileNotFoundError:
         print("未找到 docker CLI；跳过本地镜像过滤", file=sys.stderr)
         return set()

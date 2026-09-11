@@ -178,12 +178,15 @@ def test_has_local_image_matches_mirror_prefix():
 
 def test_force_lf_writes_strips_cr(tmp_path):
     """Windows 上默认会写成 CRLF；评分进程必须强制 LF（否则容器内 eval.sh 全挂）。"""
+    import os
+
     target = tmp_path / "eval.sh"
     with grade.force_lf_writes():
         target.write_text("set -e\ncd /testbed\n")
         assert b"\r\n" not in target.read_bytes()
     target.write_text("set -e\ncd /testbed\n")
-    assert b"\r\n" in target.read_bytes()  # 恢复后行为如初
+    # Linux/macOS 默认本就写 LF；Windows 才会翻成 CRLF（这正是需要 shim 的原因）
+    assert (b"\r\n" in target.read_bytes()) is (os.name == "nt")
 
 
 # ---------- gold_check ----------

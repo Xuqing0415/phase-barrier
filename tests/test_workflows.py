@@ -137,6 +137,18 @@ def test_learning_loop_gates_on_step_output_not_hashfiles():
     assert "id: collect" in text
 
 
+def test_learning_loop_falls_back_to_issue_when_pr_creation_is_denied():
+    """仓库未开「Allow GitHub Actions to create and approve pull requests」时，
+    ``gh pr create`` 必被拒（GraphQL: not permitted to create pull requests）。
+    workflow 必须降级成「issue + 一键建 PR 链接」，而不是让整个 job 变红。
+    """
+    text = (WORKFLOW_DIR / "learning-loop.yml").read_text(encoding="utf-8")
+    assert "if pr_error=" in text, "建 PR 失败没有被捕获"
+    assert "compare/${base}...${branch}?expand=1" in text, "降级 issue 里缺少一键建 PR 链接"
+    assert "gh issue create" in text
+    assert "--fail-on-vulnerability" in text  # 复测判定不能被降级逻辑顺手删掉
+
+
 def test_update_rules_promote_mode_works_without_suggestions():
     """CI 的 promote 步骤必须能在没有 --suggestions / --verify-cases 时跑通。"""
     result = subprocess.run(

@@ -1,15 +1,42 @@
 name: Red team
 
 # 路径 1（v0.57.0）：用对抗性 Agent 打自己的门禁，发现真实逃逸即失败。
-# 不进每次 push 的快速矩阵（一轮约 1 分钟），按周 + 手动触发即可。
+#
+# 触发方式（P0 常态化，v0.60.0）：
+# - pull_request：门禁核心代码（防线 / 拦截器 / 校验器 / 状态机 / 红队本体）变动时
+#   自动跑**快速子集**，逃逸 -> job 失败 -> PR 不能合并；结果以评论形式贴回 PR；
+# - schedule：每周一全量跑（含全部逃逸技术与多步 / 会话级 / 工具链攻击）；
+# - workflow_dispatch：手动触发（full=false 只跑快速子集）。
 on:
   workflow_dispatch:
+    inputs:
+      full:
+        description: 是否全量（false 只跑快速子集）
+        type: boolean
+        default: true
   schedule:
     - cron: '17 3 * * 1'   # 每周一 03:17 UTC
+  pull_request:
+    paths:
+      - 'anti_shortcut/defense/**'
+      - 'anti_shortcut/interceptors.py'
+      - 'anti_shortcut/validators.py'
+      - 'anti_shortcut/state.py'
+      - 'anti_shortcut/skill.py'
+      - 'benchmarks/red_team/**'
+      - '.github/workflows/red-team.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
 
 concurrency:
   group: red-team-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  # PR 快速子集：覆盖防线 2/4/5 的核心绕过面，不需要大模型即可判定
+  FAST_TECHNIQUES: 'equivalent_op,timing_evade,constraint_weaken,tool_chain_script'
 
 jobs:
   red-team:
@@ -31,34 +58,70 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
+      - name: Decide scope
+        id: scope
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "techniques=${FAST_TECHNIQUES}" >> "$GITHUB_OUTPUT"
+            echo "label=PR 快速子集（${FAST_TECHNIQUES}）" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.full }}" = "false" ]; then
+            echo "techniques=${FAST_TECHNIQUES}" >> "$GITHUB_OUTPUT"
+            echo "label=手动快速子集" >> "$GITHUB_OUTPUT"
+          else
+            echo "techniques=" >> "$GITHUB_OUTPUT"
+            echo "label=全量（全部逃逸技术）" >> "$GITHUB_OUTPUT"
+          fi
+
       # 默认加载 anti_shortcut/defense/learned_rules.yaml：红队测的是「当前」防御姿态
       - name: Run red team
+        id: redteam
         run: |
           # pipefail 必须显式打开：否则管道里 python 的退出码会被 tee 掩盖，
           # 「发现漏洞 -> 非 0 退出」就形同虚设，CI 会静默变绿。
           set -o pipefail
-          python benchmarks/red_team/run_red_team.py \
-            --workspace "$RUNNER_TEMP/red-team" \
-            --output benchmarks/red_team/results \
-            --fail-on-vulnerability | tee /tmp/red-team.md
+          out_dir="benchmarks/red_team/results/${{ github.run_id }}"
+          args=(--workspace "$RUNNER_TEMP/red-team" --output "$out_dir" --fail-on-vulnerability)
+          if [ -n "${{ steps.scope.outputs.techniques }}" ]; then
+            args+=(--techniques "${{ steps.scope.outputs.techniques }}")
+          fi
+          echo "运行范围：${{ steps.scope.outputs.label }}"
+          python benchmarks/red_team/run_red_team.py "${args[@]}" | tee "$RUNNER_TEMP/red-team.md"
 
       - name: Job summary
         if: always()
         run: |
           {
-            echo "## 红队逃逸报告"
+            echo "## 红队逃逸报告（${{ steps.scope.outputs.label }}）"
             echo
-            if [ -f /tmp/red-team.md ]; then
-              cat /tmp/red-team.md
+            if [ -f "$RUNNER_TEMP/red-team.md" ]; then
+              cat "$RUNNER_TEMP/red-team.md"
             else
               echo "报告未生成（运行在报告阶段之前就失败了，见上方日志）"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment on PR
+        # fork PR 的 GITHUB_TOKEN 是只读的，`gh pr comment` 会 403 把 job 弄红；
+        # 这种 PR 只写 job summary（报告仍然可见），不回评论。
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f "$RUNNER_TEMP/red-team.md" ]; then
+            {
+              echo "<!-- red-team-report -->"
+              echo
+              cat "$RUNNER_TEMP/red-team.md"
+            } > "$RUNNER_TEMP/red-team-comment.md"
+            gh pr comment "${{ github.event.number }}" --body-file "$RUNNER_TEMP/red-team-comment.md"
+          fi
 
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: red-team-report
-          path: benchmarks/red_team/results/report.*
+          path: |
+            benchmarks/red_team/results/${{ github.run_id }}/report.*
+            benchmarks/red_team/results/report.*
           if-no-files-found: warn

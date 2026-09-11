@@ -15,9 +15,11 @@
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections import defaultdict
+from datetime import datetime, timezone
 
 from .case_library import case_texts
 from pathlib import Path
@@ -33,6 +35,7 @@ __all__ = [
     "case_texts",
     "apply_suggestions",
     "append_few_shot",
+    "promote_rules",
     "extract_candidates",
 ]
 
@@ -270,13 +273,18 @@ def analyze_cases(
 def build_suggestions(report: dict[str, Any]) -> dict[str, Any]:
     """把分析报告整理成结构化更新建议（可直接落 YAML）。"""
     forbidden: dict[str, list[str]] = defaultdict(list)
+    provenance: dict[str, list[str]] = defaultdict(list)
     vague: list[str] = []
     weakening: list[str] = []
     examples: list[dict[str, str]] = []
     for group in report.get("groups", []):
         for item in group.get("new_patterns", []):
             category = str(item.get("category") or "file_delete")
-            forbidden[category].append(str(item["pattern"]))
+            pattern = str(item["pattern"])
+            forbidden[category].append(pattern)
+            for case_id in group.get("case_ids") or []:
+                if case_id and case_id not in provenance[pattern]:
+                    provenance[pattern].append(str(case_id))
         vague.extend(group.get("vague_phrases", []))
         weakening.extend(group.get("weakening_words", []))
         if group.get("sample_reason"):
@@ -289,6 +297,7 @@ def build_suggestions(report: dict[str, Any]) -> dict[str, Any]:
             )
     return {
         "forbidden_patterns": {k: _dedupe(v) for k, v in sorted(forbidden.items())},
+        "provenance": {k: v for k, v in sorted(provenance.items())},
         "vague_phrases": _dedupe(vague),
         "weakening_words": _dedupe(weakening),
         "few_shot_examples": examples[:5],
@@ -337,6 +346,130 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+_SCHEMA_VERSION = 2
+
+
+def _utc_now() -> str:
+    """当前 UTC 时间（秒级、带 Z 后缀，便于人工比对）。"""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _rule_id(category: str, pattern: str) -> str:
+    """规则 ID：对「类别 + 正则」取哈希，稳定且与书写顺序无关。"""
+    digest = hashlib.sha256(f"{category}\x00{pattern}".encode("utf-8")).hexdigest()[:12]
+    return f"rule-{digest}"
+
+
+def _normalize_rules(existing: dict[str, Any]) -> list[dict[str, Any]]:
+    """把规则文件统一成 ``rules`` 列表（兼容 v1 的顶层 ``forbidden_patterns`` 映射）。
+
+    v2 起每条规则拆成两个区块：``auto``（``--apply`` 每次刷新）与 ``manual``
+    （人工审核痕迹，``--apply`` 永不触碰）。v1 文件迁移时旧的 ``forbidden_patterns``
+    条目成为已有规则（不会重复新增），顶层 ``note`` 视为人工说明保留。
+    """
+    rules: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    raw_rules = existing.get("rules")
+    if isinstance(raw_rules, list):
+        for item in raw_rules:
+            if not isinstance(item, dict):
+                continue
+            category = str(item.get("category") or "")
+            pattern = str(item.get("pattern") or "")
+            if not category or not pattern or (category, pattern) in seen:
+                continue
+            seen.add((category, pattern))
+            auto = item.get("auto") if isinstance(item.get("auto"), dict) else {}
+            manual = item.get("manual") if isinstance(item.get("manual"), dict) else {}
+            rules.append(
+                {
+                    "rule_id": str(item.get("rule_id") or _rule_id(category, pattern)),
+                    "category": category,
+                    "pattern": pattern,
+                    "auto": dict(auto),
+                    "manual": dict(manual),
+                }
+            )
+    for category, patterns in (existing.get("forbidden_patterns") or {}).items():
+        for pattern in patterns or []:
+            key = (str(category), str(pattern))
+            if key in seen:
+                continue
+            seen.add(key)
+            rules.append(
+                {
+                    "rule_id": _rule_id(*key),
+                    "category": key[0],
+                    "pattern": key[1],
+                    "auto": {"migrated_from": "v1_forbidden_patterns"},
+                    "manual": {},
+                }
+            )
+    return rules
+
+
+def _manual_note(existing: dict[str, Any]) -> str:
+    """人工说明：顶层 ``note`` 视为人工区（v1 / v2 兼容），``--apply`` 永不覆盖。"""
+    return str(existing.get("note") or "")
+
+
+def _prune_rule(rule: dict[str, Any]) -> dict[str, Any]:
+    """输出规则时去掉空的 auto / manual 区块，保持文件精简。"""
+    out = dict(rule)
+    for key in ("auto", "manual"):
+        if not out.get(key):
+            out.pop(key, None)
+    return out
+
+
+def promote_rules(
+    dest: str | Path,
+    *,
+    confirmations_required: int = 3,
+    write: bool = True,
+    now: str | None = None,
+) -> dict[str, Any]:
+    """把复测确认过的规则从 ``observation`` 升级为 ``active``（置信度管理）。
+
+    每条规则在 ``auto`` 里带 ``confidence`` / ``confirmations``：新规则先以
+    ``observation`` 进入规则库（照常参与拦截），每通过一次红队复测 +1；累计到
+    ``confirmations_required`` 后升级为 ``active``，表示「已被反复验证」。
+    """
+    dest = Path(dest)
+    if not dest.is_file():
+        return {"promoted": [], "dest": str(dest), "written": False}
+    existing = yaml.safe_load(dest.read_text(encoding="utf-8")) or {}
+    if not isinstance(existing, dict):
+        raise ValueError(f"规则文件顶层必须是映射：{dest}")
+    rules = _normalize_rules(existing)
+    promoted: list[str] = []
+    for rule in rules:
+        auto = rule.setdefault("auto", {})
+        confidence = str(auto.get("confidence") or "observation")
+        if confidence == "active":
+            continue
+        count = int(auto.get("confirmations") or 0) + 1
+        auto["confirmations"] = count
+        auto["last_confirmed_at"] = now or _utc_now()
+        if count >= max(1, int(confirmations_required)):
+            auto["confidence"] = "active"
+            promoted.append(f"[{rule['category']}] {rule['pattern']}")
+    forbidden: dict[str, list[str]] = {}
+    for rule in rules:
+        forbidden.setdefault(rule["category"], []).append(rule["pattern"])
+    examples = list(existing.get("few_shot_examples") or [])
+    payload = dict(existing)
+    payload["schema_version"] = _SCHEMA_VERSION
+    payload["rules"] = [_prune_rule(r) for r in rules]
+    payload["forbidden_patterns"] = {k: v for k, v in sorted(forbidden.items()) if v}
+    payload["few_shot_examples"] = examples[-5:]
+    if write:
+        dest.write_text(
+            yaml.safe_dump(payload, allow_unicode=True, sort_keys=False), encoding="utf-8"
+        )
+    return {"promoted": promoted, "dest": str(dest), "written": bool(write)}
+
+
 def apply_suggestions(
     suggestions: dict[str, Any],
     dest: str | Path,
@@ -349,6 +482,8 @@ def apply_suggestions(
     - 合并前做正则编译校验，非法正则直接丢弃并记录；
     - 给了 ``verify_texts`` 时做**反查**：建议的正则必须至少命中一条它来自的
       案例文本，否则丢弃（防止把「看起来像」的规则写进规则库）；
+    - **人工区永不覆盖**：顶层 ``note`` 与每条规则的 ``manual`` 区块（人工审核痕迹、
+      来源说明）只读；``--apply`` 只刷新 ``auto`` 区块（来源案例、时间戳、置信度）；
     - 幂等：已在目标文件里的条目不会重复写入；
     - ``write=False`` 时只做校验与统计（dry-run），不落盘。
     """
@@ -359,12 +494,17 @@ def apply_suggestions(
         if isinstance(loaded, dict):
             existing = loaded
 
-    stats: dict[str, Any] = {"added": {}, "skipped": [], "dest": str(dest)}
-    forbidden = {
-        str(k): list(v or []) for k, v in (existing.get("forbidden_patterns") or {}).items()
+    stats: dict[str, Any] = {"added": {}, "updated": [], "skipped": [], "dest": str(dest)}
+    rules = _normalize_rules(existing)
+    by_key: dict[tuple[str, str], dict[str, Any]] = {
+        (r["category"], r["pattern"]): r for r in rules
     }
+    provenance = (
+        suggestions.get("provenance") if isinstance(suggestions.get("provenance"), dict) else {}
+    )
+    now = _utc_now()
+
     for category, patterns in (suggestions.get("forbidden_patterns") or {}).items():
-        target = forbidden.setdefault(str(category), [])
         for pattern in patterns:
             try:
                 compiled = re.compile(pattern)
@@ -376,22 +516,62 @@ def apply_suggestions(
             ):
                 stats["skipped"].append(f"反查未命中任何案例，丢弃 {pattern!r}")
                 continue
-            if pattern in target:
+            key = (str(category), str(pattern))
+            sources = [str(c) for c in (provenance.get(pattern) or []) if c]
+            current = by_key.get(key)
+            if current is not None:
+                # 已有规则：只刷新 auto，manual（人工审核痕迹）原样保留
+                auto = current.setdefault("auto", {})
+                auto["generated_by"] = str(auto.get("generated_by") or "analyze_cases.py")
+                auto["updated_at"] = now
+                merged = _dedupe(list(auto.get("source_cases") or []) + sources)
+                if merged:
+                    auto["source_cases"] = merged
+                stats["updated"].append(f"[{category}] {pattern}")
                 continue
-            target.append(pattern)
+            rule = {
+                "rule_id": _rule_id(*key),
+                "category": key[0],
+                "pattern": key[1],
+                "auto": {
+                    "generated_by": "analyze_cases.py",
+                    "updated_at": now,
+                    "confidence": str(suggestions.get("confidence") or "observation"),
+                    "confirmations": 0,
+                    "source_cases": sources,
+                },
+                "manual": {},
+            }
+            rules.append(rule)
+            by_key[key] = rule
             stats["added"].setdefault(str(category), []).append(pattern)
 
-    vague = _dedupe(list(existing.get("vague_phrases") or []) + list(suggestions.get("vague_phrases") or []))
+    vague = _dedupe(
+        list(existing.get("vague_phrases") or []) + list(suggestions.get("vague_phrases") or [])
+    )
     weakening = _dedupe(
         list(existing.get("weakening_words") or []) + list(suggestions.get("weakening_words") or [])
     )
     examples = list(existing.get("few_shot_examples") or []) + list(
         suggestions.get("few_shot_examples") or []
     )
+    suggestion_note = str(suggestions.get("note") or "")
+    manual_note = _manual_note(existing) or suggestion_note or "由案例库分析生成，人工审核后合入。"
+    forbidden: dict[str, list[str]] = {}
+    for rule in rules:
+        forbidden.setdefault(rule["category"], []).append(rule["pattern"])
     payload = {
-        "note": suggestions.get("note")
-        or existing.get("note")
-        or "由案例库分析生成，人工审核后合入。",
+        "schema_version": _SCHEMA_VERSION,
+        # 顶层 note 是人工区：--apply 永不覆盖（v1 迁移时旧的顶层 note 视为人工说明）
+        "note": manual_note,
+        # 机器区块：记录本次建议的说明与刷新时间，供人工比对「建议变了什么」
+        "auto": {
+            "generated_by": "analyze_cases.py",
+            "updated_at": now,
+            "suggested_note": suggestion_note,
+        },
+        "rules": [_prune_rule(r) for r in rules],
+        # 兼容视图：防线 4 直接读取（behavior_audit.extra_forbidden_patterns_file）
         "forbidden_patterns": {k: v for k, v in sorted(forbidden.items()) if v},
         "vague_phrases": vague,
         "weakening_words": weakening,
@@ -403,6 +583,7 @@ def apply_suggestions(
             yaml.safe_dump(payload, allow_unicode=True, sort_keys=False), encoding="utf-8"
         )
     stats["written"] = bool(write)
+    stats["rules_total"] = len(rules)
     stats["total_patterns"] = sum(len(v) for v in payload["forbidden_patterns"].values())
     return stats
 

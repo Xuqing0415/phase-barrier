@@ -37,11 +37,18 @@ defense:
     enabled: false
     trace_file: trace.jsonl
     deny_missing_test_command: false
+    scan_deliverables: true  # 交付物源码兜底扫描
+    scan_chains: true        # 工具链补扫：trace 写过的路径按磁盘完整内容再扫（v0.60.0）
   human_review:           # 防线 5（阶段 4/5 -> 6 交付前）
     enabled: false
     sample_rate: 0.3
     force_above_score: 80
     auto_approve_below_score: 20
+    rollup_ledger: null          # 跨会话风险账本（相对工作区或绝对路径）
+    task_family_detection: false # 需求族聚合（v0.60.0）
+    task_family_window_hours: 24
+    task_family_min_tasks: 3
+    task_family_score_threshold: 60
 ```
 
 ## 防线 1：需求模板（前置约束）
@@ -144,7 +151,13 @@ formal_constraints:
   `secret`（硬编码密钥）；
 - 自定义类别：`defense.behavior_audit.extra_forbidden_patterns: {类别: [正则...]}`；
 - 命中禁止操作 → **拒绝交付**，报告写入 `behavior_diff.json`；
-- trace 中完全没有测试命令：默认警告，`deny_missing_test_command: true` 时拒绝。
+- trace 中完全没有测试命令：默认警告，`deny_missing_test_command: true` 时拒绝；
+- **去混淆归一化**（v0.60.0）：匹配前把引号拼接（`r''m`）、反斜杠转义（`r\m`）、
+  零宽字符还原成字面；`base64 -d | sh` / `xxd -r | sh` 等混淆管道有显式模式；
+- **工具链补扫**（`scan_chains`，v0.60.0）：trace 里的 `write_file` 内容会被截断到
+  4000 字符，交付物扫描又只覆盖 `source_extensions` ——「写 `.tmp` / `.env` /
+  `Makefile` 脚本再执行」的组合会落在两条扫描之间。补扫对 trace 里出现过的写入路径
+  按**磁盘完整内容**再扫一遍，命中记为 `source: chain`（`write_then_run`）。
 
 ### 验收对照
 
@@ -166,6 +179,11 @@ formal_constraints:
 
 - 抽样概率 = `min(sample_rate, score/100*sample_rate)`；
 - `score >= force_above_score` 必抽；`score < auto_approve_below_score` 自动放行；
+- **需求族聚合**（`task_family_detection`，v0.60.0）：同一 `task_family_id` 在
+  `task_family_window_hours` 内的任务数 >= `task_family_min_tasks` 且风险总分 >=
+  `task_family_score_threshold` → **强制人工复核**（不看单任务分数）。用于识别
+  「把高风险任务拆成多个低风险子任务」的会话级攻击；族 ID 由编排器声明，缺失时
+  回落到需求文本哈希；
 - 命中抽样 → 生成 `.agent_gate/defense/human_review_request.json`
   （需求 + spec 摘要 + 双模型结论 + 形式化结果 + 行为审计报告），**不放行**；
 - 人工核对后批准，再重新推进即可：

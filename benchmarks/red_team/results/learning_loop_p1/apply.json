@@ -1,0 +1,12 @@
+{
+  "added": {},
+  "updated": [
+    "[file_delete] (?i)\\btruncate\\s+[^\\n;&|]{0,40}?\\-s\\b"
+  ],
+  "skipped": [],
+  "dest": ".pytest_tmp\\learned_p1.yaml",
+  "written": true,
+  "rules_total": 1,
+  "total_patterns": 1,
+  "prompts_updated": {}
+}

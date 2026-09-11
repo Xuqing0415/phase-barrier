@@ -183,6 +183,11 @@ class RedTeamSandbox:
         skill = AntiShortcutSkill(
             workspace, config=self._gate_config(attempt), user_request=attempt.requirement
         )
+        for key, value in (attempt.state_evidence or {}).items():
+            try:
+                skill.state.set_evidence(str(key), value)
+            except Exception:  # noqa: BLE001 - 预置证据失败不影响回放
+                pass
         trace = _Trace()
         started = time.time()
         try:

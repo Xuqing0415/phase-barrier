@@ -20,7 +20,7 @@
     python scripts/update_rules.py --suggestions suggestions.json \
         --dest anti_shortcut/defense/learned_rules.yaml --verify-cases case_library.jsonl --apply
 
-退出码：0 = 成功（含 dry-run）；1 = 输入错误 / 建议文件不可读；2 = 缺少反查案例。
+退出码：0 = 成功（含 dry-run）；1 = 输入错误 / 建议文件不可读；2 = 缺少 --suggestions 或反查案例。
 """
 from __future__ import annotations
 
@@ -51,14 +51,61 @@ def main(argv: list[str] | None = None) -> int:
     from anti_shortcut.defense.case_library import load_cases
 
     ap = argparse.ArgumentParser(description="phase-barrier 规则更新（路径 4，人工审核后合入）")
-    ap.add_argument("--suggestions", required=True, help="analyze_cases.py 产出的建议 JSON/YAML")
+    ap.add_argument(
+        "--suggestions",
+        default=None,
+        help="analyze_cases.py 产出的建议 JSON/YAML（--promote 模式下不需要）",
+    )
     ap.add_argument("--dest", required=True, help="目标规则文件（如 anti_shortcut/defense/learned_rules.yaml）")
     ap.add_argument("--verify-cases", nargs="*", default=None, help="反查用的案例库（JSONL/目录）")
     ap.add_argument("--allow-unverified", action="store_true", help="允许在没有反查案例的情况下 apply")
     ap.add_argument("--prompt", action="append", default=None, help="追加 few-shot 示例的提示词文件（可多次）")
+    ap.add_argument(
+        "--confidence",
+        choices=("observation", "active"),
+        default="observation",
+        help="新规则的置信度（默认 observation，经红队复测后由 --promote 升级）",
+    )
+    ap.add_argument(
+        "--promote",
+        action="store_true",
+        help="复测确认模式：给规则自动 +1 确认次数，累计够数后 observation -> active",
+    )
+    ap.add_argument(
+        "--confirmations-required",
+        type=int,
+        default=3,
+        help="升级为 active 所需的复测确认次数（默认 3）",
+    )
     ap.add_argument("--apply", action="store_true", help="真正写入（缺省为 dry-run）")
     ap.add_argument("--json", action="store_true", help="把统计打到 stdout（JSON）")
     args = ap.parse_args(argv)
+
+    # --promote 是「复测确认」模式：只给已有规则累计确认次数，读的是 --dest 本身，
+    # 不需要（也不应该要求）--suggestions / --verify-cases，否则 CI 里的
+    # `--promote --apply` 会被这两道前置校验直接挡下（退出码 2）。
+    if args.promote:
+        from anti_shortcut.defense.case_analysis import promote_rules
+
+        stats = promote_rules(
+            args.dest,
+            confirmations_required=args.confirmations_required,
+            write=args.apply,
+        )
+        if args.json:
+            print(json.dumps(stats, ensure_ascii=False, indent=2))
+        else:
+            mode = "已写入" if args.apply else "dry-run（未写入；加 --apply 落盘）"
+            print(f"[{mode}] 置信度确认：{stats['dest']}")
+            for item in stats.get("promoted") or []:
+                print(f"  ★ 升级为 active：{item}")
+            if not stats.get("promoted"):
+                print("  （本轮没有规则达到升级门槛）")
+        return 0
+
+    if not args.suggestions:
+        print("必须提供 --suggestions（或改用 --promote 升级已有规则）", file=sys.stderr)
+        return 2
 
     src = Path(args.suggestions)
     if not src.is_file():
@@ -84,6 +131,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
+    suggestions.setdefault("confidence", args.confidence)
     stats = apply_suggestions(
         suggestions, args.dest, verify_texts=verify_texts, write=args.apply
     )
@@ -103,6 +151,8 @@ def main(argv: list[str] | None = None) -> int:
         for category, patterns in (stats["added"] or {}).items():
             for pattern in patterns:
                 print(f"  + [{category}] {pattern}")
+        for item in stats.get("updated") or []:
+            print(f"  ~ 刷新机器区（人工 note 保留）：{item}")
         if not stats["added"]:
             print("  （没有新增规则）")
         for skipped in stats["skipped"]:

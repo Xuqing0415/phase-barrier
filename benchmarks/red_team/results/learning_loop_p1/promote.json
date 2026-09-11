@@ -1,0 +1,16 @@
+[
+  {
+    "round": 1,
+    "promoted": [],
+    "confidence": "observation",
+    "confirmations": 1
+  },
+  {
+    "round": 2,
+    "promoted": [
+      "[file_delete] (?i)\\btruncate\\s+[^\\n;&|]{0,40}?\\-s\\b"
+    ],
+    "confidence": "active",
+    "confirmations": 2
+  }
+]

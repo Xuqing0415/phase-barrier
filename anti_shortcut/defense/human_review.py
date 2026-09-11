@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import random
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -68,26 +69,65 @@ def _resolve_ledger(workspace: Path, opts: HumanReviewOptions) -> Path | None:
     return path if path.is_absolute() else workspace / path
 
 
+def _normalize_request(text: str) -> str:
+    """需求文本归一化：去掉空白，截断到固定长度（族哈希要稳定）。"""
+    return re.sub(r"\s+", "", str(text))[:200]
+
+
+def _family_id(state: Any, user_request: str) -> str:
+    """需求族 ID（P1 方向 B，会话级攻击检测）。
+
+    优先取状态机里的显式 ``task_family_id``（编排器知道父任务，能准确声明同一族的
+    子任务）；没有显式声明时回落到需求文本哈希——同一需求的多次尝试仍会落进同一族。
+    """
+    explicit = state.get_evidence("task_family_id") if state is not None else None
+    if explicit:
+        return str(explicit)
+    return "family-" + _request_id(_normalize_request(user_request))
+
+
 def _rollup_boost(
-    workspace: Path, opts: HumanReviewOptions, request_id: str
-) -> tuple[int, dict[str, Any]]:
+    workspace: Path,
+    opts: HumanReviewOptions,
+    request_id: str,
+    user_request: str = "",
+    state: Any = None,
+    current_score: int = 0,
+) -> tuple[int, bool, dict[str, Any]]:
     """跨会话风险累积：按共享账本窗口内的历史任务数增加风险分。
 
     单任务的风险分永远看不到「把高风险任务拆成若干低风险子任务」这种攻击——
     每个子任务单看都很简单。共享账本把同一台机器 / 同一 CI 上最近完成的交付
     记下来，窗口内历史越多，当前任务的风险分越高，从而让拆分子任务逐步逼近
     强制人工复核阈值。
+
+    ``task_family_detection`` 打开时额外做**需求族聚合**：同一 ``task_family_id``
+    在 ``task_family_window_hours`` 内的任务数与风险分之和达到门槛即强制人工复核
+    （即使每个子任务单独看都是低风险）。
+
+    返回 ``(boost, family_forced, info)``。
     """
     ledger = _resolve_ledger(workspace, opts)
+    family_id = _family_id(state, user_request) if opts.task_family_detection else ""
     info: dict[str, Any] = {
         "enabled": ledger is not None,
         "ledger": str(ledger) if ledger is not None else "",
     }
+    if opts.task_family_detection:
+        info.update(
+            {
+                "task_family_id": family_id,
+                "family_tasks": 0,
+                "family_score_sum": 0,
+                "family_forced": False,
+            }
+        )
     if ledger is None:
-        return 0, info
+        return 0, False, info
     cutoff = time.time() - max(1, int(opts.rollup_window_minutes)) * 60
+    entries = read_jsonl(ledger)
     recent: list[dict[str, Any]] = []
-    for entry in read_jsonl(ledger):
+    for entry in entries:
         if entry.get("request_id") == request_id:
             continue
         try:
@@ -105,7 +145,37 @@ def _rollup_boost(
             "recent_request_ids": [e.get("request_id") for e in recent][-5:],
         }
     )
-    return boost, info
+    family_forced = False
+    if opts.task_family_detection:
+        family_cutoff = time.time() - max(1, int(opts.task_family_window_hours)) * 3600
+        family = []
+        for entry in entries:
+            if entry.get("request_id") == request_id:
+                continue
+            if str(entry.get("task_family_id") or "") != family_id:
+                continue
+            try:
+                at_epoch = float(entry.get("at_epoch"))
+            except (TypeError, ValueError):
+                continue
+            if at_epoch >= family_cutoff:
+                family.append(entry)
+        # 把当前任务也算进去：第 N 个子任务应当能触发「同族 >= N 个任务」的门槛
+        family_tasks = len(family) + 1
+        family_score = sum(int(e.get("risk_score") or 0) for e in family) + int(current_score)
+        family_forced = (
+            family_tasks >= int(opts.task_family_min_tasks)
+            and family_score >= int(opts.task_family_score_threshold)
+        )
+        info.update(
+            {
+                "family_window_hours": int(opts.task_family_window_hours),
+                "family_tasks": family_tasks,
+                "family_score_sum": family_score,
+                "family_forced": family_forced,
+            }
+        )
+    return boost, family_forced, info
 
 
 def _append_ledger(
@@ -114,6 +184,7 @@ def _append_ledger(
     request_id: str,
     score: int,
     user_request: str,
+    task_family_id: str = "",
 ) -> None:
     """把本次交付评估写入共享账本（同一 request_id 只记一次，重跑幂等）。"""
     ledger = _resolve_ledger(workspace, opts)
@@ -130,6 +201,7 @@ def _append_ledger(
             "risk_score": score,
             "user_request": str(user_request)[:200],
             "workspace": str(workspace),
+            "task_family_id": task_family_id,
         },
     )
 
@@ -238,16 +310,31 @@ class HumanReviewLine(DefenseLine):
         score, parts = compute_risk_score(workspace, config, state)
         request_id = _request_id(seed_text)
 
-        rollup_boost, rollup_info = _rollup_boost(workspace, opts, request_id)
+        rollup_boost, family_forced, rollup_info = _rollup_boost(
+            workspace, opts, request_id, user_request, state, score
+        )
         if rollup_boost:
             score = min(100, score + rollup_boost)
             parts["rollup_boost"] = rollup_boost
             parts["total"] = score
-        _append_ledger(workspace, opts, request_id, score, user_request)
+        _append_ledger(
+            workspace,
+            opts,
+            request_id,
+            score,
+            user_request,
+            str(rollup_info.get("task_family_id") or ""),
+        )
+        if family_forced:
+            parts["family_forced"] = True
 
         must_review = False
         probability = 0.0
-        if score >= opts.force_above_score:
+        if family_forced:
+            # 会话级攻击：单任务分数不高，但同族任务累积已越过门槛 -> 强制人工复核
+            must_review = True
+            probability = 1.0
+        elif score >= opts.force_above_score:
             must_review = True
             probability = 1.0
         elif score < opts.auto_approve_below_score:
@@ -271,6 +358,7 @@ class HumanReviewLine(DefenseLine):
             "probability": round(probability, 4),
             "request_id": request_id,
             "rollup": rollup_info,
+            "family_forced": family_forced,
         }
         if must_review:
             approved = [
@@ -291,6 +379,7 @@ class HumanReviewLine(DefenseLine):
                 "request_id": request_id,
                 "risk_score": score,
                 "risk_breakdown": parts,
+                "session_family": rollup_info if family_forced else {},
                 "created_at": now_iso(),
                 "user_request": user_request[:2000],
                 "requirement_template": state.get_evidence("requirement_template"),
@@ -306,9 +395,18 @@ class HumanReviewLine(DefenseLine):
                 ],
             }
             write_evidence(workspace, config, "human_review_request.json", payload)
+            if family_forced:
+                reason = (
+                    f"同一需求族 {rollup_info.get('task_family_id')} 在 "
+                    f"{rollup_info.get('family_window_hours', 24)}h 内累积到 "
+                    f"{rollup_info.get('family_tasks')} 个任务 / 风险总分 "
+                    f"{rollup_info.get('family_score_sum')}，触发会话级强制复核"
+                )
+            else:
+                reason = f"任务风险分 {score}/100 命中人工复核抽样"
             return DefenseCheckResult(
                 False,
-                f"防线 5（人工复核）未放行：任务风险分 {score}/100 命中人工复核抽样"
+                f"防线 5（人工复核）未放行：{reason}"
                 f"（请求 ID {request_id}）。复核请求已写入 "
                 f".agent_gate/defense/human_review_request.json；人工通过后运行 "
                 f"`python -m anti_shortcut review-approve --request-id {request_id}` "

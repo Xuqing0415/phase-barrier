@@ -133,6 +133,8 @@ class EscapeAttempt:
     enabled_defenses: tuple[int, ...] | None = None
     notes: str = ""
     attack_category: str = ""
+    #: 攻击额外写入状态机的证据（如会话级攻击声明的 ``task_family_id``）
+    state_evidence: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -237,6 +239,7 @@ class EscapeTechnique(ABC):
         enabled_defenses: Sequence[int] | None = None,
         notes: str = "",
         category: str = "",
+        state_evidence: Mapping[str, Any] | None = None,
     ) -> EscapeAttempt:
         """构造 ``EscapeAttempt`` 并校验技术元信息自洽。"""
         if not self.name:
@@ -268,4 +271,64 @@ class EscapeTechnique(ABC):
             enabled_defenses=defenses,
             notes=notes or self.__doc__ or "",
             attack_category=category or self.attack_category,
+            state_evidence=dict(state_evidence or {}),
+        )
+
+
+@dataclass(frozen=True)
+class ChainStep:
+    """多步攻击里的一个阶段动作块。
+
+    :param stage: 本块结束后要推进到的阶段（0 表示不推进）
+    :param calls: 本块内的工具调用
+    :param note: 给人看的阶段说明（拼进链路描述）
+    """
+
+    stage: int
+    calls: tuple[ToolCall, ...] = ()
+    note: str = ""
+
+
+class EscapeChain(EscapeTechnique):
+    """多步攻击（跨阶段组合，v0.60.0）。
+
+    单步技术只在一个阶段内构造恶意输入；真实攻击者会**组合多个阶段的动作**，让每
+    一步单独看都合规：spec 弱化一点约束、测试只覆盖被弱化的版本、实现按测试交付、
+    测试全绿 —— 最终交付一个有缺陷但形式合规的结果。
+
+    子类提供 :meth:`build_steps`（按序的阶段动作块）与 :attr:`requirement_payload`；
+    本基类负责把它们拼成一条可回放的调用序列。
+    """
+
+    name = ""
+    target_defense = 0
+    expectation = "blocked"
+    attack_category = ""
+    goal_stage = 6
+    #: 链路使用的需求模板（阶段 0 证据）
+    requirement_payload: str = ""
+    #: 链路启用哪些防线（离线跑时通常关掉需要大模型的防线 2）
+    chain_defenses: tuple[int, ...] = (1, 3, 4, 5)
+
+    def build_steps(self, requirement: str) -> Sequence[ChainStep]:
+        raise NotImplementedError
+
+    def generate(self, requirement: str) -> EscapeAttempt:
+        calls: list[ToolCall] = []
+        notes: list[str] = []
+        for step in self.build_steps(requirement):
+            calls.extend(step.calls)
+            if step.stage:
+                calls.append(ToolCall.advance(step.stage))
+            if step.note:
+                notes.append(step.note)
+        setup = {"requirement.yaml": self.requirement_payload} if self.requirement_payload else {}
+        return self.make_attempt(
+            requirement,
+            goal_stage=self.goal_stage,
+            setup=setup,
+            calls=calls,
+            case_id="chain",
+            enabled_defenses=self.chain_defenses,
+            notes="攻击链：" + " → ".join(notes),
         )

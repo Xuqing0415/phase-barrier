@@ -79,6 +79,9 @@ BUILTIN_FORBIDDEN: dict[str, dict[str, Any]] = {
             r"(?i)\brsync\b[^\n]*--delete\b",
             r"(?i)\bRemove-Item\b",
             r"(?i)\bClear-Content\b",
+            # 混淆执行：真正要跑的命令以 base64 / hex 形式出现，字面里没有 rm/delete
+            r"(?i)\bbase64\s+(?:-[dD]|--decode)\b[^\n|]*\|\s*(?:ba|z|k)?sh\b",
+            r"(?i)\bxxd\s+-r\b[^\n|]*\|\s*(?:ba|z|k)?sh\b",
             # Python：shutil / os / pathlib / 裸 unlink
             r"(?i)\bshutil\.rmtree\b",
             r"(?i)\bos\.(remove|unlink|rmdir|removedirs)\b",
@@ -124,6 +127,38 @@ def _forbidden_statements(text: str) -> list[str]:
             if len(line) > 3:
                 out.append(line[:200])
     return out
+
+
+#: 零宽字符：看起来一样、字面不同
+_ZERO_WIDTH = "\u200b\u200c\u200d\ufeff"
+#: 引号拼接（r''m -> rm）与反斜杠转义（r\\m -> rm）的还原
+_QUOTE_SPLIT_RE = re.compile(r"(?<=[A-Za-z0-9_])['\"]{1,2}(?=[A-Za-z0-9_])")
+_ESCAPE_SPLIT_RE = re.compile(r"(?<=[A-Za-z0-9_])\\+?(?=[A-Za-z0-9_])")
+
+
+def _deobfuscate(text: str) -> str:
+    """去混淆归一化：把 shell 等价写法还原成规则库认得出的字面。
+
+    规则库面对的是**字面**，而 shell 支持引号拼接（``r''m``）、反斜杠转义
+    （``r\\m``）与零宽字符插入。审计在匹配前再看一遍归一化后的文本，封堵
+    「等价写法绕过关键字规则」这一类逃逸。
+    """
+    if not text:
+        return text
+    out = text
+    for ch in _ZERO_WIDTH:
+        out = out.replace(ch, "")
+    out = _QUOTE_SPLIT_RE.sub("", out)
+    out = _ESCAPE_SPLIT_RE.sub("", out)
+    return out
+
+
+def _match(pattern: str, *views: str) -> str:
+    """在原始 / 去混淆视图里找第一个命中的；返回 ``raw`` / ``deobfuscated`` / 空串。"""
+    for index, view in enumerate(views):
+        if re.search(pattern, view):
+            return "raw" if index == 0 else "deobfuscated"
+    return ""
 
 
 def _record_text(record: dict[str, Any], scan_write_content: bool) -> str:
@@ -271,21 +306,24 @@ class BehaviorAuditLine(DefenseLine):
             for category, patterns in active.items():
                 for pattern in patterns:
                     try:
-                        if re.search(pattern, text):
-                            violations.append(
-                                {
-                                    "category": category,
-                                    "pattern": pattern,
-                                    "source": "trace",
-                                    "tool": record.get("tool"),
-                                    "path": _record_path(record),
-                                    "ts": record.get("ts"),
-                                    "stage": record.get("stage"),
-                                    "snippet": text[:300],
-                                }
-                            )
+                        matched_on = _match(pattern, text, _deobfuscate(text))
                     except re.error:
                         continue
+                    if not matched_on:
+                        continue
+                    violations.append(
+                        {
+                            "category": category,
+                            "pattern": pattern,
+                            "source": "trace",
+                            "tool": record.get("tool"),
+                            "path": _record_path(record),
+                            "ts": record.get("ts"),
+                            "stage": record.get("stage"),
+                            "matched_on": matched_on,
+                            "snippet": text[:300],
+                        }
+                    )
 
         # 交付物兜底扫描：trace 里看不到的写入（绕过包装器 / 内容被截断）在文件里仍在
         deliverable_files = _iter_deliverables(workspace, opts) if opts.scan_deliverables else []
@@ -327,6 +365,74 @@ class BehaviorAuditLine(DefenseLine):
                     except re.error:
                         continue
 
+        # 工具链审计（v0.60.0）：Agent 先写文件、再执行它时，trace 只保留写入内容的
+        # 前 4000 字符；若该文件不在源码扩展名内（.tmp / .env / Makefile 等），交付物
+        # 扫描也会跳过它。脚本后半段的禁止操作因此两条路都看不到。这里对「trace 里写过
+        # 的路径」按磁盘上的**完整内容**补扫（工具链），并标注是否随后被执行。
+        executed_commands = []
+        chains: list[dict[str, Any]] = []
+        chain_seen: set[str] = set()
+        if opts.scan_chains:
+            executed_commands = [
+                _command_of(r)
+                for r in records
+                if r.get("tool") in ("execute_command", "exec", "shell")
+            ]
+        for record in (records if opts.scan_chains else []):
+            if record.get("tool") not in ("write_file", "write", "apply_patch", "raw_write"):
+                continue
+            rel = _record_path(record)
+            if not rel:
+                continue
+            path = Path(rel)
+            if not path.is_absolute():
+                path = workspace / path
+            try:
+                rel_key = path.resolve().relative_to(workspace.resolve()).as_posix()
+            except (OSError, ValueError):
+                continue
+            if rel_key in chain_seen:
+                continue
+            chain_seen.add(rel_key)
+            if not path.is_file():
+                continue
+            try:
+                content = path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            executed = any(
+                cmd and (rel_key in cmd or Path(rel_key).name in cmd)
+                for cmd in executed_commands
+            )
+            for category, patterns in active.items():
+                already = any(
+                    v.get("category") == category
+                    and Path(str(v.get("path") or "")).name == Path(rel_key).name
+                    for v in violations
+                )
+                if already:
+                    continue
+                for pattern in patterns:
+                    try:
+                        matched_on = _match(pattern, content, _deobfuscate(content))
+                    except re.error:
+                        continue
+                    if not matched_on:
+                        continue
+                    hit = {
+                        "category": category,
+                        "pattern": pattern,
+                        "source": "chain",
+                        "tool": "write_then_run" if executed else "write_file",
+                        "path": rel_key,
+                        "stage": record.get("stage"),
+                        "executed": executed,
+                        "matched_on": matched_on,
+                        "snippet": content[:300],
+                    }
+                    chains.append(hit)
+                    violations.append(hit)
+                    break  # 同一文件同一类别只记一条，避免刷屏
         missing_test_command = not seen_test_command
         statements = list(dict.fromkeys(statements))
         evidence: dict[str, Any] = {
@@ -340,6 +446,7 @@ class BehaviorAuditLine(DefenseLine):
                 p.relative_to(workspace).as_posix() for p in deliverable_files
             ],
             "untraced_artifacts": untraced,
+            "chains": chains,
             "violations": violations,
             "seen_test_command": seen_test_command,
             "missing_test_command": missing_test_command,
@@ -347,6 +454,12 @@ class BehaviorAuditLine(DefenseLine):
         write_evidence(workspace, config, "behavior_diff.json", evidence)
 
         if violations:
+            chain_n = sum(1 for v in violations if v.get("source") == "chain")
+            chain_note = (
+                f"（其中 {chain_n} 处来自工具链补扫：写入 trace 的内容被截断 / 文件不在源码扩展名内）"
+                if chain_n
+                else ""
+            )
             detail = "；".join(
                 f"[{v['category']}] "
                 + (f"文件 {v['path']} " if v.get("source") == "deliverable" else f"工具 {v.get('tool')} ")
@@ -356,7 +469,7 @@ class BehaviorAuditLine(DefenseLine):
             return DefenseCheckResult(
                 False,
                 f"防线 4（行为审计）未通过：trace 中检测到 {len(violations)} 处"
-                f" spec 禁止的操作——{detail}。请回退违规改动并重新走对应阶段",
+                f" spec 禁止的操作——{detail}{chain_note}。请回退违规改动并重新走对应阶段",
                 evidence,
             )
         if missing_test_command and opts.deny_missing_test_command:

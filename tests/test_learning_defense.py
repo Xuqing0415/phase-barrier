@@ -28,6 +28,7 @@ from anti_shortcut.defense.case_analysis import (
     build_suggestions,
     case_texts,
     extract_candidates,
+    promote_rules,
     render_markdown,
 )
 from anti_shortcut.defense.case_library import (
@@ -482,3 +483,108 @@ def test_shipped_learned_rules_fail_closed_when_missing(tmp_path):
     result = BehaviorAuditLine().run(tmp_path, cfg, _StubState(user_request="清理"), 5, 6)
     assert not result.ok
     assert "fail-closed" in result.message or "缺失" in result.message
+
+
+# ---------- P0：人工区保护（auto / manual 分区块） ----------
+
+
+def test_apply_suggestions_preserves_manual_note_block(tmp_path):
+    """``--apply`` 只刷新机器区；人工写的 note 与 rules[].manual 必须原样保留。"""
+    import yaml
+
+    dest = tmp_path / "learned.yaml"
+    dest.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 2,
+                "note": "人工说明：truncate 已由人工确认（批准人 Xuqing0415）",
+                "auto": {"generated_by": "analyze_cases.py", "updated_at": "2026-01-01T00:00:00Z"},
+                "rules": [
+                    {
+                        "rule_id": "rule-manual-1",
+                        "category": "file_delete",
+                        "pattern": "(?i)\\btruncate\\b",
+                        "auto": {"generated_by": "analyze_cases.py"},
+                        "manual": {
+                            "note": "人工确认：truncate 等价于清空文件",
+                            "approved_by": "Xuqing0415",
+                            "approved_at": "2026-09-11",
+                        },
+                    }
+                ],
+                "forbidden_patterns": {"file_delete": ["(?i)\\btruncate\\b"]},
+            },
+            allow_unicode=True,
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    stats = apply_suggestions(
+        {
+            "forbidden_patterns": {"file_delete": ["(?i)\\btruncate\\b"]},
+            "note": "机器生成的建议说明（不得覆盖人工 note）",
+        },
+        dest,
+        verify_texts=[TRUNCATE_CMD],
+    )
+    payload = yaml.safe_load(dest.read_text(encoding="utf-8"))
+    assert payload["note"].startswith("人工说明"), payload["note"]
+    assert payload["auto"]["suggested_note"] == "机器生成的建议说明（不得覆盖人工 note）"
+    rule = payload["rules"][0]
+    assert rule["manual"]["note"] == "人工确认：truncate 等价于清空文件"
+    assert rule["manual"]["approved_by"] == "Xuqing0415"
+    assert rule["auto"]["updated_at"] != "2026-01-01T00:00:00Z"
+    assert stats["added"] == {} and stats["updated"]
+    assert stats["total_patterns"] == 1
+
+
+def test_apply_suggestions_marks_new_rules_observation(tmp_path):
+    import yaml
+
+    dest = tmp_path / "learned.yaml"
+    apply_suggestions(
+        {"forbidden_patterns": {"file_delete": ["(?i)\\btruncate\\b"]}, "provenance": {"(?i)\\btruncate\\b": ["case-1"]}},
+        dest,
+        verify_texts=[TRUNCATE_CMD],
+    )
+    payload = yaml.safe_load(dest.read_text(encoding="utf-8"))
+    rule = payload["rules"][0]
+    assert rule["auto"]["confidence"] == "observation"
+    assert rule["auto"]["source_cases"] == ["case-1"]
+
+
+def test_promote_rules_upgrades_after_enough_confirmations(tmp_path):
+    import yaml
+
+    dest = tmp_path / "learned.yaml"
+    dest.write_text(
+        yaml.safe_dump(
+            {
+                "rules": [
+                    {
+                        "category": "file_delete",
+                        "pattern": "(?i)\\btruncate\\b",
+                        "auto": {"confidence": "observation", "confirmations": 0},
+                        "manual": {"note": "人工确认，保留"},
+                    }
+                ],
+                "forbidden_patterns": {"file_delete": ["(?i)\\btruncate\\b"]},
+            },
+            allow_unicode=True,
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+    first = promote_rules(dest, confirmations_required=2, now="2026-09-11T00:00:00Z")
+    assert first["promoted"] == []
+    second = promote_rules(dest, confirmations_required=2, now="2026-09-12T00:00:00Z")
+    assert second["promoted"], second
+    payload = yaml.safe_load(dest.read_text(encoding="utf-8"))
+    rule = payload["rules"][0]
+    assert rule["auto"]["confidence"] == "active"
+    assert rule["manual"]["note"] == "人工确认，保留"
+
+
+def test_promote_rules_dry_run_and_missing_file(tmp_path):
+    assert promote_rules(tmp_path / "nope.yaml")["written"] is False

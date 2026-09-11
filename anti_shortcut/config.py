@@ -412,6 +412,11 @@ class BehaviorAuditOptions(BaseModel):
     # 是否扫描工作区交付物源码（兜底）：即使写入绕过了工具包装器（trace 无记录），
     # 或 trace 里的写入内容被截断，也能发现实现文件里真实存在的禁止操作。
     scan_deliverables: bool = True
+    # 工具链补扫（v0.60.0，默认开启）：trace 里的 write_file 内容只保留前 4000 字符，
+    # 交付物扫描又只覆盖 source_extensions；「先写脚本（.tmp/.env/Makefile 等）再执行」
+    # 的组合会把禁止操作藏在两条扫描之间。开启后按磁盘完整内容补扫 trace 写过的路径。
+    # 关掉它等于重新打开这个缺口（仅供对照实验，不建议生产关闭）。
+    scan_chains: bool = True
     source_extensions: list[str] = Field(
         default_factory=lambda: [
             ".py", ".pyi", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs",
@@ -453,6 +458,14 @@ class HumanReviewOptions(BaseModel):
     rollup_window_minutes: int = 60
     rollup_boost_per_task: int = 25
     rollup_max_boost: int = 50
+    # 会话级风险累积（P1 方向 B，v0.60.0）：把「同一需求族（task_family_id）在窗口内
+    # 完成的多个任务」的风险分合并计算。高风险任务被拆成若干低风险子任务逐个过关时，
+    # 单任务分数都不高，但同族任务数与总分都会累积；达到门槛即强制人工复核。
+    # 默认关闭（保持单任务语义不变）。
+    task_family_detection: bool = False
+    task_family_window_hours: int = 24
+    task_family_min_tasks: int = 3
+    task_family_score_threshold: int = 60
 
     @field_validator("sample_rate")
     @classmethod
@@ -474,6 +487,24 @@ class HumanReviewOptions(BaseModel):
         if isinstance(value, bool) or value < 0:
             raise ValueError(
                 f"defense.human_review.{info.field_name} 必须是 >= 0 的整数，得到 {value}"
+            )
+        return value
+
+    @field_validator("task_family_window_hours", "task_family_min_tasks")
+    @classmethod
+    def _check_family_counts(cls, value: int, info) -> int:
+        if isinstance(value, bool) or value < 1:
+            raise ValueError(
+                f"defense.human_review.{info.field_name} 必须是 >= 1 的整数，得到 {value}"
+            )
+        return value
+
+    @field_validator("task_family_score_threshold")
+    @classmethod
+    def _check_family_score(cls, value: int) -> int:
+        if isinstance(value, bool) or not (0 <= value <= 1000):
+            raise ValueError(
+                f"defense.human_review.task_family_score_threshold 必须是 0-1000 的整数，得到 {value}"
             )
         return value
 

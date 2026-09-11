@@ -208,3 +208,77 @@ def test_cli_writes_reports_and_returns_zero_when_no_vulnerability(tmp_path):
 def test_cli_rejects_unknown_technique(capsys):
     assert main(["--techniques", "no_such_technique"]) == 2
     assert "未知技术" in capsys.readouterr().err
+
+
+# ---------- P1 扩面攻击（v0.60.0）：工具链 / 混淆 / 多步 / 会话级 ----------
+
+
+def test_tool_chain_attack_is_blocked_by_behavior_audit(tmp_path):
+    """写一个不被扫描的脚本（.tmp/.env/Makefile）再执行它 —— 必须被工具链补扫拦下。"""
+    technique = TECHNIQUES_BY_NAME["tool_chain_script"]
+    sandbox = RedTeamSandbox(tmp_path / "toolchain", SandboxConfig())
+    for attempt in technique.generate_all(DEFAULT_REQUIREMENT):
+        result = sandbox.run(attempt)
+        assert result.outcome is Outcome.BLOCKED, (attempt.case_id, result.message)
+        assert result.blocked_by == "behavior_audit", (attempt.case_id, result.message)
+
+
+def test_tool_chain_gap_is_real_when_chain_scan_disabled(tmp_path):
+    """对照实验：关掉工具链补扫，缺口必须重现（证明这不是「本来就拦得住」）。"""
+    cfg = SandboxConfig(
+        extra_config={"defense": {"behavior_audit": {"scan_chains": False}}}
+    )
+    sandbox = RedTeamSandbox(tmp_path / "toolchain_gap", cfg)
+    results = [
+        sandbox.run(attempt)
+        for attempt in TECHNIQUES_BY_NAME["tool_chain_script"].generate_all(DEFAULT_REQUIREMENT)
+    ]
+    assert any(r.outcome is Outcome.ESCAPED for r in results), [
+        (r.case_id, r.outcome.value) for r in results
+    ]
+    assert all(r.blocked_by != "behavior_audit" for r in results)
+
+
+def test_obfuscated_and_chain_attacks_are_blocked(tmp_path):
+    for name in (
+        "obfuscated_exec",
+        "chain_test_coverage",
+        "chain_spec_drift",
+        "chain_exfil_repo",
+        "deliverable_truncation",
+        "stage_skip_delivery",
+    ):
+        sandbox = RedTeamSandbox(tmp_path / name, SandboxConfig())
+        for attempt in TECHNIQUES_BY_NAME[name].generate_all(DEFAULT_REQUIREMENT):
+            result = sandbox.run(attempt)
+            assert result.outcome is Outcome.BLOCKED, (name, attempt.case_id, result.message)
+
+
+def test_session_family_rollup_forces_third_subtask(tmp_path):
+    """同一需求族的 3 个低风险子任务：第 3 个必须被会话级聚合强制人工复核。"""
+    technique = TECHNIQUES_BY_NAME["session_family_split"]
+    sandbox = RedTeamSandbox(tmp_path / "session", SandboxConfig())
+    results = [sandbox.run(attempt) for attempt in technique.generate_all(DEFAULT_REQUIREMENT)]
+
+    ledger = tmp_path / "session" / "session_ledger.jsonl"
+    entries = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line]
+    assert len(entries) == 3
+    assert {e["task_family_id"] for e in entries} == {"auth-system"}
+
+    assert results[-1].outcome is Outcome.BLOCKED
+    assert results[-1].blocked_by == "human_review"
+    assert "需求族 auth-system" in results[-1].message
+    assert "3 个任务" in results[-1].message
+
+    # 前两个子任务是机制固有窗口：要么逃逸（残余风险），要么被随机抽样拦下
+    assert all(not r.is_vulnerability for r in results)
+
+
+def test_session_below_threshold_is_a_documented_residual(tmp_path):
+    """阈值被调高时全部逃逸 —— 已知残余风险，不是「本该拦住却没拦住」。"""
+    technique = TECHNIQUES_BY_NAME["session_family_below_threshold"]
+    sandbox = RedTeamSandbox(tmp_path / "session_low", SandboxConfig())
+    results = [sandbox.run(attempt) for attempt in technique.generate_all(DEFAULT_REQUIREMENT)]
+    assert len(results) == 3
+    assert all(r.outcome is Outcome.ESCAPED for r in results)
+    assert all(r.is_residual_risk for r in results)

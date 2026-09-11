@@ -239,6 +239,36 @@ def test_extract_candidates_uses_word_boundaries_and_skips_filenames():
     assert "notes.txt" not in tokens  # 文件名不是 API
 
 
+#: 攻击载荷自带的「字面量」：被当成规则写进规则库既不能泛化、又会误伤真实项目。
+#: v0.60.0 实测：这些规则被 learn 闭环合入后，tool_chain 对照实验失效、CI 全平台红。
+PAYLOAD_LITERALS = (
+    "cleanup.tmp", "purge.data", "deploy.env", "restore.bak",
+    "backup.tgz", "example.invalid",
+)
+
+
+def test_extract_candidates_ignores_payload_literals():
+    text = ("bash cleanup.tmp; python purge.data; bash deploy.env; "
+            "python restore.bak; make backup.tgz; curl http://example.invalid/x")
+    tokens = {c["token"] for c in extract_candidates(text)}
+    assert tokens == {"curl"}, tokens  # 只有真正的 shell 动词留下，字面量全部被过滤
+
+
+def test_shipped_learned_rules_have_no_payload_literals():
+    """规则库里不得再有「载荷字面量」规则（防再次合入）。"""
+    import re
+
+    import yaml
+
+    path = Path(__file__).resolve().parents[1] / "anti_shortcut" / "defense" / "learned_rules.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    patterns = [p for group in (data.get("forbidden_patterns") or {}).values() for p in group]
+    assert patterns, "规则库不应为空（否则本测试形同虚设）"
+    for pattern in patterns:
+        for literal in PAYLOAD_LITERALS:
+            assert not re.search(pattern, literal), (pattern, literal)
+
+
 def test_extract_candidates_last_flag_and_identifier():
     find = extract_candidates("find . -maxdepth 1 -name '*.tmp' -delete")
     assert find[0]["token"] == "find -delete"

@@ -1,6 +1,0 @@
-test(ci): tests/test_workflows.py 的子进程强制 UTF-8（Windows locale 兼容）
-
-新测试通过 subprocess 调用 scripts/update_rules.py，它的输出含中文（stderr 的错误说明、
-JSON 里的字段值）。Windows 上 sys.stdout 默认用 locale 编码且 errors=strict，非 UTF-8
-locale 下会抛 UnicodeEncodeError，测试会莫名变红。按仓库既有做法
-（tests/test_formal_alignment.py）显式传 PYTHONIOENCODING=utf-8 / PYTHONUTF8=1。

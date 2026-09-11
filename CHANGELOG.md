@@ -65,6 +65,15 @@
   `--base` 改用 `github.event.repository.default_branch`。
   回归测试：`tests/test_workflows.py`（重复键检测 / step id 引用可解析 / hashFiles 禁区 /
   复测必须带 `--fail-on-vulnerability` / promote CLI 可跑通 / 缺 `--suggestions` 退出码 2）。
+- **fix（学习闭环每周会开一个「空 PR」）**：`apply_suggestions --apply` 即使一个案例都没
+  学到新的东西，也会刷新顶层与每条规则的 `updated_at`，并且 `few_shot_examples` 每轮被重复
+  追加（`[-5:]` 截断后成员与顺序持续变化）—— 于是每周的 `learning-loop` 必然产生 diff，
+  开出一个只有时间戳/示例顺序在变、没有审核价值的 PR。现改为：机器区签名（忽略时间戳）未变
+  时保持原 `updated_at`；示例按内容去重、以「已有顺序优先」合并，超限时稳定收敛到最近 5 条。
+  实测：同一批建议反复 `--apply` 写出的文件**逐字节相同**，且对现有 `learned_rules.yaml`
+  执行不再产生任何 diff（workflow 会直接走「无 PR 需要创建」分支）。
+  回归测试：`test_apply_suggestions_is_idempotent_when_nothing_changes` /
+  `test_apply_suggestions_converges_few_shot_examples`。
 - **test**：新增 `tests/test_behavior_chain_audit.py`（工具链补扫 / 缺口重现 / 去混淆 /
   良性命令不误报）、扩展 `tests/test_red_team_techniques.py`（18 类技术契约、链路跨阶段、
   工具链载体扩展名、混淆载荷字面、会话族声明）与 `tests/test_red_team_agent.py`

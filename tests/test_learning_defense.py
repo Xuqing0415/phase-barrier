@@ -588,3 +588,55 @@ def test_promote_rules_upgrades_after_enough_confirmations(tmp_path):
 
 def test_promote_rules_dry_run_and_missing_file(tmp_path):
     assert promote_rules(tmp_path / "nope.yaml")["written"] is False
+
+
+def test_apply_suggestions_is_idempotent_when_nothing_changes(tmp_path):
+    """同一批建议重复 ``--apply`` 必须写出**逐字节相同**的文件。
+
+    否则每周的学习闭环即使什么都没学到，也会因为 ``updated_at`` / 示例顺序变化而
+    产生 diff，``gh pr create`` 于是每周开一个没有审核价值的 PR。
+    """
+    import yaml
+
+    dest = tmp_path / "learned.yaml"
+    suggestions = {
+        "forbidden_patterns": {"file_delete": ["(?i)\\btruncate\\b"]},
+        "provenance": {"(?i)\\btruncate\\b": ["case-1"]},
+        "note": "机器建议说明",
+        "few_shot_examples": [
+            {"defense_line": "behavior_audit", "trigger_type": "forbidden_op:file_delete"}
+        ],
+    }
+    apply_suggestions(suggestions, dest, verify_texts=[TRUNCATE_CMD])
+    first = dest.read_text(encoding="utf-8")
+    stamp = yaml.safe_load(first)["auto"]["updated_at"]
+
+    apply_suggestions(suggestions, dest, verify_texts=[TRUNCATE_CMD])
+    second = dest.read_text(encoding="utf-8")
+
+    assert second == first, "重复 --apply 不应产生任何 diff"
+    assert yaml.safe_load(second)["auto"]["updated_at"] == stamp
+
+
+def test_apply_suggestions_converges_few_shot_examples(tmp_path):
+    """示例超过上限时也要收敛：不能每轮都被「挤掉一条、又补回一条」地轮换。"""
+    import yaml
+
+    dest = tmp_path / "learned.yaml"
+    suggestions = {
+        "forbidden_patterns": {"file_delete": ["(?i)\\btruncate\\b"]},
+        "few_shot_examples": [
+            {"defense_line": "behavior_audit", "trigger_type": f"t{i}"} for i in range(1, 7)
+        ],
+    }
+    apply_suggestions(suggestions, dest, verify_texts=[TRUNCATE_CMD])
+    first = yaml.safe_load(dest.read_text(encoding="utf-8"))["few_shot_examples"]
+
+    apply_suggestions(suggestions, dest, verify_texts=[TRUNCATE_CMD])
+    second = yaml.safe_load(dest.read_text(encoding="utf-8"))["few_shot_examples"]
+
+    apply_suggestions(suggestions, dest, verify_texts=[TRUNCATE_CMD])
+    third = yaml.safe_load(dest.read_text(encoding="utf-8"))["few_shot_examples"]
+
+    assert first == second == third, (first, second, third)
+    assert len(first) == 5

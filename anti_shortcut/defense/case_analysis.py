@@ -413,6 +413,61 @@ def _manual_note(existing: dict[str, Any]) -> str:
     return str(existing.get("note") or "")
 
 
+#: 判断「这次 --apply 到底改了什么」时要忽略的纯时间戳字段
+_TIMESTAMP_KEYS = frozenset({"updated_at", "last_confirmed_at"})
+
+
+def _machine_signature(node: Any) -> str:
+    """忽略时间戳后的稳定签名：用于判断本次 --apply 是否真的改变了机器区内容。
+
+    没有它的话，每周的学习闭环即使什么都没学到，也会因为 ``updated_at`` 变了而
+    产生一个「只改时间戳」的 diff，于是每次都开一个没有审核价值的 PR。
+    """
+
+    def strip(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {k: strip(v) for k, v in value.items() if k not in _TIMESTAMP_KEYS}
+        if isinstance(value, list):
+            return [strip(v) for v in value]
+        return value
+
+    return json.dumps(strip(node), ensure_ascii=False, sort_keys=True)
+
+
+#: few-shot 示例最多保留多少条（与 update_rules.py / learning-loop 的约定一致）
+_EXAMPLE_LIMIT = 5
+
+
+def _merge_examples(existing: Sequence[Any], suggested: Sequence[Any]) -> list[Any]:
+    """合并 few-shot 示例，保证「稳定 + 幂等 + 只留最近 N 条」。
+
+    先对建议本身去重并取最近 N 条，再按「已有顺序优先」与旧示例合并后截断。
+    这样同一批建议反复 ``--apply`` 写出的文件逐字节相同 —— 否则每周的学习闭环会
+    开出一个「只是示例顺序/成员在变」的 PR，人工审核无从下手。
+    """
+    newest = _dedupe_examples(suggested)[-_EXAMPLE_LIMIT:]
+    merged = _dedupe_examples(list(existing) + newest)
+    return merged[-_EXAMPLE_LIMIT:]
+
+
+def _dedupe_examples(items: Iterable[Any]) -> list[Any]:
+    """按内容去重（保留首次出现的顺序）。
+
+    ``few_shot_examples`` 是追加式的：不去重的话每次 ``--apply`` 都会把同一批示例再追加
+    一遍，``[-5:]`` 截断后列表顺序/成员持续变化，文件永远无法稳定 —— 每周的学习闭环
+    于是每次都开一个只有示例顺序在变的 PR。
+    """
+    seen: set[str] = set()
+    out: list[Any] = []
+    for item in items:
+        key = json.dumps(item, ensure_ascii=False, sort_keys=True)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(item)
+    return out
+
+
 def _prune_rule(rule: dict[str, Any]) -> dict[str, Any]:
     """输出规则时去掉空的 auto / manual 区块，保持文件精简。"""
     out = dict(rule)
@@ -457,12 +512,12 @@ def promote_rules(
     forbidden: dict[str, list[str]] = {}
     for rule in rules:
         forbidden.setdefault(rule["category"], []).append(rule["pattern"])
-    examples = list(existing.get("few_shot_examples") or [])
+    examples = _merge_examples(existing.get("few_shot_examples") or [], [])
     payload = dict(existing)
     payload["schema_version"] = _SCHEMA_VERSION
     payload["rules"] = [_prune_rule(r) for r in rules]
     payload["forbidden_patterns"] = {k: v for k, v in sorted(forbidden.items()) if v}
-    payload["few_shot_examples"] = examples[-5:]
+    payload["few_shot_examples"] = examples
     if write:
         dest.write_text(
             yaml.safe_dump(payload, allow_unicode=True, sort_keys=False), encoding="utf-8"
@@ -522,11 +577,15 @@ def apply_suggestions(
             if current is not None:
                 # 已有规则：只刷新 auto，manual（人工审核痕迹）原样保留
                 auto = current.setdefault("auto", {})
+                before = dict(auto)
                 auto["generated_by"] = str(auto.get("generated_by") or "analyze_cases.py")
-                auto["updated_at"] = now
                 merged = _dedupe(list(auto.get("source_cases") or []) + sources)
                 if merged:
                     auto["source_cases"] = merged
+                # 首次给这条规则打戳，之后只在机器区内容真的变化时刷新
+                # （否则每周闭环都会开一个只改时间戳的 PR）。
+                if auto != before or "updated_at" not in before:
+                    auto["updated_at"] = now
                 stats["updated"].append(f"[{category}] {pattern}")
                 continue
             rule = {
@@ -552,8 +611,9 @@ def apply_suggestions(
     weakening = _dedupe(
         list(existing.get("weakening_words") or []) + list(suggestions.get("weakening_words") or [])
     )
-    examples = list(existing.get("few_shot_examples") or []) + list(
-        suggestions.get("few_shot_examples") or []
+    examples = _merge_examples(
+        existing.get("few_shot_examples") or [],
+        suggestions.get("few_shot_examples") or [],
     )
     suggestion_note = str(suggestions.get("note") or "")
     manual_note = _manual_note(existing) or suggestion_note or "由案例库分析生成，人工审核后合入。"
@@ -575,8 +635,15 @@ def apply_suggestions(
         "forbidden_patterns": {k: v for k, v in sorted(forbidden.items()) if v},
         "vague_phrases": vague,
         "weakening_words": weakening,
-        "few_shot_examples": examples[-5:],
+        "few_shot_examples": examples,
     }
+    # 幂等：整份文件的机器区（忽略时间戳）与旧文件一致时，保持原有 updated_at，
+    # 让「什么都没学到」的每周闭环落在 git diff 干净这一侧（workflow 会直接跳过建 PR）。
+    previous_auto = existing.get("auto") if isinstance(existing.get("auto"), dict) else {}
+    previous_stamp = str(previous_auto.get("updated_at") or "")
+    if previous_stamp and _machine_signature(payload) == _machine_signature(existing):
+        payload["auto"]["updated_at"] = previous_stamp
+
     if write:
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(

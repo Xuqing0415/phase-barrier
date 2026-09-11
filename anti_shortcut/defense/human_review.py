@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import hashlib
 import random
+import time
 from pathlib import Path
 from typing import Any
 
 from ..config import GateConfig, HumanReviewOptions
 from ._base import DefenseCheckResult, DefenseLine
 from ._common import (
+    append_jsonl,
     evidence_path,
     now_iso,
     read_json,
@@ -56,6 +58,80 @@ def approve_request(
         {"approvals": entries},
     )
     return path
+
+
+def _resolve_ledger(workspace: Path, opts: HumanReviewOptions) -> Path | None:
+    """解析共享账本路径（相对路径按工作区解析）；未配置则返回 None。"""
+    if not opts.rollup_ledger:
+        return None
+    path = Path(str(opts.rollup_ledger))
+    return path if path.is_absolute() else workspace / path
+
+
+def _rollup_boost(
+    workspace: Path, opts: HumanReviewOptions, request_id: str
+) -> tuple[int, dict[str, Any]]:
+    """跨会话风险累积：按共享账本窗口内的历史任务数增加风险分。
+
+    单任务的风险分永远看不到「把高风险任务拆成若干低风险子任务」这种攻击——
+    每个子任务单看都很简单。共享账本把同一台机器 / 同一 CI 上最近完成的交付
+    记下来，窗口内历史越多，当前任务的风险分越高，从而让拆分子任务逐步逼近
+    强制人工复核阈值。
+    """
+    ledger = _resolve_ledger(workspace, opts)
+    info: dict[str, Any] = {
+        "enabled": ledger is not None,
+        "ledger": str(ledger) if ledger is not None else "",
+    }
+    if ledger is None:
+        return 0, info
+    cutoff = time.time() - max(1, int(opts.rollup_window_minutes)) * 60
+    recent: list[dict[str, Any]] = []
+    for entry in read_jsonl(ledger):
+        if entry.get("request_id") == request_id:
+            continue
+        try:
+            at_epoch = float(entry.get("at_epoch"))
+        except (TypeError, ValueError):
+            continue
+        if at_epoch >= cutoff:
+            recent.append(entry)
+    boost = min(int(opts.rollup_max_boost), int(opts.rollup_boost_per_task) * len(recent))
+    info.update(
+        {
+            "window_minutes": int(opts.rollup_window_minutes),
+            "recent_tasks": len(recent),
+            "boost": boost,
+            "recent_request_ids": [e.get("request_id") for e in recent][-5:],
+        }
+    )
+    return boost, info
+
+
+def _append_ledger(
+    workspace: Path,
+    opts: HumanReviewOptions,
+    request_id: str,
+    score: int,
+    user_request: str,
+) -> None:
+    """把本次交付评估写入共享账本（同一 request_id 只记一次，重跑幂等）。"""
+    ledger = _resolve_ledger(workspace, opts)
+    if ledger is None:
+        return
+    if any(entry.get("request_id") == request_id for entry in read_jsonl(ledger)):
+        return
+    append_jsonl(
+        ledger,
+        {
+            "at": now_iso(),
+            "at_epoch": time.time(),
+            "request_id": request_id,
+            "risk_score": score,
+            "user_request": str(user_request)[:200],
+            "workspace": str(workspace),
+        },
+    )
 
 
 def _spec_summary(workspace: Path, config: GateConfig, limit: int = 800) -> str:
@@ -155,9 +231,19 @@ class HumanReviewLine(DefenseLine):
     ) -> DefenseCheckResult:
         opts: HumanReviewOptions = config.defense.human_review
         user_request = str(state.get_evidence("user_request") or "")
-        seed_text = f"{workspace}|{user_request}|{to_stage}"
+        # 种子必须与**绝对路径**无关：否则同一任务在不同 checkout / 不同临时目录下会
+        # 得到不同的抽样结果，表现为「本地过、CI 挂」的随机失败（且 deterministic=true
+        # 名不副实）。这里只用工作区名 + 需求 + 目标阶段，同一任务处处可复现。
+        seed_text = f"{Path(workspace).name}|{user_request}|{to_stage}"
         score, parts = compute_risk_score(workspace, config, state)
         request_id = _request_id(seed_text)
+
+        rollup_boost, rollup_info = _rollup_boost(workspace, opts, request_id)
+        if rollup_boost:
+            score = min(100, score + rollup_boost)
+            parts["rollup_boost"] = rollup_boost
+            parts["total"] = score
+        _append_ledger(workspace, opts, request_id, score, user_request)
 
         must_review = False
         probability = 0.0
@@ -184,6 +270,7 @@ class HumanReviewLine(DefenseLine):
             "sampled": must_review,
             "probability": round(probability, 4),
             "request_id": request_id,
+            "rollup": rollup_info,
         }
         if must_review:
             approved = [

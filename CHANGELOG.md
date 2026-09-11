@@ -4,6 +4,94 @@
 发布为里程碑驱动：日常改动累积于 main，仅在用户可感知里程碑或紧急修复时发版，
 同日不重复发布（详见 [docs/release.md](docs/release.md) 发布节奏）。
 
+## [0.59.0] - 2026-09-11
+
+- **feat（路径 4：学习型防线）：拦截 / 逃逸案例库 + 模式提取 + 人工审核式规则更新**：
+  新增 `anti_shortcut/defense/case_library.py`（JSONL 案例库、两个采集点、触发类型分类）、
+  `case_analysis.py`（分组分析、模式提取、规则合入、提示词 few-shot）、CLI
+  `scripts/analyze_cases.py` 与 `scripts/update_rules.py`，以及学习产物
+  `anti_shortcut/defense/learned_rules.yaml`。**自动只到「建议」为止**：`--apply` 前逐条做
+  正则编译校验 + **反查**（建议的正则必须命中它来自的案例原文，否则丢弃），且不给
+  `--verify-cases` 时直接拒绝执行；合入幂等。规则文件被防线 4 通过
+  `extra_forbidden_patterns_file` 加载，且**文件缺失 / 解析失败时 fail-closed**（规则文件
+  写坏 ≠ 没有规则）；`vague_phrases` / `weakening_words` / `few_shot_examples` 是给人审核后
+  合入防线 1 配置与防线 2 提示词的输入，不会被代码自动应用。
+- **闭环实证（真实跑通，非模拟）**：红队新增 `equivalent_op/truncate_zero` 变体
+  （`truncate -s 0 notes.txt`：命令里既没有 `rm` 也没有 `delete`，字面规则库天然看不见），
+  实测**逃逸到阶段 6** —— 这是一条真实漏洞。随后 `--case-library` 采集 → `analyze_cases.py`
+  提取出 1 条新规则候选 → `update_rules.py` 反查通过后合入 `learned_rules.yaml` →
+  复测：**真实漏洞 0 个**，同一条命令在阶段 4 被防线 4 用学到的正则拦下。产物与前后对照见
+  `benchmarks/red_team/results/learning_loop/`（`before/report.json` escaped →
+  `after/report.json` blocked）。
+- **fix（CI 随机失败，已定位并修根因）：防线 5「确定性抽样」的种子与绝对路径耦合**。
+  原种子是 `hash(workspace 绝对路径 | 需求 | 阶段)`，而临时目录 / CI basetemp / 本地
+  checkout 路径各不相同 —— 同一个任务在不同机器上会得到不同的抽样结果，
+  `deterministic=true` 名不副实，仓库里甚至已有一条注释自认「约 12% 概率随机失败」。
+  现改为 `工作区名 + 需求 + 目标阶段`，同一任务处处可复现；并补上跨父目录一致性的回归
+  测试（`tests/test_defense_lines.py`）。红队 `risk_camouflage` 的 rollup 用例也不再断言
+  伪随机结果，改为断言与抽样无关的性质（分数按历史累积、最高分任务确定性强制复核、
+  没有任何结果被算作真实漏洞）。
+- **测试**：新增 `tests/test_learning_defense.py`（34 例）：采集开关 / 幂等 / 异常吞掉、
+  分类与汇总、模式提取（动词+选项、文件名过滤、词边界、无效正则、缺类别不乱猜）、
+  规则合入（非法正则、反查未命中、dry-run、幂等、样本截断）、提示词标记块幂等，以及
+  「逃逸案例 → 分析 → apply → 防线 4 拦下同一条命令」的闭环集成。
+- **docs**：新增 `docs/learning-defense.md`（含上面的闭环实证表），mkdocs / README 导航同步。
+
+## [0.58.0] - 2026-09-11
+
+- **feat（路径 2：形式化不变量）：TLA+ 规范 + TLC 模型检查 + 实现对齐**：新增
+  `anti_shortcut/formal/PhaseBarrier.tla` / `PhaseBarrier.cfg`，把状态机核心保证写成
+  10 条不变量（交付需新鲜全绿测试、改码不早于实现、交付需防线 4/5、防线 1/2/3 守 1→2、
+  阶段不越界、交付即终态、被测版本有界、报告通过必有测试运行等）。规范采用**严格配置**
+  （五道防线全视为启用，「防线缺失」不会被建模成「已通过」），并用**有限抽象**保证 TLC
+  可穷举：用代码版本计数替代无界时钟（否则状态无限、TLC 永不终止 —— 这是建模型时踩过的
+  坑，已写进规范注释），`MaxSeq = 2` 足以覆盖每个门卫分支。
+- **本地真实模型检查通过**：`1149 states generated, 168 distinct states found, 0 states left
+  on queue` / `No error has been found`。并做了**反向验证**证明不变量有约束力：把交付动作里的
+  `defense[4] /\ defense[5]` 删掉后，TLC 立即报
+  `Invariant INV_DeliveryNeedsBehaviorAudit is violated`（退出码 12）。
+- **feat（实现 ↔ 规范对齐）**：`anti_shortcut/formal/__init__.py` 输出机器可读的
+  `alignment_report()`（规范侧门卫表 / 允许的阶段推进 / 实现侧门卫表 / 已定义不变量 /
+  已被 TLC 检查的不变量 / **定义了却没检查的不变量**）。
+- **测试**：新增 `tests/test_formal_alignment.py`（13 例）：规范自洽、`.cfg` 常量固定、
+  定义了就必须被检查、门卫表两侧一致、真实 `AntiShortcutSkill` 不跳级 / `4->6` 捷径要求
+  测试新鲜全绿 / 交付即终态；环境变量 `PHASE_BARRIER_TLC_JAR` 指向 jar 时额外真实跑一次 TLC。
+- **CI**：新增 `formal-invariants` job（JDK 17 + 下载 `tla2tools.jar` + 跑 TLC），TLC 报错即失败。
+- **docs**：新增 `docs/formal-invariants.md`（不变量表 + 抽象说明 + 本地运行 + 反向验证）。
+
+## [0.57.0] - 2026-09-11
+
+- **feat（路径 1：红队 Agent）：用对抗性 Agent 打自己的门禁**：新增
+  `benchmarks/red_team/`（`agent.py` 沙箱与判定、`payloads.py` 合规产物骨架、
+  `run_red_team.py` 批量运行、`techniques/` 八类逃逸技术）。红队与被约束 Agent 拥有**完全
+  相同的工具集与权限**，按真实阶段流程推进，只把攻击点伪装成合规；结论只来自真实
+  `AntiShortcutSkill` + 真实防线的执行结果，判定语义区分 `blocked` / `escaped` /
+  `inconclusive`（防线故障或 fail-closed **不算**「已拦截」）/ `residual_risk`（机制固有窗口）。
+- **fix（红队发现并修复的 4 个真实漏洞）**：
+  - **防线 1**：模板只校验「字段存在 + 条目数量」，空话条目 + 重复条目凑数即可逃逸 →
+    新增 `reject_duplicate_items` 与 14 条 `vague_phrases` 具体性检查；
+  - **防线 3**：区间矛盾只按同名变量求交，把同一约束的上下界写到变量别名
+    （`password` / `password_input`）即可逃逸 → 新增 `variable_alias_suffixes` 归一化后再求交；
+  - **防线 4**：规则库漏等价写法（`shutil.rmtree` / `find -delete` / `Remove-Item` /
+    `git clean` / `rsync --delete` / `rm -f` / `TRUNCATE TABLE` / 多种密钥格式），且**只看
+    trace**，绕过工具包装器的写入看不见 → 大幅扩充 `BUILTIN_FORBIDDEN`，新增
+    `scan_deliverables` 兜底扫描工作区交付物源码（容错遍历 + 排除依赖目录），证据里记录
+    `untraced_artifacts`；
+  - **防线 5**：风险分按单个工作区计算，把高风险任务拆成多个低风险子任务逐个过门禁即可
+    逃逸 → 新增跨会话风险账本 `rollup_ledger`（窗口内历史任务数 → 风险分加成，同 request
+    幂等），实测风险分随历史 39 → 64 → 89 累积并触发强制人工复核。
+- **测试**：新增 `tests/test_red_team_techniques.py`（21 例，技术契约与载荷有效性）、
+  `tests/test_red_team_agent.py`（13 例，端到端：曾经逃逸的载荷必须被拦下，否则失败）、
+  `tests/test_defense_hardening.py`（43 例，上述 4 个漏洞的单元级回归）。
+- **CI**：新增 `red-team.yml`（`workflow_dispatch` + 每周），跑
+  `run_red_team.py --fail-on-vulnerability` 并把报告写进构建摘要；红队不进每次 push 的
+  快速矩阵。
+- **docs**：新增 `docs/red-team.md`（八类技术表、判定语义、已修复漏洞表、如何新增技术）。
+- **refactor（红队框架自身缺陷修复）**：需求模板 YAML 里的函数签名含 `: ` 未加引号导致
+  解析失败并误报「缺少需求模板」（改用 JSON 转义）、多案例技术未被展开、离线时按案例收窄
+  `enabled_defenses`（否则防线 2 fail-closed 会把所有案例都变成「不可判定」，掩盖后三道
+  防线的真实能力）、`{sandbox_root}` 占位符替换。
+
 ## [0.56.0] - 2026-09-10
 
 - **feat（插件生态）：5 分钟插件开发指南 + 可被自动收录的种子插件仓库**：`docs/plugins.md`

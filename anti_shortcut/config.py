@@ -284,6 +284,27 @@ class RequirementTemplateOptions(BaseModel):
     min_forbidden_items: int = 1
     min_interface_items: int = 2
     min_acceptance_items: int = 2
+    # 是否拒绝「同一条目重复填写」（靠重复凑够条数 = 无信息量）
+    reject_duplicate_items: bool = True
+    # 空话短语：条目命中即视为没有可客观判定的内容（模板填充型逃逸的典型特征）
+    vague_phrases: list[str] = Field(
+        default_factory=lambda: [
+            "不合理的操作",
+            "合理的操作",
+            "标准接口",
+            "正常运行",
+            "正常使用",
+            "必要的服务",
+            "必要的措施",
+            "相应信息",
+            "相应内容",
+            "具体情况",
+            "合适的方式",
+            "保证系统稳定",
+            "满足业务需求",
+            "按需处理",
+        ]
+    )
 
     @field_validator(
         "goal_max_chars", "min_forbidden_items", "min_interface_items", "min_acceptance_items"
@@ -354,6 +375,11 @@ class FormalCheckOptions(BaseModel):
     tlc_timeout_seconds: float = 60.0
     # 为 true 时：DSL 已启用但没有可用 TLC -> 拒绝（而非降级警告）
     require_tlc: bool = False
+    # 变量别名后缀：区间求交前先做归一化（password_input / password_input_raw -> password），
+    # 否则把同一约束对象的上下界写到不同别名名下即可绕过矛盾检测。置空列表可关闭。
+    variable_alias_suffixes: list[str] = Field(
+        default_factory=lambda: ["_input", "_raw", "_value", "_val", "_arg", "_param"]
+    )
 
     @field_validator("tlc_timeout_seconds")
     @classmethod
@@ -377,8 +403,32 @@ class BehaviorAuditOptions(BaseModel):
     deny_missing_test_command: bool = False
     # 额外禁止操作映射：{类别名: [正则...]}，与内置类别合并
     extra_forbidden_patterns: dict[str, list[str]] = Field(default_factory=dict)
+    # 从 YAML 文件加载额外规则（路径 4 的学习闭环：案例分析 -> 人工评审 ->
+    # ``anti_shortcut/defense/learned_rules.yaml``）。配置了但文件缺失/解析失败时
+    # fail-closed（拒绝交付），避免「规则文件写坏了 = 静默没有规则」。
+    extra_forbidden_patterns_file: str | None = None
     # 是否扫描 write_file 内容（默认 true；为 false 时仅扫描工具名 / 路径 / 命令）
     scan_write_content: bool = True
+    # 是否扫描工作区交付物源码（兜底）：即使写入绕过了工具包装器（trace 无记录），
+    # 或 trace 里的写入内容被截断，也能发现实现文件里真实存在的禁止操作。
+    scan_deliverables: bool = True
+    source_extensions: list[str] = Field(
+        default_factory=lambda: [
+            ".py", ".pyi", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs",
+            ".java", ".kt", ".go", ".rs", ".rb", ".php", ".cs", ".swift",
+            ".dart", ".scala", ".sh", ".ps1", ".bat", ".sql", ".c", ".h",
+            ".cc", ".cpp", ".hpp", ".lua", ".pl", ".r",
+        ]
+    )
+    # 扫描交付物时跳过的目录名（避免第三方依赖 / 构建产物的误报）
+    exclude_dirs: list[str] = Field(
+        default_factory=lambda: [
+            ".git", ".agent_gate", ".venv", "venv", "node_modules",
+            "__pycache__", ".pytest_cache", "pytest-cache-files-*", "dist",
+            "build", ".tox", "site-packages", ".mypy_cache", ".ruff_cache",
+            "vendor",
+        ]
+    )
 
 
 class HumanReviewOptions(BaseModel):
@@ -386,7 +436,8 @@ class HumanReviewOptions(BaseModel):
 
     依据风险分数抽样：``sample_rate`` 为最大抽样概率（0-1），
     ``force_above_score`` 以上必抽，``auto_approve_below_score`` 以下自动放行。
-    ``deterministic`` 时以「需求 + 目标阶段」的哈希做种子，同一任务结果可复现。
+    ``deterministic`` 时以「工作区名 + 需求 + 目标阶段」的哈希做种子：同一任务结果
+    处处可复现（与仓库 / 临时目录的绝对路径无关，避免「本地过、CI 挂」的随机失败）。
     """
 
     enabled: bool = False
@@ -395,12 +446,35 @@ class HumanReviewOptions(BaseModel):
     auto_approve_below_score: int = 20
     deterministic: bool = True
     approval_file: str = "human_review_approvals.json"
+    # 跨会话风险累积：把每次交付评估写入共享账本（同一台机器 / 同一 CI 的工作区共用），
+    # 窗口内历史任务越多、风险分越高，用于识别「把高风险任务拆成多个低风险子任务」。
+    # 留空则关闭（默认关闭，保持单任务语义不变）。
+    rollup_ledger: str | None = None
+    rollup_window_minutes: int = 60
+    rollup_boost_per_task: int = 25
+    rollup_max_boost: int = 50
 
     @field_validator("sample_rate")
     @classmethod
     def _check_sample_rate(cls, value: float) -> float:
         if not (0 <= value <= 1):
             raise ValueError(f"defense.human_review.sample_rate 必须是 0-1，得到 {value}")
+        return value
+
+    @field_validator("rollup_window_minutes")
+    @classmethod
+    def _check_rollup_window(cls, value: int) -> int:
+        if isinstance(value, bool) or value < 1:
+            raise ValueError(f"defense.human_review.rollup_window_minutes 必须是 >= 1 的整数，得到 {value}")
+        return value
+
+    @field_validator("rollup_boost_per_task", "rollup_max_boost")
+    @classmethod
+    def _check_rollup_boost(cls, value: int, info) -> int:
+        if isinstance(value, bool) or value < 0:
+            raise ValueError(
+                f"defense.human_review.{info.field_name} 必须是 >= 0 的整数，得到 {value}"
+            )
         return value
 
     @field_validator("force_above_score", "auto_approve_below_score")
@@ -413,6 +487,21 @@ class HumanReviewOptions(BaseModel):
         return value
 
 
+class CaseLibraryOptions(BaseModel):
+    """防线案例库（路径 4，v0.59.0）：每次防线拦截时记录案例。
+
+    - ``library_file``：按工作区的案例库（相对 ``<workspace>/.agent_gate/defense/``）；
+    - ``shared_library``：可选的跨工作区汇总库（绝对路径或工作区相对路径），
+      供 ``scripts/analyze_cases.py`` 做跨任务模式提取。
+
+    采集永远不影响门禁判定：写失败只吞掉异常。
+    """
+
+    enabled: bool = False
+    library_file: str = "case_library.jsonl"
+    shared_library: str | None = None
+
+
 class DefenseOptions(BaseModel):
     """五道防线总配置（v0.52.0）。全部默认关闭，启用后叠加于既有门禁之上。"""
 
@@ -421,6 +510,7 @@ class DefenseOptions(BaseModel):
     formal_check: FormalCheckOptions = Field(default_factory=FormalCheckOptions)
     behavior_audit: BehaviorAuditOptions = Field(default_factory=BehaviorAuditOptions)
     human_review: HumanReviewOptions = Field(default_factory=HumanReviewOptions)
+    case_library: CaseLibraryOptions = Field(default_factory=CaseLibraryOptions)
 
 
 class SemanticOptions(BaseModel):

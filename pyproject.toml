@@ -84,7 +84,17 @@ local_scheme = "no-local-version"
 include = ["anti_shortcut*"]
 
 [tool.setuptools.package-data]
-anti_shortcut = ["languages/js_count_tests.cjs", "proto/*.py", "proto/*.proto"]
+anti_shortcut = [
+    "languages/js_count_tests.cjs",
+    "proto/*.py",
+    "proto/*.proto",
+    # v0.58.0：TLA+ 规范在运行期被 anti_shortcut.formal 读取（无回退，必须随包分发）
+    "formal/*.tla",
+    "formal/*.cfg",
+    # v0.52.0/v0.59.0：防线 2 提示词与路径 4 学习产物（缺失时降级为内置提示词 / 空规则库）
+    "defense/prompts/*.txt",
+    "defense/*.yaml",
+]
 
 [tool.coverage.run]
 source = ["anti_shortcut"]

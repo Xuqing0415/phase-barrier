@@ -1,0 +1,184 @@
+name: Learning loop
+
+# 路径 4 的半自动闭环（P1，v0.60.0）：
+#   红队逃逸 -> 自动分析 -> 生成 PR（含来源案例 / 规则 diff / 复测结果）-> 人工审核合并
+#
+# 红线保持不变：**自动只到「建议 + PR」为止**，合入由人工在 PR 上完成。
+# 复测发现真实漏洞时不提 PR，改为建 issue（说明候选规则不够，需要人判断）。
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 4 * * 1'   # 每周一 04:23 UTC（排在红队全量 03:17 之后）
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: learning-loop
+  cancel-in-progress: false
+
+jobs:
+  learning-loop:
+    name: 案例 -> 建议 -> PR（人工审核）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package and dev deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Collect cases from red team (before)
+        id: collect
+        run: |
+          # 注意：$RUNNER_TEMP 在 workspace 之外，hashFiles() 不稳定（拿不到就返回空串，
+          # 后续步骤会被静默跳过、job 依旧全绿）。这里改用 step output 显式传递。
+          python benchmarks/red_team/run_red_team.py \
+            --workspace "$RUNNER_TEMP/rt-before" \
+            --output "$RUNNER_TEMP/rt-before" \
+            --case-library "$RUNNER_TEMP/case_library.jsonl" \
+            --json > "$RUNNER_TEMP/before.json" \
+            || echo "::warning::红队采集步骤非 0 退出（仍尝试用已产出的案例继续）"
+          if [ -s "$RUNNER_TEMP/case_library.jsonl" ]; then
+            count="$(grep -c . "$RUNNER_TEMP/case_library.jsonl" || echo 0)"
+            echo "has_cases=true" >> "$GITHUB_OUTPUT"
+            echo "case_count=$count" >> "$GITHUB_OUTPUT"
+            echo "采集到 $count 条案例"
+          else
+            echo "has_cases=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::本次红队未采集到任何案例，学习闭环无输入，跳过后续步骤"
+          fi
+
+      - name: Analyze cases and build suggestions
+        if: ${{ steps.collect.outputs.has_cases == 'true' }}
+        run: |
+          python scripts/analyze_cases.py \
+            --cases "$RUNNER_TEMP/case_library.jsonl" \
+            --report "$RUNNER_TEMP/analysis.json" \
+            --markdown "$RUNNER_TEMP/analysis.md" \
+            --suggestions "$RUNNER_TEMP/suggestions.json" --json \
+            > "$RUNNER_TEMP/analyze.json"
+
+      - name: Apply verified suggestions (dry-run first)
+        if: ${{ steps.collect.outputs.has_cases == 'true' }}
+        run: |
+          python scripts/update_rules.py \
+            --suggestions "$RUNNER_TEMP/suggestions.json" \
+            --dest anti_shortcut/defense/learned_rules.yaml \
+            --verify-cases "$RUNNER_TEMP/case_library.jsonl" --json \
+            > "$RUNNER_TEMP/apply_dry.json"
+          python scripts/update_rules.py \
+            --suggestions "$RUNNER_TEMP/suggestions.json" \
+            --dest anti_shortcut/defense/learned_rules.yaml \
+            --verify-cases "$RUNNER_TEMP/case_library.jsonl" --apply --json \
+            > "$RUNNER_TEMP/apply.json"
+
+      - name: Re-run red team with the candidate rules
+        if: ${{ steps.collect.outputs.has_cases == 'true' }}
+        id: retest
+        run: |
+          # --fail-on-vulnerability 是这条判定的唯一依据：不加它时脚本无论是否
+          # 发现真实漏洞都返回 0，clean 会恒为 true，issue 分支永远不会走到。
+          if python benchmarks/red_team/run_red_team.py \
+              --workspace "$RUNNER_TEMP/rt-after" \
+              --output "$RUNNER_TEMP/rt-after" \
+              --fail-on-vulnerability \
+              --json > "$RUNNER_TEMP/after.json"; then
+            echo "clean=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "clean=false" >> "$GITHUB_OUTPUT"
+            # 非 0 退出也会先把 JSON 打到 stdout（main() 先输出后返回 1），
+            # 所以这里只能补空文件，不能直接覆盖 —— 覆盖等于把失败证据（漏洞明细）删掉。
+            [ -s "$RUNNER_TEMP/after.json" ] || echo '{}' > "$RUNNER_TEMP/after.json"
+          fi
+
+      - name: Promote confirmed rules
+        if: ${{ steps.retest.outputs.clean == 'true' }}
+        run: |
+          python scripts/update_rules.py --dest anti_shortcut/defense/learned_rules.yaml \
+            --promote --confirmations-required 3 --apply --json \
+            > "$RUNNER_TEMP/promote.json"
+
+      - name: Build PR body
+        if: ${{ steps.collect.outputs.has_cases == 'true' }}
+        run: |
+          {
+            echo "## 学习闭环自动产物（需要人工审核）"
+            echo
+            echo "本 PR 由 `.github/workflows/learning-loop.yml` 生成：红队案例 -> 模式提取 -> 候选规则。"
+            echo "**规则不会自动上线**，合并前请核对来源案例与复测结果。"
+            echo
+            echo "### 1. 规则 diff"
+            echo '```diff'
+            git diff -- anti_shortcut/defense/learned_rules.yaml || true
+            echo '```'
+            echo
+            echo "### 2. 来源案例与提取报告"
+            cat "$RUNNER_TEMP/analysis.md" 2>/dev/null || echo "(无分析报告)"
+            echo
+            echo "### 3. 预期拦截效果与复测结果"
+            echo "- 候选规则的反查：必须命中它来自的案例原文（`--verify-cases`），否则已被丢弃。"
+            echo "- 复测（加载候选规则后重跑红队全量）：**${{ steps.retest.outputs.clean == 'true' && '通过（真实漏洞 0）' || '失败（仍有漏洞，见 issue）' }}**"
+            echo '```json'
+            head -c 4000 "$RUNNER_TEMP/after.json" 2>/dev/null || echo '{}'
+            echo '```'
+            echo
+            echo "### 4. 人工审核清单"
+            echo "- [ ] 规则是否真的对应「被禁止的语义」，而不是误伤正常写法？"
+            echo "- [ ] 来源案例是否属于同类攻击（而不是巧合命中）？"
+            echo "- [ ] 复测是否在**加载本 PR 规则**的前提下通过？"
+            echo "- [ ] 是否需要补充回归测试（`tests/test_behavior_chain_audit.py` 风格）？"
+            echo
+            echo "_自动化只到建议为止；合入后规则会进入 `observation`，经 N 次红队复测无误后由 `--promote` 升级为 `active`。_"
+          } > "$RUNNER_TEMP/pr_body.md"
+
+      - name: Open PR (or issue when the re-test still finds holes)
+        if: ${{ steps.collect.outputs.has_cases == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet -- anti_shortcut/defense/learned_rules.yaml; then
+            echo "候选规则与现有规则一致，无 PR 需要创建"
+            exit 0
+          fi
+          run_date="$(date -u +%Y%m%d)"
+          # 标签不存在时 `gh pr create --label` 会直接报错、PR 根本不会创建；
+          # 这里按需创建（存在则不动），而不是用 `|| true` 把失败吞掉。
+          ensure_label() {
+            gh label list --limit 200 --json name --jq '.[].name' | grep -qx "$1" || \
+              gh label create "$1" --color "$2" --description "$3"
+          }
+          ensure_label defense 1D76DB "防御门禁/防线相关"
+          ensure_label learning-loop FBCA04 "学习闭环自动产物（需人工审核）"
+          if [ "${{ steps.retest.outputs.clean }}" != "true" ]; then
+            gh issue create \
+              --title "学习闭环复测未通过：$run_date" \
+              --body-file "$RUNNER_TEMP/pr_body.md" \
+              --label "defense,learning-loop"
+            exit 0
+          fi
+          branch="learning-loop/$run_date-${{ github.run_id }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add anti_shortcut/defense/learned_rules.yaml
+          git commit -m "feat(defense): 学习闭环候选规则（$run_date，人工审核后合入）"
+          git push -u origin "$branch"
+          gh pr create \
+            --base "${{ github.event.repository.default_branch }}" \
+            --head "$branch" \
+            --title "学习闭环候选规则（$run_date）" \
+            --body-file "$RUNNER_TEMP/pr_body.md" \
+            --label "defense,learning-loop"

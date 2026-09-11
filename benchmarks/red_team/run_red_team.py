@@ -123,8 +123,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     ap.add_argument(
         "--fail-on-vulnerability",
+        # 别名：用户文档里写作 --fail-on-escape；语义是「真实漏洞」才算失败，
+        # 设计上已知的残余风险（expectation=partial，如风险伪装的首个子任务）不算。
+        "--fail-on-escape",
+        dest="fail_on_vulnerability",
         action="store_true",
-        help="发现逃逸成功的技术时以非 0 退出（供 CI 使用）",
+        help="发现真实漏洞（逃逸且非已知残余风险）时以非 0 退出（供 CI 使用）",
     )
     ap.add_argument(
         "--case-library",

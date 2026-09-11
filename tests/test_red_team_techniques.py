@@ -8,6 +8,8 @@
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from anti_shortcut.defense._common import load_yaml_or_json
@@ -145,8 +147,9 @@ def test_summarize_splits_vulnerabilities_and_residual_risks():
 # ---------- 八类技术 ----------
 
 
-def test_registry_has_eight_techniques_with_expected_targets():
-    assert len(ALL_TECHNIQUES) == 8
+def test_registry_has_eighteen_techniques_with_expected_targets():
+    """v0.57.0 的 8 类 + v0.60.0 扩面 10 类（P1：多步 / 会话级 / 工具链 / 混淆）。"""
+    assert len(ALL_TECHNIQUES) == 18
     assert {t.name for t in ALL_TECHNIQUES} == {
         "template_filler",
         "coverage_disguise",
@@ -156,8 +159,103 @@ def test_registry_has_eight_techniques_with_expected_targets():
         "equivalent_op",
         "timing_evade",
         "risk_camouflage",
+        "tool_chain_script",
+        "deliverable_truncation",
+        "obfuscated_exec",
+        "stage_skip_delivery",
+        "chain_test_coverage",
+        "chain_spec_drift",
+        "chain_exfil_repo",
+        "session_family_split",
+        "session_family_stagger",
+        "session_family_below_threshold",
     }
     assert all(1 <= t.target_defense <= 5 for t in ALL_TECHNIQUES)
+
+
+def test_escape_chains_produce_multi_stage_sequences():
+    """多步链路必须真实跨阶段：调用序列里出现 >= 3 次 advance_stage。"""
+    for name in ("chain_test_coverage", "chain_spec_drift", "chain_exfil_repo"):
+        technique = TECHNIQUES_BY_NAME[name]
+        attempt = technique.generate("需求")
+        advances = [c.stage for c in attempt.calls if c.tool == "advance_stage"]
+        assert len(advances) >= 3, name
+        assert advances == sorted(advances), name
+        assert "攻击链" in attempt.notes
+
+
+def test_tool_chain_variants_write_to_non_source_extensions():
+    """工具链攻击的载体必须落在 source_extensions 之外，否则测不到补扫。"""
+    attempts = TECHNIQUES_BY_NAME["tool_chain_script"].generate_all("需求")
+    assert len(attempts) == 5
+    source_exts = {
+        ".py", ".js", ".ts", ".sh", ".ps1", ".sql", ".go", ".rs", ".java",
+    }
+    payloads_ = []
+    for attempt in attempts:
+        writes = [
+            c
+            for c in attempt.calls
+            if c.tool == "write_file"
+            and c.path not in ("mod.py", "spec.md", "test_mod.py")
+        ]
+        assert writes, attempt.case_id
+        payloads_.append(writes[0])
+        assert Path(writes[0].path).suffix not in source_exts
+        assert "rm -rf" in writes[0].content or "rmtree" in writes[0].content
+    commands = [
+        c.command
+        for a in attempts
+        for c in a.calls
+        if c.tool == "execute_command" and c.command and "pytest" not in c.command
+    ]
+    assert len(commands) == 5
+    for write in payloads_:
+        if write.path == "Makefile":
+            assert any(cmd.startswith("make") for cmd in commands)
+        else:
+            assert any(write.path in cmd for cmd in commands)
+
+
+def test_obfuscated_variants_are_semantically_dangerous_but_not_literal():
+    attempts = TECHNIQUES_BY_NAME["obfuscated_exec"].generate_all("需求")
+    assert [a.case_id for a in attempts] == ["quote_split", "backslash_escape", "base64_pipe"]
+    raw_commands = [
+        c.command
+        for a in attempts
+        for c in a.calls
+        if c.tool == "execute_command" and "pytest" not in (c.command or "")
+    ]
+    assert len(raw_commands) == 3
+    # 字面里不应出现完整的 "rm -rf"（否则这条技术就没有测到去混淆）
+    assert all("rm -rf" not in cmd for cmd in raw_commands)
+
+
+def test_session_family_techniques_declare_shared_family_and_partial_expectation():
+    for name in (
+        "session_family_split",
+        "session_family_stagger",
+        "session_family_below_threshold",
+    ):
+        technique = TECHNIQUES_BY_NAME[name]
+        attempts = technique.generate_all("需求")
+        assert len(attempts) >= 3, name
+        families = {a.state_evidence.get("task_family_id") for a in attempts}
+        assert len(families) == 1 and None not in families, name
+        assert all(a.expectation == "partial" for a in attempts), name
+        for attempt in attempts:
+            opts = attempt.config_overrides["defense"]["human_review"]
+            assert opts["task_family_detection"] is True
+            assert opts["rollup_ledger"] == "{sandbox_root}/session_ledger.jsonl"
+
+
+def test_misc_techniques_are_well_formed():
+    skip = TECHNIQUES_BY_NAME["stage_skip_delivery"].generate("需求")
+    assert [c.stage for c in skip.calls if c.tool == "advance_stage"] == [6]
+    trunc = TECHNIQUES_BY_NAME["deliverable_truncation"].generate("需求")
+    impl_writes = [c for c in trunc.calls if c.tool == "write_file" and c.path == "mod.py"]
+    assert impl_writes and len(impl_writes[0].content) > 4000
+    assert impl_writes[0].content.index("rmtree") > 4000
 
 
 def test_all_attempts_are_replayable_and_well_formed():

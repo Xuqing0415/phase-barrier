@@ -1,4 +1,4 @@
-# 学习型防线（路径 4，v0.59.0）
+# 学习型防线（路径 4，v0.59.0 / v0.60.0 半自动闭环）
 
 > 学习型防线不是「用机器学习替代规则」，而是**从拦截 / 逃逸案例中自动提取候选模式，
 > 由人审核后更新规则库与提示词**。
@@ -14,6 +14,8 @@
 | `scripts/analyze_cases.py` | CLI：案例库 → 分析报告 + 更新建议 |
 | `scripts/update_rules.py` | CLI：建议 → （人工审核后）合入规则文件 |
 | `anti_shortcut/defense/learned_rules.yaml` | 学习产物（防线 4 会加载其中的 `forbidden_patterns`） |
+| `.github/workflows/learning-loop.yml` | 半自动闭环：采集 → 分析 → PR（含复测）/ issue（复测失败） |
+| `scripts/update_rules.py --promote` | 置信度管理：`observation` → `active`（按复测确认次数） |
 
 ## 采集
 
@@ -94,6 +96,63 @@ python scripts/update_rules.py --suggestions suggestions.json --dest learned_rul
 **fail-closed**：配了 `extra_forbidden_patterns_file` 但文件缺失或解析失败时，防线 4 直接
 拒绝交付 —— 规则文件写坏 ≠ 没有规则。
 
+### 规则文件结构（v0.60.0：auto / manual 分区块）
+
+v0.59.0 的一个真实缺陷：`--apply` 会用建议里的 `note` 覆盖人工写的 `note`（人工审核
+痕迹被抹掉）。v0.60.0 起规则文件按「机器区 / 人工区」分开：
+
+```yaml
+schema_version: 2
+note: "人工说明（人工区：--apply 永不覆盖）"
+auto:                       # 机器区：每次 --apply 刷新
+  generated_by: analyze_cases.py
+  updated_at: "2026-09-11T00:00:00Z"
+  suggested_note: "本文件由案例库分析生成……"
+rules:                      # 逐条规则：auto 机器更新 / manual 人工审核痕迹
+  - rule_id: rule-4925aa5d1e5d
+    category: file_delete
+    pattern: '(?i)\btruncate\s+[^\n;&|]{0,40}?\-s\b'
+    auto:
+      confidence: active            # observation -> active（复测确认后升级）
+      confirmations: 3
+      source_cases: [case-71c21fa316bd]
+      updated_at: "2026-09-11T00:00:00Z"
+    manual:
+      note: "人工确认：truncate -s 0 属于 file_delete（清空文件）"
+      approved_by: Xuqing0415
+      approved_at: "2026-09-11"
+forbidden_patterns:         # 兼容视图：由 rules 汇总，防线 4 直接读它
+  file_delete:
+    - '(?i)\btruncate\s+[^\n;&|]{0,40}?\-s\b'
+```
+
+`scripts/update_rules.py --apply` 只刷新 `auto` 与顶层 `auto:` 区块；顶层 `note` 与
+`rules[].manual` 原样保留（有回归测试 `test_apply_suggestions_preserves_manual_note_block`）。
+
+### 规则置信度
+
+新规则以 `confidence: observation` 进入规则库（**照常参与拦截**，只是标记「尚未反复
+验证」）。每通过一轮红队全量复测就 `+1`，累计到门槛后升级：
+
+```bash
+python scripts/update_rules.py --dest anti_shortcut/defense/learned_rules.yaml \
+  --promote --confirmations-required 3 --apply
+```
+
+### 半自动闭环（v0.60.0）
+
+`.github/workflows/learning-loop.yml`（每周一 04:23 UTC + 手动）把闭环从「人推动」
+变成「机制推动」，但**合入仍由人工在 PR 上完成**：
+
+```text
+红队全量跑（采集案例） -> analyze_cases.py -> update_rules --apply（先 dry-run）
+   -> 复测（加载候选规则再跑红队） -> 复测通过则开 PR / 不通过则开 issue
+   -> 人工审核合并 -> --promote 累积确认次数
+```
+
+PR 正文自动包含：规则 diff、来源案例与提取报告、复测结果、人工审核清单。复测失败
+（仍有真实漏洞）不会提 PR，而是建 issue —— 说明候选规则不够，需要人判断。
+
 ## 与红队的联动（闭环）
 
 ```text
@@ -123,4 +182,6 @@ python scripts/update_rules.py --suggestions suggestions.json --dest learned_rul
 - 只能补**规则可表达**的缺口。设计级缺口（如风险伪装里「第一个子任务必然没有历史」）
   需要改机制，不是加正则；
 - 案例库按 800 字截断载荷，且**不做**自动合入 —— 这是刻意的：自动更新规则可能引入误报
-  或恶意规则，所以合入路径永远留一个人。
+  或恶意规则，所以合入路径永远留一个人；
+- 置信度升级（`--promote`）只统计「复测通过次数」，不等于「规则一定正确」；宽严仍由
+  人工在 PR 上把关。

@@ -4,6 +4,76 @@
 发布为里程碑驱动：日常改动累积于 main，仅在用户可感知里程碑或紧急修复时发版，
 同日不重复发布（详见 [docs/release.md](docs/release.md) 发布节奏）。
 
+## [0.60.0] - 2026-09-11
+
+- **fix（P0：`learned_rules.yaml` 人工 note 被自动更新覆盖）**：v0.59.0 的
+  `update_rules.py --apply` 会用建议里的 `note` 覆盖人工写的 `note`（含来源与 case id），
+  下一次自动更新就会抹掉人工审核痕迹。现改为 **auto / manual 分区块**：规则文件升级为
+  `schema_version: 2`，每条规则拆成 `auto`（来源案例 / 时间戳 / 置信度，`--apply` 刷新）
+  与 `manual`（人工 note / 批准人 / 批准日期，`--apply` 只读）；顶层 `note` 是人工区，
+  永不覆盖，机器说明写入顶层 `auto.suggested_note`。`forbidden_patterns` 保留为兼容视图
+  （防线 4 照常读取）；v1 旧文件自动迁移且不丢规则、不重复新增。
+  回归测试：`test_apply_suggestions_preserves_manual_note_block`。
+- **feat（P0：红队测试常态化）**：`.github/workflows/red-team.yml` 增加
+  `pull_request.paths` 触发（`anti_shortcut/defense/**`、`interceptors.py`、`validators.py`、
+  `state.py`、`skill.py`、`benchmarks/red_team/**`）—— 门禁核心代码一改就跑**快速子集**，
+  逃逸即 job 失败，并把报告以评论形式贴回 PR；`schedule` 每周一全量跑 18 类技术；
+  结果写入 `benchmarks/red_team/results/<run_id>/` 并上传 artifact。`--fail-on-vulnerability`
+  增加 `--fail-on-escape` 别名（两者等价；只在**真实漏洞**时失败，设计上承认的残余风险
+  不会让 CI 变红）。
+- **feat（P1：扩大攻击面，逃逸技术 8 → 18）**：新增
+  `tool_chain_script`（写 `.tmp`/`.data`/`.env`/`Makefile` 脚本再执行，5 个变体）、
+  `deliverable_truncation`（危险操作躲在 trace 4000 字符截断点之后）、
+  `obfuscated_exec`（`r''m`、`r\m`、`base64 -d | sh`，3 个变体）、
+  `stage_skip_delivery`（跳阶段交付），以及 `EscapeChain` 多步链路 3 条
+  （`chain_test_coverage` / `chain_spec_drift` / `chain_exfil_repo`）与会话级攻击 3 条
+  （`session_family_split` / `session_family_stagger` / `session_family_below_threshold`）。
+  红队契约新增 `EscapeAttempt.state_evidence`（把 `task_family_id` 等证据写进真实状态机）。
+- **fix（P1 红队发现的真实漏洞：工具链补扫 + 去混淆）**：`write_file` 写一个不在
+  `source_extensions` 内的脚本（`.tmp`/`.data`/`.env`/`Makefile`），把禁止操作放在 trace
+  的 4000 字符截断点之后，再 `bash <script>` 执行 —— 逐条记录扫描与交付物扫描都看不见。
+  实测 5 个变体里 4 个逃逸到阶段 6；修复后全部被防线 4 拦下。修复分两处：
+  `defense.behavior_audit.scan_chains`（对 trace 里出现过的写入路径按**磁盘完整内容**补扫，
+  命中记为 `source: chain` / `write_then_run`）与**去混淆归一化**（匹配前还原引号拼接 /
+  反斜杠转义 / 零宽字符，并新增 `base64 -d | sh`、`xxd -r | sh` 显式模式）。
+  回归测试：`tests/test_behavior_chain_audit.py`（含「关掉修复 = 缺口重现」对照）。
+- **feat（P1：会话级攻击检测）**：防线 5 新增**需求族聚合**
+  （`task_family_detection` / `task_family_window_hours` / `task_family_min_tasks` /
+  `task_family_score_threshold`）：同一 `task_family_id` 在窗口内的任务数与风险总分达到
+  门槛即**强制人工复核**，用于识别「把高风险任务拆成多个低风险子任务」；族 ID 由编排器
+  声明，缺失时回落到需求文本哈希。红色风险（前 1–2 个子任务、阈值被调高）作为
+  **已知残余风险**显式文档化（`docs/red-team.md`），不计入真实漏洞。
+- **feat（P1：学习闭环半自动化）**：新增 `.github/workflows/learning-loop.yml`
+  （每周一 + 手动）：红队采集案例 → `analyze_cases.py` → `update_rules.py`（先 dry-run
+  再 apply，全程 `--verify-cases` 反查）→ **复测**（加载候选规则再跑红队）→ 通过则用
+  `gh` 开 PR（正文含规则 diff / 来源案例 / 复测结果 / 人工审核清单），不通过则建 issue。
+  规则新增**置信度管理**：新规则以 `observation` 进入（照常拦截），
+  `update_rules.py --promote --confirmations-required N` 按复测确认次数升级为 `active`。
+- **fix（CI：三处「静默绿」缺陷 + promote 步骤必失败）**：
+  1) `learning-loop.yml` 的复测步骤没带 `--fail-on-vulnerability`，而
+     `run_red_team.py` 只有在带该旗标且发现**真实漏洞**时才返回 1 —— 于是 `clean`
+     恒为 true，「复测未通过 → 建 issue」这条安全路径是死代码（实测：`--no-learned-rules`
+     下 `equivalent_op` 有 1 个真实漏洞，照 CI 的写法退出码仍是 0）；
+  2) 四个步骤用 `hashFiles(format('{0}/...', runner.temp))` 判断 workspace 之外的
+     `$RUNNER_TEMP` 文件，取不到就返回空串 → 后续步骤被静默跳过、job 依旧全绿；
+     现改为采集步骤显式输出 `has_cases` / `case_count`；
+  3) promote 步骤以 `--promote --apply` 调用 `update_rules.py`，却被 `--suggestions`
+     必填与 `--verify-cases` 前置校验挡下（退出码 2），CI 里该步骤必失败 —— 现
+     `--promote` 独立成支路，不再要求这两个参数。
+  附带修正：复测失败时不再用 `{}` 覆盖 `after.json`（否则 issue 里看不到漏洞明细）、
+  PR/issue 标签按需创建（缺标签会让 `gh pr create` 直接报错且被 `|| true` 吞掉）、
+  `--base` 改用 `github.event.repository.default_branch`。
+  回归测试：`tests/test_workflows.py`（重复键检测 / step id 引用可解析 / hashFiles 禁区 /
+  复测必须带 `--fail-on-vulnerability` / promote CLI 可跑通 / 缺 `--suggestions` 退出码 2）。
+- **test**：新增 `tests/test_behavior_chain_audit.py`（工具链补扫 / 缺口重现 / 去混淆 /
+  良性命令不误报）、扩展 `tests/test_red_team_techniques.py`（18 类技术契约、链路跨阶段、
+  工具链载体扩展名、混淆载荷字面、会话族声明）与 `tests/test_red_team_agent.py`
+  （工具链被拦 + 缺口对照、会话聚合强制复核、扩面攻击端到端）、
+  `tests/test_learning_defense.py`（人工 note 保留、observation 标记、置信度升级）。
+- **docs**：`docs/red-team.md` 更新为 18 类技术 + CI 常态化 + 逃逸历史（新增 3 条
+  v0.60.0 漏洞）+ 残余风险表；`docs/learning-defense.md` 补 auto/manual 结构、置信度与
+  半自动闭环；`docs/five-lines.md` 补 `scan_chains` / 去混淆 / 需求族聚合配置与语义。
+
 ## [0.59.0] - 2026-09-11
 
 - **feat（路径 4：学习型防线）：拦截 / 逃逸案例库 + 模式提取 + 人工审核式规则更新**：

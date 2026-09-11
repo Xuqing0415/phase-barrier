@@ -1,4 +1,27 @@
-note: "路径 4 学习闭环产物（人工审核后合入）。来源：benchmarks/red_team/results/learning_loop/before/report.json 里 equivalent_op/truncate_zero 的逃逸案例（case-71c21fa316bd，防线4 / file_delete）；该规则经 scripts/update_rules.py --verify-cases 反查（必须命中案例原文）后才写入。vague_phrases / weakening_words / few_shot_examples 是给防线 1 配置与防线 2 提示词的人工评审输入，不会被代码自动应用。注意：重新运行 update_rules.py --apply 会用建议里的 note 覆盖本行。"
+schema_version: 2
+note: 路径 4 学习闭环产物（人工审核后合入）。来源：benchmarks/red_team/results/learning_loop/before/report.json
+  里 equivalent_op/truncate_zero 的逃逸案例（case-71c21fa316bd，防线4 / file_delete）；该规则经 scripts/update_rules.py
+  --verify-cases 反查（必须命中案例原文）后才写入。本 note 属于人工区：update_rules.py --apply 只刷新 auto 区块与每条规则的
+  auto 区块，永不覆盖本 note 与 rules[].manual（人工审核痕迹）。
+auto:
+  generated_by: analyze_cases.py
+  updated_at: '2026-09-11T00:00:00Z'
+  suggested_note: 本文件由案例库分析生成，必须人工审核后以 PR 形式合入；不要自动上线。
+rules:
+- rule_id: rule-4925aa5d1e5d
+  category: file_delete
+  pattern: (?i)\btruncate\s+[^\n;&|]{0,40}?\-s\b
+  auto:
+    generated_by: analyze_cases.py
+    updated_at: '2026-09-11T00:00:00Z'
+    confidence: active
+    confirmations: 3
+    source_cases:
+    - case-71c21fa316bd
+  manual:
+    note: 人工确认：truncate -s 0 把文件截断为空，属于 file_delete（清空文件）禁止类别，不是普通文本写入。
+    approved_by: Xuqing0415
+    approved_at: '2026-09-11'
 forbidden_patterns:
   file_delete:
   - (?i)\btruncate\s+[^\n;&|]{0,40}?\-s\b

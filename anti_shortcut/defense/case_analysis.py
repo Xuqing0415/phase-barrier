@@ -82,12 +82,33 @@ _FILE_SUFFIXES = frozenset(
         "rs", "rb", "php", "cs", "swift", "dart", "scala", "sh", "ps1", "bat",
         "sql", "c", "h", "cc", "cpp", "hpp", "lua", "pl", "r", "json", "yaml", "yml",
         "toml", "ini", "cfg", "conf", "txt", "md", "log", "db", "sqlite", "csv",
+        # 数据 / 临时 / 备份 / 归档 / 媒体：同样是「字面文件名」，不是可复用 API
+        "tmp", "temp", "data", "dat", "env", "bak", "backup", "orig", "old",
+        "swp", "swo", "lock", "pid", "out", "err", "cache", "dump", "rdb", "sqlite3",
+        "tgz", "tar", "gz", "bz2", "xz", "zip", "7z", "rar",
+        "pdf", "docx", "xlsx", "pptx", "png", "jpg", "jpeg", "gif", "svg",
+        "mp3", "mp4", "wav", "avi", "mov",
     }
+)
+
+#: 保留域 / 占位域：攻击载荷里的 ``example.invalid`` 是示意地址，不是可复用的 API 模式
+_RESERVED_TLDS = frozenset(
+    {"invalid", "local", "localhost", "test", "example", "internal", "example.com"}
 )
 
 
 def _looks_like_filename(token: str) -> bool:
-    return "." in token and token.rsplit(".", 1)[-1].lower() in _FILE_SUFFIXES
+    """token 是「字面量」（文件名 / 占位域名）而非可复用 API 模式。
+
+    学习闭环的教训（v0.60.0 回归）：``cleanup.tmp`` / ``purge.data`` / ``deploy.env`` /
+    ``restore.bak`` / ``backup.tgz`` / ``example.invalid`` 都是**攻击载荷自带的字面量**。
+    一旦把它们当模式写进规则库，既不能泛化（只命中夹具本身），又会误伤真实项目——
+    任何叫这个名字的文件写入都会被判成危险操作，等于把误报固化进防线。
+    """
+    if "." not in token:
+        return False
+    suffix = token.rsplit(".", 1)[-1].lower()
+    return suffix in _FILE_SUFFIXES or suffix in _RESERVED_TLDS
 
 
 def _shell_specific(verb: str, text: str) -> tuple[str, str] | None:

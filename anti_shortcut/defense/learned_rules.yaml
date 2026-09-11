@@ -1,8 +1,11 @@
 schema_version: 2
-note: 路径 4 学习闭环产物（人工审核后合入）。来源：benchmarks/red_team/results/learning_loop/before/report.json
-  里 equivalent_op/truncate_zero 的逃逸案例（case-71c21fa316bd，防线4 / file_delete）；该规则经 scripts/update_rules.py
-  --verify-cases 反查（必须命中案例原文）后才写入。本 note 属于人工区：update_rules.py --apply 只刷新 auto 区块与每条规则的
-  auto 区块，永不覆盖本 note 与 rules[].manual（人工审核痕迹）。
+note: "路径 4 学习闭环产物（人工审核后合入）。来源：benchmarks/red_team/results/learning_loop/before/report.json\
+  \ 里 equivalent_op/truncate_zero 的逃逸案例（case-71c21fa316bd，防线4 / file_delete）；该规则经\
+  \ scripts/update_rules.py --verify-cases 反查（必须命中案例原文）后才写入。本 note 属于人工区：update_rules.py\
+  \ --apply 只刷新 auto 区块与每条规则的 auto 区块，永不覆盖本 note 与 rules[].manual（人工审核痕迹）。\n  【2026-09-11\
+  \ 清理】学习闭环曾把 6 条「载荷字面量」规则（cleanup.tmp / purge.data / deploy.env / restore.bak / backup.tgz\
+  \ / example.invalid）当模式合入：既无法泛化，又会让真实项目里同名文件的正常写入被判成危险操作，并使红队对照实验 test_tool_chain_gap\
+  \ 失效（CI 全平台红）。已删除，并在 case_analysis._looks_like_filename 里堵住生成路径。"
 auto:
   generated_by: analyze_cases.py
   updated_at: '2026-09-11T07:45:25Z'
@@ -62,106 +65,6 @@ rules:
     - case-c611da13947f
     - case-b88eacadac9a
     last_confirmed_at: '2026-09-11T07:45:41Z'
-- rule_id: rule-18db748c0f91
-  category: file_delete
-  pattern: (?i)\bcleanup\.tmp\b
-  auto:
-    generated_by: analyze_cases.py
-    updated_at: '2026-09-11T07:45:25Z'
-    confidence: observation
-    confirmations: 1
-    source_cases:
-    - case-4e4bdda7f978
-    - case-8e20ea54b165
-    - case-738c81466dc5
-    - case-1020d8c06af0
-    - case-44b2409f41a2
-    - case-10ab351f3ecd
-    - case-6b0d39f575cb
-    - case-3af6f3489015
-    - case-9cec07eb6e77
-    - case-22c3361153af
-    - case-6ebaa4c583f3
-    - case-e93600d072ce
-    - case-fc560f5f8d1e
-    - case-c611da13947f
-    - case-b88eacadac9a
-    last_confirmed_at: '2026-09-11T07:45:41Z'
-- rule_id: rule-57dd16db3967
-  category: file_delete
-  pattern: (?i)\bpurge\.data\b
-  auto:
-    generated_by: analyze_cases.py
-    updated_at: '2026-09-11T07:45:25Z'
-    confidence: observation
-    confirmations: 1
-    source_cases:
-    - case-4e4bdda7f978
-    - case-8e20ea54b165
-    - case-738c81466dc5
-    - case-1020d8c06af0
-    - case-44b2409f41a2
-    - case-10ab351f3ecd
-    - case-6b0d39f575cb
-    - case-3af6f3489015
-    - case-9cec07eb6e77
-    - case-22c3361153af
-    - case-6ebaa4c583f3
-    - case-e93600d072ce
-    - case-fc560f5f8d1e
-    - case-c611da13947f
-    - case-b88eacadac9a
-    last_confirmed_at: '2026-09-11T07:45:41Z'
-- rule_id: rule-b2b6e25d20df
-  category: file_delete
-  pattern: (?i)\bdeploy\.env\b
-  auto:
-    generated_by: analyze_cases.py
-    updated_at: '2026-09-11T07:45:25Z'
-    confidence: observation
-    confirmations: 1
-    source_cases:
-    - case-4e4bdda7f978
-    - case-8e20ea54b165
-    - case-738c81466dc5
-    - case-1020d8c06af0
-    - case-44b2409f41a2
-    - case-10ab351f3ecd
-    - case-6b0d39f575cb
-    - case-3af6f3489015
-    - case-9cec07eb6e77
-    - case-22c3361153af
-    - case-6ebaa4c583f3
-    - case-e93600d072ce
-    - case-fc560f5f8d1e
-    - case-c611da13947f
-    - case-b88eacadac9a
-    last_confirmed_at: '2026-09-11T07:45:41Z'
-- rule_id: rule-ff7c713bdc53
-  category: file_delete
-  pattern: (?i)\brestore\.bak\b
-  auto:
-    generated_by: analyze_cases.py
-    updated_at: '2026-09-11T07:45:25Z'
-    confidence: observation
-    confirmations: 1
-    source_cases:
-    - case-4e4bdda7f978
-    - case-8e20ea54b165
-    - case-738c81466dc5
-    - case-1020d8c06af0
-    - case-44b2409f41a2
-    - case-10ab351f3ecd
-    - case-6b0d39f575cb
-    - case-3af6f3489015
-    - case-9cec07eb6e77
-    - case-22c3361153af
-    - case-6ebaa4c583f3
-    - case-e93600d072ce
-    - case-fc560f5f8d1e
-    - case-c611da13947f
-    - case-b88eacadac9a
-    last_confirmed_at: '2026-09-11T07:45:41Z'
 - rule_id: rule-d948f2f46db1
   category: file_delete
   pattern: (?i)\bdd\b
@@ -187,40 +90,11 @@ rules:
     - case-c611da13947f
     - case-b88eacadac9a
     last_confirmed_at: '2026-09-11T07:45:41Z'
-- rule_id: rule-e17a66a39a61
-  category: network
-  pattern: (?i)\bexample\.invalid\b
-  auto:
-    generated_by: analyze_cases.py
-    updated_at: '2026-09-11T07:45:25Z'
-    confidence: observation
-    confirmations: 1
-    source_cases:
-    - case-b619055fa377
-    last_confirmed_at: '2026-09-11T07:45:41Z'
-- rule_id: rule-f77139a020c9
-  category: network
-  pattern: (?i)\bbackup\.tgz\b
-  auto:
-    generated_by: analyze_cases.py
-    updated_at: '2026-09-11T07:45:25Z'
-    confidence: observation
-    confirmations: 1
-    source_cases:
-    - case-b619055fa377
-    last_confirmed_at: '2026-09-11T07:45:41Z'
 forbidden_patterns:
   file_delete:
   - (?i)\btruncate\s+[^\n;&|]{0,40}?\-s\b
   - (?i)\brm\b
-  - (?i)\bcleanup\.tmp\b
-  - (?i)\bpurge\.data\b
-  - (?i)\bdeploy\.env\b
-  - (?i)\brestore\.bak\b
   - (?i)\bdd\b
-  network:
-  - (?i)\bexample\.invalid\b
-  - (?i)\bbackup\.tgz\b
 vague_phrases:
 - 不合理的操作
 - 标准接口

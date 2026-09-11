@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -50,6 +51,12 @@ def _construct_mapping(loader: yaml.SafeLoader, node, deep: bool = False):
 _StrictLoader.add_constructor(
     yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_mapping
 )
+
+
+def _utf8_env() -> dict:
+    """子进程强制 UTF-8：Windows CI 的 locale 编码不是 UTF-8 时，
+    子进程打印中文会 UnicodeEncodeError，断言里的中文错误信息也就无从比对。"""
+    return {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
 
 
 def _load(path: Path) -> dict:
@@ -165,6 +172,7 @@ def test_update_rules_promote_mode_works_without_suggestions():
         cwd=REPO_ROOT,
         capture_output=True,
         encoding="utf-8",
+        env=_utf8_env(),
     )
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -183,5 +191,6 @@ def test_update_rules_rejects_missing_suggestions_outside_promote_mode():
         cwd=REPO_ROOT,
         capture_output=True,
         encoding="utf-8",
+        env=_utf8_env(),
     )
     assert result.returncode == 2, result.stdout + result.stderr

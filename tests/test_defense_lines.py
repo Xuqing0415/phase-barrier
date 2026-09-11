@@ -495,13 +495,27 @@ def test_line5_high_risk_forced_sampling_and_approval(tmp_path):
 
 def test_line5_low_risk_auto_approves(tmp_path):
     ws = tmp_path
-    # 注意：抽样种子取自 request_id = hash(workspace|需求|阶段)，而 tmp_path 每次运行
-    # 都不同；若沿用默认 auto_approve_below_score=20（本用例实际风险分 35），断言会依赖
-    # 伪随机数，约 12% 概率随机失败。这里显式把阈值抬到风险分之上，保证确定性。
+    # 抽样种子与绝对路径无关（v0.59.0 起），这里仍显式把阈值抬到风险分之上，
+    # 目的是精确覆盖「低于 auto_approve_below_score 必放行」这一分支本身。
     cfg = _cfg({"human_review": {"enabled": True, "auto_approve_below_score": 100}})
     state = _StubState("", {})
     r = HumanReviewLine().run(ws, cfg, state, 5, 6)
     assert r.ok and r.evidence["sampled"] is False
+
+
+def test_line5_sampling_seed_is_independent_of_absolute_path(tmp_path):
+    """``deterministic=true`` 必须真的可复现：同一任务名放在不同父目录下（模拟不同
+    checkout / 不同 CI basetemp），抽样结果与 request_id 必须完全一致。"""
+    cfg = _cfg(
+        {"human_review": {"enabled": True, "force_above_score": 100, "auto_approve_below_score": 0}}
+    )
+    observed = []
+    for parent in ("checkout-a", "checkout-b"):
+        ws = tmp_path / parent / "task"
+        ws.mkdir(parents=True)
+        r = HumanReviewLine().run(ws, cfg, _StubState("实现密码校验函数", None), 5, 6)
+        observed.append((r.request_id, r.evidence["sampled"], r.evidence["probability"]))
+    assert observed[0] == observed[1] == observed[0], observed
 
 
 def test_compute_risk_score_penalizes_missing_formal(tmp_path):

@@ -50,6 +50,9 @@ nav:
       - 配置指南: configuration.md
       - 语义级校验（v0.49.0）: semantic-validation.md
       - 五道防线（v0.52.0）: five-lines.md
+      - 红队 Agent（路径 1，v0.57.0）: red-team.md
+      - 形式化不变量（路径 2，v0.58.0）: formal-invariants.md
+      - 学习型防线（路径 4，v0.59.0）: learning-defense.md
       - 语言适配器: languages.md
       - GitHub Action 门禁: github-action.md
       - GitHub Action 上架: publish-to-marketplace.md

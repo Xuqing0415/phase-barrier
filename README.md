@@ -104,6 +104,9 @@ anti-shortcut advance --workspace . --to 2                         # 推进阶�
 | 语言适配器 | [docs/languages.md](docs/languages.md) |
 | 架构与设计 | [docs/architecture.md](docs/architecture.md) |
 | 拦截规则与安全加固 | [docs/security-rules.md](docs/security-rules.md) |
+| 红队 Agent（自己打自己，v0.57.0） | [docs/red-team.md](docs/red-team.md) |
+| 形式化不变量（TLA+ 模型检查，v0.58.0） | [docs/formal-invariants.md](docs/formal-invariants.md) |
+| 学习型防线（从案例中学习，v0.59.0） | [docs/learning-defense.md](docs/learning-defense.md) |
 | 状态与审计（远程推送） | [docs/audit-logging.md](docs/audit-logging.md) |
 | GitHub Action | [docs/github-action.md](docs/github-action.md) |
 | 编排器钩子 SDK | [docs/orchestrator-hooks.md](docs/orchestrator-hooks.md) |

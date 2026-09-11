@@ -30,7 +30,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from ..config import FormalCheckOptions, GateConfig
 from ._base import DefenseCheckResult, DefenseLine
@@ -81,16 +81,65 @@ def _parse_constraints(data: dict[str, Any]) -> tuple[list[dict[str, Any]], list
     return constraints, errors
 
 
+def normalize_variable(variable: str, alias_suffixes: Sequence[str] = ()) -> str:
+    """把变量名归一化：剥掉常见「装饰性」后缀。
+
+    ``password_input`` / ``password_input_raw`` -> ``password``。否则只要把同一约束
+    对象的上下界写到两个别名名下（``>= 8`` 记在 ``password_input``、``<= 6`` 记在
+    ``password_input_raw``），按同名求交的矛盾检测就看不见它们其实互斥。
+    """
+    name = str(variable).strip()
+    suffixes = sorted(
+        [str(s) for s in (alias_suffixes or ()) if str(s).strip()],
+        key=len,
+        reverse=True,
+    )
+    changed = True
+    while changed:
+        changed = False
+        for suffix in suffixes:
+            if len(name) > len(suffix) + 1 and name.lower().endswith(suffix.lower()):
+                name = name[: -len(suffix)]
+                changed = True
+    return name
+
+
+def variable_alias_groups(
+    constraints: list[dict[str, Any]], alias_suffixes: Sequence[str] = ()
+) -> dict[str, list[str]]:
+    """返回被归一化合并的变量名分组（仅列出真的合并了多个名字的组）。"""
+    groups: dict[str, list[str]] = {}
+    for c in constraints:
+        var = str(c.get("variable") or "")
+        if not var:
+            continue
+        group = normalize_variable(var, alias_suffixes)
+        names = groups.setdefault(group, [])
+        if var not in names:
+            names.append(var)
+    return {group: names for group, names in groups.items() if len(names) > 1}
+
+
 def detect_static_contradictions(
-    constraints: list[dict[str, Any]]
+    constraints: list[dict[str, Any]],
+    alias_suffixes: Sequence[str] = (),
 ) -> list[str]:
-    """对 DSL 做区间求交，返回矛盾描述列表（空列表 = 静态一致）。"""
+    """对 DSL 做区间求交，返回矛盾描述列表（空列表 = 静态一致）。
+
+    v0.57.0：变量名先按 ``alias_suffixes`` 归一化再分组，避免「同一约束对象的上下界
+    写到不同别名名下」绕过矛盾检测；归一化只是合并分组，报告中会列出别名对应关系。
+    """
     contradictions: list[str] = []
-    # 每变量维护 [lower, upper] 与 exact 集
+    # 每变量（归一化后）维护 [lower, upper] 与 exact 集
     bounds: dict[str, dict[str, Any]] = {}
+    aliases: dict[str, list[str]] = {}
     for c in constraints:
         var = c["variable"]
-        slot = bounds.setdefault(var, {"lower": None, "upper": None, "exact": set(), "neq": set()})
+        group = normalize_variable(var, alias_suffixes)
+        names = aliases.setdefault(group, [])
+        if var not in names:
+            names.append(var)
+        slot = bounds.setdefault(group, {"lower": None, "upper": None, "exact": set(), "neq": set()})
         value = c["value"]
         ctype = c["type"]
         op = c["operator"]
@@ -119,8 +168,13 @@ def detect_static_contradictions(
         except (TypeError, ValueError):
             contradictions.append(f"约束 {c['id']} 的 value 不是整数: {value!r}")
 
-    for var, slot in bounds.items():
-        label = f"变量 {var}"
+    for group, slot in bounds.items():
+        names = aliases.get(group) or [group]
+        label = (
+            f"变量 {names[0]}"
+            if len(names) == 1
+            else f"变量 {group}（别名 {'/'.join(names)}）"
+        )
         for exact in slot["exact"]:
             if slot["lower"] is not None and exact < slot["lower"]:
                 contradictions.append(f"{label} 矛盾：exact={exact} 与下界 {slot['lower']} 冲突")
@@ -202,6 +256,7 @@ class FormalCheckLine(DefenseLine):
         cfile = workspace / opts.constraints_file
         hand_tla = cfile.suffix.lower() == ".tla"
         data = None
+        alias_groups: dict[str, list[str]] = {}
         if cfile.is_file():
             if hand_tla:
                 module_text = cfile.read_text(encoding="utf-8", errors="replace")
@@ -224,7 +279,12 @@ class FormalCheckLine(DefenseLine):
                 else:
                     constraints, parse_errors = [], ["constraints 文件顶层必须是映射（YAML / JSON 对象）"]
                 dsl_errors.extend(parse_errors)
-                static_contradictions = detect_static_contradictions(constraints)
+                static_contradictions = detect_static_contradictions(
+                    constraints, opts.variable_alias_suffixes
+                )
+                alias_groups = variable_alias_groups(
+                    constraints, opts.variable_alias_suffixes
+                )
                 module_text = generate_tla(constraints)
         else:
             # 未提供任何约束文件 -> 降级为警告（不拦截），保持向后兼容
@@ -255,6 +315,7 @@ class FormalCheckLine(DefenseLine):
             "constraints": constraints,
             "dsl_errors": dsl_errors,
             "static_contradictions": static_contradictions,
+            "variable_aliases": alias_groups,
             "generated_tla": module_text if not hand_tla else None,
         }
 

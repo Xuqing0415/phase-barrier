@@ -25,6 +25,7 @@ from ..config import GateConfig
 from ._base import DefenseCheckResult, DefenseLine  # noqa: F401
 from ._common import DEFENSE_DIR_NAME, defense_dir  # noqa: F401
 from .behavior_audit import BehaviorAuditLine
+from .case_library import capture_defense_failure
 from .dual_review import DualReviewLine
 from .formal_check import FormalCheckLine
 from .human_review import HumanReviewLine
@@ -35,6 +36,7 @@ __all__ = [
     "defense_dir",
     "DefenseCheckResult",
     "DefenseLine",
+    "capture_defense_failure",
     "BUILTIN_DEFENSE_LINES",
     "run_defense_checks",
 ]
@@ -85,6 +87,17 @@ def run_defense_checks(
             }
         )
         if not res.ok:
+            # 路径 4：拦截即采集（默认关闭；采集异常绝不影响门禁）
+            capture_defense_failure(
+                workspace,
+                config,
+                line.name,
+                res.message,
+                res.evidence,
+                state=state,
+                from_stage=from_stage,
+                to_stage=to_stage,
+            )
             return False, res.message, {"defense_checks": results}
     if not results:
         return True, "", {}

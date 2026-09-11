@@ -8,6 +8,7 @@
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -60,6 +61,66 @@ def build_requirement(
     }
 
 
+def _normalize_item(value: Any) -> str:
+    """去掉空白后用于「重复条目」判定。"""
+    return re.sub(r"\\s+", "", str(value if value is not None else ""))
+
+
+def _list_section_issues(
+    items: Any,
+    label: str,
+    min_items: int,
+    options: RequirementTemplateOptions,
+) -> list[str]:
+    """列表区块（禁止行为 / 接口 / 验收）的通用校验：条数 + 具体性。
+
+    v0.57.0 新增两项，用于拦截「模板填充型」逃逸（字段齐全、条目凑数、语义为空）：
+
+    - 重复条目：同一条目重复填写只是凑够条数，没有信息量；
+    - 空话短语：条目命中 ``options.vague_phrases`` 时无法客观判定（如「标准接口」
+      「功能正常运行」「不允许出现不合理的操作」）。
+    """
+    if not isinstance(items, list) or not items:
+        return [f"缺失或为空：{label}（至少 {min_items} 条）"]
+    issues: list[str] = []
+    if len(items) < min_items:
+        issues.append(f"{label} 条目数 {len(items)} < 最低要求 {min_items}")
+
+    bad_type = [
+        idx + 1
+        for idx, value in enumerate(items)
+        if not isinstance(value, str) or not value.strip()
+    ]
+    if bad_type:
+        issues.append(
+            f"{label}第 {'、'.join(str(i) for i in bad_type[:3])} 条不是非空字符串"
+            "（若条目含 `: `，YAML 会把它解析成映射，请给条目加引号）"
+        )
+
+    normalized = [_normalize_item(x) for x in items]
+    if options.reject_duplicate_items:
+        seen: set[str] = set()
+        dups: list[str] = []
+        for value in normalized:
+            if value in seen and value not in dups:
+                dups.append(value)
+            seen.add(value)
+        if dups:
+            issues.append(f"{label}存在重复条目（只是凑够条数）：{'、'.join(dups[:3])}")
+
+    phrases = [str(x) for x in (options.vague_phrases or []) if str(x).strip()]
+    if phrases:
+        hits: list[str] = []
+        for raw, value in zip(items, normalized):
+            for phrase in phrases:
+                if phrase in value:
+                    hits.append(f"{raw}（含空话短语「{phrase}」）")
+                    break
+        if hits:
+            issues.append(f"{label}内容为空话、无法客观判定：{'；'.join(hits[:3])}")
+    return issues
+
+
 def validate_requirement(
     data: dict[str, Any], options: RequirementTemplateOptions
 ) -> tuple[bool, list[str], dict[str, Any]]:
@@ -85,42 +146,36 @@ def validate_requirement(
     stats["goal_len"] = len(goal) if isinstance(goal, str) else 0
 
     forbidden = data.get("forbidden")
-    if not isinstance(forbidden, list) or not forbidden:
-        issues.append(
-            f"缺失或为空：{SECTION_LABELS['forbidden']}"
-            f"（至少 {options.min_forbidden_items} 条）"
+    issues.extend(
+        _list_section_issues(
+            forbidden,
+            SECTION_LABELS["forbidden"],
+            options.min_forbidden_items,
+            options,
         )
-    elif len(forbidden) < options.min_forbidden_items:
-        issues.append(
-            f"{SECTION_LABELS['forbidden']} 条目数 {len(forbidden)}"
-            f" < 最低要求 {options.min_forbidden_items}"
-        )
+    )
     stats["forbidden_count"] = len(forbidden) if isinstance(forbidden, list) else 0
 
     interfaces = data.get("interfaces")
-    if not isinstance(interfaces, list) or not interfaces:
-        issues.append(
-            f"缺失或为空：{SECTION_LABELS['interfaces']}"
-            f"（至少 {options.min_interface_items} 条）"
+    issues.extend(
+        _list_section_issues(
+            interfaces,
+            SECTION_LABELS["interfaces"],
+            options.min_interface_items,
+            options,
         )
-    elif len(interfaces) < options.min_interface_items:
-        issues.append(
-            f"{SECTION_LABELS['interfaces']} 条目数 {len(interfaces)}"
-            f" < 最低要求 {options.min_interface_items}"
-        )
+    )
     stats["interface_count"] = len(interfaces) if isinstance(interfaces, list) else 0
 
     acceptance = data.get("acceptance")
-    if not isinstance(acceptance, list) or not acceptance:
-        issues.append(
-            f"缺失或为空：{SECTION_LABELS['acceptance']}"
-            f"（至少 {options.min_acceptance_items} 条）"
+    issues.extend(
+        _list_section_issues(
+            acceptance,
+            SECTION_LABELS["acceptance"],
+            options.min_acceptance_items,
+            options,
         )
-    elif len(acceptance) < options.min_acceptance_items:
-        issues.append(
-            f"{SECTION_LABELS['acceptance']} 条目数 {len(acceptance)}"
-            f" < 最低要求 {options.min_acceptance_items}"
-        )
+    )
     stats["acceptance_count"] = len(acceptance) if isinstance(acceptance, list) else 0
 
     stats["sections"] = {

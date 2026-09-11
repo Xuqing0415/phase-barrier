@@ -14,18 +14,20 @@ Python 版本与老仓库依赖不匹配（例如宿主 py3.14 跑不动 astropy
   （``--venv`` 参数），两者互不影响。
 - 宿主仍需 ``grade.py``（swebench harness + Docker）对生成的补丁打分。
 
-用法（宿主机执行，需 docker CLI 与已拉取的评测镜像）::
+环境：宿主需 docker CLI 与已拉取的评测镜像；代理脚本在仓库内（``benchmarks/swebench/``），默认即指向同仓库路径。
+
+用法（宿主机执行）::
 
     python scripts/run_swebench_batch_container.py \
-        --tasks .pytest_tmp/bench_data/tasks_lite20.json \
-        --dataset .pytest_tmp/bench_data/swebench_test.json \
-        --agent-script .pytest_tmp/bench_data/run_agent.py \
-        --grade-script .pytest_tmp/bench_data/grade.py \
+        --tasks .pytest_tmp/bench_data/lite/tasks_scale20.json \
+        --dataset .pytest_tmp/bench_data/lite/dataset.json \
         --grade-python .pytest_tmp/sweb_venv/Scripts/python.exe \
         --results .pytest_tmp/bench_data/results_scale20/results.csv \
-        --agent-runs .pytest_tmp/bench_data/agent_runs \
-        --eval-runs .pytest_tmp/bench_data/eval_runs \
+        --log-dir .pytest_tmp/bench_data/container_logs \
         --modes baseline,gated --max-turns 60 --concurrency 2 --skip-existing
+
+``--agent-script`` / ``--grade-script`` 默认已指向仓库内的
+``benchmarks/swebench/{run_agent,grade}.py``，无需显式传入。
 
 输出：``--results`` CSV 追加 ``(instance_id, mode)`` 行；已存在的组合自动跳过，可断点续跑。
 缺镜像、缺 patch、超时都会按行记录 note，不中断整批。
@@ -44,6 +46,32 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MOUNT_POINT = "/pb"
+# 官方评测镜像的 base conda 里没有 phase-barrier 的运行时依赖（pydantic/PyYAML/structlog），
+# 而镜像自带的 testbed 环境又不满足 requires-python>=3.10。用命名卷缓存一份按 Python 小版本
+# 分目录的依赖，首次运行 pip 安装、后续复用；并发时用 mkdir 锁避免写坏同一目录。
+GATE_DEPS_MOUNT = "/pb_gate_deps"
+GATE_DEPS_VOLUME = "pb_gate_deps"
+GATE_DEPS_PACKAGES = "pydantic PyYAML structlog"
+
+
+def gate_deps_bootstrap(gate_python: str) -> str:
+    """返回容器内前置 shell 片段：按门禁解释器的小版本缓存并安装门禁依赖。
+
+    镜像里 PATH 上的 ``python`` 往往是 testbed 环境（可能是 3.6/3.9），不是跑门禁的
+    base conda——必须用 ``gate_python`` 判定依赖目录，否则会装出 ABI 不匹配的包。
+    """
+    return (
+        'DEPS="' + GATE_DEPS_MOUNT + '/site-$(' + gate_python
+        + ' -c \'import sys;print("%d.%d"%sys.version_info[:2])\')"; '
+        'mkdir -p ' + GATE_DEPS_MOUNT + '; '
+        'if [ ! -f "$DEPS/.ready" ]; then '
+        'if mkdir "$DEPS.lock" 2>/dev/null; then '
+        + gate_python + ' -m pip install -q --target "$DEPS" ' + GATE_DEPS_PACKAGES
+        + ' && touch "$DEPS/.ready"; '
+        'rmdir "$DEPS.lock" 2>/dev/null; '
+        'else for _i in $(seq 1 90); do [ -f "$DEPS/.ready" ] && break; sleep 5; done; fi; fi; '
+        'export PYTHONPATH="$DEPS:${PYTHONPATH:-}"; '
+    )
 COLUMNS = ["instance_id", "repo", "mode", "resolved", "turns", "seconds",
            "diff_chars", "gate_intercepts", "gate_final_stage", "gate_completed", "note"]
 _LOCK = threading.Lock()
@@ -90,13 +118,15 @@ def build_agent_docker_command(*, image: str, repo_mount: Path | str, agent_scri
                                docker: str = "docker") -> list[str]:
     """构造在官方镜像里运行 run_agent.py 的 ``docker run`` argv（纯函数，便于测试）。"""
     script = (
-        f"{gate_python} {agent_script}"
+        gate_deps_bootstrap(gate_python)
+        + f"{gate_python} {agent_script}"
         f" --dataset {dataset} --instance {instance_id} --workdir /testbed"
         f" --venv {testbed_python} --mode {mode} --label {label}"
         f" --outdir {outdir} --max-turns {max_turns} --exec-timeout {exec_timeout}"
     )
     argv = [docker, "run", "--rm",
             "-v", f"{repo_mount}:{mount_point}",
+            "-v", f"{GATE_DEPS_VOLUME}:{GATE_DEPS_MOUNT}",
             "-w", "/testbed"]
     for key, value in (extra_env or {}).items():
         argv += ["-e", f"{key}={value}"]
@@ -208,9 +238,9 @@ def main() -> int:
     ap.add_argument("--tasks", required=True, type=Path)
     ap.add_argument("--dataset", required=True, type=Path)
     ap.add_argument("--agent-script", type=Path,
-                    default=REPO_ROOT / ".pytest_tmp" / "bench_data" / "run_agent.py")
+                    default=REPO_ROOT / "benchmarks" / "swebench" / "run_agent.py")
     ap.add_argument("--grade-script", type=Path,
-                    default=REPO_ROOT / ".pytest_tmp" / "bench_data" / "grade.py")
+                    default=REPO_ROOT / "benchmarks" / "swebench" / "grade.py")
     ap.add_argument("--grade-python", type=Path,
                     default=REPO_ROOT / ".pytest_tmp" / "sweb_venv" / "Scripts" / "python.exe")
     ap.add_argument("--results", required=True, type=Path)

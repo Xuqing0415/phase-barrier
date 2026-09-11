@@ -281,7 +281,8 @@ def extract_patch(workdir: Path) -> tuple[str, str]:
         if missing:
             with open(exclude, "a", encoding="utf-8") as fh:
                 fh.write("\n" + "\n".join(missing) + "\n")
-    subprocess.run(["git", "add", "-A"], cwd=str(workdir), capture_output=True, text=True)
+    subprocess.run(["git", "add", "-A"], cwd=str(workdir), capture_output=True,
+                       text=True, encoding="utf-8", errors="replace")
     proc = subprocess.run(["git", "diff", "HEAD"], cwd=str(workdir),
                           capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
@@ -304,11 +305,11 @@ def run(args) -> int:
         return 2
 
     subprocess.run(["git", "config", "--global", "user.email", "pb@example.com"],
-                   capture_output=True, text=True)
+                   capture_output=True, text=True, encoding="utf-8", errors="replace")
     subprocess.run(["git", "config", "--global", "user.name", "phase-barrier"],
-                   capture_output=True, text=True)
+                   capture_output=True, text=True, encoding="utf-8", errors="replace")
     subprocess.run(["git", "config", "--global", "--add", "safe.directory", str(workdir)],
-                   capture_output=True, text=True)
+                   capture_output=True, text=True, encoding="utf-8", errors="replace")
 
     gate = None
     intercepts = 0

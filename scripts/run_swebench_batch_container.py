@@ -65,20 +65,37 @@ def gate_deps_bootstrap(gate_python: str) -> str:
     成功才落 ``.ready``。Docker Desktop 的卷挂载下 ``mkdir`` 锁不保证互斥，两个容器
     并发 pip install 会把目录写坏（实测出现过 pydantic 装上了、``typing_extensions``
     缺失，之后同卷容器全部 import 失败）。
+
+    v1.0.0：改为「共享卷只读复制 + 容器内私有目录 + 校验后原子发布」。
+    实测复现：``mkdir`` 锁在并发下真的会同时进临界区，两个容器各自 ``rm -rf`` +
+    pip install，先完成的那个 ``touch .ready`` 之后仍被另一个容器的写入破坏，
+    随后所有容器 ``import typing_extensions`` 失败（2026-09-12 批量跑 Scale-30 时
+    4 个 gated 任务因此空补丁）。现在：
+
+    1. 使用方只把共享缓存 ``cp -a`` 到容器私有 ``$LOCAL``，再校验 import；
+       共享卷上任何并发写都不会影响正在运行的容器。
+    2. 缓存缺失或校验不过时，在 ``$LOCAL`` 里重装（不碰共享卷）。
+    3. 发布缓存走唯一临时目录 + ``mv``，且**不覆盖已有缓存**；不再有 ``rm -rf``
+       共享目录的写前清空，坏缓存只在自身校验失败时清除（可自愈）。
     """
     return (
-        'DEPS="' + GATE_DEPS_MOUNT + '/site-$(' + gate_python
+        'DEPS_BASE="' + GATE_DEPS_MOUNT + '/site-$(' + gate_python
         + ' -c \'import sys;print("%d.%d"%sys.version_info[:2])\')"; '
         'mkdir -p ' + GATE_DEPS_MOUNT + '; '
-        'if [ ! -f "$DEPS/.ready" ]; then '
-        'if mkdir "$DEPS.lock" 2>/dev/null; then '
-        'rm -rf "$DEPS"; mkdir -p "$DEPS"; '
-        + gate_python + ' -m pip install -q --target "$DEPS" ' + GATE_DEPS_PACKAGES
-        + ' && PYTHONPATH="$DEPS" ' + gate_python
-        + ' -c "import pydantic, yaml, structlog" && touch "$DEPS/.ready"; '
-        'rmdir "$DEPS.lock" 2>/dev/null; '
-        'else for _i in $(seq 1 90); do [ -f "$DEPS/.ready" ] && break; sleep 5; done; fi; fi; '
-        'export PYTHONPATH="$DEPS:${PYTHONPATH:-}"; '
+        'LOCAL="/tmp/pb_gate_deps_$$"; mkdir -p "$LOCAL"; '
+        'py_ok() { PYTHONPATH="$1" ' + gate_python + ' -c "import pydantic, yaml, structlog" 2>/dev/null; }; '
+        'if [ -f "$DEPS_BASE/.ready" ] && py_ok "$DEPS_BASE"; then '
+        'cp -a "$DEPS_BASE/." "$LOCAL/" 2>/dev/null; '
+        'elif [ -e "$DEPS_BASE" ]; then rm -rf "$DEPS_BASE" 2>/dev/null; fi; '
+        'if ! py_ok "$LOCAL"; then '
+        'rm -rf "$LOCAL"; mkdir -p "$LOCAL"; '
+        + gate_python + ' -m pip install -q --target "$LOCAL" ' + GATE_DEPS_PACKAGES
+        + ' && py_ok "$LOCAL" || { echo "pb_gate_deps: 门禁依赖安装失败" >&2; exit 1; }; '
+        'TMP="$DEPS_BASE.pub.$$"; rm -rf "$TMP"; mkdir -p "$TMP"; '
+        'cp -a "$LOCAL/." "$TMP/" 2>/dev/null && touch "$TMP/.ready" && '
+        '{ [ -e "$DEPS_BASE" ] || mv "$TMP" "$DEPS_BASE" 2>/dev/null; }; '
+        'rm -rf "$TMP" 2>/dev/null; fi; '
+        'export PYTHONPATH="$LOCAL:${PYTHONPATH:-}"; '
     )
 COLUMNS = ["instance_id", "repo", "mode", "resolved", "turns", "seconds",
            "diff_chars", "gate_intercepts", "gate_final_stage", "gate_completed", "note"]

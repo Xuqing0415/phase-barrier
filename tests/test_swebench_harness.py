@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -233,3 +234,25 @@ def test_container_bootstraps_gate_deps(tmp_path):
     assert f"{container.GATE_DEPS_VOLUME}:{container.GATE_DEPS_MOUNT}" in argv
     assert "pydantic PyYAML structlog" in argv[-1]
     assert "/opt/miniconda3/bin/python /pb/benchmarks/swebench/run_agent.py" in argv[-1]
+
+
+def test_gate_deps_bootstrap_verifies_import_before_ready():
+    """依赖卷必须「清空安装 + import 校验 + 才落 .ready」，坏卷不会污染后续容器。"""
+    script = container.gate_deps_bootstrap("/opt/miniconda3/bin/python")
+    assert 'rm -rf "$DEPS"' in script
+    assert 'import pydantic, yaml, structlog' in script
+    assert script.index("import pydantic, yaml, structlog") < script.index('touch "$DEPS/.ready"')
+
+
+def test_patch_is_fresh_rejects_stale_and_empty(tmp_path):
+    """Agent 秒退时挂载目录里可能还留着上一轮的补丁，不能被当成本次结果评分。"""
+    patch = tmp_path / "model_patch.diff"
+    started = 1_000_000.0
+    assert container.patch_is_fresh(patch, started) is False   # 不存在
+    patch.write_text("", encoding="utf-8")
+    assert container.patch_is_fresh(patch, started) is False   # 空文件
+    patch.write_text("diff --git a/x b/x\n", encoding="utf-8")
+    os.utime(patch, (started - 60, started - 60))
+    assert container.patch_is_fresh(patch, started) is False   # 上一轮遗留
+    os.utime(patch, (started + 1, started + 1))
+    assert container.patch_is_fresh(patch, started) is True     # 本次产出

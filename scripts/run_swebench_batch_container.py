@@ -38,6 +38,7 @@ import argparse
 import csv
 import json
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -59,6 +60,11 @@ def gate_deps_bootstrap(gate_python: str) -> str:
 
     镜像里 PATH 上的 ``python`` 往往是 testbed 环境（可能是 3.6/3.9），不是跑门禁的
     base conda——必须用 ``gate_python`` 判定依赖目录，否则会装出 ABI 不匹配的包。
+
+    v0.62.0：安装前先清空目录、装完用 ``import pydantic, yaml, structlog`` 校验，
+    成功才落 ``.ready``。Docker Desktop 的卷挂载下 ``mkdir`` 锁不保证互斥，两个容器
+    并发 pip install 会把目录写坏（实测出现过 pydantic 装上了、``typing_extensions``
+    缺失，之后同卷容器全部 import 失败）。
     """
     return (
         'DEPS="' + GATE_DEPS_MOUNT + '/site-$(' + gate_python
@@ -66,8 +72,10 @@ def gate_deps_bootstrap(gate_python: str) -> str:
         'mkdir -p ' + GATE_DEPS_MOUNT + '; '
         'if [ ! -f "$DEPS/.ready" ]; then '
         'if mkdir "$DEPS.lock" 2>/dev/null; then '
+        'rm -rf "$DEPS"; mkdir -p "$DEPS"; '
         + gate_python + ' -m pip install -q --target "$DEPS" ' + GATE_DEPS_PACKAGES
-        + ' && touch "$DEPS/.ready"; '
+        + ' && PYTHONPATH="$DEPS" ' + gate_python
+        + ' -c "import pydantic, yaml, structlog" && touch "$DEPS/.ready"; '
         'rmdir "$DEPS.lock" 2>/dev/null; '
         'else for _i in $(seq 1 90); do [ -f "$DEPS/.ready" ] && break; sleep 5; done; fi; fi; '
         'export PYTHONPATH="$DEPS:${PYTHONPATH:-}"; '
@@ -107,6 +115,19 @@ def container_path(host_path: Path | str, repo_mount: Path | str,
     """把宿主路径翻译成容器内路径（要求位于 --repo-mount 之下）。"""
     rel = Path(host_path).resolve().relative_to(Path(repo_mount).resolve())
     return f"{mount_point}/{rel.as_posix()}"
+
+
+def patch_is_fresh(patch: Path, since: float) -> bool:
+    """补丁文件是否存在、非空，且确实是本次运行（不早于 ``since``）产生的。
+
+    只判「文件存在且非空」会把上一轮同名运行的旧补丁当成本次结果去评分：
+    Agent 在容器里 import 失败秒退时，旧补丁仍在挂载目录里（实测踩坑）。
+    """
+    try:
+        stat = Path(patch).stat()
+    except OSError:
+        return False
+    return stat.st_size > 0 and stat.st_mtime >= since
 
 
 def build_agent_docker_command(*, image: str, repo_mount: Path | str, agent_script: str,
@@ -163,6 +184,11 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
     label = f"{short_id(iid)}_{mode}{args.label_suffix}"
     instance = instances[iid]
     log = Path(args.log_dir) / f"{label}.container.log" if args.log_dir else None
+    label_dir = Path(args.agent_runs) / label
+    # 清掉上一轮同名运行的 patch / stats，避免 Agent 未产出时拿旧补丁评分
+    if label_dir.exists():
+        shutil.rmtree(label_dir, ignore_errors=True)
+    started_at = time.time()
     argv = build_agent_docker_command(
         image=container_image(instance), repo_mount=args.repo_mount,
         agent_script=container_path(args.agent_script, args.repo_mount, args.mount_point),
@@ -181,7 +207,7 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
     except subprocess.TimeoutExpired:
         return {**job, "resolved": "", "note": "container_timeout"}
     pb = parse_pb(out)
-    patch = Path(args.agent_runs) / label / "model_patch.diff"
+    patch = label_dir / "model_patch.diff"
     row = {"instance_id": iid, "repo": job["repo"], "mode": mode, "resolved": "",
            "turns": pb.get("PB_TURNS", ""), "seconds": "",
            "diff_chars": pb.get("PB_DIFF_CHARS", ""),
@@ -197,7 +223,7 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
             row["seconds"] = stats.get("seconds", "")
         except Exception:
             pass
-    if not (patch.exists() and patch.stat().st_size > 0):
+    if not patch_is_fresh(patch, started_at):
         row["note"] = (row["note"] + " empty_patch").strip()
         row["resolved"] = "0"
         return row

@@ -359,8 +359,17 @@ requests / xarray / pylint / pytest / scikit-learn / sphinx）。同一模型（
   （`patch_is_fresh()`，含回归测试）。
 - **依赖卷**：Docker Desktop 卷挂载下 `mkdir` 锁不保证互斥，两个容器并发
   `pip install --target` 会把 `pb_gate_deps` 写坏（实测 pydantic 装上了、`typing_extensions`
-  缺失）。bootstrap 改为「先 `rm -rf` 目录 → 装 → `import pydantic, yaml, structlog` 校验 →
-  才落 `.ready`」。
+  缺失）。第一版修复是「`rm -rf` 目录 → 装 → `import` 校验 → 才落 `.ready`」——**不够**：
+  2026-09-12 批量跑 Verified 时再次复现，`mkdir` 锁根本没互斥，两个容器同时进临界区、
+  各自 `rm -rf` + install，先完成的容器 `touch .ready` 之后仍被另一个容器的写入破坏；
+  7 个 gated 任务里 5 个空补丁（`agent_exit_1`）、1 个评分失败（`grade_exit_4294967295`），
+  整批数据不可用。最终修复：
+  1. 使用方只把共享缓存 `cp -a` 到容器私有 `$LOCAL`，再校验 import——共享卷上的并发写
+     不再影响正在运行的容器；
+  2. 缓存缺失或校验不过时在 `$LOCAL` 重装，不碰共享卷；
+  3. 发布走唯一临时目录 + `mv`，且不覆盖已有缓存；坏缓存由校验失败分支自愈。
+
+  结论：**并发场景下不要信任"锁"，要让每个使用方持有私有副本并自行校验。**
 
 ## 九、Verified 分片复核（2026-09-12）
 

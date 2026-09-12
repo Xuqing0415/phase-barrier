@@ -35,6 +35,7 @@ python -m anti_shortcut init --with-coverage --rules no_path_traversal,no_shell_
 | `test_file_patterns` | list | `PydanticUndefined` |  |
 | `min_test_functions` | int | `2` |  |
 | `require_assert_per_test` | bool | `True` |  |
+| `stage2_test_scope` | str | `changed` | 阶段 2 校验范围：`changed` 只校验 Git 工作区相对 HEAD 的新增/修改测试文件（避免拿仓库历史测试蒙混、也避免存量夹具误伤）；`workspace` 退回全量扫描。非 Git 仓库 / 工作区干净时自动退回全量 |
 | `source_file_patterns` | list | `PydanticUndefined` |  |
 | `require_implementation` | bool | `True` |  |
 | `test_commands` | list | `PydanticUndefined` |  |

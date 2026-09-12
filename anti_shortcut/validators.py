@@ -20,7 +20,14 @@ from typing import Any, Callable
 from .config import GateConfig
 from .languages import LanguageAdapter, get_adapter, validate_test_collection
 from .languages.python import PYTHON_SUFFIXES, PythonAdapter
-from .paths import classify_path, iter_workspace_files, path_matches, sha256_file
+from .paths import (
+    changed_workspace_files,
+    classify_path,
+    iter_workspace_files,
+    norm_path_key,
+    path_matches,
+    sha256_file,
+)
 
 __all__ = [
     "PYTHON_SUFFIXES",
@@ -83,27 +90,75 @@ def validate_spec(
 
 # ---------- 阶段 2：测试用例编写 ----------
 
+_TEST_DIR_NAMES = frozenset({"tests", "test", "testing", "spec", "specs", "__tests__"})
+
+
+def _in_test_dir(path: Path) -> bool:
+    """路径是否位于测试目录约定下（``tests/`` / ``spec/`` / ``__tests__/`` 等）。"""
+    return any(part.lower() in _TEST_DIR_NAMES for part in path.parts[:-1])
+
 def validate_tests(
     workspace: Path,
     config: GateConfig,
     state,
     adapter: LanguageAdapter | None = None,
 ) -> tuple[bool, str, dict]:
-    """校验测试用例：存在测试文件 + 通过适配器统计测试函数与断言。"""
+    """校验测试用例：存在测试文件 + 通过适配器统计测试函数与断言。
+
+    v0.62.0 起默认只校验「本次变更」里的测试文件（``stage2_test_scope=changed``）：
+    仓库里已有的测试不能替当前任务过关；存量测试文件（夹具、非 Python 测试、
+    历史空壳测试）也不再误伤门禁。非 Git 仓库 / 工作区干净 / git 不可用时
+    自动退回「扫描整个工作区」的旧行为。
+    """
     adapter = _resolve_adapter(config, workspace, adapter)
-    test_files = [
-        p for p in iter_workspace_files(workspace, config)
-        if adapter.is_test_file(p, config)
-    ]
+    candidates = iter_workspace_files(workspace, config)
+    scoped = False
+    if getattr(config, "stage2_test_scope", "changed") == "changed":
+        changed = changed_workspace_files(workspace)
+        if changed:
+            keys = {norm_path_key(p) for p in changed}
+            # 只有「变更集里真的包含工作区文件」才收窄范围：仓库干净、或只多了
+            # 门禁目录（.agent_gate）时视为无变更，退回全量扫描。
+            scoped_candidates = [p for p in candidates if norm_path_key(p) in keys]
+            if scoped_candidates:
+                candidates = scoped_candidates
+                scoped = True
+
+    test_files = [p for p in candidates if adapter.is_test_file(p, config)]
+    lenient = False
+    if not test_files and scoped:
+        # 目录约定兜底：有些仓库的测试文件名不匹配 test_*.py（如 django 的
+        # ``tests/<app>/tests.py``），但位于 tests/ 目录下且是目标语言文件。
+        suffixes = {s.lower() for s in adapter.file_extensions}
+        test_files = [
+            p for p in candidates
+            if p.suffix.lower() in suffixes and _in_test_dir(p)
+        ]
+        lenient = True
     if not test_files:
+        if scoped:
+            return False, (
+                "本次变更中没有测试文件：阶段 2 要求为当前任务新增或修改测试用例，"
+                "仓库里已有的测试不能代替"
+            ), {}
         return False, "未找到测试文件（如 test_*.py），请先编写测试用例", {}
 
     parsed: list[dict[str, Any]] = []
     for tf in test_files:
         info = adapter.analyze_tests(tf)
         if info is None:
+            if lenient:
+                continue
             return False, f"测试文件 {tf.name} 存在语法错误，无法通过校验", {}
+        if lenient and not info.get("test_functions"):
+            continue
         parsed.append({"file": str(tf.relative_to(workspace)), **info})
+
+    if not parsed:
+        return False, (
+            "本次变更中没有可识别的测试用例：阶段 2 要求为当前任务新增或修改"
+            "测试函数（test_* / TestCase 方法），仓库里已有的测试不能代替"
+        ), {}
 
     ok, msg, extra = validate_test_collection(config, parsed)
     if not ok:

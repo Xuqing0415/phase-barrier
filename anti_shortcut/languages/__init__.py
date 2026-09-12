@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 from importlib import metadata
 from pathlib import Path
 from typing import Any
@@ -94,6 +95,88 @@ _LANGUAGE_GLOB_MARKERS: list[tuple[tuple[str, ...], str]] = [
     (("*.vcxproj",), "cpp"),
 ]
 
+# 扩展名 -> 语言（多个标志文件同时命中时用于「文件数消歧」，只覆盖内置适配器）
+_EXTENSION_LANGUAGE: dict[str, str] = {
+    ".py": "python",
+    ".pyw": "python",
+    ".pyi": "python",
+    ".js": "javascript",
+    ".jsx": "javascript",
+    ".mjs": "javascript",
+    ".cjs": "javascript",
+    ".ts": "javascript",
+    ".tsx": "javascript",
+    ".vue": "javascript",
+    ".svelte": "javascript",
+    ".java": "java",
+    ".kt": "kotlin",
+    ".kts": "kotlin",
+    ".go": "go",
+    ".rs": "rust",
+    ".rb": "ruby",
+    ".gemspec": "ruby",
+    ".cs": "csharp",
+    ".csproj": "csharp",
+    ".sln": "csharp",
+    ".vb": "dotnet",
+    ".fs": "dotnet",
+    ".cpp": "cpp",
+    ".cc": "cpp",
+    ".cxx": "cpp",
+    ".hpp": "cpp",
+    ".h": "cpp",
+    ".c": "cpp",
+    ".php": "php",
+    ".scala": "scala",
+    ".sc": "scala",
+    ".swift": "swift",
+    ".dart": "dart",
+}
+
+# 消歧扫描跳过的目录（依赖 / 构建产物；否则 node_modules 会把任何仓库拉向 javascript）
+_COUNT_SKIP_DIRS = frozenset({
+    ".git", ".hg", ".svn", "node_modules", "bower_components", ".venv", "venv",
+    "env", "__pycache__", "target", "dist", "build", "out", "vendor",
+    "third_party", "site-packages", ".mypy_cache", ".pytest_cache", ".tox",
+    ".gradle", ".idea", ".cache", "Pods", "DerivedData", ".phase-barrier-javac",
+})
+
+# 消歧扫描的文件数上限：超大仓库只统计前 N 个文件，避免门禁卡在 IO
+_COUNT_FILE_LIMIT = 50000
+
+
+def _count_language_files(root: Path, languages: set[str]) -> dict[str, int]:
+    """统计 ``root`` 下各候选语言的文件数（跳过依赖 / 构建目录）。
+
+    只在多个语言的标志文件同时命中时调用，用于消歧。统计到
+    ``_COUNT_FILE_LIMIT`` 个文件即停止（遍历顺序不保证），返回已统计结果
+    ——足以判断主语言，且不会让门禁卡在超大仓库的 IO 上。
+    """
+    counts = dict.fromkeys(languages, 0)
+    seen = 0
+    stack = [root]
+    while stack and seen < _COUNT_FILE_LIMIT:
+        directory = stack.pop()
+        try:
+            entries = list(os.scandir(directory))
+        except OSError:
+            continue
+        for entry in entries:
+            try:
+                if entry.is_dir(follow_symlinks=False):
+                    if entry.name not in _COUNT_SKIP_DIRS:
+                        stack.append(Path(entry.path))
+                    continue
+                if not entry.is_file(follow_symlinks=False):
+                    continue
+            except OSError:
+                continue
+            seen += 1
+            lang = _EXTENSION_LANGUAGE.get(Path(entry.name).suffix.lower())
+            if lang in counts:
+                counts[lang] += 1
+    return counts
+
 
 def load_entry_point_adapters() -> dict[str, type[LanguageAdapter]]:
     """加载通过 ``phase_barrier.languages`` 入口点注册的自定义适配器。
@@ -121,20 +204,40 @@ def detect_language(workspace: Path) -> str:
     """根据工作区根目录的标志文件自动检测语言；未识别时返回 ``python``（默认）。
 
     v0.11.0：支持目录级 glob 标志（``*.gemspec`` / ``*.csproj`` / ``*.sln``）。
+    v0.62.0：多个语言的标志文件同时命中时（如 django 同时有 ``package.json``
+    与 ``setup.py``），按候选语言的源文件数消歧——``package.json`` 常常只是
+    前端 / 文档工具链的附属文件，不应把 Python 仓库判定成 javascript。
     """
     root = Path(workspace)
-    for markers, lang in _LANGUAGE_MARKERS:
-        for marker in markers:
-            if (root / marker).exists():
-                return lang
-    for globs, lang in _LANGUAGE_GLOB_MARKERS:
-        for glob in globs:
-            if any(root.glob(glob)):
-                return lang
+    matched: list[tuple[str, int]] = []
+    for order, (markers, lang) in enumerate(_LANGUAGE_MARKERS):
+        if any((root / marker).exists() for marker in markers if "*" not in marker):
+            matched.append((lang, order))
+    for offset, (globs, lang) in enumerate(_LANGUAGE_GLOB_MARKERS):
+        if any(any(root.glob(glob)) for glob in globs):
+            matched.append((lang, len(_LANGUAGE_MARKERS) + offset))
     # Kotlin 探针：无标志文件的纯 Kotlin 工作区（src/main/kotlin 源根）
     if (root / "src" / "main" / "kotlin").is_dir():
-        return "kotlin"
-    return "python"
+        matched.append(("kotlin", len(_LANGUAGE_MARKERS) + len(_LANGUAGE_GLOB_MARKERS)))
+    if not matched:
+        return "python"
+
+    languages = {lang for lang, _ in matched}
+    if len(languages) > 1:
+        counts = _count_language_files(root, languages)
+        ranked = sorted(
+            languages,
+            key=lambda lang: (
+                counts.get(lang, 0),
+                -min(order for name, order in matched if name == lang),
+            ),
+            reverse=True,
+        )
+        best = ranked[0]
+        if counts.get(best, 0) > 0:
+            return best
+    # 只有一个候选语言 / 无法通过文件数消歧（空目录等）：保持原有标志文件优先级
+    return matched[0][0]
 
 
 def get_adapter(

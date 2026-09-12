@@ -322,7 +322,13 @@ def run(args) -> int:
 
         gate = AntiShortcutSkill(
             workdir,
-            config={"require_assert_per_test": False, "min_test_functions": 1},
+            config={
+                "require_assert_per_test": False,
+                "min_test_functions": 1,
+                # 只校验本次变更里的测试文件：SWE-bench 镜像里挂着几十年的存量测试，
+                # 全量扫描既会误伤（夹具 / 非 Python 测试），也允许 Agent 白嫖存量测试。
+                "stage2_test_scope": "changed",
+            },
             user_request=problem or args.instance,
         )
         tools.bound = gate.install(

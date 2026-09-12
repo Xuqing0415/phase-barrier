@@ -138,6 +138,8 @@ def render_config(
         _fmt_list(profile["test_file_patterns"]),
         "min_test_functions: 2",
         "require_assert_per_test: true",
+        "# 阶段 2 只校验「本次变更」里的测试文件（Git 相对 HEAD 的新增/修改）；设为 workspace 退回全量扫描",
+        "stage2_test_scope: changed",
         "",
         "# ---- 阶段 3：实现代码 ----",
         "source_file_patterns:",

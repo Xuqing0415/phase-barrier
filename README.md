@@ -13,6 +13,22 @@
 > 跳步、偷步、伪造产出会被自动拦截——先有证据，才放行下一步。
 
 ## 为什么需要 phase-barrier？
+## 实测数据
+
+SWE-bench Lite Scale-20（官方评测容器内，同模型同预算，20 实例配对，2026-09）：
+
+| 组别 | resolved | 门禁拦截 | 交付全绿 | 空补丁 | 平均耗时 |
+|---|---|---|---|---|---|
+| baseline（无门禁） | 18/20（90%） | 0 | — | 0 | 262s |
+| gated（阶段门禁） | **20/20（100%）** | **78** | 14 | 0 | 462s |
+
+门禁把 baseline 失败的 2 个实例救了回来，0 例拖累；代价是平均耗时约 1.8 倍（n=20，仅同条件对比）。
+完整报告与复算命令见 [`docs/benchmarks/swe-bench-scale20.md`](docs/benchmarks/swe-bench-scale20.md)，
+原始数据在 `benchmarks/swebench/results/`。
+
+**版本**：v1.0.0 起公开 API 冻结（1.x 内向后兼容，破坏性变更只在 2.0）——见 [`docs/release.md`](docs/release.md)。
+
+## 为什么需要 phase-barrier？
 
 编码 Agent 拿到需求后倾向于“直接写代码”，跳过需求分析、设计与测试，造成理解偏差、
 缺回归保障、后期难维护。phase-barrier 在 Agent 的工具调用层加一道闸门：

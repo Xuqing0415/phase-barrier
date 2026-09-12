@@ -1,9 +1,9 @@
-# 社区推广内容包（v0.56.0）
+# 社区推广内容包（v0.62.0）
 
 任何人可直接复制本目录内容发布到对应平台。发布前请刷新下方「核心数据」中的数字：
 
 ```bash
-python -m pytest tests --collect-only -q | tail -n 1      # 测试总数（当前 1195，70 个文件）
+python -m pytest tests --collect-only -q | tail -n 1      # 测试总数（当前 1439，82 个文件）
 python scripts/verify_plugins.py --json                    # 插件索引状态（当前 4 条，全 passed）
 python scripts/check_custom_domain.py                      # 域名状态（可选）
 ```
@@ -27,12 +27,12 @@ v0.52.0 起叠加「五道防线」——需求模板 / 双模型交叉复核 / 
 
 | 指标 | 数值 | 备注 |
 |------|------|------|
-| PyPI 最新发布 | v0.51.0 | `pip install phase-barrier`；main 已累积至 v0.56.0（里程碑驱动，见 release.md） |
-| main 最新里程碑 | v0.56.0 | 五道防线 + 插件自动收录闭环实证 |
+| PyPI 最新发布 | v0.51.0 | `pip install phase-barrier`；main 已累积至 v0.62.0（里程碑驱动，见 release.md） |
+| main 最新里程碑 | v0.62.0 | 五道防线 + 红队 / 形式化 / 学习闭环 + SWE-bench Scale-20 实测 |
 | 支持语言 | 13 | Python / JavaScript（含 TypeScript）/ Java / Kotlin / Scala / Go / Rust / Swift / Ruby / PHP / C#（.NET 别名）/ C++ / Dart |
-| 测试 | 1195（70 个文件） | 覆盖率门禁 ≥90%（实测 94%） |
-| CI 矩阵 | Linux / Windows / macOS × Python 3.11-3.14 | 真实语言工具链全量激活 |
-| SWE-bench 双组实测 | Scale-20：baseline 25% vs gated 25%（19 次拦截）；官方容器内新增 10 例 gated 50% > baseline 40% | 见 `docs/tutorials/swe-bench-real.md` §7.4 / §8 / §9 |
+| 测试 | 1439（82 个文件） | 覆盖率门禁 ≥90%（实测 93%） |
+| CI 矩阵 | Linux / Windows / macOS × Python 3.10-3.14 | 真实语言工具链全量激活 |
+| SWE-bench 双组实测 | Scale-20（官方评测容器内，同模型同预算）：baseline 18/20（90%）vs gated **20/20（100%）**，78 次拦截，0 空补丁，0 例拖累；Verified 分片复核 8/8 一致 | 报告 `docs/benchmarks/swe-bench-scale20.md`，原始 CSV `benchmarks/swebench/results/` |
 | 插件生态 | `plugins.json` 4 条（2 官方示例 + 2 自动发现），全部 passed | 打 `phase-barrier-plugin` topic 即被每周自动收录；增量刷新已实证 |
 | 分发 | PyPI + GitHub Release（sigstore 签名） | GitHub Action Marketplace |
 | 文档站 | <https://docs.xshayncka.dev/> | MkDocs |

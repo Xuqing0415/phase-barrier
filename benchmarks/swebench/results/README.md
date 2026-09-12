@@ -17,6 +17,14 @@ turns, seconds, diff_chars, gate_intercepts, gate_final_stage, gate_completed, n
 
 ## 汇总（可复算）
 
+推荐直接用仓库脚本（含 Wilson 95% 区间与逐实例救回/拖累清单）：
+
+```bash
+python benchmarks/swebench/analyze_results.py --results benchmarks/swebench/results/scale20_lite_container.csv
+```
+
+等价的手写复算：
+
 ```bash
 python - <<'PY'
 import csv, io, statistics

@@ -21,6 +21,19 @@
 - 真实场景验证优先：发布前把可执行的真实场景验证（Docker / kind e2e / 真实工具链
   用例 / 上游集成）跑通；不做纯"刷版本"式发布。
 
+### 1.x 版本语义（v1.0.0 起：公开 API 冻结）
+
+- v1.0.0 起公开 API 冻结：`AntiShortcutSkill` / `bootstrap` / `install_into` /
+  `register_integration` / `load_plugins` / `PhaseBarrier` / `GateClient` / `GateDenied`
+  的导入路径与签名、配置 schema 既有字段语义、CLI 子命令与退出码、`.agent_gate/`
+  状态与证据文件格式，在 1.x 周期内保证向后兼容。
+- 允许的变更：新增可选配置字段、新增入口点 / 插件、新增 CLI 子命令、性能与错误
+  信息改进、文档与内部重构。
+- 需要破坏兼容时：先在某个 minor 版本发出弃用告警（`DeprecationWarning` + 文档标注 +
+  CHANGELOG 说明），且只在下一个大版本（2.0）移除。
+- 版本号规则不变：`X.Y.0` = 里程碑，`X.Y.Z` = 紧急修复；发布门槛（CI 全绿、覆盖率
+  ≥90%、CHANGELOG 汇总、同日不重复发布）同样适用于 1.x。
+
 发布流程（`git tag vX.Y.Z` 触发）会用 sigstore 以 GitHub OIDC 身份对 sdist / wheel
 签名，`.sigstore.json` 签名随 GitHub Release 附件发布。用户可离线校验包来源：
 

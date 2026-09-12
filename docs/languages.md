@@ -33,6 +33,14 @@ test_commands:
 `go.mod` -> `go`，`Cargo.toml` -> `rust`，`Gemfile` / `*.gemspec` -> `ruby`，
 `*.csproj` / `*.sln` -> `csharp`，`CMakeLists.txt` / `Makefile` / `*.vcxproj` -> `cpp`，`composer.json` -> `php`，
 `build.sbt` -> `scala`，`Package.swift` -> `swift`，`pubspec.yaml` -> `dart`，`requirements.txt` / `setup.py` / `pyproject.toml` -> `python`；未识别时默认 Python。
+v0.62.0 起，多个语言的标志文件同时命中时不再按列表顺序「先到先得」，而是统计候选语言的
+源文件数（跳过 `node_modules` / `.venv` / `build` 等依赖与产物目录）取主语言：
+django、sphinx 这类仓库根目录带 `package.json`（前端 / 文档工具链）却以 Python 为主，
+旧逻辑会判成 `javascript`，阶段 2 便用 JS 启发式校验 `.py` 测试文件而永久卡死
+（SWE-bench Scale-20 实测 6 个实例卡在阶段 2）。无法消歧时（空目录等）保持原有标志文件
+优先级；显式 `language` 配置仍然最高优先。
+阶段 2 的校验范围由 `stage2_test_scope` 控制（默认 `changed`，只校验本次变更里的测试文件），
+见 [配置指南](configuration.md)。
 .NET 项目可显式 `language: dotnet` 启用 `DotNetAdapter`（与 `csharp` 共用实现，便于按生态区分）。
 适配器默认文件模式与 YAML 中的 `test_file_patterns` / `source_file_patterns`
 自动合并（配置只增不减）。完整字段说明见 [配置指南](configuration.md)。

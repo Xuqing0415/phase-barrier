@@ -5,7 +5,9 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import re
+import subprocess
 from pathlib import Path
 
 from .config import GateConfig
@@ -94,3 +96,68 @@ def iter_workspace_files(workspace: Path, config: GateConfig) -> list[Path]:
             continue
         out.append(p)
     return sorted(out)
+
+
+def changed_workspace_files(workspace: Path) -> list[Path] | None:
+    """返回工作区「本次变更」的文件（Git 相对 HEAD 的改动 + 未跟踪文件）。
+
+    只在 ``workspace`` 本身就是 Git 仓库根目录时启用，避免在子目录里把上层
+    仓库的变更误当成工作区变更。返回 ``None`` 表示无法判断（非 Git 仓库 /
+    git 不可用 / 工作区不是仓库根），调用方应退回「扫描整个工作区」；返回
+    空列表表示仓库干净、没有未提交变更。
+    """
+    ws = Path(workspace).resolve()
+    try:
+        top = subprocess.run(
+            ["git", "-C", str(ws), "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if top.returncode != 0 or not (top.stdout or "").strip():
+        return None
+    try:
+        if Path(top.stdout.strip()).resolve() != ws:
+            return None
+    except OSError:
+        return None
+    try:
+        status = subprocess.run(
+            ["git", "-C", str(ws), "status", "--porcelain", "-z", "--untracked-files=all"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if status.returncode != 0:
+        return None
+
+    out: list[Path] = []
+    chunks = (status.stdout or "").split("\0")
+    index = 0
+    while index < len(chunks):
+        chunk = chunks[index]
+        index += 1
+        if len(chunk) < 4:
+            continue
+        state, rel = chunk[:2], chunk[3:]
+        if state[0] in ("R", "C"):
+            index += 1  # porcelain -z：重命名 / 复制会额外跟一个「源路径」字段
+        out.append(ws / rel)
+    return out
+
+
+def norm_path_key(path: Path) -> str:
+    """路径比较键：绝对化 + 平台大小写归一（Windows 下不区分大小写）。"""
+    try:
+        resolved = path.resolve()
+    except OSError:
+        resolved = Path(os.path.abspath(path))
+    return os.path.normcase(str(resolved))

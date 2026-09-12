@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -572,6 +572,13 @@ class GateConfig(BaseModel):
     test_file_patterns: list[str] = Field(default_factory=lambda: list(DEFAULT_TEST_FILE_PATTERNS))
     min_test_functions: int = 2
     require_assert_per_test: bool = True
+    # 阶段 2 测试文件校验范围（v0.62.0）：
+    #   "changed"   -> 只校验「本次变更」（Git 工作区相对 HEAD 的新增 / 修改）里的测试文件：
+    #                  既避免拿仓库历史测试蒙混过关，也避免存量测试文件（夹具、非 Python
+    #                  测试等）误伤门禁；
+    #   "workspace" -> 沿用旧行为，扫描整个工作区。
+    # 非 Git 仓库 / 工作区干净 / git 不可用时自动退回全量扫描。
+    stage2_test_scope: Literal["changed", "workspace"] = "changed"
     # ---- 阶段 3：实现 ----
     source_file_patterns: list[str] = Field(default_factory=lambda: list(DEFAULT_SOURCE_FILE_PATTERNS))
     require_implementation: bool = True

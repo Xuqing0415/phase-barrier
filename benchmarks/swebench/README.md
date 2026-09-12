@@ -45,12 +45,13 @@ python scripts/run_swebench_batch_container.py \
   --tasks .pytest_tmp/bench_data/verified/tasks_scale20.json \
   --dataset .pytest_tmp/bench_data/verified/dataset.json \
   --grade-python .pytest_tmp/sweb_venv/Scripts/python.exe \
-  --results .pytest_tmp/bench_data/results_scale20/results.csv \
+  --results .pytest_tmp/bench_data/results/scale20.csv \
   --log-dir .pytest_tmp/bench_data/container_logs \
-  --modes baseline,gated --max-turns 60 --concurrency 2 --skip-existing
+  --modes baseline,gated --max-turns 60 --concurrency 3 --skip-existing
 ```
 
 `--skip-existing` 按 `(instance_id, mode)` 断点续跑，中断后重跑同一条命令即可。
+已入库的两份评测数据见 [`results/`](results/)（含复算命令与实测口径说明）。
 
 ## 跑之前先自检（强烈建议）
 

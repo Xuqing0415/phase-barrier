@@ -4,6 +4,67 @@
 发布为里程碑驱动：日常改动累积于 main，仅在用户可感知里程碑或紧急修复时发版，
 同日不重复发布（详见 [docs/release.md](docs/release.md) 发布节奏）。
 
+## [0.62.0] - 2026-09-11
+
+- **fix（P0：阶段 2 在存量仓库上永久卡死，SWE-bench gated 组假阴性）**：Scale-20 容器实测中
+  6 个 gated 实例（django-10914/10924/11001/11019、sphinx-10325、sympy-11870）卡在阶段 2，
+  报「测试文件 `js_tests/admin/jsi18n-mocks.test.js` 为启发式校验（非 Python），断言关键字
+  不足（0 < 1）」。根因两层：
+  1. `detect_language` 按标志文件列表顺序「先到先得」，django / sphinx 仓库根目录带
+     `package.json`（前端 / 文档工具链）而 `package.json` 排第一，于是整个 Python 仓库被判成
+     `javascript`，再用 JS 启发式去校验 `.py` 测试文件；
+  2. `validate_tests` 扫描**整个存量仓库**，仓库里几十年的夹具 / 历史测试都会被计入，
+     顺带允许 Agent 不写新测试直接拿仓库已有测试过关。
+  修复：`detect_language` 在多标志命中时按候选语言源文件数消歧（跳过 `node_modules` /
+  `.venv` / `build` 等依赖与产物目录），无法消歧时回退原有优先级；新增
+  `stage2_test_scope: changed`（默认）——阶段 2 只校验 Git 工作区相对 HEAD 的新增 / 修改
+  测试文件，`workspace` 保留全量扫描旧行为，非 Git 仓库 / 工作区干净时自动回退；
+  测试目录约定兜底（如 django 的 `tests/<app>/tests.py` 不匹配 `test_*.py` 时按
+  `tests/` 目录 + 目标语言后缀识别，解析不出测试函数则跳过而非报错）。
+  真实镜像实证：`django__django-10914` 与 `sphinx-doc__sphinx-10325` 容器内
+  `detect_language -> python`、阶段 2 校验通过（修复前同一镜像日志为 javascript + 空壳报错）。
+  回归测试：`tests/test_stage2_scope.py`（13 项，含 django / sphinx 布局端到端复现）。
+- **fix（docs/config）**：`python -m anti_shortcut init` 生成的配置模板与
+  [配置指南](docs/configuration.md) 增加 `stage2_test_scope`；[语言适配器](docs/languages.md)
+  补主语言消歧说明。
+- **fix（benchmark：批驱动会拿「上一轮的旧补丁」当本次结果评分）**：Agent 在容器里
+  import 失败秒退时，挂载目录里上一轮的 `model_patch.diff` / `stats.json` 仍在，驱动照旧
+  送去评分 —— 实测 20 行里 14 行是这样来的假数据。现在 `run_one` 先清空同名 label 目录，
+  并要求补丁 mtime 晚于本次启动（`patch_is_fresh()`，含回归测试）。同时修掉依赖卷损坏：
+  Docker Desktop 卷挂载下 `mkdir` 锁不保证互斥，两个容器并发 `pip install --target` 会把
+  `pb_gate_deps` 写坏（实测 pydantic 装上、`typing_extensions` 缺失，之后同卷容器全部
+  import 失败）；bootstrap 改为「`rm -rf` 目录 → 装 → `import pydantic, yaml, structlog`
+  校验 → 才落 `.ready`」。
+- **data/docs（SWE-bench 实测数据入库 + 教程重写）**：Scale-20（Lite `test` 分片，20 实例 ×
+  baseline/gated = 40 行）与 Verified 跨分片复核（8 行）落到
+  `benchmarks/swebench/results/`，附汇总复算脚本与口径说明；教程 §8 用可复算数据替换旧的
+  混合来源表格（baseline 18/20=90%、gated 20/20=100%、拦截 78 次、14 次交付前最终测试全绿），
+  新增 §8.3「阶段 2 假阳性的修复前后对照」与 §8.4「harness 陷阱」，§9 改写为本轮
+  Verified 复核（8/8 两分片判定一致，未出现翻转）。
+
+## [0.61.0] - 2026-09-11
+
+- **fix（P0：学习闭环把「载荷字面量」当成规则，CI 全平台红）**：`case_analysis.extract_candidates`
+  的 `_looks_like_filename` 只覆盖代码 / 文档后缀，漏了 `.tmp/.data/.env/.bak/.tgz` 与占位域
+  `.invalid`，导致红队攻击载荷里的文件名（`cleanup.tmp`、`purge.data`、`deploy.env`、
+  `restore.bak`、`backup.tgz`、`example.invalid`）被当成模式写进
+  `anti_shortcut/defense/learned_rules.yaml`：① 红队对照实验失效（关掉 `scan_chains` 仍命中，
+  缺口不重现）令 CI 红；② 生产误报（同名文件正常写入被判 `file_delete`）。补齐后缀与保留域
+  名单、删除 6 条字面量规则，新增回归测试
+  `test_extract_candidates_ignores_payload_literals` /
+  `test_shipped_learned_rules_have_no_payload_literals`。
+- **feat（SWE-bench 评测工具链入库，实验可复现）**：真实 SWE-bench 双组评测脚本此前只存在于
+  本地 `.pytest_tmp/bench_data/`，从未入库，临时目录一清就无法复算。现固化到
+  `benchmarks/swebench/`：`run_agent.py`（容器内 DeepSeek 工具循环，gated 走
+  `AntiShortcutSkill.install`）、`grade.py`（宿主侧官方 harness 评分）、
+  `prepare_dataset.py`（导出实例 + 按本机已缓存镜像过滤）、`gold_check.py`（gold patch 自检，
+  失败即说明 harness 有 bug）、`regrade_cross_shard.py`（跨分片重新评分，不重跑 Agent）。
+  同步修掉两个会让结果整体假阴性的 harness 缺陷：Windows 写 `eval.sh` 的 CRLF（容器内
+  `set -e`/`conda activate` 全部解析失败，表现为 PASS_TO_PASS 全挂）与官方 harness
+  按 `run_id/model/instance` 缓存 `report.json`（换补丁仍返回旧结论）。`gate_completed`
+  改取 `State.delivery_clean()`，即「阶段 6 + 最近一次测试全绿 + 晚于最后一次改动」。
+  测试：`tests/test_swebench_harness.py`。
+
 ## [0.60.0] - 2026-09-11
 
 - **fix（P0：`learned_rules.yaml` 人工 note 被自动更新覆盖）**：v0.59.0 的

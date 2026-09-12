@@ -73,6 +73,7 @@ nav:
       - K8s sidecar 加固与 gRPC 接口（v0.39.0 已实现）: tutorials/k8s-sidecar-grpc.md
       - SWE-bench 门禁基准: tutorials/swe-bench-gate.md
       - SWE-bench 真实评测 harness: tutorials/swe-bench-real.md
+      - SWE-bench Scale-20 实测报告: benchmarks/swe-bench-scale20.md
       - 视频教程模板: video-tutorial-template.md
   - FAQ: faq.md
   - Roadmap: roadmap.md

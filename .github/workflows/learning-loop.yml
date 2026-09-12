@@ -210,3 +210,83 @@ jobs:
             --title "学习闭环候选规则（$run_date，需人工开 PR）" \
             --body-file "$RUNNER_TEMP/pr_body.md" \
             --label "defense,learning-loop"
+
+      - name: Run summary
+        if: always()
+        env:
+          CASE_COUNT: ${{ steps.collect.outputs.case_count }}
+          RETEST_CLEAN: ${{ steps.retest.outputs.clean }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          # 每次运行都留一份人可读摘要，避免「配了但没跑 / 跑了没产出」无从察觉。
+          if git diff --quiet -- anti_shortcut/defense/learned_rules.yaml; then
+            rules_state="无候选变更"
+          else
+            rules_state="有候选变更（已开 PR 或 issue）"
+          fi
+          {
+            echo "## 学习闭环运行摘要"
+            echo
+            echo "| 项 | 值 |"
+            echo "|---|---|"
+            echo "| 触发方式 | ${EVENT_NAME} |"
+            echo "| 采集到案例 | ${CASE_COUNT:-0} 条 |"
+            echo "| 复测结果 | ${RETEST_CLEAN:-未执行} |"
+            echo "| 候选规则 | ${rules_state} |"
+            echo "| run | [${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  output-healthcheck:
+    name: 产出健康检查（连续 2 周无候选则告警）
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Alert when the loop produced nothing for 2 weeks
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 学习闭环的价值在于「持续产出候选规则」。若连续 14 天没有任何带
+          # learning-loop 标签的 PR/issue，说明它要么没跑、要么跑了没产出，
+          # 这时自动开 issue 提醒维护者，而不是让 job 静默全绿。
+          set -euo pipefail
+          gh label list --limit 200 --json name --jq '.[].name' | grep -qx "defense" || \
+            gh label create "defense" --color 1D76DB --description "防御门禁/防线相关"
+          gh label list --limit 200 --json name --jq '.[].name' | grep -qx "learning-loop" || \
+            gh label create "learning-loop" --color FBCA04 --description "学习闭环自动产物（需人工审核）"
+          latest="$(gh api "repos/${GITHUB_REPOSITORY}/issues?labels=learning-loop&state=all&sort=created&direction=desc&per_page=1" --jq '.[0].created_at // ""')"
+          now="$(date -u +%s)"
+          if [ -n "$latest" ]; then
+            age_days=$(( (now - $(date -u -d "$latest" +%s)) / 86400 ))
+          else
+            age_days=999
+          fi
+          echo "最近一次学习闭环产出：${latest:-无}（${age_days} 天前）"
+          if [ "$age_days" -lt 14 ]; then
+            echo "未超过 14 天，无需告警"
+            exit 0
+          fi
+          open_alerts="$(gh issue list --state open --label learning-loop --json title \
+            --jq '[.[] | select(.title | startswith("学习闭环连续 2 周无产出"))] | length')"
+          if [ "$open_alerts" != "0" ]; then
+            echo "已有未关闭的同类告警，跳过"
+            exit 0
+          fi
+          gh issue create \
+            --title "学习闭环连续 2 周无产出（截至 $(date -u +%Y-%m-%d)）" \
+            --label "defense,learning-loop" \
+            --body "$(cat <<'BODY'
+          学习闭环（`.github/workflows/learning-loop.yml`）已连续 14 天没有产出任何候选规则 PR/issue。
+
+          请按顺序排查：
+
+          1. 该 workflow 近期是否真的在跑（Actions -> Learning loop；schedule 为每周一 04:23 UTC）。
+          2. 运行摘要（job summary）里「采集到案例」是否为 0——红队没采到案例则闭环无输入。
+          3. 若采集正常但没有候选，说明现有规则已覆盖当前逃逸技术（属于正常稳态），
+             可关闭本 issue 或考虑扩充红队逃逸技术库。
+          4. 若是权限问题（自动建 PR 被拒），确认 Settings -> Actions -> General 已勾选
+             「Allow GitHub Actions to create and approve pull requests」。
+          BODY
+          )"

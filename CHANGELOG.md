@@ -22,6 +22,12 @@
   0 例拖累、2 例被门禁救回），报告见 `docs/benchmarks/swe-bench-scale20.md`。
 - **门禁正确性（v0.62.0）**：修复阶段 2 在存量仓库永久卡死的两个根因（语言误判 +
   存量测试白嫖），卡死实例 resolved 0 → 1。
+- **评测 harness 并发缺陷（v1.0.0 修复）**：门禁依赖卷用 `mkdir` 锁在 Docker Desktop
+  卷挂载下**不互斥**，两个容器同时 `rm -rf` + `pip install` 会把共享卷写坏——实测
+  （2026-09-12 批量跑 Verified）7 个 gated 任务里 5 个空补丁、1 个评分失败，整批数据
+  不可用。改为「容器私有目录 + 共享缓存只读复制 + 校验后原子发布」，并加自愈：
+  缓存校验失败即重建。回归测试钉住新不变量（无 mkdir 锁、PYTHONPATH 不指向共享卷、
+  发布前先校验、不覆盖已有缓存）。
 
 **API 冻结承诺**：1.x 周期内保证向后兼容。冻结范围包括公开导入
 （`AntiShortcutSkill` / `bootstrap` / `install_into` / `register_integration` / `load_plugins` /

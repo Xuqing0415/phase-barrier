@@ -7,13 +7,13 @@ FAIL_TO_PASS / PASS_TO_PASS 更严格）。本脚本读取一次双组评测的 
 用法::
 
     python benchmarks/swebench/regrade_cross_shard.py \
-        --results .pytest_tmp/bench_data/results_scale20/results.csv \
+        --results benchmarks/swebench/results/scale20_lite_container.csv \
         --target-dataset .pytest_tmp/bench_data/verified/dataset.json \
         --agent-runs .pytest_tmp/bench_data/agent_runs \
         --grade-python .pytest_tmp/sweb_venv/Scripts/python.exe \
         --grade-script benchmarks/swebench/grade.py \
         --out-dir .pytest_tmp/bench_data/eval_runs_verified \
-        --out-csv .pytest_tmp/bench_data/results_verified/regrade.csv
+        --out-csv benchmarks/swebench/results/verified_regrade.csv
 
 输出 CSV 列：``instance_id, mode, source_resolved, target_resolved, target_note``。
 仅对目标分片里存在、且补丁文件存在的行评分；其余计入 ``skipped``。

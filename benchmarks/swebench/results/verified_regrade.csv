@@ -1,0 +1,9 @@
+instance_id,mode,source_resolved,target_resolved,target_note
+astropy__astropy-12907,baseline,1,1,"{""resolved"": true, ""f2p"": {""success"": 2, ""failure"": 0}, ""p2p"": {""success"": 13, ""failure"": 0}}"
+astropy__astropy-12907,gated,1,1,"{""resolved"": true, ""f2p"": {""success"": 2, ""failure"": 0}, ""p2p"": {""success"": 13, ""failure"": 0}}"
+astropy__astropy-14182,baseline,1,1,"{""resolved"": true, ""f2p"": {""success"": 1, ""failure"": 0}, ""p2p"": {""success"": 9, ""failure"": 0}}"
+astropy__astropy-14182,gated,1,1,"{""resolved"": true, ""f2p"": {""success"": 1, ""failure"": 0}, ""p2p"": {""success"": 9, ""failure"": 0}}"
+django__django-10914,baseline,1,1,"{""resolved"": true, ""f2p"": {""success"": 1, ""failure"": 0}, ""p2p"": {""success"": 98, ""failure"": 0}}"
+django__django-10914,gated,1,1,"{""resolved"": true, ""f2p"": {""success"": 1, ""failure"": 0}, ""p2p"": {""success"": 98, ""failure"": 0}}"
+scikit-learn__scikit-learn-10297,baseline,1,1,"{""resolved"": true, ""f2p"": {""success"": 1, ""failure"": 0}, ""p2p"": {""success"": 28, ""failure"": 0}}"
+scikit-learn__scikit-learn-10297,gated,1,1,"{""resolved"": true, ""f2p"": {""success"": 1, ""failure"": 0}, ""p2p"": {""success"": 28, ""failure"": 0}}"

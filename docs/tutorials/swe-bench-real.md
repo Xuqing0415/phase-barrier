@@ -281,72 +281,119 @@ gated 有 3 个实例完整走到阶段 6 并交付（sympy-11400、flask-4045�
   环境里执行。两者互不影响。
 
 ```powershell
-python scripts/run_swebench_batch_container.py --tasks .pytest_tmp/bench_data/tasks_lite20.json --dataset .pytest_tmp/bench_data/swebench_test.json --agent-script .pytest_tmp/bench_data/run_agent.py --grade-script .pytest_tmp/bench_data/grade.py --grade-python .pytest_tmp/sweb_venv/Scripts/python.exe --results .pytest_tmp/bench_data/results_scale20/results.csv --agent-runs .pytest_tmp/bench_data/agent_runs --eval-runs .pytest_tmp/bench_data/eval_runs --log-dir .pytest_tmp/bench_data/container_logs --modes baseline,gated --max-turns 60 --concurrency 2 --skip-existing
+python scripts/run_swebench_batch_container.py --tasks .pytest_tmp/bench_data/lite/tasks_scale20.json --dataset .pytest_tmp/bench_data/lite/dataset.json --grade-python .pytest_tmp/sweb_venv/Scripts/python.exe --results benchmarks/swebench/results/scale20_lite_container.csv --agent-runs .pytest_tmp/bench_data/agent_runs --eval-runs .pytest_tmp/bench_data/eval_runs --log-dir .pytest_tmp/bench_data/container_logs --modes baseline,gated --max-turns 60 --concurrency 3 --skip-existing
 ```
 
-### 8.2 结果（Lite test 分片，20 实例 × 2 组）
+`--agent-script` / `--grade-script` 默认已指向仓库内 `benchmarks/swebench/{run_agent,grade}.py`；
+任务清单与数据集用 `benchmarks/swebench/prepare_dataset.py` 生成
+（`--local-images-only` 只保留本机已缓存镜像的实例，避免跑到一半缺镜像）。
 
-数据：`swebench_test.json`（Lite test，300 实例）按仓库分层抽 20 个（django 4 / sympy 4 /
-astropy 2 / matplotlib 2 / flask / seaborn / requests / xarray / pylint / pytest /
-scikit-learn / sphinx）。其中 10 个新实例在官方容器内运行，另 10 个为 §7.4 Scale-10
-结转（宿主 venv），CSV 见 `results_scale20/results.csv`，汇总见 `report.md`。
+### 8.2 结果（Lite test 分片，20 实例 × 2 组，全部在官方容器内运行）
 
-| 组别 | n | resolved | resolve 率 | 门禁拦截 | 阶段6完成 | 空补丁 |
-|---|---|---|---|---|---|---|
-| baseline | 20 | 5 | 25.0% | 0 | 0 | 7 |
-| gated | 20 | 5 | 25.0% | 19 | 9 | 5 |
+数据（已入库，可直接复算）：`benchmarks/swebench/results/scale20_lite_container.csv`（40 行，
+`note` 全为 `graded`）；实例清单 `.pytest_tmp/bench_data/lite/tasks_scale20.json`
+（按仓库分层抽样：django 4 / sympy 4 / astropy 2 / matplotlib 2 / seaborn / flask /
+requests / xarray / pylint / pytest / scikit-learn / sphinx）。同一模型（`deepseek-v4-flash`）、
+同一 60 轮预算、同一官方镜像环境。
 
-按来源分组（方法学对照；容器组才是与 Scale-20 新增实例同环境的数据）：
-
-| 来源 | 组别 | n | resolved | resolve 率 | 拦截 | 空补丁 |
-|---|---|---|---|---|---|---|
-| scale10 结转（宿主 venv） | baseline | 10 | 1 | 10.0% | 0 | 4 |
-| scale10 结转（宿主 venv） | gated | 10 | 0 | 0.0% | 14 | 3 |
-| Scale-20 新增（官方容器） | baseline | 10 | 4 | 40.0% | 0 | 3 |
-| Scale-20 新增（官方容器） | gated | 10 | 5 | 50.0% | 5 | 2 |
+| 组别 | n | resolved | resolve 率 | 门禁拦截 | 走到阶段 6 | 交付前最终测试全绿 | 空补丁 | 平均轮数 | 平均耗时 |
+|---|---|---|---|---|---|---|---|---|---|
+| baseline（无门禁） | 20 | 18 | 90% | 0 | — | — | 0 | 43.1 | 262s |
+| gated（门禁） | 20 | 20 | 100% | 78 | 14 | 14 | 0 | 49.8 | 462s |
 
 要点：
 
-- 容器组内 gated 50% > baseline 40%：在依赖正确的环境里，门禁组反而多解一例
-  （scikit-learn-10297 gated 过、baseline 不过），且空补丁更少（2 vs 3）；
-  而宿主 venv 结转组两组都接近 0，说明 **环境错配是此前 resolve 偏低的主因之一**。
-- 门禁确实在起作用：gated 组全程 19 次拦截、9 次走到阶段 6 交付；baseline 组无门禁概念。
-- 双组总体 25% vs 25% 持平，未观察到门禁对最终解决率的负作用；样本仍小（20 实例），
-  只作内部相对对比。
-- 观测到一次「补丁提取竞态」：astropy-14182 的两个容器在宿主休眠期间被墙钟暂停，
-  恢复后仍在推进；宿主侧 90 分钟看门狗触发并记为 `container_timeout`，随后单独重跑
-  得到正式数据。长跑批量评测建议关闭宿主休眠 / 放宽 `--agent-timeout`。
+- **门禁组 20/20 全解，baseline 18/20**；两组都无空补丁。门禁组平均多花 6.7 轮 / 200 秒，
+  换来的是「先写复现测试 → 再实现 → 跑测试 → 交付前最终测试全绿」的完整证据链。
+- 78 次拦截集中在「没写/没跑测试就要进实现或交付」「测试红却想推进」；14 个实例走到阶段 6
+  且 `delivery_clean()=True`（最近一次测试全绿且晚于最后一次源码/测试变更）。
+- 这批数据是**修复阶段 2 存量仓库假阳性之后**的结果：修复前同批量 gated 只有 13/20（65%，
+  见 §8.3）。两组都只用于**同条件相对对比**，n=20 不构成榜单结论。
+- 看门狗仍会在宿主休眠时误伤：本轮有 3 个容器因宿主休眠触发 `container_timeout`，
+  剔除后单独重跑才得到正式数据。长跑批量评测建议关闭宿主休眠 / 放宽 `--agent-timeout`。
 
-## 九、Verified 分片复核（2026-09-10）
+### 8.3 修复：阶段 2 在存量仓库上的假阳性（2026-09-12）
 
-用 canonical `SWE-bench/SWE-bench_Verified`（500 实例，含 harness 需要的 `eval_script`）
-复核本地已有官方镜像的 4 个实例（astropy-12907 / astropy-14182 / django-10914 /
-scikit-learn-10297），并对比 `deepseek-v4-flash`（默认）与更强的 `deepseek-v4-pro`。
+**现象**：修复前 gated 组 6 个实例永久卡在阶段 2，报错形如
+`测试文件 js_tests/admin/jsi18n-mocks.test.js 为启发式校验（非 Python），断言关键字不足（0 < 1）`。
 
-> 坑：HuggingFace 直连在本机 TLS 失败，用 `HF_ENDPOINT=https://hf-mirror.com` 走镜像；
-> 且 `princeton-nlp/SWE-bench_Verified` 镜像缺 `eval_script`，会令 harness
-> `make_test_spec` 抛 `KeyError: 'eval_script'`——必须用 `SWE-bench/SWE-bench_Verified`。
+**根因**（两层，都用容器内日志实证）：
 
-| 实例 | flash b | flash g | pro b | pro g | gated 终态(flash/pro) | gated 拦截(flash/pro) |
-|---|---|---|---|---|---|---|
-| astropy__astropy-12907 | 1 | 1 | 1 | 1 | 6 / 6 | 1 / 1 |
-| astropy__astropy-14182 | 1 | 0 | 0 | 0 | 4 / 6 | 0 / 1 |
-| django__django-10914 | 0 | 0 | 1 | 0 | 2 / 2 | 2 / 1 |
-| scikit-learn__scikit-learn-10297 | 0 | 0 | 0 | 0 | 6 / 6 | 1 / 1 |
+1. `detect_language` 按标志文件列表顺序「先到先得」，而 `package.json` 排第一：django / sphinx
+   仓库根目录带 `package.json`（前端 / 文档工具链）却以 Python 为主，于是整个仓库被判成
+   `javascript`，再用 JS 启发式去校验 `.py` 测试文件（Agent 自己也在容器里打印出
+   `detected: javascript` / `bad count: 522`）。
+2. `validate_tests` 扫描**整个存量仓库**：仓库里几十年的夹具（sphinx 的
+   `tests/roots/.../dummy/test_nested.py`）与历史测试都会被计入，同时也允许 Agent 不写新测试、
+   直接拿仓库已有测试过关。
 
-Verified resolve：flash baseline 2/4、gated 1/4；pro baseline 2/4、gated 1/4。
+**修复**：多标志命中时按候选语言源文件数消歧（跳过 `node_modules`/`.venv`/`build` 等）；
+新增 `stage2_test_scope: changed`（默认），阶段 2 只校验 Git 工作区相对 HEAD 的新增/修改测试文件，
+`workspace` 保留全量扫描，非 Git 仓库 / 工作区干净时自动回退；`tests/` 目录约定兜底
+（django 的 `tests/<app>/tests.py` 不匹配 `test_*.py` 时按目录 + 目标语言后缀识别）。
+
+**修复前后对照**（同实例、同模型、同预算）：
+
+| 实例 | 修复前 resolved | 修复前终态 | 修复后 resolved | 修复后终态 | 交付全绿 |
+|---|---|---|---|---|---|
+| django__django-10914 | 0 | 阶段 2（8 次拦截） | 1 | 阶段 6 | 是 |
+| django__django-10924 | 0 | 阶段 2（9 次拦截） | 1 | 阶段 6 | 是 |
+| django__django-11001 | 0 | 阶段 2（15 次拦截） | 1 | 阶段 6 | 是 |
+| django__django-11019 | 0 | 阶段 2（6 次拦截） | 1 | 阶段 6 | 是 |
+| sphinx-doc__sphinx-10325 | 0 | 阶段 2（16 次拦截） | 1 | 阶段 4 | 否 |
+| sympy__sympy-11870 | 0 | 阶段 2（5 次拦截） | 1 | 阶段 4 | 否 |
+
+**容器内直接探测**（不调 LLM，同一镜像）：`detect_language(/testbed) -> python`、
+`PythonAdapter`、阶段 2 校验通过；修复前同一镜像的 Agent 日志为 javascript + 空壳报错。
+
+### 8.4 harness 陷阱（实测踩到，已修复）
+
+- **CRLF**：Windows 上 `Path.write_text` 会把 `eval.sh` 写成 CRLF，容器内 `set -e` /
+  `conda activate` / `cd /testbed` 全部解析失败，表现为「PASS_TO_PASS 98/98 全挂」的假阴性。
+  `grade.py` 用 `force_lf_writes()` 在评分进程内强制 LF。
+- **report 缓存**：官方 harness 按 `run_id/model/instance` 缓存 `report.json`，换补丁沿用同一
+  run_id 会直接返回旧结论；run_id 现带上补丁 sha256 前 12 位。
+- **陈旧补丁**：Agent 在容器里 import 失败秒退时，上一轮的 `model_patch.diff` 还留在挂载目录，
+  驱动会把**旧补丁**当成本次结果去评分（本轮实测：14 行「成功」数据其实是上一轮的补丁）。
+  现在 `run_one` 先清空同名 label 目录，并要求补丁 mtime 晚于本次启动时间
+  （`patch_is_fresh()`，含回归测试）。
+- **依赖卷**：Docker Desktop 卷挂载下 `mkdir` 锁不保证互斥，两个容器并发
+  `pip install --target` 会把 `pb_gate_deps` 写坏（实测 pydantic 装上了、`typing_extensions`
+  缺失）。bootstrap 改为「先 `rm -rf` 目录 → 装 → `import pydantic, yaml, structlog` 校验 →
+  才落 `.ready`」。
+
+## 九、Verified 分片复核（2026-09-12）
+
+用 canonical `SWE-bench/SWE-bench_Verified`（500 实例，含 harness 需要的 `eval_script`）对
+「本机已缓存官方镜像」的 4 个实例重新评分：把本轮 Scale-20 产出的 8 份补丁（4 实例 × 2 组）
+换分片打分，**不重跑 Agent**。数据已入库：`benchmarks/swebench/results/verified_regrade.csv`。
+
+| 实例 | baseline Lite→Verified | gated Lite→Verified | Verified F2P / P2P |
+|---|---|---|---|
+| astropy__astropy-12907 | 1 → 1 | 1 → 1 | 2 / 13 |
+| astropy__astropy-14182 | 1 → 1 | 1 → 1 | 1 / 9 |
+| django__django-10914 | 1 → 1 | 1 → 1 | 1 / 98 |
+| scikit-learn__scikit-learn-10297 | 1 → 1 | 1 → 1 | 1 / 28 |
 
 要点：
 
-- 换更强模型没有提高 resolve 数，但显著改善交付形态：pro 零空补丁（flash 2 个），
-  gated 走到阶段 6 的次数 3 次（flash 2 次）。说明「更强模型」的价值体现在补丁完整性，
-  而不是在小样本上的 resolve 计数。
-- **分片会翻转结论**：scikit-learn-10297 的同一份 1550 字符补丁（sha256 完全一致）在
-  Lite test 判 `resolved=1`、在 Verified 判 `resolved=0`，说明 Verified 的
-  FAIL_TO_PASS/PASS_TO_PASS 更严格——这正是「用 Verified 复核」能识别 Lite 分片
-  侥幸通过的直接证据。
-- gated 在 django-10914 上弱于 baseline（两个模型都 b=1/g=0）：门禁的
-  spec → 复现测试 → 实现 → 验证 流程要占轮次，在 60 轮预算下对需要长侦查的任务更紧；
-  后续可通过提高轮数上限或按难度放宽阶段证据要求来缓解。
-- 数据与复算脚本（本地实验产物，未入库）：`results_verified_flash/`、`results_verified_pro/`、
-  `results_verified_compare.md`。
+- 本轮 **8/8 在两个分片上判定一致，没有出现翻转**。
+- 上一轮（2026-09-10，本地产物未入库、已无法复算）曾观测到 scikit-learn-10297 的**一份旧补丁**
+  在 Lite 判 1、Verified 判 0。本轮同一实例、同一 Agent 配置产出的补丁两个分片都判 1——
+  说明**翻转是补丁级的**（旧补丁恰好过了 Lite 的 FAIL_TO_PASS，遇到 Verified 更严的用例集才暴露），
+  不能据此说 Lite 分片系统性偏松。跨分片复核的价值在于给每份补丁加一道更严的独立判定。
+- 坑记录：HuggingFace 直连在本机 TLS 失败，用 `HF_ENDPOINT=https://hf-mirror.com` 走镜像；
+  `princeton-nlp/SWE-bench_Verified` 缺 `eval_script`，会令 harness `make_test_spec` 抛
+  `KeyError: 'eval_script'`——必须用 `SWE-bench/SWE-bench_Verified`。
+
+复算命令（宿主侧，只需 Docker 与 `.pytest_tmp/sweb_venv`）：
+
+```bash
+python benchmarks/swebench/regrade_cross_shard.py \
+  --results benchmarks/swebench/results/scale20_lite_container.csv \
+  --target-dataset .pytest_tmp/bench_data/verified/dataset.json \
+  --agent-runs .pytest_tmp/bench_data/agent_runs \
+  --grade-python .pytest_tmp/sweb_venv/Scripts/python.exe \
+  --out-dir .pytest_tmp/bench_data/eval_runs_verified \
+  --out-csv benchmarks/swebench/results/verified_regrade.csv
+```

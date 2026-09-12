@@ -237,11 +237,26 @@ def test_container_bootstraps_gate_deps(tmp_path):
 
 
 def test_gate_deps_bootstrap_verifies_import_before_ready():
-    """依赖卷必须「清空安装 + import 校验 + 才落 .ready」，坏卷不会污染后续容器。"""
+    """依赖卷必须「只读复制到容器私有目录 + import 校验 + 原子发布」，坏卷不会污染容器。
+
+    v1.0.0 修复：并发下 ``mkdir`` 锁不互斥，两个容器同时 ``rm -rf`` + pip install 会
+    把共享卷写坏（实测缺 ``typing_extensions``，4 个 gated 任务空补丁）。所以断言
+    使用方不再直接依赖共享卷、发布不再覆盖已有缓存。
+    """
     script = container.gate_deps_bootstrap("/opt/miniconda3/bin/python")
-    assert 'rm -rf "$DEPS"' in script
+    # 共享缓存只被读：复制到容器私有目录，绝不放进 PYTHONPATH
+    assert 'cp -a "$DEPS_BASE/." "$LOCAL/"' in script
+    assert 'export PYTHONPATH="$LOCAL:' in script
+    assert 'export PYTHONPATH="$DEPS_BASE' not in script
+    # 非原子的 mkdir 锁已移除
+    assert '"$DEPS.lock"' not in script
+    assert "mkdir \"$DEPS_BASE.lock\"" not in script
+    # 装完先校验 import，再发布；发布走唯一临时目录 + rename，且不覆盖已有缓存
     assert 'import pydantic, yaml, structlog' in script
-    assert script.index("import pydantic, yaml, structlog") < script.index('touch "$DEPS/.ready"')
+    assert script.index("pb_gate_deps: 门禁依赖安装失败") < script.index('touch "$TMP/.ready"')
+    assert 'TMP="$DEPS_BASE.pub.$$"' in script
+    assert 'mv "$TMP" "$DEPS_BASE"' in script
+    assert '[ -e "$DEPS_BASE" ] || mv "$TMP" "$DEPS_BASE"' in script
 
 
 def test_patch_is_fresh_rejects_stale_and_empty(tmp_path):

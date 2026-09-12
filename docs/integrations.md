@@ -23,6 +23,97 @@ gate.advance(2)                                # 申请进入下一阶段
 - 被拦截统一抛 `anti_shortcut.proxy_client.GateDenied`；命令行等价物
   `python -m anti_shortcut write|exec|advance`（见 CLI 章节）。
 
+## 三种接入形态（v0.27.0 起齐全，2026-09 按真实代码复核）
+
+先选形态，再选框架。三种形态的操作面一致：`write_file` / `execute_command` /
+`advance_stage`，被拒时都要「补齐证据后重试」。
+
+### 形态 A：进程内包装（最快，同信任域）
+
+```python
+from anti_shortcut import bootstrap
+
+tools = {
+    "write_file": my_write_file,        # def write_file(path: str, content: str) -> object
+    "execute_command": my_exec,         # def execute_command(command: str, cwd: str = None) -> object
+}
+
+# bootstrap(agent_tools, workspace, config=..., user_request=...) -> AntiShortcutSkill
+skill = bootstrap(
+    tools,                                  # 工具字典会被原地替换为经门禁包装的版本
+    "/path/to/project",
+    config="anti_shortcut_config.yaml",     # YAML 路径 / dict / GateConfig / None
+    user_request="实现登录功能，禁止明文存储密码……",   # 阶段 0 证据
+)
+tools["advance_stage"]                      # 由 bootstrap 注入，指向 skill.advance_stage
+```
+
+- 第一个参数是**工具字典**，不是 agent 对象，也没有 `register_tool` 回调。
+- 校验失败时包装器抛 `PermissionError`，原因写在异常消息里。
+- 参考实现：`examples/minimal_agent.py`（下面「验证集成」有它的真实输出）。
+
+### 形态 B：sidecar（推荐，进程隔离）
+
+```bash
+python -m anti_shortcut sidecar --workspace /workspace --config anti_shortcut_config.yaml --port 8765
+```
+
+```python
+from anti_shortcut.proxy_client import GateClient, GateDenied
+
+gate = GateClient("http://127.0.0.1:8765")
+gate.write_file("spec.md", spec_text)          # 被拒抛 GateDenied
+gate.execute_command("python -m pytest -q")    # 命令输出会被解析并自动记录测试结果
+gate.advance(2)                                # 证据不足时抛 GateDenied
+
+try:
+    gate.write_file("impl.py", code)
+except GateDenied as exc:
+    print(exc.status, exc.reason)              # 403 + 可读原因
+```
+
+- 客户端模块是 **`anti_shortcut.proxy_client`**；`GateClient(base_url, timeout=30.0,
+  cert=(crt, key), ca=...)`，`cert`/`ca` 用于 mTLS。
+- 生产部署把 `.agent_gate/` 只读挂给 Agent 容器（写权限在 sidecar 侧）：
+  `deploy/helm/phase-barrier/`。
+
+### 形态 C：CLI 包装（零代码改造）
+
+```bash
+python -m anti_shortcut write   --workspace /workspace --path src/main.py --stdin
+python -m anti_shortcut exec    --workspace /workspace --command "python -m pytest -q"
+python -m anti_shortcut advance --workspace /workspace --to 2
+```
+
+### 常见错误写法（照着抄会立刻报错，均已实测）
+
+| 错误写法 | 实际 API | 实测现象 |
+|---|---|---|
+| `from anti_shortcut.gate_client import GateClient` | `from anti_shortcut.proxy_client import GateClient` | `ModuleNotFoundError: No module named 'anti_shortcut.gate_client'` |
+| `bootstrap(workspace=..., config_path=...)` | `bootstrap(agent_tools, workspace, config=...)`（无 `config_path`） | `TypeError: bootstrap() missing 1 required positional argument: 'agent_tools'` |
+| `gate.write(...)` / `gate.exec(...)` | `gate.write_file(...)` / `gate.execute_command(...)` | `AttributeError: 'GateClient' object has no attribute 'exec'` |
+| `if result.blocked: ...` | `try/except GateDenied`（`exc.reason`） | `AttributeError: 'GateClient' object has no attribute 'blocked'` |
+
+### 验证集成是否生效（真实输出，2026-09-12 复跑）
+
+```bash
+python examples/minimal_agent.py
+```
+
+阶段 1 直接写实现 / 跑测试会被拦，按 SOP 补齐 spec -> 测试 -> 实现 -> 测试后一路推进：
+
+```text
+=== 阶段 1（Spec 设计）===
+[BLOCKED] write_file(fib.py, ...)  -> 当前阶段不允许编写实现代码：请先完成测试用例编写（阶段 2）
+[BLOCKED] execute_command(pytest -q) -> 当前阶段不允许运行测试命令：请先完成实现代码（阶段 3）
+=== 按 SOP 推进 ===
+[OK] write_file(spec.md, ...)     [advance] -> 已进入阶段 2（测试用例编写）：spec 校验通过
+[OK] write_file(test_fib.py, ...) [advance] -> 已进入阶段 3（实现代码）：测试用例校验通过（1 个文件，2 个测试函数）
+[OK] write_file(fib.py, ...)      [advance] -> 已进入阶段 4（运行测试）：实现代码校验通过（1 个文件，语法检查 OK）
+[OK] execute_command(pytest -q)   [advance] -> 已进入阶段 6（交付）：测试全部通过，跳过修复阶段，直接进入交付
+最终阶段: 6（交付），完成 = True
+```
+
 ## LangChain
 
 - 示例：`examples/langchain_integration/`

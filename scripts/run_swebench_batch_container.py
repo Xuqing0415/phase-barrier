@@ -183,6 +183,27 @@ def pending_jobs(tasks: list[dict], done: set[tuple[str, str]], modes: list[str]
     return jobs
 
 
+def local_images(docker: str = "docker") -> set[str]:
+    """本机已缓存的镜像集合（``--only-ready`` 用）。"""
+    proc = subprocess.run([docker, "images", "--format", "{{.Repository}}:{{.Tag}}"],
+                          capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if proc.returncode != 0:
+        raise RuntimeError(f"docker images 失败，--only-ready 无法判定：{proc.stderr.strip()}")
+    return {line.strip() for line in (proc.stdout or "").splitlines() if line.strip()}
+
+
+def filter_ready(tasks: list[dict], images: set[str]) -> list[dict]:
+    """只保留镜像已缓存的实例（扩样本时可边拉边跑，不必等全部拉完）。"""
+    ready: list[dict] = []
+    for task in tasks:
+        image = container_image(task)
+        if not image.endswith(":latest"):
+            image += ":latest"
+        if image in images:
+            ready.append(task)
+    return ready
+
+
 def _run(cmd: list[str], timeout: int, log_path: Path | None = None):
     env = dict(os.environ)
     env.setdefault("PYTHONIOENCODING", "utf-8")
@@ -298,6 +319,8 @@ def main() -> int:
     ap.add_argument("--testbed-python", default="/opt/miniconda3/envs/testbed/bin/python",
                     help="容器内跑测试/布局命令的解释器")
     ap.add_argument("--modes", default="baseline,gated")
+    ap.add_argument("--only-ready", action="store_true",
+                    help="只跑本机已缓存镜像的实例（扩样本时边拉边跑；配合 --skip-existing 可续跑）")
     ap.add_argument("--max-turns", type=int, default=60)
     ap.add_argument("--exec-timeout", type=int, default=300)
     ap.add_argument("--agent-timeout", type=int, default=5400)
@@ -312,6 +335,10 @@ def main() -> int:
         return 2
     instances = {str(r["instance_id"]): r for r in _load_rows(args.dataset)}
     tasks = [t for t in _load_rows(args.tasks) if str(t.get("instance_id")) in instances]
+    if args.only_ready:
+        before = len(tasks)
+        tasks = filter_ready(tasks, local_images())
+        print(f"--only-ready：{len(tasks)}/{before} 个实例的镜像已缓存", flush=True)
 
     done: set[tuple[str, str]] = set()
     if args.results.exists():

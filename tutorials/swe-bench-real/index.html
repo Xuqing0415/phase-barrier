@@ -1,0 +1,2496 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="反捷径校验 Skill：阶段门禁 + 证据校验 + 工具拦截，强制编码 Agent 遵循标准工程师 SOP">
+      
+      
+      
+        <link rel="canonical" href="https://docs.xshayncka.dev/tutorials/swe-bench-real/">
+      
+      
+        <link rel="prev" href="../swe-bench-gate/">
+      
+      
+        <link rel="next" href="../../benchmarks/swe-bench-scale20/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>SWE-bench 真实评测 harness - phase-barrier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#swe-bench-v0410-harness" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="phase-barrier" class="md-header__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            phase-barrier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              SWE-bench 真实评测 harness
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../quickstart/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  快速开始
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../usage/" class="md-tabs__link">
+          
+  
+  
+  使用指南
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../integrations/" class="md-tabs__link">
+          
+  
+  
+  集成与生态
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../ci-incremental-gate/" class="md-tabs__link">
+          
+  
+  
+  教程
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../release/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  发布与供应链安全
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  贡献指南
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  更新日志
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="phase-barrier" class="md-nav__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    phase-barrier
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速开始
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    使用指南
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    使用指南
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI 使用
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    配置指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../semantic-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语义级校验（v0.49.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../five-lines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    五道防线（v0.52.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../red-team/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    红队 Agent（路径 1，18 类逃逸技术，v0.60.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../formal-invariants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    形式化不变量（路径 2，v0.58.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-defense/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    学习型防线（路径 4，半自动闭环，v0.60.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../languages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语言适配器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../github-action/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../publish-to-marketplace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 上架
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orchestrator-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    编排器钩子 SDK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audit-logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    状态与审计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    拦截规则与安全加固
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    架构与设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../custom-domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    自定义域名（docs.xshayncka.dev）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    集成与生态
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    集成与生态
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent 框架集成
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件与生态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plugin-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件状态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../k8s/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    最佳实践
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    教程
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    教程
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-incremental-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI 增量门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../k8s-sidecar-grpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s sidecar 加固与 gRPC 接口（v0.39.0 已实现）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../swe-bench-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 门禁基准
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 真实评测 harness
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 真实评测 harness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一、快速冒烟（无任何外部依赖）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        二、实例清单与回报标记
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三、真实评测步骤
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四、报告解读
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        五、局限与后续
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-09-06windows-harness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        六、实测记录（2026-09-06：Windows 本机跑通官方 harness 并产出首批数据）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-09" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        七、批量扩展：选任务 + 双组编排脚本（2026-09）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="七、批量扩展：选任务 + 双组编排脚本（2026-09）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-scriptsselect_swe_taskspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 选任务：scripts/select_swe_tasks.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-scriptsrun_swebench_batchpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 批量运行：scripts/run_swebench_batch.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-windows-powershell" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 新增实例的环境准备（Windows PowerShell 操作序列）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74-scale-10-2026-09-09swe-bench-lite-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 Scale-10 真实双组实测（2026-09-09，SWE-bench Lite test 分片）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scale-20-eval-agent2026-09-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        八、Scale-20：改在官方 eval 容器内跑 Agent（2026-09-10）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="八、Scale-20：改在官方 eval 容器内跑 Agent（2026-09-10）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-venv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 为什么从宿主 venv 换成容器内运行
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82-lite-test-20-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 结果（Lite test 分片，20 实例 × 2 组，全部在官方容器内运行）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83-2-2026-09-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 修复：阶段 2 在存量仓库上的假阳性（2026-09-12）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#84-harness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.4 harness 陷阱（实测踩到，已修复）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verified-2026-09-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        九、Verified 分片复核（2026-09-12）
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmarks/swe-bench-scale20/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Scale-20 实测报告
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../video-tutorial-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    视频教程模板
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    发布与供应链安全
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    贡献指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    更新日志
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="swe-bench-v0410-harness">教程：真实 SWE-bench 评测（v0.41.0 harness）<a class="headerlink" href="#swe-bench-v0410-harness" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>上一教程 <a href="../swe-bench-gate/">SWE-bench 门禁基准</a> 的 <code>benchmarks/swe_bench_gate.py</code>
+是<strong>任务模拟器</strong>：内置合成任务，验证「带门禁的 Agent 过程合规」。本教程的
+<code>benchmarks/swebench_runner.py</code>（v0.41.0）是<strong>真实数据集评测的编排层</strong>：加载与官方
+SWE-bench 同构的实例清单，双组（基线 / 门禁）跑 Agent 并聚合 resolve / 拦截指标。
+真实隐藏测试打分仍依赖官方 swebench harness / Docker 环境（见下文第 3 步）。</p>
+</blockquote>
+<h2 id="_1">一、快速冒烟（无任何外部依赖）<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>benchmarks/swebench_runner.py<span class="w"> </span>--synthetic<span class="w"> </span><span class="m">20</span><span class="w"> </span>--fail-fast
+</code></pre></div>
+<p>合成模式用固定种子确定性模拟 baseline / gated 两组结果（gated resolve 率 ≥ baseline、
+存在拦截），用于验证管线与阈值逻辑；CI bench job 每次 PR 也会跑一次。</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>benchmarks/swebench_runner.py<span class="w"> </span>--synthetic<span class="w"> </span><span class="m">20</span><span class="w"> </span>--json
+</code></pre></div>
+<h2 id="_2">二、实例清单与回报标记<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>实例清单是与官方 SWE-bench 数据集同构的 JSON：</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"instance_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"django__django-11039"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"repo"</span><span class="p">:</span><span class="w"> </span><span class="s2">"django/django"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"base_commit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8d9f5b2..."</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"problem_statement"</span><span class="p">:</span><span class="w"> </span><span class="s2">"# 问题描述 ..."</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"patch"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w">       </span><span class="c1">// 黄金补丁（供对照，harness 透传）</span>
+<span class="w">    </span><span class="nt">"test_patch"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">]</span>
+</code></pre></div>
+<p>支持 <code>[{...}]</code> 或 <code>{"instances": [...]}</code> / <code>{"data": [...]}</code> 包装。</p>
+<p>Agent / 隐藏测试执行器按以下 stdout 标记回报结果（harness 只做编排与统计）：</p>
+<table>
+<thead>
+<tr>
+<th>标记</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PB_RESOLVED=1\|0</code></td>
+<td>该实例最终是否 resolve（由官方 harness 跑隐藏测试后写入）</td>
+</tr>
+<tr>
+<td><code>PB_GATE_INTERCEPTS=N</code></td>
+<td>门禁拦截次数（基线无门禁恒为 0）</td>
+</tr>
+</tbody>
+</table>
+<p>未写任何标记时按退出码推断：0 视为 resolve。</p>
+<h2 id="_3">三、真实评测步骤<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>真实评测需要用户自备环境（官方 swebench 依赖 Docker 与数据集镜像，资源密集）：</p>
+<ol>
+<li><strong>准备 SWE-bench 环境</strong>：<code>pip install swebench</code>，拉取数据集
+   （如 <code>princeton-nlp/SWE-bench_Verified</code>）与对应 repo 镜像（<code>swebench/sweb.eval.x86_64.*</code>）。</li>
+<li><strong>准备实例清单</strong>：从数据集提取 <code>instance_id</code> / <code>repo</code> / <code>base_commit</code> /
+   <code>problem_statement</code> / <code>test_patch</code>，写入 <code>instances.json</code>。</li>
+<li><strong>包装 Agent 命令</strong>：写一个 <code>run_agent.sh</code>，对给定实例：checkout <code>base_commit</code>
+   → 启动 Agent（基线 / 经 phase-barrier 门禁）→ 跑官方 harness 的隐藏测试
+   → 按上表打印 <code>PB_RESOLVED</code> / <code>PB_GATE_INTERCEPTS</code>。命令模板占位符：
+   <code>{id}</code>（实例 id）与 <code>{workdir}</code>（harness 预创建的实例工作目录）。</li>
+<li><strong>运行双组评测</strong>：</li>
+</ol>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>benchmarks/swebench_runner.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--instances<span class="w"> </span>instances.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cmd-baseline<span class="w"> </span><span class="s1">'bash run_agent.sh {id} {workdir} no-gate'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cmd-gated<span class="w">     </span><span class="s1">'bash run_agent.sh {id} {workdir} with-gate'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--timeout<span class="w"> </span><span class="m">3600</span><span class="w"> </span>--json<span class="w"> </span>--output<span class="w"> </span>report.json
+</code></pre></div>
+<ol>
+<li><strong>阈值门禁</strong>（<code>--fail-fast</code>）：</li>
+</ol>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>benchmarks/swebench_runner.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--instances<span class="w"> </span>instances.json<span class="w"> </span>--cmd-baseline<span class="w"> </span>...<span class="w"> </span>--cmd-gated<span class="w"> </span>...<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--fail-fast
+</code></pre></div>
+<p>默认判定：gated resolve 率 ≥ baseline，且 gated 拦截数 &gt; 0（证明门禁实际生效）；
+可用 <code>--no-intercepts-check</code> 关闭后者。失败退出码 1，便于纳入发布门禁。</p>
+<h2 id="_4">四、报告解读<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>报告含 baseline / gated 各自的 <code>resolve_rate</code>、<code>gate_intercepts</code>、
+<code>gate_intercept_rate</code>、<code>avg_duration_s</code>，以及逐实例 <code>rows</code>。典型结论形态：</p>
+<ul>
+<li>若 gated resolve 率与 baseline 相当且拦截率 &gt; 0：门禁拦截了跳步但对最终解决率无
+  显著负作用；</li>
+<li>若 gated 显著更高：跳步导致的“假绿”被消除，质量受益；</li>
+<li>若 gated 显著更低：门禁约束过严或证据要求与任务节奏不匹配，需放宽阶段配置。</li>
+</ul>
+<h2 id="_5">五、局限与后续<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<ul>
+<li>harness 不内置官方 swebench 容器与隐藏测试打分；真正的 resolve 判定由调用方
+  包装脚本完成（推荐复用官方 harness 的 <code>run_evaluation</code>）。</li>
+<li>建议从小样本（20–50 实例）开始，控制 Docker 与算力成本；补丁通过率等细粒度指标
+  可由包装脚本继续扩展标记（本 harness 已对额外 <code>PB_*</code> 行保持透传兼容）。</li>
+</ul>
+<h2 id="2026-09-06windows-harness">六、实测记录（2026-09-06：Windows 本机跑通官方 harness 并产出首批数据）<a class="headerlink" href="#2026-09-06windows-harness" title="Permanent link">&para;</a></h2>
+<p>数据：官方 <code>SWE-bench/SWE-bench_Lite</code> dev 分片（避开公共 test），3 个实例、跨两个仓库：
+<code>marshmallow-code__marshmallow-1343</code> / <code>-1359</code> 与 <code>pydicom__pydicom-1256</code>。
+评分用官方 <code>run_evaluation</code>（swebench 5.0.2）+ 官方 Docker 评测镜像，gold patch 对照
+resolved=1（链路自检通过）。Agent 为 DeepSeek <code>deepseek-v4-flash</code>，
+同实例同环境跑 baseline / gated 双组。</p>
+<table>
+<thead>
+<tr>
+<th>实例</th>
+<th>组别</th>
+<th>resolve</th>
+<th>门禁终态</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>marshmallow-1343</td>
+<td>baseline</td>
+<td>1</td>
+<td>-</td>
+<td>33 轮 / 152s</td>
+</tr>
+<tr>
+<td>marshmallow-1343</td>
+<td>gated</td>
+<td>1</td>
+<td>阶段 6</td>
+<td>37 轮，推进被拒 1 次（证据不足），写/执行拦截 0</td>
+</tr>
+<tr>
+<td>marshmallow-1359</td>
+<td>baseline</td>
+<td>1</td>
+<td>-</td>
+<td>32 轮 / 156s；补丁与 gold 逐行等价</td>
+</tr>
+<tr>
+<td>marshmallow-1359</td>
+<td>gated</td>
+<td>1</td>
+<td>阶段 6</td>
+<td>33 轮，推进被拒 1 次，写/执行拦截 0</td>
+</tr>
+<tr>
+<td>pydicom-1256</td>
+<td>baseline</td>
+<td>1</td>
+<td>-</td>
+<td>33 轮 / 136s；<code>jsonrep.py</code> 向 <code>from_json</code> 补传 bulk handler</td>
+</tr>
+<tr>
+<td>pydicom-1256</td>
+<td>gated</td>
+<td>1</td>
+<td>阶段 6</td>
+<td>27 轮 / 87s；推进/写/执行拦截均 0，证据链完整</td>
+</tr>
+</tbody>
+</table>
+<p>要点：
+- 门禁组均完整走通 spec → 复现测试（修复前红）→ 实现 → 测试通过 → 交付；先测后码顺序真实成立。
+- 存量仓库需配置 <code>require_assert_per_test: false</code>（仓库历史测试无断言会误伤阶段 2）与
+  <code>min_test_functions: 1</code>，属产品既有配置项。
+- pydicom-1256 gated 组 0 拦截即通关：模型在门禁提示下自觉按 spec → 复现测试 → 实现 →
+  测试通过 → 交付的顺序行动，未尝试越权；新增复现测试 <code>tests/test_pb_repro.py</code> 为带
+  真实断言的先红后绿用例（SQ 内 BulkDataURI 交给 handler），与 baseline 走同一修复点，
+  官方 F2P 均通过。
+- 数据质量备注：<code>pydicom-1413</code> gold 在官方镜像上自身 unresolved（patch 可应用、F2P
+  3/3 通过，但 PASS_TO_PASS 有 2 例回归），属实例镜像环境不匹配，已排除出 Agent 评测。
+- Windows 侧工程问题与修复：swebench 5.x 需用带 <code>image</code> 列的 <code>SWE-bench/SWE-bench_Lite</code>；
+  数据集与 harness 写文件需 CRLF→LF（容器内 eval.sh 带 CR 行尾会全挂）；Docker Hub 不通时经镜像站拉取后 <code>docker tag</code> 回官方名；<code>PYTHONUTF8=1</code>。
+- 样本仍小（3 实例 × 2 组，跨 marshmallow / pydicom 两生态）且实例偏易：本组实验门禁对
+  resolve 无负作用（3/3 双组全过）且留下完整合规证据链；量化影响需扩至 10-30 实例
+  （django / sympy 等更难点）。完整记录见
+  <code>.pytest_tmp/bench_data/report.md</code>（本地实验产物，未入库）。</p>
+<h2 id="2026-09">七、批量扩展：选任务 + 双组编排脚本（2026-09）<a class="headerlink" href="#2026-09" title="Permanent link">&para;</a></h2>
+<p>单实例手工跑通后，仓库新增两个脚本把“3 实例 → 10-30 实例”的启动门槛降到一条命令：</p>
+<h3 id="71-scriptsselect_swe_taskspy">7.1 选任务：<code>scripts/select_swe_tasks.py</code><a class="headerlink" href="#71-scriptsselect_swe_taskspy" title="Permanent link">&para;</a></h3>
+<p>按仓库分层抽样，可指定必须覆盖的仓库、排除已知数据质量问题实例（如 <code>pydicom__pydicom-1413</code>），
+固定随机种子保证可复现：</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># dev 分片（23 实例，6 仓库）抽 12 个</span>
+python<span class="w"> </span>scripts/select_swe_tasks.py<span class="w"> </span>--dataset<span class="w"> </span>swebench_dev.json<span class="w"> </span>--count<span class="w"> </span><span class="m">12</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--exclude<span class="w"> </span>pydicom__pydicom-1413<span class="w"> </span>--out<span class="w"> </span>tasks_dev12.json
+
+<span class="c1"># 含 django/sympy 的 Lite test 抽 20 个，django 与 sympy 各至少 2 个</span>
+python<span class="w"> </span>scripts/select_swe_tasks.py<span class="w"> </span>--dataset<span class="w"> </span>swebench_test.json<span class="w"> </span>--count<span class="w"> </span><span class="m">20</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--must-repo<span class="w"> </span>django/django<span class="w"> </span>sympy/sympy<span class="w"> </span>--per-repo<span class="w"> </span><span class="m">2</span><span class="w"> </span>--out<span class="w"> </span>tasks_lite20.json
+</code></pre></div>
+<p>注意：dev 分片只有 marshmallow / pvlib / pydicom / astroid / pyvista / sqlfluff，<strong>没有
+django / sympy</strong>；要覆盖高难度仓库需用含 <code>image</code> 列的 <code>SWE-bench/SWE-bench_Lite</code> test 分片。
+test 分片与公共榜单重叠——本仓库只做内部 baseline-vs-gated 相对对比，不提交榜单；若介意，
+可改用 <code>SWE-bench_Verified</code> 等非重叠分片（数据列结构一致即可）。</p>
+<h3 id="72-scriptsrun_swebench_batchpy">7.2 批量运行：<code>scripts/run_swebench_batch.py</code><a class="headerlink" href="#72-scriptsrun_swebench_batchpy" title="Permanent link">&para;</a></h3>
+<p>对任务清单逐实例执行 baseline / gated Agent 运行并接官方评分，追加写 <code>results.csv</code>。
+PowerShell 请用<strong>单行</strong>执行（下方示例已展平）；bash 可用 <code>\</code> 续行。任务清单/数据集在
+<code>.pytest_tmp/bench_data/</code> 下，命令里要带该前缀：</p>
+<div class="highlight"><pre><span></span><code><span class="n">python</span> <span class="n">scripts</span><span class="p">/</span><span class="n">run_swebench_batch</span><span class="p">.</span><span class="n">py</span> <span class="p">-</span><span class="n">-tasks</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">tasks_dev12</span><span class="p">.</span><span class="n">json</span> <span class="p">-</span><span class="n">-dataset</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">swebench_dev</span><span class="p">.</span><span class="n">json</span> <span class="p">-</span><span class="n">-agent-python</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">venv312</span><span class="p">/</span><span class="n">Scripts</span><span class="p">/</span><span class="n">python</span><span class="p">.</span><span class="n">exe</span> <span class="p">-</span><span class="n">-agent-script</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">run_agent</span><span class="p">.</span><span class="n">py</span> <span class="p">-</span><span class="n">-grade-python</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">sweb_venv</span><span class="p">/</span><span class="n">Scripts</span><span class="p">/</span><span class="n">python</span><span class="p">.</span><span class="n">exe</span> <span class="p">-</span><span class="n">-grade-script</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">grade</span><span class="p">.</span><span class="n">py</span> <span class="p">-</span><span class="n">-workdir-root</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">wd</span> <span class="p">-</span><span class="n">-venv-map</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">venv_map</span><span class="p">.</span><span class="n">json</span> <span class="p">-</span><span class="n">-modes</span> <span class="n">baseline</span><span class="p">,</span><span class="n">gated</span> <span class="p">-</span><span class="n">-max-turns</span> <span class="n">60</span> <span class="p">-</span><span class="n">-prepare-workdir</span> <span class="p">-</span><span class="n">-skip-existing</span> <span class="p">-</span><span class="n">-outdir</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">results</span>
+</code></pre></div>
+<p>前置条件与注意点（沿用第六节踩坑结论）：</p>
+<ul>
+<li>每个实例的官方 Docker 评测镜像须已拉取并 tag 回官方名（Docker Hub 不通时经镜像站拉取，
+  如 <code>docker.1panel.live</code>）；<code>run_evaluation</code> 会按 <code>image</code> 列自动找镜像。</li>
+<li>每个仓库需要一个装好依赖的 venv（py3.12 + pytest；marshmallow 2.x 需 setuptools 兼容层，
+  pydicom 2.1 需 <code>setuptools&lt;81</code> 提供 <code>pkg_resources</code>）；多仓库用 <code>--venv-map</code> 传 JSON 文件，
+  例如 <code>{"marshmallow-code/marshmallow": ".../mm_venv/Scripts/python.exe",
+  "pydicom/pydicom": ".../pd_venv/Scripts/python.exe"}</code>（键支持 repo 或 instance_id）。</li>
+<li>预检与断点续跑：默认先检查 venv 与 Docker 镜像，缺失的 (实例, 组别) 直接跳过并打印缺什么，
+  不会白跑 Agent（<code>--no-preflight</code> 关闭）；<code>results.csv</code> 已记录的行默认跳过（<code>--rerun</code> 强制重跑）。</li>
+<li><code>--prepare-workdir</code> 用 <code>git init + fetch --depth 1 &lt;base_commit&gt;</code> 自动建工作区；数据集与
+  harness 写文件 CRLF→LF 修复、<code>PYTHONUTF8=1</code> 见第六节。</li>
+<li>单实例可加 <code>--instance &lt;iid&gt;</code> 调试。</li>
+<li><code>--venv-map</code> 指向 JSON（键为 repo 或 instance_id，值为该环境 python 绝对/仓库相对路径）；
+  每新备好一个仓库的 venv 就往 JSON 加一行再重跑，未映射的行会被预检跳过。
+  本仓库示例见 <code>.pytest_tmp/bench_data/venv_map.json</code>（marshmallow-1343/1359、pydicom-1256）。</li>
+</ul>
+<h3 id="73-windows-powershell">7.3 新增实例的环境准备（Windows PowerShell 操作序列）<a class="headerlink" href="#73-windows-powershell" title="Permanent link">&para;</a></h3>
+<p>批量脚本只会运行“venv 已映射 + Docker 镜像已就绪”的 (实例, 组别)。给一个新实例开跑的操作：</p>
+<div class="highlight"><pre><span></span><code><span class="c"># 1) 共享 bench venv（一次性；仓库代码从工作区直接导入，venv 只需 pytest + 常见依赖）</span>
+<span class="n">python</span> <span class="n">-m</span> <span class="n">venv</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">bench_venv</span>
+<span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">bench_venv</span><span class="p">/</span><span class="n">Scripts</span><span class="p">/</span><span class="n">python</span><span class="p">.</span><span class="n">exe</span> <span class="n">-m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">-U</span> <span class="n">pip</span>
+<span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">bench_venv</span><span class="p">/</span><span class="n">Scripts</span><span class="p">/</span><span class="n">python</span><span class="p">.</span><span class="n">exe</span> <span class="n">-m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">pytest</span> <span class="n">numpy</span> <span class="n">pandas</span> <span class="s2">"setuptools&lt;81"</span>
+
+<span class="c"># 2) 往 .pytest_tmp/bench_data/venv_map.json 追加一行（示例：sqlfluff-1517）</span>
+<span class="c">#    "sqlfluff__sqlfluff-1517": ".pytest_tmp/bench_data/bench_venv/Scripts/python.exe"</span>
+
+<span class="c"># 3) 拉官方评测镜像（直连 Docker Hub 不通时经镜像站拉取后 tag 回官方名）</span>
+<span class="n">docker</span> <span class="n">pull</span> <span class="n">docker</span><span class="p">.</span><span class="n">1panel</span><span class="p">.</span><span class="n">live</span><span class="p">/</span><span class="n">swebench</span><span class="p">/</span><span class="n">sweb</span><span class="p">.</span><span class="n">eval</span><span class="p">.</span><span class="n">x86_64</span><span class="p">.</span><span class="n">sqlfluff_1776_sqlfluff</span><span class="p">-</span><span class="n">1517</span><span class="p">:</span><span class="n">latest</span>
+<span class="n">docker</span> <span class="n">tag</span> <span class="n">docker</span><span class="p">.</span><span class="n">1panel</span><span class="p">.</span><span class="n">live</span><span class="p">/</span><span class="n">swebench</span><span class="p">/</span><span class="n">sweb</span><span class="p">.</span><span class="n">eval</span><span class="p">.</span><span class="n">x86_64</span><span class="p">.</span><span class="n">sqlfluff_1776_sqlfluff</span><span class="p">-</span><span class="n">1517</span><span class="p">:</span><span class="n">latest</span> <span class="n">swebench</span><span class="p">/</span><span class="n">sweb</span><span class="p">.</span><span class="n">eval</span><span class="p">.</span><span class="n">x86_64</span><span class="p">.</span><span class="n">sqlfluff_1776_sqlfluff</span><span class="p">-</span><span class="n">1517</span><span class="p">:</span><span class="n">latest</span>
+
+<span class="c"># 4) 可选：先在工作区确认测试可收集（避免 Agent 白跑），测试目录以仓库为准</span>
+<span class="n">python</span> <span class="n">-m</span> <span class="n">pytest</span> <span class="p">-</span><span class="n">-collect-only</span> <span class="n">-q</span>
+
+<span class="c"># 5) 重跑 7.2 的批量命令——已完成自动跳过，新备好的实例开始执行</span>
+</code></pre></div>
+<p>各仓库要点：</p>
+<ul>
+<li>纯 Python（sqlfluff / astroid）：bench_venv 即可；astroid 测试还依赖 pylint 等，按报错补装。</li>
+<li>pvlib：需要 numpy / pandas / scipy（bench_venv 已含前两者，缺 scipy 补装）。</li>
+<li>pyvista：依赖 VTK，环境重，建议放最后或从任务清单剔除。</li>
+<li>pydicom-1256 已用 pd_venv（py3.12 + numpy + setuptools&lt;81）；同版本其他实例可复用它，
+  版本不同需确认依赖后再映射。</li>
+</ul>
+<h3 id="74-scale-10-2026-09-09swe-bench-lite-test">7.4 Scale-10 真实双组实测（2026-09-09，SWE-bench Lite test 分片）<a class="headerlink" href="#74-scale-10-2026-09-09swe-bench-lite-test" title="Permanent link">&para;</a></h3>
+<p>把 §6 的 3 实例小样本扩到 10 实例。数据源 <code>SWE-bench/SWE-bench_Lite</code> <strong>test 分片</strong>
+（<code>swebench_test.json</code>，300 实例），按仓库分层抽 10 个：django×4 / sympy×4 / flask×1 /
+seaborn×1（<code>tasks_scale10.json</code>）。与 §6 同环境：Agent 为 DeepSeek <code>deepseek-v4-flash</code>，
+上限 60 轮；每仓库独立 venv；官方 eval 镜像 + swebench 5.0.2 <code>run_evaluation</code> 打分。
+冒烟 4 实例（django-10914/10924、sympy-11400/11870）先跑，其余 6 实例于当日续跑完成，
+共 10 实例 × 2 组 = 20 行，存 <code>results_scale10/results.csv</code>。</p>
+<table>
+<thead>
+<tr>
+<th>实例</th>
+<th>baseline resolve</th>
+<th>gated resolve</th>
+<th>gated 拦截 / 终态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>django-10914</td>
+<td>1（60轮/469s）</td>
+<td>0（60轮/581s）</td>
+<td>3 / 阶段2</td>
+</tr>
+<tr>
+<td>django-10924</td>
+<td>0（空补丁）</td>
+<td>0（60轮/484s）</td>
+<td>3 / 阶段2</td>
+</tr>
+<tr>
+<td>sympy-11400</td>
+<td>0（60轮/285s）</td>
+<td>0（32轮/81s）</td>
+<td>0 / 阶段6交付</td>
+</tr>
+<tr>
+<td>sympy-11870</td>
+<td>0（60轮/291s）</td>
+<td>0（60轮/408s）</td>
+<td>1 / 阶段4</td>
+</tr>
+<tr>
+<td>django-11001</td>
+<td>0（空补丁）</td>
+<td>0（空补丁）</td>
+<td>1 / 阶段2</td>
+</tr>
+<tr>
+<td>django-11019</td>
+<td>0（空补丁）</td>
+<td>0（空补丁）</td>
+<td>4 / 阶段2</td>
+</tr>
+<tr>
+<td>sympy-11897</td>
+<td>0（空补丁）</td>
+<td>0（空补丁）</td>
+<td>1 / 阶段2</td>
+</tr>
+<tr>
+<td>sympy-12171</td>
+<td>0（60轮/637s）</td>
+<td>0（60轮/512s）</td>
+<td>1 / 阶段5</td>
+</tr>
+<tr>
+<td>flask-4045</td>
+<td>0（60轮/296s）</td>
+<td>0（60轮/210s）</td>
+<td>0 / 阶段6交付</td>
+</tr>
+<tr>
+<td>seaborn-2848</td>
+<td>0（60轮/269s）</td>
+<td>0（60轮/336s）</td>
+<td>0 / 阶段6交付</td>
+</tr>
+</tbody>
+</table>
+<p>汇总：<strong>baseline 1/10（10%）resolve；gated 0/10（0%）</strong>；gated 全程拦截共 14 次；
+gated 有 3 个实例完整走到阶段 6 并交付（sympy-11400、flask-4045、seaborn-2848），
+其中 flask-4045 双组都产出非空补丁但均未过隐藏测试。</p>
+<p>结论与要点：
+- 门禁对“过程合规”有实质约束：gated 组只有走到阶段 6 才算放行，拦截集中在 spec/测试
+  不达标的实例（多数卡在阶段 2），未出现 baseline 那种 60 轮空转后直接空补丁的情况被放行。
+- 双组空补丁出现在同一批难点（django-11001/11019、sympy-11897），且 transcript 显示模型
+  60 轮内反复侦查（git log / python 探测）未落盘修改，属模型×任务难度问题，非门禁副作用；
+  sympy-11400 gated 32 轮即完成阶段 6，说明门禁不是简单“拖慢”。
+- 数据质量修正：批量期间发现 <code>run_agent.py</code> 提取补丁用 <code>git diff</code>（仅未暂存），
+  seaborn-2848 gated 因 Agent <code>git add</code> 后提取为空而误记 empty_patch；已改为
+  <code>git diff HEAD</code> 并复核该实例（恢复补丁经官方 harness 重评分仍 0，行内 diff/note 已更正）。
+- 边界观测：seaborn-2848 gated 走到阶段 6 后，最后一轮 pytest 实为收集错误（exit 4）；
+  说明“阶段计数到 6”≠“交付前最终测试全绿”。该盲点已由 v0.53.0 交付收尾校验
+  （<code>delivery_clean()</code>：最近一次测试全绿且晚于最后一次源码/测试变更）闭环；
+  Scale-20 起，评测的 gate_completed 仅在最终全绿时才计 1。
+- 局限：60 轮上限 + flash 模型导致 resolve 偏低，baseline 与 gated 绝对数值均不具榜单意义，
+  只用于<strong>同条件下相对对比</strong>；建议下一步换更强模型 / 提高轮数，或切 Verified 分片再测。</p>
+<h2 id="scale-20-eval-agent2026-09-10">八、Scale-20：改在官方 eval 容器内跑 Agent（2026-09-10）<a class="headerlink" href="#scale-20-eval-agent2026-09-10" title="Permanent link">&para;</a></h2>
+<h3 id="81-venv">8.1 为什么从宿主 venv 换成容器内运行<a class="headerlink" href="#81-venv" title="Permanent link">&para;</a></h3>
+<p>§7.4 的 Scale-10 用宿主 venv 跑通，但扩任务时暴露了两个环境问题：</p>
+<ul>
+<li>宿主 Python 太新（本机 venv 为 3.14），老仓库（astropy 1.x、老 sympy/scikit-learn）
+  的依赖装不上或行为不对，Agent 会把轮次耗在 numpy 兼容 shim 上而不是写真实补丁。</li>
+<li>官方评测镜像本身已把 <code>/testbed</code> 建到 <code>base_commit</code> 且依赖就绪（testbed conda 环境），
+  是最贴近官方评测的运行环境。</li>
+</ul>
+<p>于是新增 <code>scripts/run_swebench_batch_container.py</code>：对每个实例 <code>docker run</code> 其官方
+<code>swebench/sweb.eval.x86_64.*</code> 镜像，在容器内运行 <code>run_agent.py</code>，补丁落回宿主挂载目录
+后再用宿主 <code>grade.py</code>（官方 swebench harness + Docker）打分。</p>
+<p>门禁与测试解释器的分工（关键工程点）：</p>
+<ul>
+<li><code>phase-barrier</code> 的 <code>requires-python &gt;= 3.10</code>，但不少老任务镜像的 testbed 环境是
+  py3.6/3.8/3.9（如 requests-1963=3.9、matplotlib-18869=3.8、scikit-learn-10297=3.6）。
+  直接在这些环境里 import 门禁会在 pydantic 解析 <code>str | None</code> 时报错。</li>
+<li>这些镜像的 <strong>base conda python 是 3.11</strong>，因此用 base conda python 跑 <code>run_agent.py</code>
+  （门禁逻辑），并把 <code>--venv</code> 指向 testbed 解释器——测试命令经 PATH 在该实例真实
+  环境里执行。两者互不影响。</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">python</span> <span class="n">scripts</span><span class="p">/</span><span class="n">run_swebench_batch_container</span><span class="p">.</span><span class="n">py</span> <span class="p">-</span><span class="n">-tasks</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">lite</span><span class="p">/</span><span class="n">tasks_scale20</span><span class="p">.</span><span class="n">json</span> <span class="p">-</span><span class="n">-dataset</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">lite</span><span class="p">/</span><span class="n">dataset</span><span class="p">.</span><span class="n">json</span> <span class="p">-</span><span class="n">-grade-python</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">sweb_venv</span><span class="p">/</span><span class="n">Scripts</span><span class="p">/</span><span class="n">python</span><span class="p">.</span><span class="n">exe</span> <span class="p">-</span><span class="n">-results</span> <span class="n">benchmarks</span><span class="p">/</span><span class="n">swebench</span><span class="p">/</span><span class="n">results</span><span class="p">/</span><span class="n">scale20_lite_container</span><span class="p">.</span><span class="n">csv</span> <span class="p">-</span><span class="n">-agent-runs</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">agent_runs</span> <span class="p">-</span><span class="n">-eval-runs</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">eval_runs</span> <span class="p">-</span><span class="n">-log-dir</span> <span class="p">.</span><span class="n">pytest_tmp</span><span class="p">/</span><span class="n">bench_data</span><span class="p">/</span><span class="n">container_logs</span> <span class="p">-</span><span class="n">-modes</span> <span class="n">baseline</span><span class="p">,</span><span class="n">gated</span> <span class="p">-</span><span class="n">-max-turns</span> <span class="n">60</span> <span class="p">-</span><span class="n">-concurrency</span> <span class="n">3</span> <span class="p">-</span><span class="n">-skip-existing</span>
+</code></pre></div>
+<p><code>--agent-script</code> / <code>--grade-script</code> 默认已指向仓库内 <code>benchmarks/swebench/{run_agent,grade}.py</code>；
+任务清单与数据集用 <code>benchmarks/swebench/prepare_dataset.py</code> 生成
+（<code>--local-images-only</code> 只保留本机已缓存镜像的实例，避免跑到一半缺镜像）。</p>
+<h3 id="82-lite-test-20-2">8.2 结果（Lite test 分片，20 实例 × 2 组，全部在官方容器内运行）<a class="headerlink" href="#82-lite-test-20-2" title="Permanent link">&para;</a></h3>
+<p>数据（已入库，可直接复算）：<code>benchmarks/swebench/results/scale20_lite_container.csv</code>（40 行，
+<code>note</code> 全为 <code>graded</code>）；实例清单 <code>.pytest_tmp/bench_data/lite/tasks_scale20.json</code>
+（按仓库分层抽样：django 4 / sympy 4 / astropy 2 / matplotlib 2 / seaborn / flask /
+requests / xarray / pylint / pytest / scikit-learn / sphinx）。同一模型（<code>deepseek-v4-flash</code>）、
+同一 60 轮预算、同一官方镜像环境。</p>
+<table>
+<thead>
+<tr>
+<th>组别</th>
+<th>n</th>
+<th>resolved</th>
+<th>resolve 率</th>
+<th>门禁拦截</th>
+<th>走到阶段 6</th>
+<th>交付前最终测试全绿</th>
+<th>空补丁</th>
+<th>平均轮数</th>
+<th>平均耗时</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>baseline（无门禁）</td>
+<td>20</td>
+<td>18</td>
+<td>90%</td>
+<td>0</td>
+<td>—</td>
+<td>—</td>
+<td>0</td>
+<td>43.1</td>
+<td>262s</td>
+</tr>
+<tr>
+<td>gated（门禁）</td>
+<td>20</td>
+<td>20</td>
+<td>100%</td>
+<td>78</td>
+<td>14</td>
+<td>14</td>
+<td>0</td>
+<td>49.8</td>
+<td>462s</td>
+</tr>
+</tbody>
+</table>
+<p>要点：</p>
+<ul>
+<li><strong>门禁组 20/20 全解，baseline 18/20</strong>；两组都无空补丁。门禁组平均多花 6.7 轮 / 200 秒，
+  换来的是「先写复现测试 → 再实现 → 跑测试 → 交付前最终测试全绿」的完整证据链。</li>
+<li>78 次拦截集中在「没写/没跑测试就要进实现或交付」「测试红却想推进」；14 个实例走到阶段 6
+  且 <code>delivery_clean()=True</code>（最近一次测试全绿且晚于最后一次源码/测试变更）。</li>
+<li>这批数据是<strong>修复阶段 2 存量仓库假阳性之后</strong>的结果：修复前同批量 gated 只有 13/20（65%，
+  见 §8.3）。两组都只用于<strong>同条件相对对比</strong>，n=20 不构成榜单结论。</li>
+<li>看门狗仍会在宿主休眠时误伤：本轮有 3 个容器因宿主休眠触发 <code>container_timeout</code>，
+  剔除后单独重跑才得到正式数据。长跑批量评测建议关闭宿主休眠 / 放宽 <code>--agent-timeout</code>。</li>
+</ul>
+<h3 id="83-2-2026-09-12">8.3 修复：阶段 2 在存量仓库上的假阳性（2026-09-12）<a class="headerlink" href="#83-2-2026-09-12" title="Permanent link">&para;</a></h3>
+<p><strong>现象</strong>：修复前 gated 组 6 个实例永久卡在阶段 2，报错形如
+<code>测试文件 js_tests/admin/jsi18n-mocks.test.js 为启发式校验（非 Python），断言关键字不足（0 &lt; 1）</code>。</p>
+<p><strong>根因</strong>（两层，都用容器内日志实证）：</p>
+<ol>
+<li><code>detect_language</code> 按标志文件列表顺序「先到先得」，而 <code>package.json</code> 排第一：django / sphinx
+   仓库根目录带 <code>package.json</code>（前端 / 文档工具链）却以 Python 为主，于是整个仓库被判成
+   <code>javascript</code>，再用 JS 启发式去校验 <code>.py</code> 测试文件（Agent 自己也在容器里打印出
+   <code>detected: javascript</code> / <code>bad count: 522</code>）。</li>
+<li><code>validate_tests</code> 扫描<strong>整个存量仓库</strong>：仓库里几十年的夹具（sphinx 的
+   <code>tests/roots/.../dummy/test_nested.py</code>）与历史测试都会被计入，同时也允许 Agent 不写新测试、
+   直接拿仓库已有测试过关。</li>
+</ol>
+<p><strong>修复</strong>：多标志命中时按候选语言源文件数消歧（跳过 <code>node_modules</code>/<code>.venv</code>/<code>build</code> 等）；
+新增 <code>stage2_test_scope: changed</code>（默认），阶段 2 只校验 Git 工作区相对 HEAD 的新增/修改测试文件，
+<code>workspace</code> 保留全量扫描，非 Git 仓库 / 工作区干净时自动回退；<code>tests/</code> 目录约定兜底
+（django 的 <code>tests/&lt;app&gt;/tests.py</code> 不匹配 <code>test_*.py</code> 时按目录 + 目标语言后缀识别）。</p>
+<p><strong>修复前后对照</strong>（同实例、同模型、同预算）：</p>
+<table>
+<thead>
+<tr>
+<th>实例</th>
+<th>修复前 resolved</th>
+<th>修复前终态</th>
+<th>修复后 resolved</th>
+<th>修复后终态</th>
+<th>交付全绿</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>django__django-10914</td>
+<td>0</td>
+<td>阶段 2（8 次拦截）</td>
+<td>1</td>
+<td>阶段 6</td>
+<td>是</td>
+</tr>
+<tr>
+<td>django__django-10924</td>
+<td>0</td>
+<td>阶段 2（9 次拦截）</td>
+<td>1</td>
+<td>阶段 6</td>
+<td>是</td>
+</tr>
+<tr>
+<td>django__django-11001</td>
+<td>0</td>
+<td>阶段 2（15 次拦截）</td>
+<td>1</td>
+<td>阶段 6</td>
+<td>是</td>
+</tr>
+<tr>
+<td>django__django-11019</td>
+<td>0</td>
+<td>阶段 2（6 次拦截）</td>
+<td>1</td>
+<td>阶段 6</td>
+<td>是</td>
+</tr>
+<tr>
+<td>sphinx-doc__sphinx-10325</td>
+<td>0</td>
+<td>阶段 2（16 次拦截）</td>
+<td>1</td>
+<td>阶段 4</td>
+<td>否</td>
+</tr>
+<tr>
+<td>sympy__sympy-11870</td>
+<td>0</td>
+<td>阶段 2（5 次拦截）</td>
+<td>1</td>
+<td>阶段 4</td>
+<td>否</td>
+</tr>
+</tbody>
+</table>
+<p><strong>容器内直接探测</strong>（不调 LLM，同一镜像）：<code>detect_language(/testbed) -&gt; python</code>、
+<code>PythonAdapter</code>、阶段 2 校验通过；修复前同一镜像的 Agent 日志为 javascript + 空壳报错。</p>
+<h3 id="84-harness">8.4 harness 陷阱（实测踩到，已修复）<a class="headerlink" href="#84-harness" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>CRLF</strong>：Windows 上 <code>Path.write_text</code> 会把 <code>eval.sh</code> 写成 CRLF，容器内 <code>set -e</code> /
+  <code>conda activate</code> / <code>cd /testbed</code> 全部解析失败，表现为「PASS_TO_PASS 98/98 全挂」的假阴性。
+  <code>grade.py</code> 用 <code>force_lf_writes()</code> 在评分进程内强制 LF。</li>
+<li><strong>report 缓存</strong>：官方 harness 按 <code>run_id/model/instance</code> 缓存 <code>report.json</code>，换补丁沿用同一
+  run_id 会直接返回旧结论；run_id 现带上补丁 sha256 前 12 位。</li>
+<li><strong>陈旧补丁</strong>：Agent 在容器里 import 失败秒退时，上一轮的 <code>model_patch.diff</code> 还留在挂载目录，
+  驱动会把<strong>旧补丁</strong>当成本次结果去评分（本轮实测：14 行「成功」数据其实是上一轮的补丁）。
+  现在 <code>run_one</code> 先清空同名 label 目录，并要求补丁 mtime 晚于本次启动时间
+  （<code>patch_is_fresh()</code>，含回归测试）。</li>
+<li><strong>依赖卷</strong>：Docker Desktop 卷挂载下 <code>mkdir</code> 锁不保证互斥，两个容器并发
+  <code>pip install --target</code> 会把 <code>pb_gate_deps</code> 写坏（实测 pydantic 装上了、<code>typing_extensions</code>
+  缺失）。第一版修复是「<code>rm -rf</code> 目录 → 装 → <code>import</code> 校验 → 才落 <code>.ready</code>」——<strong>不够</strong>：
+  2026-09-12 批量跑 Verified 时再次复现，<code>mkdir</code> 锁根本没互斥，两个容器同时进临界区、
+  各自 <code>rm -rf</code> + install，先完成的容器 <code>touch .ready</code> 之后仍被另一个容器的写入破坏；
+  7 个 gated 任务里 5 个空补丁（<code>agent_exit_1</code>）、1 个评分失败（<code>grade_exit_4294967295</code>），
+  整批数据不可用。最终修复：</li>
+<li>使用方只把共享缓存 <code>cp -a</code> 到容器私有 <code>$LOCAL</code>，再校验 import——共享卷上的并发写
+     不再影响正在运行的容器；</li>
+<li>缓存缺失或校验不过时在 <code>$LOCAL</code> 重装，不碰共享卷；</li>
+<li>发布走唯一临时目录 + <code>mv</code>，且不覆盖已有缓存；坏缓存由校验失败分支自愈。</li>
+</ul>
+<p>结论：<strong>并发场景下不要信任"锁"，要让每个使用方持有私有副本并自行校验。</strong></p>
+<h2 id="verified-2026-09-12">九、Verified 分片复核（2026-09-12）<a class="headerlink" href="#verified-2026-09-12" title="Permanent link">&para;</a></h2>
+<p>用 canonical <code>SWE-bench/SWE-bench_Verified</code>（500 实例，含 harness 需要的 <code>eval_script</code>）对
+「本机已缓存官方镜像」的 4 个实例重新评分：把本轮 Scale-20 产出的 8 份补丁（4 实例 × 2 组）
+换分片打分，<strong>不重跑 Agent</strong>。数据已入库：<code>benchmarks/swebench/results/verified_regrade.csv</code>。</p>
+<table>
+<thead>
+<tr>
+<th>实例</th>
+<th>baseline Lite→Verified</th>
+<th>gated Lite→Verified</th>
+<th>Verified F2P / P2P</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>astropy__astropy-12907</td>
+<td>1 → 1</td>
+<td>1 → 1</td>
+<td>2 / 13</td>
+</tr>
+<tr>
+<td>astropy__astropy-14182</td>
+<td>1 → 1</td>
+<td>1 → 1</td>
+<td>1 / 9</td>
+</tr>
+<tr>
+<td>django__django-10914</td>
+<td>1 → 1</td>
+<td>1 → 1</td>
+<td>1 / 98</td>
+</tr>
+<tr>
+<td>scikit-learn__scikit-learn-10297</td>
+<td>1 → 1</td>
+<td>1 → 1</td>
+<td>1 / 28</td>
+</tr>
+</tbody>
+</table>
+<p>要点：</p>
+<ul>
+<li>本轮 <strong>8/8 在两个分片上判定一致，没有出现翻转</strong>。</li>
+<li>上一轮（2026-09-10，本地产物未入库、已无法复算）曾观测到 scikit-learn-10297 的<strong>一份旧补丁</strong>
+  在 Lite 判 1、Verified 判 0。本轮同一实例、同一 Agent 配置产出的补丁两个分片都判 1——
+  说明<strong>翻转是补丁级的</strong>（旧补丁恰好过了 Lite 的 FAIL_TO_PASS，遇到 Verified 更严的用例集才暴露），
+  不能据此说 Lite 分片系统性偏松。跨分片复核的价值在于给每份补丁加一道更严的独立判定。</li>
+<li>坑记录：HuggingFace 直连在本机 TLS 失败，用 <code>HF_ENDPOINT=https://hf-mirror.com</code> 走镜像；
+  <code>princeton-nlp/SWE-bench_Verified</code> 缺 <code>eval_script</code>，会令 harness <code>make_test_spec</code> 抛
+  <code>KeyError: 'eval_script'</code>——必须用 <code>SWE-bench/SWE-bench_Verified</code>。</li>
+</ul>
+<p>复算命令（宿主侧，只需 Docker 与 <code>.pytest_tmp/sweb_venv</code>）：</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>benchmarks/swebench/regrade_cross_shard.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--results<span class="w"> </span>benchmarks/swebench/results/scale20_lite_container.csv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target-dataset<span class="w"> </span>.pytest_tmp/bench_data/verified/dataset.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--agent-runs<span class="w"> </span>.pytest_tmp/bench_data/agent_runs<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--grade-python<span class="w"> </span>.pytest_tmp/sweb_venv/Scripts/python.exe<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--out-dir<span class="w"> </span>.pytest_tmp/bench_data/eval_runs_verified<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--out-csv<span class="w"> </span>benchmarks/swebench/results/verified_regrade.csv
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.top", "navigation.tabs", "toc.integrate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

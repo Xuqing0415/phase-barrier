@@ -259,6 +259,22 @@ def test_gate_deps_bootstrap_verifies_import_before_ready():
     assert '[ -e "$DEPS_BASE" ] || mv "$TMP" "$DEPS_BASE"' in script
 
 
+def test_filter_ready_keeps_only_cached_images():
+    """--only-ready：只保留镜像已缓存的实例（扩样本时可边拉边跑）。"""
+    tasks = [
+        {"instance_id": "django__django-1", "image": "swebench/sweb.eval.x86_64.django_1776_django-1:latest"},
+        {"instance_id": "sympy__sympy-2", "image": "swebench/sweb.eval.x86_64.sympy_1776_sympy-2:latest"},
+        {"instance_id": "astropy__astropy-3"},   # 无 image 列：按 instance_id 推导
+    ]
+    images = {
+        "swebench/sweb.eval.x86_64.django_1776_django-1:latest",
+        "swebench/sweb.eval.x86_64.astropy_1776_astropy-3:latest",
+    }
+    ready = container.filter_ready(tasks, images)
+    assert [t["instance_id"] for t in ready] == ["django__django-1", "astropy__astropy-3"]
+    assert container.filter_ready(tasks, set()) == []
+
+
 def test_patch_is_fresh_rejects_stale_and_empty(tmp_path):
     """Agent 秒退时挂载目录里可能还留着上一轮的补丁，不能被当成本次结果评分。"""
     patch = tmp_path / "model_patch.diff"

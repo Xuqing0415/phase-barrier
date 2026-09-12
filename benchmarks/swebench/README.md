@@ -43,13 +43,15 @@ python scripts/select_swe_tasks.py --dataset .pytest_tmp/bench_data/verified/dat
   --exclude pydicom__pydicom-1413 --out .pytest_tmp/bench_data/verified/tasks_scale20.json
 
 # 3) 双组评测（容器内 Agent + 官方评分）
+#    --only-ready：只跑本机已缓存镜像的实例 —— 扩样本时可以边拉镜像边跑，
+#    不必等全部拉完；配合 --skip-existing 反复跑同一条命令即可逐轮补齐。
 python scripts/run_swebench_batch_container.py \
   --tasks .pytest_tmp/bench_data/verified/tasks_scale20.json \
   --dataset .pytest_tmp/bench_data/verified/dataset.json \
   --grade-python .pytest_tmp/sweb_venv/Scripts/python.exe \
   --results .pytest_tmp/bench_data/results/scale20.csv \
   --log-dir .pytest_tmp/bench_data/container_logs \
-  --modes baseline,gated --max-turns 60 --concurrency 3 --skip-existing
+  --modes baseline,gated --max-turns 60 --concurrency 3 --skip-existing --only-ready
 ```
 
 `--skip-existing` 按 `(instance_id, mode)` 断点续跑，中断后重跑同一条命令即可。

@@ -6,8 +6,9 @@
 # 自动条目的新提交（git ls-remote 与 last_commit_sha 不一致）做增量刷新。
 # 第二步 verify_plugins.py：安装索引全部条目并运行 plugin-verify（子进程），
 # 把最新 status / last_verified 写回 plugins.json，并把状态表同步到
-# docs/plugin-status.md 插件状态页（--update --sync-docs）；有变更则自动提交到 main，
-# 验证报告作为 artifact 上传。GitHub Search 使用仓库内置 GITHUB_TOKEN。
+# docs/plugin-status.md 插件状态页（--update --sync-docs）；有变更则推分支并开 PR，
+# 由人工合并（不再由机器人直接提交到 main），验证报告作为 artifact 上传。
+# GitHub Search 使用仓库内置 GITHUB_TOKEN。
 name: Plugin Verification and Discovery
 
 on:
@@ -17,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: plugin-verification
@@ -82,18 +84,37 @@ jobs:
             plugin-discovery-report.json
           if-no-files-found: error
 
-      - name: Commit updated plugins.json
-        # 只允许 main 自动提交：schedule 始终在默认分支（main）运行，但
+      - name: Open PR with updated plugin status
+        # 只允许默认分支的定时运行改索引：schedule 始终在默认分支（main）运行，但
         # workflow_dispatch 可从任意分支手动触发——此时若直接 push HEAD:main，
         # 会把该分支的 plugins.json / 状态页内容误推到 main。
+        #
+        # 改为「推分支 + 开 PR」，不再由机器人直接 push main：直接提交会让
+        # github-actions[bot] 永久计入仓库贡献者，并每周产生一次无人审核的主分支提交。
+        # 合并时请用 **Create a merge commit**——若用 Squash and merge，squash 出的
+        # 提交作者仍是 PR 作者（机器人），等于没去掉这个贡献者。
         if: always() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add plugins.json docs/plugin-status.md docs/plugins.md
           if git diff --cached --quiet; then
-            echo "plugins.json 无变更，跳过提交"
-          else
-            git commit -m "chore: update plugin verification status [skip ci]"
-            git push origin HEAD:main
+            echo "plugins.json 无变更，跳过"
+            exit 0
           fi
+          branch="plugin-status/${{ github.run_id }}"
+          base="${{ github.event.repository.default_branch }}"
+          git checkout -b "$branch"
+          git commit -m "chore: update plugin verification status"
+          git push -u origin "$branch"
+          if gh pr create \
+              --base "$base" \
+              --head "$branch" \
+              --title "chore: 插件验证状态更新（$(date -u +%Y-%m-%d)）" \
+              --body "由 plugin-verification workflow 自动生成：刷新 plugins.json 的 status / last_verified，并同步 docs/plugin-status.md 与 docs/plugins.md。请用 Create a merge commit 合并（不要 Squash，否则机器人会成为 main 上的提交作者）。"; then
+            exit 0
+          fi
+          echo "::warning::自动建 PR 失败（分支 $branch 已推送）。若报 createPullRequest 权限问题，请在 Settings → Actions → General → Workflow permissions 勾选 Allow GitHub Actions to create and approve pull requests 后重跑。"
+          echo "手动创建：https://github.com/${GITHUB_REPOSITORY}/compare/${base}...${branch}?expand=1"

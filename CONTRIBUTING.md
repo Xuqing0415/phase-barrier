@@ -103,6 +103,8 @@ python -m flake8 --jobs=1 <files> # 风格检查（Windows 下需 --jobs=1）
 - 遵循 PEP 8；新代码尽量保持 flake8 干净（既有 E501 历史问题可不改）。
 - 新增功能必须配套测试（文件识别 / 校验逻辑 / 输出解析至少各一例）。
 - 提交信息遵循 Conventional Commits（`feat:` / `fix:` / `docs:` / `test:` / `refactor:`）。
+- 提交署名只用本人身份：不要加 `Co-authored-by:` 尾注（用 Agent 生成的提交也不要带
+  agent 署名），避免工具 / 机器人账号出现在仓库贡献者列表里。
 - 提交前运行 `python -m pytest`，确保全绿。
 
 ## 发布流程（里程碑驱动）

@@ -91,14 +91,14 @@ jobs:
         #
         # 改为「推分支 + 开 PR」，不再由机器人直接 push main：直接提交会让
         # github-actions[bot] 永久计入仓库贡献者，并每周产生一次无人审核的主分支提交。
-        # 合并时请用 **Create a merge commit**——若用 Squash and merge，squash 出的
-        # 提交作者仍是 PR 作者（机器人），等于没去掉这个贡献者。
+        # 分支提交统一使用维护者身份（GitHub noreply 邮箱，与账号绑定），
+        # 无论 merge commit 还是 squash 合并，作者都会归到 Xuqing0415 名下。
         if: always() && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "Xuqing0415"
+          git config user.email "248270291+Xuqing0415@users.noreply.github.com"
           git add plugins.json docs/plugin-status.md docs/plugins.md
           if git diff --cached --quiet; then
             echo "plugins.json 无变更，跳过"
@@ -113,7 +113,7 @@ jobs:
               --base "$base" \
               --head "$branch" \
               --title "chore: 插件验证状态更新（$(date -u +%Y-%m-%d)）" \
-              --body "由 plugin-verification workflow 自动生成：刷新 plugins.json 的 status / last_verified，并同步 docs/plugin-status.md 与 docs/plugins.md。请用 Create a merge commit 合并（不要 Squash，否则机器人会成为 main 上的提交作者）。"; then
+              --body "由 plugin-verification workflow 自动生成：刷新 plugins.json 的 status / last_verified，并同步 docs/plugin-status.md 与 docs/plugins.md。"; then
             exit 0
           fi
           echo "::warning::自动建 PR 失败（分支 $branch 已推送）。若报 createPullRequest 权限问题，请在 Settings → Actions → General → Workflow permissions 勾选 Allow GitHub Actions to create and approve pull requests 后重跑。"

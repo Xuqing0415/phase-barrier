@@ -171,8 +171,10 @@ jobs:
           fi
           branch="learning-loop/$run_date-${{ github.run_id }}"
           base="${{ github.event.repository.default_branch }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # 提交身份使用维护者（GitHub noreply 邮箱），避免 github-actions[bot]
+          # 被计入仓库贡献者侧边栏；PR 仍由 GITHUB_TOKEN 创建，不影响审核流程。
+          git config user.name "Xuqing0415"
+          git config user.email "248270291+Xuqing0415@users.noreply.github.com"
           git checkout -b "$branch"
           git add anti_shortcut/defense/learned_rules.yaml
           git commit -m "feat(defense): 学习闭环候选规则（$run_date，人工审核后合入）"

@@ -417,6 +417,10 @@ class BehaviorAuditOptions(BaseModel):
     # 的组合会把禁止操作藏在两条扫描之间。开启后按磁盘完整内容补扫 trace 写过的路径。
     # 关掉它等于重新打开这个缺口（仅供对照实验，不建议生产关闭）。
     scan_chains: bool = True
+    # 执行前后快照检测（v1.0.1，默认开启）：命令执行前后对比工作区文件（路径 +
+    # mtime + size），把没经过 write_file 记录的新增 / 修改 / 删除记为「未授权写入」
+    # 写入审计日志。仅检测、不拦截、不回退；关掉可省掉每次执行前后两次目录遍历。
+    write_audit: bool = True
     source_extensions: list[str] = Field(
         default_factory=lambda: [
             ".py", ".pyi", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs",

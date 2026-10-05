@@ -32,6 +32,7 @@ from .languages import get_adapter
 from .remote_audit import RemoteAuditSink
 from .semantic import run_semantic_checks
 from .state import StateManager
+from .write_audit import diff_snapshots, snapshot_workspace
 from .validators import (
     get_validator,
     validate_implementation,
@@ -111,6 +112,10 @@ class AntiShortcutSkill:
             self.gate_dir / EVIDENCE_MANIFEST_NAME,
             hmac_key=self.config.state_hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY"),
         )
+        # 纵深防御 2-B（v1.0.1，检测版）：执行前后工作区快照，用于发现「没经过
+        # write_file 记录」的写入。仅检测 + 审计，不拦截 / 不回退。
+        self._written_paths: set[str] = set()
+        self._unauthorized_writes: list[dict[str, Any]] = []
         self.validators: dict[int, Callable] = {
             1: validate_spec,
             2: validate_tests,
@@ -264,6 +269,7 @@ class AntiShortcutSkill:
                 "write_file",
                 {"path": str(path), "content": content},
             )
+            self._written_paths.add(self._workspace_key(path))
             kind = self._classify_path(Path(path))
             if kind in ("test", "source"):
                 self.state.mark_source_change(str(path))
@@ -283,7 +289,9 @@ class AntiShortcutSkill:
         def guarded(command: str | list[str], **kwargs: Any) -> Any:
             cmd = command if isinstance(command, str) else " ".join(str(c) for c in command)
             self.check_exec_permission(command)
+            before_snapshot = self._write_audit_snapshot()
             result = original_exec(command, **kwargs)
+            self._audit_unauthorized_writes(cmd, before_snapshot)
             exit_code = result.get("exit_code") if isinstance(result, dict) else None
             self._record_trace("execute_command", {"command": cmd, "exit_code": exit_code})
             if is_language_test_command(cmd, self.config, self.adapter):
@@ -348,6 +356,75 @@ class AntiShortcutSkill:
             )
         except Exception:  # pragma: no cover - trace 记录绝不影响门禁主流程
             pass
+
+    # ---------- 纵深防御 2-B：执行前后快照检测（v1.0.1，检测版） ----------
+
+    @property
+    def unauthorized_writes(self) -> list[dict[str, Any]]:
+        """本次会话检测到的「未授权写入」（只读副本）。"""
+        return [dict(item) for item in self._unauthorized_writes]
+
+    def _workspace_key(self, path: str | Path) -> str:
+        """把路径归一成工作区相对 posix 路径（与快照 key 同口径）。"""
+        p = Path(path)
+        try:
+            resolved = p.resolve() if p.is_absolute() else (self.workspace / p).resolve()
+            return resolved.relative_to(self.workspace).as_posix()
+        except (OSError, ValueError):
+            return str(path)
+
+    def _write_audit_enabled(self) -> bool:
+        cfg = self.config.defense.behavior_audit
+        return bool(cfg.enabled and cfg.write_audit)
+
+    def _write_audit_snapshot(self) -> dict[str, tuple[int, int]] | None:
+        if not self._write_audit_enabled():
+            return None
+        try:
+            return snapshot_workspace(self.workspace)
+        except Exception:  # pragma: no cover - 快照失败绝不影响门禁主流程
+            return None
+
+    def _audit_unauthorized_writes(
+        self, command: str, before: dict[str, tuple[int, int]] | None
+    ) -> None:
+        """对比执行前后快照，把未经 ``write_file`` 记录的变更写成审计事件。
+
+        仅检测：记录 ``unauthorized_write`` / ``unauthorized_delete`` 事件，并累积到
+        状态证据 ``unauthorized_writes``；不拦截、不回退。任何异常都不影响门禁主流程。
+        """
+        if before is None:
+            return
+        try:
+            changes = diff_snapshots(before, snapshot_workspace(self.workspace))
+        except Exception:  # pragma: no cover - 检测失败绝不影响门禁主流程
+            return
+        recorded = False
+        for change in changes:
+            if change.path in self._written_paths:
+                continue  # 本会话 write_file 明确写过，有记录
+            event = "unauthorized_write" if change.change != "deleted" else "unauthorized_delete"
+            record = {
+                "ts": now_iso(),
+                "path": change.path,
+                "change": change.change,
+                "command": redact_mapping({"c": command[:500]})["c"],
+                "stage": self.current_stage,
+            }
+            self._unauthorized_writes.append(record)
+            recorded = True
+            try:
+                self.logger.warning(event, **record)
+            except Exception:  # pragma: no cover - 审计日志失败不影响门禁
+                pass
+        if recorded:
+            try:
+                # 证据保留最近 100 条，避免长会话无限增长（审计日志是完整流水）
+                self.state.set_evidence(
+                    "unauthorized_writes", self._unauthorized_writes[-100:]
+                )
+            except Exception:  # pragma: no cover - 证据写入失败不影响门禁
+                pass
 
     def install(self, tools: dict[str, Callable]) -> dict[str, Callable]:
         """把包装后的工具注入 Agent 的工具表（原地修改并返回）。

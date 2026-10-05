@@ -28,6 +28,8 @@ _tmp_site/
 _pytest_final/
 .pytest_tmp/
 pytest-cache-files-*/
+# 基准 / 演示脚本回退到仓库根目录的临时工作区（见 scripts/cleanup_bench_dirs.py）
+pb-*/
 _build_tmp/
 
 # IDE / OS
@@ -40,11 +42,11 @@ Thumbs.db
 # 本地工具缓存
 .workbuddy/
 
-# K8s ͸������ demo ���˹�����
+# K8s 透明代理 demo 回退工作区
 .k8s_proxy_demo_ws/
 
 
-# ���лỰ�����ʵ���ļ���ɳ�����������ԣ�
+# 并行会话遗留的实验文件（沙箱锁定，忽略）
 identifier.sqlite
 
 # MkDocs build output

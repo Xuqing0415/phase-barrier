@@ -39,6 +39,7 @@ defense:
     deny_missing_test_command: false
     scan_deliverables: true  # 交付物源码兜底扫描
     scan_chains: true        # 工具链补扫：trace 写过的路径按磁盘完整内容再扫（v0.60.0）
+    write_audit: true        # 执行前后快照：未经 write_file 记录的写入记为未授权（v1.0.1，仅检测不回退）
   human_review:           # 防线 5（阶段 4/5 -> 6 交付前）
     enabled: false
     sample_rate: 0.3
@@ -157,7 +158,13 @@ formal_constraints:
 - **工具链补扫**（`scan_chains`，v0.60.0）：trace 里的 `write_file` 内容会被截断到
   4000 字符，交付物扫描又只覆盖 `source_extensions` ——「写 `.tmp` / `.env` /
   `Makefile` 脚本再执行」的组合会落在两条扫描之间。补扫对 trace 里出现过的写入路径
-  按**磁盘完整内容**再扫一遍，命中记为 `source: chain`（`write_then_run`）。
+  按**磁盘完整内容**再扫一遍，命中记为 `source: chain`（`write_then_run`）；
+- **执行前后快照**（`write_audit`，v1.0.1）：写路径提取是启发式的，``ruby -e`` /
+  PowerShell / `awk` 等写法可能漏检。命令执行前后各取一次工作区快照（路径 + mtime +
+  size），把没经过 `write_file` 记录的新增 / 修改 / 删除记为 `unauthorized_write` /
+  `unauthorized_delete` 写入审计日志与状态证据 `unauthorized_writes`。**只检测、不拦截、
+  不回退**——先暴露真实漏检与误报率，再决定是否升级为回退。排除目录 / 文件沿用
+  `behavior_audit.exclude_dirs`（另跳过 `.coverage` 等覆盖率产物与 `.pyc` 字节码）。
 
 ### 验收对照
 

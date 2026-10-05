@@ -1,0 +1,30 @@
+# 已知残余风险白名单（红队 CI 的「唯一例外」通道，v1.0.1）
+#
+# 口径：红队一旦出现逃逸（escaped）就视为失败，**除非**该案例被本文件显式豁免。
+# 这里记的是「机制固有窗口」，不是免罪符：
+#   - technique / case_id 必填，case_id 支持 fnmatch 通配；
+#   - reason 必填，写清为什么这是固有窗口而不是缺陷；
+#   - expires_at 必填（YYYY-MM-DD）。过期即视为漏洞：
+#     `run_red_team.py --check-residual-expiry` 会失败，CI 变红，必须重新评审——
+#     要么修掉窗口，要么续期并在 PR 里说明窗口为何仍然存在；
+#   - 本文件走代码评审，禁止用「预期逃逸」的代码注释替代这里的人工确认。
+version: 1
+entries:
+  - technique: session_family_split
+    case_id: "0[12]-*"
+    reason: >-
+      会话级聚合的固有窗口：需求族前两个低风险子任务在累积到 task_family_min_tasks
+      之前没有足够历史，无法判定为「拆分子任务」；第 3 个会被强制人工复核。
+    expires_at: 2027-01-31
+  - technique: session_family_stagger
+    case_id: "0[12]-*"
+    reason: >-
+      与 split 同源：错峰提交同样要等累积到阈值才能判定，前两个子任务落在窗口内。
+      第 3 个被会话级聚合拦下。
+    expires_at: 2027-01-31
+  - technique: session_family_below_threshold
+    case_id: "*"
+    reason: >-
+      该技术故意把 task_family_min_tasks 抬到实际任务数之上，等价于按配置关闭会话级
+      聚合；逃逸由配置使然，属已知残余风险，不是机制缺陷。
+    expires_at: 2027-01-31

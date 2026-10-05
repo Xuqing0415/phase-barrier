@@ -254,6 +254,23 @@ def test_obfuscated_and_chain_attacks_are_blocked(tmp_path):
             assert result.outcome is Outcome.BLOCKED, (name, attempt.case_id, result.message)
 
 
+def test_compact_redirection_attack_is_blocked_at_write_gate(tmp_path):
+    """P1 回归（v1.0.1）：紧凑重定向偷偷落实现源码，必须在阶段 0 就被写入门禁拒绝。
+
+    修复前：``extract_written_paths`` 漏检 ``>mod.py``，命令照常执行 -> 源码落盘 ->
+    测试全绿 -> 直达交付（逃逸）。修复后：命令被 ``PermissionError`` 拒绝，实现文件
+    始终不存在，阶段 3 校验失败 -> BLOCKED。
+    """
+    technique = TECHNIQUES_BY_NAME["compact_redirection"]
+    sandbox = RedTeamSandbox(tmp_path / "compact", SandboxConfig())
+    for attempt in technique.generate_all(DEFAULT_REQUIREMENT):
+        result = sandbox.run(attempt)
+        assert result.outcome is Outcome.BLOCKED, (attempt.case_id, result.message)
+        # 拦下它的必须是写入门禁（阶段门禁本职），而不是防线故障 / 未判定
+        assert any(
+            "PermissionError" in err for err in result.evidence["errors"]
+        ), (attempt.case_id, result.evidence["errors"])
+
 def test_session_family_rollup_forces_third_subtask(tmp_path):
     """同一需求族的 3 个低风险子任务：第 3 个必须被会话级聚合强制人工复核。"""
     technique = TECHNIQUES_BY_NAME["session_family_split"]

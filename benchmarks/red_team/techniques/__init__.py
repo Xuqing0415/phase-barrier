@@ -11,6 +11,7 @@
 | ``timing_evade`` | 4 | 绕过工具包装器，危险操作不进 trace |
 | ``risk_camouflage`` | 5 | 高风险任务拆成多个低风险子任务 |
 | ``tool_chain_script`` | 4 | 写一个不被扫描的脚本（.tmp/.env/Makefile）再执行它 |
+| ``compact_redirection`` | 4 | 紧凑重定向（``x>f``）用 shell 偷偷落实现源码，绕过写入门禁 |
 | ``deliverable_truncation`` | 4 | 危险操作藏在 trace 4000 字符截断点之后 |
 | ``obfuscated_exec`` | 4 | 引号拼接 / 反斜杠转义 / base64 解码后管道给 sh |
 | ``stage_skip_delivery`` | 4 | 跳过中间阶段直接交付 |
@@ -37,6 +38,7 @@ from .formal_evade import FormalEvadeTechnique
 from .risk_camouflage import RiskCamouflageTechnique
 from .template_filler import TemplateFillerTechnique
 from .chains import CHAIN_TECHNIQUES, ExfilChain, SpecDriftChain, TestCoverageChain
+from .compact_syntax import CompactRedirectionTechnique
 from .misc_attacks import MISC_TECHNIQUES, DeliverableTruncationTechnique, StageSkipTechnique
 from .obfuscated import ObfuscatedExecTechnique
 from .session_attacks import (
@@ -62,6 +64,7 @@ ALL_TECHNIQUES = (
     DeliverableTruncationTechnique(),
     ObfuscatedExecTechnique(),
     StageSkipTechnique(),
+    CompactRedirectionTechnique(),
 ) + CHAIN_TECHNIQUES + SESSION_TECHNIQUES
 
 #: 按名字索引
@@ -90,6 +93,7 @@ __all__ = [
     "DeliverableTruncationTechnique",
     "ObfuscatedExecTechnique",
     "StageSkipTechnique",
+    "CompactRedirectionTechnique",
     "TestCoverageChain",
     "SpecDriftChain",
     "ExfilChain",

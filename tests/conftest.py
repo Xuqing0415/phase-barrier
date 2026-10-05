@@ -1,7 +1,9 @@
 """pytest 共享 fixtures 与常量。"""
 from __future__ import annotations
 
+import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -19,6 +21,48 @@ def _patched_mkdir(self, mode=0o777, *args, **kwargs):
 
 
 Path.mkdir = _patched_mkdir
+
+# ``tempfile.mkdtemp`` 直接走 ``os.mkdir(..., 0o700)``，不经过 ``Path.mkdir``：
+# pytest 的 ``pytest-cache-files-*`` 由它创建，在本机同样会被 ACL 拒绝，
+# 导致 basetemp 清理时报 WinError 5（v1.0.1）。仅在 Windows 上放宽该 mode。
+if os.name == "nt":
+    _orig_os_mkdir = os.mkdir
+
+    def _patched_os_mkdir(path, mode=0o777, *args, **kwargs):
+        if mode == 0o700:
+            mode = 0o755
+        return _orig_os_mkdir(path, mode, *args, **kwargs)
+
+    os.mkdir = _patched_os_mkdir
+
+
+def _ensure_usable_pytest_temproot() -> None:
+    """默认临时根不可用时，把 pytest 的 temproot 切到工作区内（v1.0.1）。
+
+    ``%TEMP%\\pytest-of-<user>`` 一旦被历史遗留的拒绝 ACL 污染（WinError 5），
+    pytest 首次使用 ``tmp_path`` 就会抛 ``PermissionError``，大批用例在 setup
+    阶段直接 error。这里预检默认根目录能否列目录，不可用则改用
+    ``PYTEST_DEBUG_TEMPROOT``——pytest 直到 ``getbasetemp()`` 才读取它，
+    所以在 conftest 导入期设置依然生效。
+    """
+    if os.environ.get("PYTEST_DEBUG_TEMPROOT"):
+        return
+    import getpass
+
+    default_root = Path(tempfile.gettempdir()) / f"pytest-of-{getpass.getuser()}"
+    try:
+        default_root.mkdir(parents=True, exist_ok=True)
+        os.listdir(default_root)
+    except OSError:
+        fallback = Path(__file__).resolve().parents[1] / ".pytest_tmp" / "tmp-root"
+        try:
+            fallback.mkdir(parents=True, exist_ok=True)
+        except OSError:  # pragma: no cover（兜底目录也不可写时保持原行为）
+            return
+        os.environ["PYTEST_DEBUG_TEMPROOT"] = str(fallback)
+
+
+_ensure_usable_pytest_temproot()
 
 USER_REQUEST = "实现一个计算斐波那契数列的函数 fib(n)"
 

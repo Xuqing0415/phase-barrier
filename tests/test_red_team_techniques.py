@@ -16,6 +16,7 @@ from anti_shortcut.defense._common import load_yaml_or_json
 
 from benchmarks.red_team.agent import SandboxConfig, summarize
 from benchmarks.red_team.techniques import ALL_TECHNIQUES, TECHNIQUES_BY_NAME
+from benchmarks.red_team.techniques.compact_syntax import VARIANTS as COMPACT_VARIANTS
 from benchmarks.red_team.techniques.equivalent_op import VARIANTS
 from benchmarks.red_team.techniques.base import (
     DEFENSE_LABELS,
@@ -147,9 +148,9 @@ def test_summarize_splits_vulnerabilities_and_residual_risks():
 # ---------- 八类技术 ----------
 
 
-def test_registry_has_eighteen_techniques_with_expected_targets():
-    """v0.57.0 的 8 类 + v0.60.0 扩面 10 类（P1：多步 / 会话级 / 工具链 / 混淆）。"""
-    assert len(ALL_TECHNIQUES) == 18
+def test_registry_has_nineteen_techniques_with_expected_targets():
+    """v0.57.0 的 8 类 + v0.60.0 扩面 10 类 + v1.0.1 紧凑语法 1 类。"""
+    assert len(ALL_TECHNIQUES) == 19
     assert {t.name for t in ALL_TECHNIQUES} == {
         "template_filler",
         "coverage_disguise",
@@ -162,6 +163,7 @@ def test_registry_has_eighteen_techniques_with_expected_targets():
         "tool_chain_script",
         "deliverable_truncation",
         "obfuscated_exec",
+        "compact_redirection",
         "stage_skip_delivery",
         "chain_test_coverage",
         "chain_spec_drift",
@@ -230,6 +232,54 @@ def test_obfuscated_variants_are_semantically_dangerous_but_not_literal():
     # 字面里不应出现完整的 "rm -rf"（否则这条技术就没有测到去混淆）
     assert all("rm -rf" not in cmd for cmd in raw_commands)
 
+
+def test_compact_redirection_variants_use_compact_operators():
+    """紧凑语法必须真的「紧凑」：重定向操作符与目标之间不能有空格，且不再 write_file 落实现。"""
+    attempts = TECHNIQUES_BY_NAME["compact_redirection"].generate_all("需求")
+    assert len(attempts) == len(COMPACT_VARIANTS) == 5
+    for attempt in attempts:
+        cmds = [
+            c.command
+            for c in attempt.calls
+            if c.tool == "execute_command" and "pytest" not in (c.command or "")
+        ]
+        assert len(cmds) == 1, attempt.case_id
+        cmd = cmds[0]
+        assert any(
+            op + "mod.py" in cmd or op + '"mod.py"' in cmd
+            for op in (">", ">>", "1>", ">|")
+        ), (attempt.case_id, cmd)
+        # 攻击的要义是「绕过写入门禁」：实现源码不能再用 write_file 落盘
+        assert [
+            c for c in attempt.calls if c.tool == "write_file" and c.path == "mod.py"
+        ] == [], attempt.case_id
+
+
+def test_compact_redirection_targets_the_normalization_fix():
+    """回归护栏：这些命令在修复前的写路径提取里必须漏检，否则这条技术抓不到回归。
+
+    修复前没有 ``_normalize_shell_operators``：``shlex`` 会把 ``>mod.py`` 当成整体
+    token，提取不到写目标；修复后目标被解析出来并走写入门禁。
+    """
+    from anti_shortcut import interceptors
+
+    original = interceptors._normalize_shell_operators
+    attempts = TECHNIQUES_BY_NAME["compact_redirection"].generate_all("需求")
+    try:
+        for attempt in attempts:
+            cmd = next(
+                c.command
+                for c in attempt.calls
+                if c.tool == "execute_command" and "pytest" not in (c.command or "")
+            )
+            interceptors._normalize_shell_operators = lambda raw: raw  # 模拟修复前
+            assert interceptors.extract_written_paths(cmd) == [], (
+                f"{attempt.case_id} 在修复前就会被检测到，红队技术抓不到该回归"
+            )
+            interceptors._normalize_shell_operators = original
+            assert "mod.py" in interceptors.extract_written_paths(cmd), attempt.case_id
+    finally:
+        interceptors._normalize_shell_operators = original
 
 def test_session_family_techniques_declare_shared_family_and_partial_expectation():
     for name in (

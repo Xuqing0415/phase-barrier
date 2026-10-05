@@ -1,6 +1,6 @@
 name: Red team
 
-# 路径 1（v0.57.0）：用对抗性 Agent 打自己的门禁，发现真实逃逸即失败。
+# 路径 1（v0.57.0）：用对抗性 Agent 打自己的门禁，出现未豁免逃逸即失败（v1.0.1 起）。
 #
 # 触发方式（P0 常态化，v0.60.0）：
 # - pull_request：门禁核心代码（防线 / 拦截器 / 校验器 / 状态机 / 红队本体）变动时
@@ -36,7 +36,7 @@ concurrency:
 
 env:
   # PR 快速子集：覆盖防线 2/4/5 的核心绕过面，不需要大模型即可判定
-  FAST_TECHNIQUES: 'equivalent_op,timing_evade,constraint_weaken,tool_chain_script'
+  FAST_TECHNIQUES: 'equivalent_op,timing_evade,constraint_weaken,tool_chain_script,compact_redirection'
 
 jobs:
   red-team:
@@ -71,6 +71,12 @@ jobs:
             echo "techniques=" >> "$GITHUB_OUTPUT"
             echo "label=全量（全部逃逸技术）" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Check residual waiver expiry
+        # 逃逸即失败（v1.0.1）：白名单是唯一例外通道，过期即视为漏洞。
+        # 单独一步：配置损坏（退出码 2）或豁免过期（退出码 1）都能立刻定位，不被红队输出淹没。
+        run: |
+          python benchmarks/red_team/run_red_team.py --check-residual-expiry
 
       # 默认加载 anti_shortcut/defense/learned_rules.yaml：红队测的是「当前」防御姿态
       - name: Run red team

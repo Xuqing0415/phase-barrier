@@ -4,6 +4,48 @@
 发布为里程碑驱动：日常改动累积于 main，仅在用户可感知里程碑或紧急修复时发版，
 同日不重复发布（详见 [docs/release.md](docs/release.md) 发布节奏）。
 
+## [Unreleased]
+
+### Security
+
+- **修复紧凑重定向绕过写路径门禁（P1）**：`echo x>fib.py` 这类「`>` 紧贴目标」的写法，
+  此前会让 `extract_written_paths` 漏检（`shlex` 把 `>fib.py` 当成单个 token），
+  于是在阶段 2 之前也能用 `execute_command` 把实现源码落到工作区，并绕过
+  `mark_source_change`（改码后必须重测）记录。新增引号感知的
+  `_normalize_shell_operators`：在重定向 / 分隔符两侧补空格后再提取路径；另加
+  `find_unresolved_redirects`：存在引号外重定向但目标解析不出时直接拒绝执行
+  （合法写入总能解析出目标，解析不出的只有绕过尝试）。新增
+  `tests/test_interceptors_redirection.py`，覆盖紧凑写法与非重定向反例（43 个用例）。
+- **红队逃逸即 CI 失败**：`run_red_team.py --fail-on-vulnerability` 不再由技术自带的
+  `expectation` 自证「这是残余风险」，改为：**任何逃逸都算失败**，除非案例登记在
+  `benchmarks/red_team/known_residual.yaml` 且未过期。新增 `--check-residual-expiry`
+  （豁免过期或配置非法即失败）与 CI 独立校验步骤，堵住「逃逸但流水线全绿」。
+
+### Added
+
+- 红队新增第 19 类技术 `compact_redirection`（紧凑重定向语法，5 个变体），并加入
+  PR 快速子集，作为本次 P1 的回归护栏。
+- **执行前后工作区快照检测**（`defense.behavior_audit.write_audit`，默认开启）：写路径提取是
+  启发式的，`ruby -e` / PowerShell / `awk` 等写法可能漏检。命令执行前后各取一次快照
+  （路径 + mtime + size），把没经过 `write_file` 记录的新增 / 修改 / 删除记为未授权写入，
+  写入审计日志与状态证据 `unauthorized_writes`。**只检测、不拦截、不回退**：先暴露真实
+  漏检与误报率，再决定是否升级为回退。新增 `anti_shortcut/write_audit.py` 与
+  `tests/test_write_audit.py`。
+- 新增残余风险白名单 `benchmarks/red_team/known_residual.yaml` 与
+  `benchmarks/red_team/residuals.py`（逐条豁免 + 到期强制复核）。
+
+### Fixed
+
+- `tests/conftest.py`：检测 `%TEMP%\pytest-of-<user>` 不可写时自动回落到工作区内
+  `.pytest_tmp/tmp-root`，避免 Windows ACL 异常导致 `pytest` 直接报错；并放宽
+  `tempfile.mkdtemp` 在该平台上的 0o700 权限。
+- `.gitignore`：修复注释行里的 U+FFFD 乱码（按 git 历史恢复原文）。
+- 仓库卫生：清理了根目录下 2817 个 `pb-*` 遗留临时工作区（基准 / 演示脚本在系统 Temp
+  不可写时回退到仓库根目录，Windows ACL 又让 `shutil.rmtree(ignore_errors=True)` 静默失败）。
+  新增 `scripts/cleanup_bench_dirs.py` / `scripts/cleanup_pytest_tmp.py`（默认 dry-run，
+  `--apply` 才删除），把 `pb-*/` 纳入 `.gitignore`，并加 `tests/test_repo_hygiene.py`：根目录
+  残留超过 10 个即让 CI 失败。
+
 ## [1.0.0] - 2026-09-12
 
 **1.0 里程碑：公开 API 冻结 + 防线有效性有实证。** 从 PyPI 最新发布 v0.51.0 到本版本

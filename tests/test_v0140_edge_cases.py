@@ -1,4 +1,4 @@
-﻿"""v0.14.0 边界补强测试：脚本类写入检测 + verify/export-evidence CLI 错误处理。"""
+"""v0.14.0 边界补强测试：脚本类写入检测 + verify/export-evidence CLI 错误处理。"""
 import json
 from pathlib import Path
 
@@ -35,6 +35,25 @@ def test_extract_script_write_pathlib_and_node():
         "node -e \"fs.appendFile('src/a.js','x',()=>{})\""
     ) == ["src/a.js"]
 
+
+def test_extract_script_write_windows_exe_interpreters():
+    """Windows 上解释器带 `.exe`：`python.exe -c` / `node.exe -e` 必须同样被识别（v1.0.1）。
+
+    历史缺陷（与紧凑重定向同族的跨平台漏检）：只按 ``Path(tok).name`` 比对白名单，
+    ``python.exe`` 匹配不上，``python.exe -c "open('x.py','w')"`` 会整体漏检。
+    """
+    assert extract_written_paths(
+        "python.exe -c \"open('fib.py','w').write('x')\""
+    ) == ["fib.py"]
+    assert extract_written_paths(
+        "node.exe -e \"require('fs').writeFileSync('out.ts','x')\""
+    ) == ["out.ts"]
+    # 完整路径（正斜杠写法，Windows 同样接受）也要能取到解释器名
+    assert extract_written_paths(
+        "C:/Python312/python.exe -c \"open('deep/spec.md','w').write('x')\""
+    ) == ["deep/spec.md"]
+    # 相似但非解释器的名字不能误判
+    assert extract_written_paths("mypython -c \"open('fib.py','w').write('x')\"") == []
 
 def test_extract_script_write_shell_redirect():
     assert extract_written_paths("bash -c \"cat > out.txt\"") == ["out.txt"]

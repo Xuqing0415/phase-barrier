@@ -23,6 +23,7 @@ from .evidence import EVIDENCE_MANIFEST_NAME, EvidenceManifest
 from .interceptors import (
     evaluate_rules,
     extract_written_paths,
+    find_unresolved_redirects,
     is_language_test_command,
     summarize_test_output,
     touches_gate_dir,
@@ -232,6 +233,15 @@ class AntiShortcutSkill:
             raise PermissionError(reason or "自定义拦截规则拒绝执行该命令")
         if touches_gate_dir(cmd, self.gate_dir):
             raise PermissionError("禁止通过 shell 访问门禁目录 .agent_gate")
+        # 纵深防御（v1.0.1）：目标解析不出的重定向一律拒绝——合法写入总能解析出
+        # 目标并走下面的路径校验，只有绕过尝试才会出现「有重定向、无目标」。
+        unresolved = find_unresolved_redirects(cmd)
+        if unresolved:
+            raise PermissionError(
+                "检测到无法解析写入目标的重定向，已拒绝执行："
+                + "、".join(unresolved)
+                + "。请改用 write_file 明确写入路径"
+            )
         if is_language_test_command(cmd, self.config, self.adapter) and self.current_stage < 3:
             raise PermissionError(
                 "当前阶段不允许运行测试命令：请先完成实现代码（阶段 3）并通过 advance_stage 校验"

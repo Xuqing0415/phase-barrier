@@ -129,12 +129,20 @@ _SCRIPT_REDIRECT_RE = re.compile(
 
 
 def _is_script_interpreter(tok: str) -> bool:
-    """判断 token 是否为脚本解释器（python / node / perl / ruby / sh 等）。"""
+    """判断 token 是否为脚本解释器（python / node / perl / ruby / sh 等）。
+
+    同时接受带可执行后缀的写法（``python.exe`` / ``node.exe``）：Windows 上
+    ``python -c "open('x.py','w')"`` 会以 ``python.exe`` 出现，只比对 ``name``
+    会漏检（v1.0.1，与紧凑重定向同族的跨平台漏检）。用 ``Path.stem`` 去掉单一
+    扩展名：``mypython`` 这类仍不匹配，``python3.12`` → ``python3`` 会正确识别。
+    """
     try:
         name = Path(tok.strip('"\'')).name.lower()
     except ValueError:
         return False
-    return name in _SCRIPT_INTERPRETERS
+    if name in _SCRIPT_INTERPRETERS:
+        return True
+    return Path(name).stem in _SCRIPT_INTERPRETERS
 
 
 def _looks_like_writable_path(path: str) -> bool:
@@ -202,8 +210,94 @@ def _extract_script_write_paths(command: str) -> list[str]:
     return out
 
 
+# 「>」前面是这些字符时视为比较 / 箭头写法（-> / => / >= / !=），不是重定向
+_REDIRECT_PREV_CHARS = "=-<!"
+
+# shell 分隔符：用于把 ``a.py;`` / ``a.py&&`` 这类粘连 token 切开
+_SHELL_SEPARATORS = ";|&"
+
+# 规范化 + shlex 分词后可能出现的重定向 token
+_REDIRECT_TOKENS = (">", ">>", "2>", "2>>", "1>", "1>>", "&>", "&>>", ">|")
+
+
+def _normalize_shell_operators(command: str) -> str:
+    """在引号外的重定向 / 分隔符两侧补空格，使其成为独立 token（v1.0.1）。
+
+    背景：``shlex.split`` 默认只按空白切分，``echo x>fib.py`` 会把 ``x>fib.py``
+    当成单个 token，导致写路径提取漏检、阶段门禁可被「紧凑语法」绕过。
+    本函数做一次引号感知的规范化：
+
+    - ``>`` / ``>>`` / ``>|`` 两侧补空格（排除 ``->`` / ``=>`` / ``2>&1`` 等写法）；
+    - ``;`` / ``|`` / ``&`` 分隔符两侧补空格，避免 ``fib.py;`` 这类粘连后缀；
+    - 单 / 双引号与反斜杠转义内的字符原样保留。
+    """
+    out: list[str] = []
+    i, n = 0, len(command)
+    quote: str | None = None
+    while i < n:
+        ch = command[i]
+        if quote is not None:
+            out.append(ch)
+            if ch == quote:
+                quote = None
+            i += 1
+            continue
+        if ch in ("'", '"'):
+            quote = ch
+            out.append(ch)
+            i += 1
+            continue
+        if ch == "\\" and i + 1 < n:
+            out.append(command[i : i + 2])
+            i += 2
+            continue
+        if ch == ">":
+            # 排除 -> / => / >= / != 等比较、箭头写法（与 _SCRIPT_REDIRECT_RE 同口径）
+            if (i and command[i - 1] in _REDIRECT_PREV_CHARS) or (
+                i + 1 < n and command[i + 1] == "="
+            ):
+                out.append(ch)
+                i += 1
+                continue
+            j = i
+            while j < n and command[j] == ">":
+                j += 1
+            if j < n and command[j] == "|":  # bash 的 >| 覆写重定向
+                j += 1
+            # fd 前缀（2> / 1>> / &>）保持与操作符相连；其余词内字符（如 x>f）
+            # 必须在操作符前补空格，否则 shlex 会把 x>f 整体当成一个 token。
+            attach = False
+            if out and (out[-1].isdigit() or out[-1] == "&"):
+                k = len(out) - 1
+                while k >= 0 and (out[k].isdigit() or out[k] == "&"):
+                    k -= 1
+                attach = k < 0 or out[k].isspace()
+            if not attach and out and not out[-1].isspace():
+                out.append(" ")
+            out.append(command[i:j])
+            if j < n and not command[j].isspace():
+                out.append(" ")
+            i = j
+            continue
+        if ch in _SHELL_SEPARATORS:
+            j = i
+            while j < n and command[j] in _SHELL_SEPARATORS:
+                j += 1
+            if out and not out[-1].isspace():
+                out.append(" ")
+            out.append(command[i:j])
+            if j < n and not command[j].isspace():
+                out.append(" ")
+            i = j
+            continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
 def extract_written_paths(command: str) -> list[str]:
     """从 shell 命令中提取可能被写入的路径（启发式，用于阶段门禁检查）。"""
+    command = _normalize_shell_operators(command or "")
     try:
         tokens = shlex.split(command, posix=True)
     except ValueError:
@@ -213,7 +307,7 @@ def extract_written_paths(command: str) -> list[str]:
     i = 0
     while i < n:
         tok = tokens[i]
-        if tok in (">", ">>", "2>", "2>>", "1>", "1>>", "&>", "&>>", ">|"):
+        if tok in _REDIRECT_TOKENS:
             if i + 1 < n:
                 nxt = tokens[i + 1]
                 if not nxt.startswith("&"):
@@ -250,6 +344,37 @@ def extract_written_paths(command: str) -> list[str]:
         if p not in paths:
             paths.append(p)
     return paths
+
+
+def find_unresolved_redirects(command: str) -> list[str]:
+    """返回「引号外存在重定向、但写目标无法解析」的操作符片段（v1.0.1，纵深防御）。
+
+    门禁口径：目标能解析出来时，交给常规路径校验（该写什么就校验什么）；目标解析
+    不出来即视为可疑写入，直接拒绝——合法写入总能解析出目标，绕过尝试才解析不出。
+
+    - fd 复制（``2>&1``、``>&2``）不是文件写入，不报；
+    - 目标位置又是操作符（``> |`` / ``> ;``）或直接缺失（``cmd >``）时上报；
+    - 引号内的 ``>`` 不参与判定（沿用 :func:`_normalize_shell_operators` 的引号感知）。
+    """
+    normalized = _normalize_shell_operators(command or "")
+    try:
+        tokens = shlex.split(normalized, posix=True)
+    except ValueError:
+        tokens = normalized.split()
+    unresolved: list[str] = []
+    n = len(tokens)
+    for i, tok in enumerate(tokens):
+        if tok not in _REDIRECT_TOKENS:
+            continue
+        if i + 1 >= n:
+            unresolved.append(tok)
+            continue
+        nxt = tokens[i + 1]
+        if nxt.startswith("&"):  # fd 复制：2>&1 / >&2
+            continue
+        if nxt in _REDIRECT_TOKENS or nxt in ("|", ";", "&&", "||"):
+            unresolved.append(f"{tok}{nxt}")
+    return unresolved
 
 
 # ---------- 测试输出摘要 ----------

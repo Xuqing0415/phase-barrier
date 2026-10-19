@@ -33,10 +33,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 def test_default_whitelist_is_valid_and_unexpired():
     waivers = load_residuals(DEFAULT_RESIDUALS_FILE)
-    assert {w.technique for w in waivers} == {
-        "session_family_split",
-        "session_family_stagger",
-        "session_family_below_threshold",
+    assert len(waivers) == 5
+    assert {(w.technique, w.case_id) for w in waivers} == {
+        ("session_family_split", "0[12]-*"),
+        ("session_family_stagger", "0[12]-*"),
+        ("session_family_below_threshold", "*"),
+        ("risk_camouflage", "password_check"),
+        ("risk_camouflage", "session_manager"),
     }
     today = date.today()
     assert all(not w.expired(today) for w in waivers)
@@ -102,13 +105,33 @@ def test_real_whitelist_covers_documented_residuals_but_not_new_escapes():
         {"technique": "session_family_stagger", "case_id": "01-a", "outcome": "escaped"},
         {"technique": "session_family_stagger", "case_id": "02-a", "outcome": "escaped"},
         {"technique": "session_family_below_threshold", "case_id": "03-a", "outcome": "escaped"},
+        {"technique": "risk_camouflage", "case_id": "password_check", "outcome": "escaped"},
+        {"technique": "risk_camouflage", "case_id": "session_manager", "outcome": "escaped"},
     ]
     gate = evaluate_escapes(documented, waivers)
-    assert gate["unwaived"] == [] and len(gate["waived"]) == 5
+    assert gate["unwaived"] == [] and len(gate["waived"]) == 7
 
     # 白名单是「逐条登记」，不是「全局免罪」：新技术的逃逸必须落进 unwaived
     fresh = [{"technique": "compact_redirection", "case_id": "compact_gt", "outcome": "escaped"}]
     assert [r["case_id"] for r in evaluate_escapes(fresh, waivers)["unwaived"]] == ["compact_gt"]
+
+
+@pytest.mark.parametrize(
+    "technique, case_id",
+    [
+        ("session_family_split", "03-a"),
+        ("session_family_stagger", "03-a"),
+        ("risk_camouflage", "permission_check"),
+        ("risk_camouflage", "new_subtask"),
+        ("risk_camouflage", "password_check_extra"),
+        ("risk_camouflage", "session_manager_extra"),
+    ],
+)
+def test_whitelist_does_not_waive_other_cases_of_known_techniques(technique, case_id):
+    row = {"technique": technique, "case_id": case_id, "outcome": "escaped"}
+    gate = evaluate_escapes([row], load_residuals())
+    assert gate["waived"] == []
+    assert gate["unwaived"] == [row]
 
 
 def test_check_residual_expiry_cli_exit_codes(tmp_path):

@@ -12,6 +12,7 @@ from __future__ import annotations
 import atexit
 import functools
 import os
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Callable
 
@@ -30,9 +31,10 @@ from .interceptors import (
 )
 from .languages import get_adapter
 from .remote_audit import RemoteAuditSink
+from .paths import sha256_file
 from .semantic import run_semantic_checks
-from .state import StateManager
-from .write_audit import diff_snapshots, snapshot_workspace
+from .state import StateChangedError, StateManager
+from .write_audit import DEFAULT_EXCLUDED_DIRS, diff_snapshots, iter_workspace_files, snapshot_workspace
 from .validators import (
     get_validator,
     validate_implementation,
@@ -73,7 +75,7 @@ class AntiShortcutSkill:
             self.gate_dir / self.config.state_file_name,
             user_request=user_request,
             hmac_key=self.config.state_hmac_key,
-            hmac_keys=self.config.state_hmac_keys,
+            hmac_keys=self.config.state_hmac_keys or None,
         )
         # 审计远程推送（v0.9.0）：配置 audit_remote_url 后异步转发到 SIEM / webhook
         self.remote_sink: RemoteAuditSink | None = None
@@ -111,6 +113,7 @@ class AntiShortcutSkill:
         self.evidence_manifest = EvidenceManifest(
             self.gate_dir / EVIDENCE_MANIFEST_NAME,
             hmac_key=self.config.state_hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY"),
+            hmac_keys=self.config.state_hmac_keys or None,
         )
         # 纵深防御 2-B（v1.0.1，检测版）：执行前后工作区快照，用于发现「没经过
         # write_file 记录」的写入。仅检测 + 审计，不拦截 / 不回退。
@@ -290,20 +293,23 @@ class AntiShortcutSkill:
             cmd = command if isinstance(command, str) else " ".join(str(c) for c in command)
             self.check_exec_permission(command)
             before_snapshot = self._write_audit_snapshot()
-            result = original_exec(command, **kwargs)
-            self._audit_unauthorized_writes(cmd, before_snapshot)
-            exit_code = result.get("exit_code") if isinstance(result, dict) else None
-            self._record_trace("execute_command", {"command": cmd, "exit_code": exit_code})
-            if is_language_test_command(cmd, self.config, self.adapter):
-                record = self._record_test_run(result)
-                self.state.mark_test_run(record)
-                self.logger.info(
-                    "test_run_recorded",
-                    exit_code=record.get("exit_code"),
-                    passed=record.get("passed"),
-                    **self._stage_summary(),
-                )
-            return result
+            with self._track_command_changes(cmd):
+                try:
+                    result = original_exec(command, **kwargs)
+                    exit_code = result.get("exit_code") if isinstance(result, dict) else None
+                    self._record_trace("execute_command", {"command": cmd, "exit_code": exit_code})
+                    if is_language_test_command(cmd, self.config, self.adapter):
+                        record = self._record_test_run(result)
+                        self.state.mark_test_run(record)
+                        self.logger.info(
+                            "test_run_recorded",
+                            exit_code=record.get("exit_code"),
+                            passed=record.get("passed"),
+                            **self._stage_summary(),
+                        )
+                    return result
+                finally:
+                    self._audit_unauthorized_writes(cmd, before_snapshot)
 
         return guarded
 
@@ -327,6 +333,44 @@ class AntiShortcutSkill:
             max_tail=self.config.max_test_output_tail,
             adapter=self.adapter,
         )
+
+    def _source_snapshot(self) -> dict[str, str | None]:
+        """按内容检测源码/测试变更；独立于可选的行为审计。"""
+        snapshot = {}
+        for rel, path in iter_workspace_files(
+            self.workspace,
+            excluded_dirs=(*DEFAULT_EXCLUDED_DIRS, self.config.gate_dir_name,
+                           ".phase-barrier-javac", ".build"),
+        ):
+            if self._classify_path(path) not in ("source", "test"):
+                continue
+            try:
+                snapshot[rel] = sha256_file(path)
+            except OSError:
+                snapshot[rel] = None  # 不可读文件不能作为“未发生变更”的证明
+        return snapshot
+
+    @contextmanager
+    def _track_command_changes(self, command: str):
+        before = self._source_snapshot()
+        is_test = is_language_test_command(command, self.config, self.adapter)
+        if is_test:
+            # 运行开始即撤销旧绿测；超时、启动失败和工具异常都不能复用旧结果。
+            self.state.mark_test_run({"passed": False, "exit_code": None, "status": "running"})
+        try:
+            yield
+        except BaseException:
+            if is_test:
+                self.state.mark_test_run({"passed": False, "exit_code": -1, "status": "aborted"})
+            raise
+        finally:
+            after = self._source_snapshot()
+            changed = sorted(path for path in before.keys() | after.keys()
+                             if (path in before) != (path in after)
+                             or before.get(path) != after.get(path)
+                             or (path in after and after[path] is None))
+            if changed:
+                self.state.mark_source_change(changed[0])
 
     # ---------- 防线 4：运行时 trace 采集（v0.52.0，默认关闭）----------
 
@@ -497,6 +541,14 @@ class AntiShortcutSkill:
     # ---------- 阶段推进 ----------
 
     def advance_stage(self, new_stage: int, evidence: dict | None = None) -> dict:
+        """验证阶段证据后提交推进；遇到并发状态更新时拒绝并提示重试。"""
+        try:
+            with self.state.validated_transition():
+                return self._advance_stage(new_stage, evidence)
+        except StateChangedError as exc:
+            return {"success": False, "stage": self.current_stage, "error": str(exc)}
+
+    def _advance_stage(self, new_stage: int, evidence: dict | None = None) -> dict:
         """阶段推进专用工具：校验“只能进入当前阶段 + 1”，并验证当前阶段的证据。
 
         特殊分支：阶段 4（运行测试）推进时——

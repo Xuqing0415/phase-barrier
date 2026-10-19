@@ -102,7 +102,7 @@ class GateProxy:
         if not isinstance(content, str):
             raise ProxyError("content 必须是字符串")
         try:
-            self.skill.check_write_permission(target)
+            self.skill.check_write_permission(target, content)
         except PermissionError as exc:
             self.skill.logger.warning(
                 "proxy_write_denied",
@@ -158,6 +158,10 @@ class GateProxy:
             raise ExecDenied(str(exc)) from exc
         run_dir = self._resolve_cwd(cwd)
         eff_timeout = timeout or DEFAULT_EXEC_TIMEOUT
+        with self.skill._track_command_changes(command):
+            return self._execute_command(command, run_dir, eff_timeout)
+
+    def _execute_command(self, command: str, run_dir: Path, eff_timeout: int) -> dict[str, Any]:
         try:
             proc = subprocess.Popen(
                 command,
@@ -197,11 +201,16 @@ class GateProxy:
                 timeout=eff_timeout,
                 **self.skill._stage_summary(),
             )
+            recorded = is_language_test_command(command, self.skill.config, self.skill.adapter)
+            if recorded:
+                self.skill.state.mark_test_run(
+                    {"passed": False, "exit_code": -1, "timed_out": True}
+                )
             return {
                 "ok": True,
                 "exit_code": -1,
                 "output": f"命令执行超时（>{eff_timeout}s）",
-                "recorded_test_run": False,
+                "recorded_test_run": recorded,
                 "timed_out": True,
             }
         output = (stdout or "") + (stderr or "")

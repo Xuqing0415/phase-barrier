@@ -15,7 +15,14 @@ from pathlib import Path
 from typing import Any
 
 from .paths import sha256_file
-from .state import _file_lock, _replace_with_retry
+from .state import (
+    StateManager,
+    TamperedStateError,
+    _file_lock,
+    _parse_rotation_keys,
+    _replace_with_retry,
+    _state_lock_path,
+)
 
 EVIDENCE_MANIFEST_VERSION = 1
 EVIDENCE_MANIFEST_NAME = "evidence_manifest.json"
@@ -42,9 +49,16 @@ class EvidenceManifest:
                      未设置时清单不签名（仍记录哈希，供文件级比对）。
     """
 
-    def __init__(self, manifest_file: Path, *, hmac_key: str | None = None) -> None:
+    def __init__(
+        self, manifest_file: Path, *, hmac_key: str | None = None,
+        hmac_keys: list[str] | None = None,
+    ) -> None:
         self.manifest_file = Path(manifest_file)
         self._hmac_key = hmac_key
+        self._rotation_keys = list(
+            hmac_keys if hmac_keys is not None else
+            _parse_rotation_keys(os.environ.get("PHASE_BARRIER_HMAC_KEYS"))
+        )
         self.manifest_file.parent.mkdir(parents=True, exist_ok=True)
         # 初始加载持伴生文件锁：Windows 上无共享删除的读句柄会阻塞并发 os.replace（同 v0.42.1 state.json 修复）
         with _file_lock(_evidence_lock_path(self.manifest_file)):
@@ -92,6 +106,7 @@ class EvidenceManifest:
                 if not rel or not digest:
                     continue
                 entries[rel] = {"stage": int(stage), "sha256": str(digest)}
+            self._data.pop("rotation_sigs", None)
             self._atomic_write()
 
     # ---------- 校验 ----------
@@ -125,15 +140,31 @@ class EvidenceManifest:
     # ---------- 内部 ----------
 
     def _canonical(self, data: dict) -> bytes:
-        payload = {k: v for k, v in data.items() if k != "sig"}
+        payload = {k: v for k, v in data.items() if k not in ("sig", "rotation_sigs")}
         return json.dumps(
             payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
         ).encode("utf-8")
 
-    def _sign(self, data: dict) -> str:
+    def _sign(self, data: dict, key: str | None = None) -> str:
         return hmac.new(
-            self._hmac_key.encode("utf-8"), self._canonical(data), hashlib.sha256
+            (key or self._hmac_key).encode("utf-8"), self._canonical(data), hashlib.sha256
         ).hexdigest()
+
+    def _verify_signature(self, data: dict) -> None:
+        signatures = [data.get("sig")]
+        # 仅在协调轮换的两次提交之间保留旧签名，不保存密钥本身。
+        extra = data.get("rotation_sigs", [])
+        if isinstance(extra, list):
+            signatures.extend(extra)
+        keys = [k for k in [self._hmac_key, *self._rotation_keys] if k]
+        for key in keys:
+            expected = "v1:" + self._sign(data, key)
+            if any(isinstance(sig, str) and hmac.compare_digest(sig, expected)
+                   for sig in signatures):
+                return
+        raise EvidenceTamperedError(
+            "证据清单签名校验失败：清单可能被篡改，或 HMAC 密钥不匹配"
+        )
 
     def _load(self) -> dict:
         try:
@@ -149,18 +180,13 @@ class EvidenceManifest:
             raise EvidenceManifestError(
                 f"证据清单版本不兼容: {data.get('version')} != {EVIDENCE_MANIFEST_VERSION}"
             )
-        if self._hmac_key and "sig" not in data:
+        if (self._hmac_key or self._rotation_keys) and "sig" not in data:
             raise EvidenceTamperedError(
                 "证据清单未签名：配置了 HMAC 密钥但清单中缺少 sig 字段"
                 "（清单可能被篡改，或由未启用签名的旧版本生成）"
             )
-        if self._hmac_key:
-            expected = "v1:" + self._sign(data)
-            actual = data.get("sig")
-            if not isinstance(actual, str) or not hmac.compare_digest(actual, expected):
-                raise EvidenceTamperedError(
-                    "证据清单签名校验失败：清单可能被篡改，或 HMAC 密钥不匹配"
-                )
+        if self._hmac_key or self._rotation_keys:
+            self._verify_signature(data)
         return data
 
     def _atomic_write(self) -> None:
@@ -181,10 +207,60 @@ class EvidenceManifest:
             raise
 
 
+def rotate_signing_key(
+    state: StateManager, manifest: EvidenceManifest,
+    new_key: str, *, keep_old: bool = False,
+) -> None:
+    """协调轮换：清单先双签，再提交状态，最后移除过渡签名。
+
+    任一步中断后，状态仍使用的密钥都能验证清单；重新运行轮换即可收尾。
+    固定按状态锁、清单锁的顺序获取，避免丢失并发更新。
+    """
+    if not new_key:
+        raise ValueError("新密钥不能为空")
+    with _file_lock(_state_lock_path(state.state_file)):
+        with _file_lock(_evidence_lock_path(manifest.manifest_file)):
+            state._data = state._load()
+            if "signature" in state._data and not (state._hmac_key or state._rotation_keys):
+                raise TamperedStateError("状态文件已签名，但未提供任何验证密钥")
+            prepared = False
+            try:
+                exists = manifest.manifest_file.exists()
+                if exists:
+                    manifest._data = manifest._load()
+                    if "sig" in manifest._data:
+                        if not (manifest._hmac_key or manifest._rotation_keys):
+                            # 支持未签名迁移在清单提交后中断，再以相同目标密钥重试。
+                            manifest._rotation_keys = [new_key]
+                        manifest._verify_signature(manifest._data)
+                    old_signatures = [manifest._data.get("sig"),
+                                      *manifest._data.get("rotation_sigs", [])]
+                    manifest._data["rotation_sigs"] = [s for s in old_signatures if isinstance(s, str)]
+                    manifest._hmac_key = new_key
+                    manifest._atomic_write()
+                    prepared = True
+                state._rotate_key_locked(new_key, keep_old=keep_old)
+                manifest._hmac_key = new_key
+                manifest._rotation_keys = list(state._rotation_keys)
+                if exists:
+                    manifest._data.pop("rotation_sigs", None)
+                    manifest._atomic_write()
+            except BaseException:
+                # 同一实例也可重试；恢复与当前状态密钥一致的写入设置。
+                manifest._hmac_key = state._hmac_key
+                manifest._rotation_keys = list(state._rotation_keys)
+                if prepared and not state._hmac_key:
+                    manifest._rotation_keys.append(new_key)
+                if manifest.manifest_file.exists():
+                    manifest._data = manifest._load()
+                raise
+
+
 __all__ = [
     "EVIDENCE_MANIFEST_NAME",
     "EVIDENCE_MANIFEST_VERSION",
     "EvidenceManifest",
     "EvidenceManifestError",
     "EvidenceTamperedError",
+    "rotate_signing_key",
 ]

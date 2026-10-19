@@ -19,6 +19,7 @@ import re
 import tempfile
 import time
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -33,6 +34,10 @@ class CorruptedStateError(ValueError):
 
 class TamperedStateError(CorruptedStateError):
     """状态文件签名校验失败：文件可能被篡改，或 HMAC 密钥不匹配。"""
+
+
+class StateChangedError(ValueError):
+    """阶段校验期间状态已变化，必须基于最新状态重新校验。"""
 
 
 try:  # POSIX
@@ -157,6 +162,7 @@ class StateManager:
         hmac_keys: list[str] | None = None,
     ) -> None:
         self.state_file = Path(state_file)
+        self._validation_basis: ContextVar[dict | None] = ContextVar("validation_basis", default=None)
         # HMAC-SHA256 状态签名：显式密钥优先，其次环境变量 PHASE_BARRIER_HMAC_KEY
         self._hmac_key = hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY")
         if hmac_keys is None:
@@ -287,7 +293,23 @@ class StateManager:
         with _file_lock(_state_lock_path(self.state_file)):
             if reload and self.state_file.exists():
                 self._data = self._load()
+            basis = self._validation_basis.get()
+            if basis is not None and self._data != basis:
+                raise StateChangedError("阶段校验期间状态已变化，请重试阶段推进")
             yield
+            if basis is not None:
+                self._validation_basis.set(self.snapshot())
+
+    @contextmanager
+    def validated_transition(self):
+        """乐观事务：允许校验器自身写入，但拒绝基于并发更新前的证据提交。"""
+        with _file_lock(_state_lock_path(self.state_file)):
+            self._data = self._load()
+            token = self._validation_basis.set(self.snapshot())
+        try:
+            yield
+        finally:
+            self._validation_basis.reset(token)
 
     def snapshot(self) -> dict:
         """返回状态的只读快照（供校验器 / 审计使用）。"""
@@ -418,27 +440,29 @@ class StateManager:
         :param new_key: 新签名密钥（非空）
         :param keep_old: 是否保留旧密钥进入轮换期
         """
-        with self._mutate(reload=False):
-            if not new_key:
-                raise ValueError("新密钥不能为空")
-            has_signature = isinstance(self._data.get("signature"), str)
-            if has_signature:
-                if not (self._hmac_key or self._rotation_keys):
-                    raise TamperedStateError(
-                        "状态文件已签名，但未提供任何验证密钥（--from / state_hmac_key / 环境变量）"
-                    )
-                self._verify_signature(self._data)
-            if keep_old:
-                old = self._hmac_key or ""
-                if old and old != new_key:
-                    self._rotation_keys = [
-                        old,
-                        *[k for k in self._rotation_keys if k != old],
-                    ]
-            else:
-                self._rotation_keys = []
-            self._hmac_key = new_key
+        with self._mutate():
+            self._rotate_key_locked(new_key, keep_old=keep_old)
+
+    def _rotate_key_locked(self, new_key: str, *, keep_old: bool = False) -> None:
+        """调用方须持状态锁并重载；供状态/清单协调轮换使用。"""
+        if not new_key:
+            raise ValueError("新密钥不能为空")
+        if isinstance(self._data.get("signature"), str):
+            if not (self._hmac_key or self._rotation_keys):
+                raise TamperedStateError(
+                    "状态文件已签名，但未提供任何验证密钥（--from / state_hmac_key / 环境变量）"
+                )
+            self._verify_signature(self._data)
+        old_key, old_keys, old_data = self._hmac_key, self._rotation_keys, self.snapshot()
+        self._rotation_keys = list(old_keys) if keep_old else []
+        if keep_old and old_key and old_key != new_key and old_key not in self._rotation_keys:
+            self._rotation_keys.insert(0, old_key)
+        self._hmac_key = new_key
+        try:
             self._atomic_write()
+        except BaseException:
+            self._hmac_key, self._rotation_keys, self._data = old_key, old_keys, old_data
+            raise
 
     # ---------- 审计辅助 ----------
 

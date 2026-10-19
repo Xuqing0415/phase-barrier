@@ -41,6 +41,7 @@ from .evidence import (
     EVIDENCE_MANIFEST_VERSION,
     EvidenceManifest,
     EvidenceManifestError,
+    rotate_signing_key,
 )
 from .paths import sha256_file
 from .languages import get_adapter
@@ -366,6 +367,7 @@ def _cmd_verify_evidence(args: argparse.Namespace) -> int:
     manifest = EvidenceManifest(
         ws / cfg.gate_dir_name / EVIDENCE_MANIFEST_NAME,
         hmac_key=cfg.state_hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY"),
+        hmac_keys=cfg.state_hmac_keys or None,
     )
     ok, violations = manifest.verify(ws)
     git_base = getattr(args, "git_base", None)
@@ -428,6 +430,7 @@ def _cmd_export_evidence(args: argparse.Namespace) -> int:
     manifest = EvidenceManifest(
         ws / cfg.gate_dir_name / EVIDENCE_MANIFEST_NAME,
         hmac_key=cfg.state_hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY"),
+        hmac_keys=cfg.state_hmac_keys or None,
     )
     ok, violations = manifest.verify(ws)
     entries = manifest.entries()
@@ -477,9 +480,14 @@ def _cmd_rotate_key(args: argparse.Namespace) -> int:
     manager = StateManager(
         state_file,
         hmac_key=old_key or None,
-        hmac_keys=cfg.state_hmac_keys,
+        hmac_keys=cfg.state_hmac_keys or None,
     )
-    manager.rotate_key(args.to_key, keep_old=args.keep_old)
+    manifest = EvidenceManifest(
+        ws / cfg.gate_dir_name / EVIDENCE_MANIFEST_NAME,
+        hmac_key=old_key or None,
+        hmac_keys=cfg.state_hmac_keys or None,
+    )
+    rotate_signing_key(manager, manifest, args.to_key, keep_old=args.keep_old)
     suffix = "（旧密钥保留为轮换期验证密钥）" if args.keep_old else ""
     print(f"OK: 状态签名密钥已轮换{suffix}")
     return 0

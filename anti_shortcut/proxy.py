@@ -94,7 +94,7 @@ class GateProxy:
 
     # ---------- 写入 ----------
 
-    def write_file(self, path: str | Path, content: str) -> dict[str, Any]:
+    def write_file(self, path: str | Path, content: str, *, break_glass: str | None = None) -> dict[str, Any]:
         """经门禁写入文件；被拒绝抛 WriteDenied，参数非法抛 ProxyError。"""
         target = self.resolve_write_path(path)
         if target.is_dir():
@@ -102,7 +102,12 @@ class GateProxy:
         if not isinstance(content, str):
             raise ProxyError("content 必须是字符串")
         try:
-            self.skill.check_write_permission(target, content)
+            with self.skill.write_operation(target, content, break_glass=break_glass):
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content, encoding="utf-8", newline="")
+                kind = self.skill._classify_path(target)
+                if kind in ("test", "source"):
+                    self.skill.state.mark_source_change(str(target))
         except PermissionError as exc:
             self.skill.logger.warning(
                 "proxy_write_denied",
@@ -111,11 +116,6 @@ class GateProxy:
                 **self.skill._stage_summary(),
             )
             raise WriteDenied(str(exc)) from exc
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content, encoding="utf-8")
-        kind = self.skill._classify_path(target)
-        if kind in ("test", "source"):
-            self.skill.state.mark_source_change(str(target))
         self.skill.logger.info(
             "proxy_write_ok",
             path=str(target),
@@ -147,7 +147,11 @@ class GateProxy:
         ):
             raise ProxyError(f"timeout 必须是 1-{MAX_EXEC_TIMEOUT} 的整数秒")
         try:
-            self.skill.check_exec_permission(command)
+            with self.skill.command_operation(command):
+                run_dir = self._resolve_cwd(cwd)
+                eff_timeout = timeout or DEFAULT_EXEC_TIMEOUT
+                with self.skill._track_command_changes(command):
+                    return self._execute_command(command, run_dir, eff_timeout)
         except PermissionError as exc:
             self.skill.logger.warning(
                 "proxy_exec_denied",
@@ -156,10 +160,6 @@ class GateProxy:
                 **self.skill._stage_summary(),
             )
             raise ExecDenied(str(exc)) from exc
-        run_dir = self._resolve_cwd(cwd)
-        eff_timeout = timeout or DEFAULT_EXEC_TIMEOUT
-        with self.skill._track_command_changes(command):
-            return self._execute_command(command, run_dir, eff_timeout)
 
     def _execute_command(self, command: str, run_dir: Path, eff_timeout: int) -> dict[str, Any]:
         try:

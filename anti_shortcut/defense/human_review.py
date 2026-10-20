@@ -41,23 +41,20 @@ def approve_request(
     workspace: Path, config: GateConfig, request_id: str, reason: str = ""
 ) -> Path:
     """记录一次人工复核通过（供 CLI ``review-approve`` 与测试使用）。"""
+    return decide_request(workspace, config, request_id, True, reason)
+
+
+def decide_request(workspace: Path, config: GateConfig, request_id: str,
+                   approved: bool, reason: str = "") -> Path:
+    from ..state import _file_lock
+
     opts: HumanReviewOptions = config.defense.human_review
     path = evidence_path(workspace, config, opts.approval_file)
-    entries = _load_approvals(path)
-    entries.append(
-        {
-            "request_id": request_id,
-            "approved": True,
-            "at": now_iso(),
-            "reason": reason,
-        }
-    )
-    write_evidence(
-        workspace,
-        config,
-        opts.approval_file,
-        {"approvals": entries},
-    )
+    with _file_lock(path.with_suffix(".lock")):
+        entries = [e for e in _load_approvals(path) if e.get("request_id") != request_id]
+        entries.append({"request_id": request_id, "approved": approved,
+                        "at": now_iso(), "reason": reason})
+        write_evidence(workspace, config, opts.approval_file, {"approvals": entries})
     return path
 
 
@@ -307,6 +304,9 @@ class HumanReviewLine(DefenseLine):
         # 得到不同的抽样结果，表现为「本地过、CI 挂」的随机失败（且 deterministic=true
         # 名不副实）。这里只用工作区名 + 需求 + 目标阶段，同一任务处处可复现。
         seed_text = f"{Path(workspace).name}|{user_request}|{to_stage}"
+        context = state.snapshot() if hasattr(state, "snapshot") else {}
+        if context.get("goal_id"):
+            seed_text += f"|{context['goal_id']}|{context['milestone_index']}"
         score, parts = compute_risk_score(workspace, config, state)
         request_id = _request_id(seed_text)
 

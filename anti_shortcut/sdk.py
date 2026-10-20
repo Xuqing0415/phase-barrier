@@ -72,12 +72,14 @@ class PhaseBarrier:
         user_request: str = "",
         *,
         console_log: bool = False,
+        session_token: str | None = None,
     ) -> None:
         self.skill = AntiShortcutSkill(
             workspace,
             config=config,
             user_request=user_request,
             console_log=console_log,
+            session_token=session_token,
         )
         self.workspace = self.skill.workspace
         self.config = self.skill.config
@@ -354,6 +356,8 @@ class PhaseBarrier:
         供阶段 4 推进（测试全部通过 -> 交付 / 未通过 -> 修复）校验使用。
         与工具级拦截中 ``execute_command`` 包装的自动记录等价。
         """
+        self.skill.control.permissions.require("record_test_run")
+        self.skill.control.assert_running()
         record = self.skill._record_test_run(result)
         self.skill.state.mark_test_run(record)
         self.skill.logger.info(

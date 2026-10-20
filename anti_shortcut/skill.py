@@ -64,6 +64,7 @@ class AntiShortcutSkill:
         *,
         adapter: Any | None = None,
         console_log: bool = False,
+        session_token: str | None = None,
     ) -> None:
         self.config = load_config(config)
         self.workspace = Path(workspace).resolve()
@@ -73,7 +74,8 @@ class AntiShortcutSkill:
         self.gate_dir.mkdir(parents=True, exist_ok=True)
         self.state = StateManager(
             self.gate_dir / self.config.state_file_name,
-            user_request=user_request,
+            user_request="" if (self.gate_dir / "permissions.yaml").exists()
+            or (self.gate_dir / "permissions.enabled").exists() else user_request,
             hmac_key=self.config.state_hmac_key,
             hmac_keys=self.config.state_hmac_keys or None,
         )
@@ -107,6 +109,8 @@ class AntiShortcutSkill:
             console=console_log,
             remote=None,
         )
+        from .control import ControlPlane
+        self.control = ControlPlane(self, session_token)
         if self.remote_sink is not None:
             self.remote_sink.on_failure = self._audit_failure_alert
         # 证据签名清单（v0.9.0）：记录每个阶段推进时的证据文件哈希，独立于 state.json
@@ -128,6 +132,9 @@ class AntiShortcutSkill:
         }
         self._protect_gate_dir()
         if user_request:
+            if self.control.permissions.enabled:
+                self.control.permissions.require("advance_stage")
+                self.control.assert_running()
             self.state.record_user_request(user_request)
         self.logger.info("skill_initialized", workspace=str(self.workspace), **self._stage_summary())
         atexit.register(self.close)
@@ -147,11 +154,15 @@ class AntiShortcutSkill:
         return self.state.is_complete
 
     def _stage_summary(self) -> dict:
-        return {
+        summary = {
             "current_stage": self.current_stage,
             "stage_name": self.stage_name,
             "completed_stages": self.state.completed_stages,
         }
+        context = self.state.snapshot()
+        if context.get("goal_id"):
+            summary.update(goal_id=context["goal_id"], milestone_index=context["milestone_index"])
+        return summary
 
     # ---------- 门禁目录保护 ----------
 
@@ -196,7 +207,8 @@ class AntiShortcutSkill:
             return "source"
         return "other"
 
-    def check_write_permission(self, path: str | Path, content: Any = None) -> None:
+    def check_write_permission(self, path: str | Path, content: Any = None, *,
+                               break_glass: str | None = None) -> None:
         """检查写入权限；不允许时抛出 PermissionError（作为工具拦截反馈）。
 
         v0.12.0：自定义拦截规则（``phase_barrier.interceptors``）优先——
@@ -204,7 +216,17 @@ class AntiShortcutSkill:
         v0.26.0：把待写内容透传给接受 ``content`` 参数的内置 / 自定义规则
         （如 no_hardcoded_secrets / require_license_header）。
         """
+        target = (self.workspace / path).resolve()
+        relative = target.relative_to(self.workspace).as_posix()
+        if break_glass is not None:
+            self.control.consume_break_glass(break_glass, str(path))
+        else:
+            self.control.permissions.require("write_file", relative)
+        self.control.assert_running()
         p = Path(path)
+        # Gate metadata is always protected, including from plugin allow rules.
+        if self._in_gate_dir(p):
+            raise PermissionError("禁止写入门禁目录 .agent_gate：状态与证据由 Skill 独占管理")
         decision, reason = evaluate_rules(
             "write", str(p), self.config, self.current_stage, content=content
         )
@@ -233,7 +255,11 @@ class AntiShortcutSkill:
         v0.12.0：自定义拦截规则（``phase_barrier.interceptors``）优先——
         (True) 直接放行；(False) 直接拦截；弃权时回落到内置阶段门禁。
         """
+        self.control.permissions.require("execute_command")
+        self.control.assert_running()
         cmd = command if isinstance(command, str) else " ".join(str(c) for c in command)
+        if touches_gate_dir(cmd, self.gate_dir):
+            raise PermissionError("禁止通过 shell 访问门禁目录 .agent_gate")
         decision, reason = evaluate_rules("exec", cmd, self.config, self.current_stage)
         if decision is True:
             return
@@ -258,25 +284,50 @@ class AntiShortcutSkill:
             if written.startswith("<"):
                 continue
             self.check_write_permission(written)
+            from fnmatch import fnmatch
+            relative = (self.workspace / written).resolve().relative_to(self.workspace).as_posix()
+            if any(fnmatch(relative, p) for p in self.control.permissions.policy().get("review_writes", [])):
+                raise PermissionError("需要人工复核的文件必须通过 write_file 写入，不能通过 shell 写入")
 
     # ---------- 工具包装 ----------
+
+    @contextmanager
+    def write_operation(self, path, content, *, break_glass=None):
+        from .state import _file_lock
+
+        with _file_lock(self.gate_dir / "control-operation.lock"):
+            if self.control.permissions.enabled or self.state.snapshot().get("goal_id"):
+                self.state.reload()
+            self.check_write_permission(path, content, break_glass=break_glass)
+            preview = self.control.diffs.preview(path, content)
+            self.logger.info("tool.start", tool="write_file", path=str(path))
+            yield
+            self.control.diffs.consumed(preview)
+
+    @contextmanager
+    def command_operation(self, command):
+        from .state import _file_lock
+        with _file_lock(self.gate_dir / "control-operation.lock"):
+            if self.control.permissions.enabled or self.state.snapshot().get("goal_id"):
+                self.state.reload()
+            self.check_exec_permission(command)
+            self.logger.info("tool.start", tool="execute_command")
+            yield
 
     def wrap_write_file(self, original_write: Callable) -> Callable:
         """包装 ``write_file(path, content)``：写入前做阶段门禁检查，写入后记录变更时间戳。"""
 
         @functools.wraps(original_write)
         def guarded(path: str | Path, content: Any, **kwargs: Any) -> Any:
-            self.check_write_permission(path, content)
-            result = original_write(path, content, **kwargs)
-            self._record_trace(
-                "write_file",
-                {"path": str(path), "content": content},
-            )
-            self._written_paths.add(self._workspace_key(path))
-            kind = self._classify_path(Path(path))
-            if kind in ("test", "source"):
-                self.state.mark_source_change(str(path))
-                self.logger.info("file_written", path=str(path), kind=kind, **self._stage_summary())
+            break_glass = kwargs.pop("break_glass", None)
+            with self.write_operation(path, content, break_glass=break_glass):
+                result = original_write(path, content, **kwargs)
+                self._record_trace("write_file", {"path": str(path), "content": content})
+                self._written_paths.add(self._workspace_key(path))
+                kind = self._classify_path(Path(path))
+                if kind in ("test", "source"):
+                    self.state.mark_source_change(str(path))
+                    self.logger.info("file_written", path=str(path), kind=kind, **self._stage_summary())
             return result
 
         return guarded
@@ -291,9 +342,8 @@ class AntiShortcutSkill:
         @functools.wraps(original_exec)
         def guarded(command: str | list[str], **kwargs: Any) -> Any:
             cmd = command if isinstance(command, str) else " ".join(str(c) for c in command)
-            self.check_exec_permission(command)
-            before_snapshot = self._write_audit_snapshot()
-            with self._track_command_changes(cmd):
+            with self.command_operation(command), self._track_command_changes(cmd):
+                before_snapshot = self._write_audit_snapshot()
                 try:
                     result = original_exec(command, **kwargs)
                     exit_code = result.get("exit_code") if isinstance(result, dict) else None
@@ -481,6 +531,11 @@ class AntiShortcutSkill:
         if "execute_command" in tools:
             tools["execute_command"] = self.wrap_execute_command(tools["execute_command"])
         tools["advance_stage"] = self.advance_stage
+        if self.control.permissions.enabled:
+            tools.update(task_capture=self.control.task_capture,
+                         task_transition=self.control.task_transition,
+                         task_list=self.control.tasks, goal_create=self.control.goal_create,
+                         goal_status=self.control.goals, goal_action=self.control.goal_action)
         return tools
 
     # ---------- 审计远程推送故障告警（v0.15.0） ----------
@@ -542,9 +597,13 @@ class AntiShortcutSkill:
 
     def advance_stage(self, new_stage: int, evidence: dict | None = None) -> dict:
         """验证阶段证据后提交推进；遇到并发状态更新时拒绝并提示重试。"""
+        self.control.permissions.require("advance_stage")
+        from .state import _file_lock
         try:
-            with self.state.validated_transition():
-                return self._advance_stage(new_stage, evidence)
+            with _file_lock(self.gate_dir / "control-operation.lock"):
+                with self.state.validated_transition():
+                    self.control.assert_running()
+                    return self._advance_stage(new_stage, evidence)
         except StateChangedError as exc:
             return {"success": False, "stage": self.current_stage, "error": str(exc)}
 
@@ -556,6 +615,8 @@ class AntiShortcutSkill:
         - 测试未通过 / 代码在测试后被修改 -> 进入阶段 5（修复与回归）
         """
         cur = self.current_stage
+        context = self.state.snapshot()
+        goal_context = {key: context[key] for key in ("goal_id", "milestone_index") if key in context}
         if self.is_complete:
             return {"success": False, "stage": cur, "error": "任务已完成（阶段 6 交付），无需继续推进"}
         if new_stage != cur + 1:
@@ -619,6 +680,7 @@ class AntiShortcutSkill:
                 to_stage=new_stage,
                 reason=def_msg,
                 evidence=def_ev,
+                **goal_context,
             )
             return {"success": False, "stage": cur, "error": def_msg, "evidence": def_ev}
         if def_ev:
@@ -626,7 +688,8 @@ class AntiShortcutSkill:
 
         self.state.advance(new_stage, ev)
         self._record_evidence_signatures(cur, ev)
-        self.logger.info("stage_advanced", from_stage=cur, to_stage=new_stage, message=msg, evidence=ev)
+        self.logger.info("stage_advanced", from_stage=cur, to_stage=new_stage, message=msg,
+                         evidence=ev, **goal_context)
         return {
             "success": True,
             "stage": new_stage,

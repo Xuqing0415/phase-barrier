@@ -347,6 +347,30 @@ class StateManager:
 
     # ---------- 修改 ----------
 
+    def start_goal_cycle(self, goal_id: str, milestone_index: int, request: str, *,
+                         expected: dict, allow_initial: bool = False) -> None:
+        """Bind a milestone at stage 0, preserving signed history of prior cycles.
+
+        This can only replace an unused initial state or a clean delivery. A Goal
+        cannot discard unfinished work, test failures or concurrent state changes.
+        """
+        with self._mutate():
+            if self.snapshot() != expected:
+                raise StateChangedError("Goal 绑定期间状态已变化，请 resume 重试")
+            if self._data.get("goal_id") == goal_id and self._data.get("milestone_index") == milestone_index:
+                return
+            pristine = (allow_initial and self.current_stage == 1 and self.completed_stages == [0])
+            if not pristine and not (self.is_complete and self.delivery_clean()):
+                raise ValueError("不能重置尚未交付的阶段循环")
+            cycles = list(self._data.get("goal_cycles", []))
+            if not pristine:
+                cycles.append({k: v for k, v in self.snapshot().items() if k != "goal_cycles"})
+            self._data = self._bootstrap(request, 0)
+            self._data.update(goal_id=goal_id, milestone_index=milestone_index, goal_cycles=cycles)
+            self._data["completed_stages"] = []
+            self._data["stage_history"] = []
+            self._atomic_write()
+
     def record_user_request(self, request: str) -> None:
         with self._mutate():
             self._data["evidence"]["user_request"] = request

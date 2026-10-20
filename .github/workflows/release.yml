@@ -2,6 +2,7 @@ name: Release to PyPI
 
 on:
   push:
+    branches: [codex/release-packaging-recovery]
     tags:
       - 'v*'
 
@@ -13,10 +14,15 @@ jobs:
   publish:
     name: Build and publish
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        tag: ${{ fromJSON(github.ref_type == 'tag' && format('["{0}"]', github.ref_name) || '["v1.0.0","v1.1.0"]') }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # setuptools-scm 需要读取 tag
+          ref: ${{ matrix.tag }}
 
       - uses: actions/setup-python@v7
         with:
@@ -25,8 +31,55 @@ jobs:
       - name: Install build frontend
         run: python -m pip install --upgrade build
 
+      - name: Validate release source and exact tag
+        env:
+          RELEASE_TAG: ${{ matrix.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --ignore-space-at-eol --exit-code
+          git diff --cached --exit-code
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "$RELEASE_TAG^{commit}")"
+          python - <<'PY'
+          import os, re, subprocess
+          tag = os.environ['RELEASE_TAG']
+          assert re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+', tag), tag
+          expected = {'v1.0.0': '3bf7c7dd8d348e1d65f465cad1a76846485795e1',
+                      'v1.1.0': '490778b29ede4899b9ce14343c136d79b4b08159'}
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          if tag in expected:
+              assert head == expected[tag], (tag, head)
+          print('Verified exact release source', tag, head)
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PHASE_BARRIER=' + tag[1:] + chr(10))
+          PY
+
       - name: Build sdist and wheel
         run: python -m build
+
+      - name: Verify artifact versions before publishing
+        env:
+          RELEASE_TAG: ${{ matrix.tag }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import email, os, pathlib, tarfile, zipfile
+          expected = os.environ['RELEASE_TAG'][1:]
+          artifacts = list(pathlib.Path('dist').iterdir())
+          assert len(artifacts) == 2, artifacts
+          for path in artifacts:
+              if path.suffix == '.whl':
+                  with zipfile.ZipFile(path) as archive:
+                      name = next(n for n in archive.namelist() if n.endswith('.dist-info/METADATA'))
+                      metadata = archive.read(name)
+              else:
+                  with tarfile.open(path) as archive:
+                      name = next(n for n in archive.getnames() if n.count('/') == 1 and n.endswith('/PKG-INFO'))
+                      metadata = archive.extractfile(name).read()
+              actual = email.message_from_bytes(metadata)['Version']
+              assert actual == expected, (path, actual, expected)
+              print(path, 'Version=' + actual)
+          PY
 
       - name: Publish to PyPI (Trusted Publishing / OIDC)
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -34,6 +87,7 @@ jobs:
           packages-dir: dist/
           # 无需 PYPI_API_TOKEN：用 GitHub OIDC 身份向 PyPI 换取短时发布 token。
           # 首次使用需在 PyPI 项目设置中添加 Trusted Publisher（见 README「构建与发布（PyPI）」）。
+          skip-existing: true   # 重跑时不覆盖 PyPI 上的不可变发行包
           attestations: true   # 生成 PyPI 侧 PEP 740 发布证明（Trusted Publishing 专用）
 
       - name: Sign artifacts with Sigstore
@@ -50,7 +104,7 @@ jobs:
         id: changelog
         shell: bash
         run: |
-          python - "${{ github.ref_name }}" <<'PY'
+          python - "${{ matrix.tag }}" <<'PY'
           import re, sys
           tag = sys.argv[1]
           ver = tag.lstrip("v")
@@ -64,11 +118,12 @@ jobs:
       - name: Create GitHub Release (Action Marketplace auto-listing)
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ matrix.tag }}
           body_path: release_body.md
           files: dist/*
 
   docker:
+    if: github.ref_type == 'tag'
     name: Build and push demo image (GHCR)
     runs-on: ubuntu-latest
     permissions:

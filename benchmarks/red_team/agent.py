@@ -171,6 +171,9 @@ class RedTeamSandbox:
         return f"{name}__{_slug(attempt.case_id)}" if attempt.case_id else name
 
     def run(self, attempt: EscapeAttempt) -> EscapeResult:
+        from benchmarks.control_red_team.base import ControlAttempt
+        if isinstance(attempt, ControlAttempt):
+            return attempt.run(self.root)
         workspace = self.root / self.case_slug(attempt)
         shutil.rmtree(workspace, ignore_errors=True)
         workspace.mkdir(parents=True, exist_ok=True)

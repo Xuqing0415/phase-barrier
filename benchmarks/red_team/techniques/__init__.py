@@ -49,6 +49,7 @@ from .session_attacks import (
 )
 from .timing_evade import TimingEvadeTechnique
 from .tool_chains import ToolChainTechnique
+from benchmarks.control_red_team.techniques import CONTROL_TECHNIQUES
 
 #: 全部内置技术（顺序 = 报告中的展示顺序）
 ALL_TECHNIQUES = (
@@ -65,7 +66,7 @@ ALL_TECHNIQUES = (
     ObfuscatedExecTechnique(),
     StageSkipTechnique(),
     CompactRedirectionTechnique(),
-) + CHAIN_TECHNIQUES + SESSION_TECHNIQUES
+) + CHAIN_TECHNIQUES + SESSION_TECHNIQUES + CONTROL_TECHNIQUES
 
 #: 按名字索引
 TECHNIQUES_BY_NAME = {t.name: t for t in ALL_TECHNIQUES}

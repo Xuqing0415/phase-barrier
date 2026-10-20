@@ -239,6 +239,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     agent = RedTeamAgent(workspace, techniques, config=config)
     results = agent.run(args.requirement)
     report = summarize(results)
+    from benchmarks.control_red_team.base import ControlTechnique
+    control_names = {t.name for t in techniques if isinstance(t, ControlTechnique)}
+    control_incomplete = [r.to_row()['case'] for r in results if r.technique in control_names
+                          and r.outcome.value in {'inconclusive', 'skipped'}]
+    report['control_incomplete'] = control_incomplete
     report["generated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     report["requirement"] = args.requirement
     report["enabled_defenses"] = list(defenses)
@@ -283,6 +288,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         shutil.rmtree(workspace, ignore_errors=True)
 
+    if report["expired_waivers"] or control_incomplete:
+        print("过期豁免或控制面验证未完成，拒绝通过", file=sys.stderr)
+        return 1
     if args.fail_on_vulnerability and report["unwaived_escapes"]:
         print(
             "未豁免的逃逸（视为漏洞）：" + "、".join(report["unwaived_escapes"]),

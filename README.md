@@ -8,6 +8,10 @@
 
 强制编码 Agent（如 Alpha-SWE）遵循标准工程师 SOP 的**阶段门禁（Stage Gate）**框架。
 
+phase-barrier 的核心是阶段门禁的不可绕过性（以 sidecar 与文件系统隔离为信任前提）。
+控制面是可选的人机协作层，不改变门禁的核心逻辑；控制面的所有写操作都经过审计和权限检查。
+权限、任务写操作与写前 Diff 通过 `permissions-init` 显式启用，调度器另需配置。
+
 > 流程：需求 -> spec 设计 -> 测试用例 -> 实现 -> 测试 -> 修复 -> 交付。
 > 每个阶段要求可验证证据（spec 章节 / 测试 AST / 语法检查 / 测试结果 / 覆盖率），
 > 跳步、偷步、伪造产出会被自动拦截——先有证据，才放行下一步。
@@ -26,7 +30,9 @@ SWE-bench Lite Scale-20（官方评测容器内，同模型同预算，20 实例
 完整报告与复算命令见 [`docs/benchmarks/swe-bench-scale20.md`](docs/benchmarks/swe-bench-scale20.md)，
 原始数据在 `benchmarks/swebench/results/`。
 
-**版本**：v1.0.0 起公开 API 冻结（1.x 内向后兼容，破坏性变更只在 2.0）——见 [`docs/release.md`](docs/release.md)。
+**版本**：当前已发布标签为 v0.51.0；CHANGELOG 中的 1.0 API 冻结是待发布里程碑，
+控制面计划作为 v1.1.0 发布，须先满足安全与 CI 门槛。
+实际版本由 Git tag 决定，状态与兼容性策略见 [`docs/release.md`](docs/release.md)。
 
 ## 为什么需要 phase-barrier？
 

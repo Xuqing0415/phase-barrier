@@ -68,6 +68,7 @@ def _build_skill(args: argparse.Namespace) -> AntiShortcutSkill:
         ws,
         config=args.config,
         user_request=getattr(args, "user_request", "") or "",
+        session_token=os.environ.get("PHASE_BARRIER_SESSION_TOKEN"),
     )
 
 
@@ -195,7 +196,15 @@ def _cmd_review_approve(args: argparse.Namespace) -> int:
                 "请先触发一次推进以生成复核请求，或显式传 --request-id"
             )
         request_id = str(payload["request_id"])
-    approve_request(ws, cfg, request_id, reason=args.reason or "")
+    skill = _build_skill(args)
+    try:
+        if skill.control.permissions.enabled:
+            skill.control.review_decide(request_id, True, args.reason or "CLI human approval")
+        else:
+            approve_request(ws, cfg, request_id, reason=args.reason or "")
+            skill.logger.info("review.decided", request_id=request_id, approved=True, reason=args.reason or "")
+    finally:
+        skill.close()
     if args.json:
         print(json.dumps({"ok": True, "request_id": request_id}, ensure_ascii=False, indent=2))
     else:
@@ -253,7 +262,8 @@ def _cmd_check(args: argparse.Namespace) -> int:
     ws = Path(args.workspace).resolve()
     if not ws.is_dir():
         raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
-    barrier = PhaseBarrier(workspace=ws, config=args.config)
+    barrier = PhaseBarrier(workspace=ws, config=args.config,
+                           session_token=os.environ.get("PHASE_BARRIER_SESSION_TOKEN"))
     try:
         result = barrier.check(args.stage)
     finally:
@@ -281,7 +291,8 @@ def _cmd_query(args: argparse.Namespace) -> int:
     ws = Path(args.workspace).resolve()
     if not ws.is_dir():
         raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
-    barrier = PhaseBarrier(workspace=ws, config=args.config)
+    barrier = PhaseBarrier(workspace=ws, config=args.config,
+                           session_token=os.environ.get("PHASE_BARRIER_SESSION_TOKEN"))
     try:
         if args.required_evidence is not None:
             payload = barrier.get_required_evidence(args.required_evidence)
@@ -511,7 +522,7 @@ def _cmd_write(args: argparse.Namespace) -> int:
     else:
         print("ERROR: 必须提供 --content 或 --stdin", file=sys.stderr)
         return 1
-    skill = AntiShortcutSkill(ws, config=args.config)
+    skill = _build_skill(args)
     try:
         result = GateProxy(skill).write_file(args.path, content)
     except WriteDenied as exc:
@@ -542,7 +553,7 @@ def _cmd_exec(args: argparse.Namespace) -> int:
     ws = Path(args.workspace).resolve()
     if not ws.is_dir():
         raise FileNotFoundError(f"工作区不存在或不是目录: {ws}")
-    skill = AntiShortcutSkill(ws, config=args.config)
+    skill = _build_skill(args)
     try:
         result = GateProxy(skill).execute_command(
             args.command, cwd=args.cwd, timeout=args.timeout
@@ -780,6 +791,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--tls-client-ca", type=str, default="", help="客户端证书签发 CA（PEM），启用后强制客户端证书"
     )
     p_sidecar.set_defaults(func=_cmd_sidecar)
+    from .control.cli import add_parsers
+    add_parsers(sub, common)
     return parser
 
 

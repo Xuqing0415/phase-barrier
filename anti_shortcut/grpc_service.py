@@ -21,6 +21,7 @@ grpcio 为可选依赖：未安装时仅本模块的 gRPC 相关函数不可用�
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import os
 from concurrent import futures
@@ -188,6 +189,27 @@ class PhaseBarrierServicer(_BaseServicer):
             total=int(result.get("total") or 0),
             events=[json.dumps(ev, ensure_ascii=False) for ev in result.get("events") or []],
         )
+
+
+def _authenticated_rpc(method):
+    @functools.wraps(method)
+    def wrapped(self, request, context):
+        metadata = dict(context.invocation_metadata()) if hasattr(context, "invocation_metadata") else {}
+        header = metadata.get("authorization", "")
+        token = header[7:] if header.startswith("Bearer ") else None
+        with self.sidecar.skill.control.permissions.session(token):
+            try:
+                self.sidecar.skill.control.permissions.require("read_state")
+                return method(self, request, context)
+            except PermissionError as exc:
+                _abort(context, grpc.StatusCode.PERMISSION_DENIED, str(exc))
+    return wrapped
+
+
+for _rpc_name in ("GetState", "Advance", "RecordTestRun", "RecordSourceChange",
+                  "WriteFile", "ExecCommand", "VerifyEvidence", "QueryAudit"):
+    setattr(PhaseBarrierServicer, _rpc_name,
+            _authenticated_rpc(getattr(PhaseBarrierServicer, _rpc_name)))
 
 
 def create_grpc_server(

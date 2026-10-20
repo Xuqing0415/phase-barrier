@@ -28,6 +28,7 @@ v0.11.0：新增 mTLS 客户端证书（``--audit-remote-client-cert`` / ``--aud
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import os
 import re
@@ -80,8 +81,24 @@ class GateSidecar:
         self.skill = AntiShortcutSkill(workspace, config=config, user_request=user_request)
         self.proxy = GateProxy(self.skill)
         self._lock = threading.Lock()
+        self.scheduler = None
+
+    def start_scheduler(self):
+        path = self.skill.gate_dir / "schedule.yaml"
+        if path.exists() and self.scheduler is None:
+            import yaml
+            from .control.scheduler import Scheduler
+            self.scheduler = Scheduler(self.skill, yaml.safe_load(path.read_text(encoding="utf-8")))
+            self.scheduler.start()
+
+    def close(self):
+        if self.scheduler:
+            self.scheduler.stop()
+        self.skill.close()
 
     def state(self) -> dict[str, Any]:
+        self.skill.control.permissions.require("read_state")
+        self.skill.state.reload()
         return {
             "current_stage": self.skill.current_stage,
             "stage_name": self.skill.stage_name,
@@ -95,6 +112,8 @@ class GateSidecar:
             return self.skill.advance_stage(new_stage)
 
     def record_test_run(self, exit_code: int, output: str) -> dict[str, Any]:
+        self.skill.control.permissions.require("record_test_run")
+        self.skill.control.assert_running()
         record = summarize_test_output(output or "", exit_code, adapter=self.skill.adapter)
         with self._lock:
             self.skill.state.mark_test_run(record)
@@ -103,10 +122,10 @@ class GateSidecar:
 
     # ---------- 透明代理（v0.17.0） ----------
 
-    def write_file(self, path: str, content: str) -> dict:
+    def write_file(self, path: str, content: str, *, break_glass: str | None = None) -> dict:
         """经门禁写入工作区文件；被拒绝抛 WriteDenied（HTTP 403）。"""
         with self._lock:
-            return self.proxy.write_file(path, content)
+            return self.proxy.write_file(path, content, break_glass=break_glass)
 
     def execute_command(
         self, command: str, timeout: int | None = None, cwd: str | None = None
@@ -116,6 +135,8 @@ class GateSidecar:
             return self.proxy.execute_command(command, timeout=timeout, cwd=cwd)
 
     def record_source_change(self, path: str) -> dict[str, Any]:
+        self.skill.control.permissions.require("record_source_change")
+        self.skill.control.assert_running()
         with self._lock:
             self.skill.state.mark_source_change(path)
         return {"ok": True, "path": path}
@@ -137,6 +158,7 @@ class GateSidecar:
         :param event: 可选事件名精确过滤（如 ``proxy_write_denied``）
         :return: ``{"ok": True, "count": N, "total": M, "offset": O, "events": [...]}``
         """
+        self.skill.control.permissions.require("read_audit")
         since_dt = _parse_event_time(since) if since is not None else None
         until_dt = _parse_event_time(until) if until is not None else None
         log_file = self.skill.gate_dir / self.skill.config.audit_log_name
@@ -179,6 +201,7 @@ class GateSidecar:
 
         :return: ``{"ok": bool, "violations": [...], "entries": [...], "signed": bool}``
         """
+        self.skill.control.permissions.require("read_evidence")
         try:
             ok, violations = self.skill.verify_evidence()
         except Exception as exc:  # EvidenceManifestError（清单损坏 / 签名不匹配）等
@@ -193,6 +216,22 @@ class GateSidecar:
 
 def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
     """为指定 sidecar 构造 HTTP 处理器（关闭默认访问日志）。"""
+
+    def authenticated(method):
+        @functools.wraps(method)
+        def wrapped(self):
+            header = self.headers.get("Authorization", "")
+            token = header[7:] if header.startswith("Bearer ") else None
+            with sidecar.skill.control.permissions.session(token):
+                try:
+                    if self.path != "/healthz":
+                        sidecar.skill.control.permissions.require("read_state")
+                    return method(self)
+                except PermissionError as exc:
+                    self._send(403, {"ok": False, "error": str(exc), "denial": "permission"})
+                except (ValueError, TypeError) as exc:
+                    self._send(400, {"ok": False, "error": str(exc)})
+        return wrapped
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt: str, *args: Any) -> None:
@@ -229,9 +268,18 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
                 return {}
             return data if isinstance(data, dict) else {}
 
+        @authenticated
         def do_GET(self) -> None:  # noqa: N802（HTTP 动词方法名）
             if self.path == "/healthz":
                 self._send(200, {"status": "ok"})
+            elif self.path == "/api/control":
+                self._send(200, sidecar.skill.control.snapshot())
+            elif urlsplit(self.path).path == "/api/events":
+                from .control.events import tail_events
+                sidecar.skill.control.permissions.require("read_audit")
+                query = parse_qs(urlsplit(self.path).query)
+                cursor = int(query.get("cursor", ["0"])[0])
+                self._send(200, tail_events(sidecar.skill.gate_dir / sidecar.skill.config.audit_log_name, cursor))
             elif self.path == "/api/state":
                 self._send(200, sidecar.state())
             elif self.path.startswith("/api/audit"):
@@ -284,8 +332,12 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
             else:
                 self._send(404, {"error": "not found"})
 
+        @authenticated
         def do_POST(self) -> None:  # noqa: N802
-            if self.path == "/api/advance":
+            if self.path == "/api/control":
+                data = self._read_json()
+                self._send(200, sidecar.skill.control.dispatch(data.get("operation"), data.get("data", {})))
+            elif self.path == "/api/advance":
                 data = self._read_json()
                 new_stage = data.get("new_stage")
                 # v0.15.0：拒绝 bool（Python 中 bool 是 int 子类）与越界阶段号
@@ -331,7 +383,7 @@ def make_handler(sidecar: GateSidecar) -> type[BaseHTTPRequestHandler]:
                     self._send(400, {"error": "content 必须是字符串"})
                     return
                 try:
-                    result = sidecar.write_file(path, content)
+                    result = sidecar.write_file(path, content, break_glass=data.get("break_glass"))
                 except WriteDenied as exc:
                     self._send(403, {"ok": False, "error": exc.reason})
                     return
@@ -546,6 +598,7 @@ def main(argv: list[str] | None = None) -> int:
         flush=True,
     )
     try:
+        sidecar.start_scheduler()
         server.serve_forever()
     except KeyboardInterrupt:
         pass
@@ -553,7 +606,7 @@ def main(argv: list[str] | None = None) -> int:
         server.server_close()
         if grpc_server is not None:
             grpc_server.stop(0)
-        sidecar.skill.close()
+        sidecar.close()
     return 0
 
 

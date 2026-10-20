@@ -47,9 +47,11 @@ class GateClient:
         timeout: float = 30.0,
         cert: tuple[str, str] | None = None,
         ca: str | None = None,
+        token: str | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.token = token
         self._ssl_context = None
         if cert or ca:
             import ssl
@@ -63,10 +65,13 @@ class GateClient:
         self, method: str, path: str, payload: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         data = json.dumps(payload).encode("utf-8") if payload is not None else None
+        headers = {"Content-Type": "application/json"} if data else {}
+        if self.token:
+            headers["Authorization"] = "Bearer " + self.token
         req = urllib.request.Request(
             self.base_url + path,
             data=data,
-            headers={"Content-Type": "application/json"} if data else {},
+            headers=headers,
             method=method,
         )
         try:
@@ -96,8 +101,20 @@ class GateClient:
     def state(self) -> dict[str, Any]:
         return self._request("GET", "/api/state")
 
-    def write_file(self, path: str, content: str) -> dict[str, Any]:
-        return self._request("POST", "/api/write", {"path": path, "content": content})
+    def write_file(self, path: str, content: str, *, break_glass: str | None = None) -> dict[str, Any]:
+        payload = {"path": path, "content": content}
+        if break_glass is not None:
+            payload["break_glass"] = break_glass
+        return self._request("POST", "/api/write", payload)
+
+    def control_snapshot(self) -> dict[str, Any]:
+        return self._request("GET", "/api/control")
+
+    def control(self, operation: str, **data: Any) -> dict[str, Any]:
+        return self._request("POST", "/api/control", {"operation": operation, "data": data})
+
+    def events(self, cursor: int = 0) -> dict[str, Any]:
+        return self._request("GET", f"/api/events?cursor={int(cursor)}")
 
     def execute_command(
         self, command: str, cwd: str | None = None, timeout: int | None = None

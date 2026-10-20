@@ -19,7 +19,8 @@ WORK = READ | {"write_file", "execute_command", "advance_stage", "record_test_ru
 MAINTAIN = WORK | {"task_manage", "goal_manage", "review_decide", "config_manage"}
 ROLES = {"observer": READ, "worker": WORK, "maintainer": MAINTAIN,
          "admin": MAINTAIN | {"policy_manage", "session_manage", "break_glass"}}
-LEGACY = WORK  # Preserve existing tools only; new privileged operations require enrollment.
+LEGACY = READ | {"write_file", "execute_command", "advance_stage", "record_test_run",
+                 "record_source_change"}  # New control writes require explicit enrollment.
 
 
 class Permissions:
@@ -52,6 +53,24 @@ class Permissions:
             raise PermissionError("权限拒绝：权限策略缺失或损坏") from exc
 
     @staticmethod
+    def validate_pattern(pattern):
+        # Policies use workspace-relative POSIX globs on every operating system.
+        if (not isinstance(pattern, str) or not pattern.strip() or pattern != pattern.strip()
+                or pattern.startswith('/') or '\\' in pattern or ':' in pattern
+                or any(part in {'', '.', '..'} for part in pattern.split('/'))):
+            raise ValueError("path pattern must be a nonempty relative POSIX glob")
+        index = 0
+        while index < len(pattern):
+            if pattern[index] == '[':
+                end = pattern.find(']', index + 1)
+                if end < 0 or pattern[index + 1:end] in {'', '!'}:
+                    raise ValueError("path pattern has an invalid character class")
+                index = end
+            elif pattern[index] == ']':
+                raise ValueError("path pattern has an unmatched character class")
+            index += 1
+
+    @staticmethod
     def validate(policy):
         if not isinstance(policy, dict) or type(policy.get("version")) is not int or policy["version"] != 1:
             raise ValueError("permissions policy requires version: 1")
@@ -74,6 +93,9 @@ class Permissions:
         reviews = policy.get("review_writes", [])
         if not isinstance(reviews, list) or any(not isinstance(p, str) for p in reviews):
             raise ValueError("review_writes must be a list of path patterns")
+        for patterns in [*scopes.values(), reviews]:
+            for pattern in patterns:
+                Permissions.validate_pattern(pattern)
         limits = policy.get("rate_limits", {})
         if not isinstance(limits, dict) or any(
             operation not in ROLES["admin"] or type(limit) is not int or limit < 1

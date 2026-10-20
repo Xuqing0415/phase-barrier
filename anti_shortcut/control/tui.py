@@ -41,6 +41,7 @@ class GateApp(App):
         self.busy = False
         self.diff_key = None
         self.split = False
+        self._render_lock = asyncio.Lock()
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -92,6 +93,13 @@ class GateApp(App):
             self.busy = False
 
     async def render_snapshot(self):
+        # Timer refreshes, button actions and split-view changes can overlap at
+        # widget mount awaits. Serialize them so a refresh cannot remove widgets
+        # while a second render is still mounting its diff view.
+        async with self._render_lock:
+            await self._render_snapshot()
+
+    async def _render_snapshot(self):
         state, identity = self.data["state"], self.data["session"]
         current, completed = state["current_stage"], state["completed_stages"]
         self.query_one("#stage", Static).update("  →  ".join(

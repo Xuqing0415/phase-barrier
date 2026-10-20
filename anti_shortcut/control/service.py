@@ -211,6 +211,7 @@ class ControlPlane:
 
     def consume_break_glass(self, token, path):
         # Delegates an exact permission once. Stage/evidence/directory checks still run.
+        self.permissions.policy()  # A delegation must not consume tokens under a broken policy.
         identity = self.permissions.identity()
         relative = self._break_glass_path(str(path))
         digest = hashlib.sha256(nonempty(token, "token").encode()).hexdigest()

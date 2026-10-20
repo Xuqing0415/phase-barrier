@@ -299,10 +299,11 @@ class AntiShortcutSkill:
             if self.control.permissions.enabled or self.state.snapshot().get("goal_id"):
                 self.state.reload()
             self.check_write_permission(path, content, break_glass=break_glass)
-            preview = self.control.diffs.preview(path, content)
+            preview = self.control.diffs.preview(path, content) if self.control.permissions.enabled else None
             self.logger.info("tool.start", tool="write_file", path=str(path))
             yield
-            self.control.diffs.consumed(preview)
+            if preview is not None:
+                self.control.diffs.consumed(preview)
 
     @contextmanager
     def command_operation(self, command):

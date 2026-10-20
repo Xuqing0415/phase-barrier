@@ -1,0 +1,2099 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="反捷径校验 Skill：阶段门禁 + 证据校验 + 工具拦截，强制编码 Agent 遵循标准工程师 SOP">
+      
+      
+      
+        <link rel="canonical" href="https://docs.xshayncka.dev/control-plane/">
+      
+      
+        <link rel="prev" href="../usage/">
+      
+      
+        <link rel="next" href="../control-security/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>人机控制面 - phase-barrier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href=".." title="phase-barrier" class="md-header__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            phase-barrier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              人机控制面
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../quickstart/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  快速开始
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../usage/" class="md-tabs__link">
+          
+  
+  
+  使用指南
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../integrations/" class="md-tabs__link">
+          
+  
+  
+  集成与生态
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tutorials/ci-incremental-gate/" class="md-tabs__link">
+          
+  
+  
+  教程
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../release/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  发布与供应链安全
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  贡献指南
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  更新日志
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="phase-barrier" class="md-nav__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    phase-barrier
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速开始
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    使用指南
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    使用指南
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI 使用
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    人机控制面
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    人机控制面
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        启动与身份
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        权限策略与人工 Diff 复核
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tui-web" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TUI / Web
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        安全承诺与已知残余风险
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-board" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task Board
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal 多阶段循环
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sidecar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sidecar 定时维护
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../control-security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    控制面安全验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    配置指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../semantic-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语义级校验（v0.49.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../five-lines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    五道防线（v0.52.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../red-team/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    红队 Agent（路径 1，18 类逃逸技术，v0.60.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../formal-invariants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    形式化不变量（路径 2，v0.58.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learning-defense/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    学习型防线（路径 4，半自动闭环，v0.60.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../languages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语言适配器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../github-action/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../publish-to-marketplace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 上架
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../orchestrator-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    编排器钩子 SDK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audit-logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    状态与审计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    拦截规则与安全加固
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    架构与设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom-domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    自定义域名（docs.xshayncka.dev）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    集成与生态
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    集成与生态
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent 框架集成
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件与生态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugin-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件状态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../k8s/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    最佳实践
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    教程
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    教程
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/ci-incremental-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI 增量门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/k8s-sidecar-grpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s sidecar 加固与 gRPC 接口（v0.39.0 已实现）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/swe-bench-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 门禁基准
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/swe-bench-real/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 真实评测 harness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/swe-bench-scale20/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Scale-20 实测报告
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../video-tutorial-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    视频教程模板
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    发布与供应链安全
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    贡献指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    更新日志
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="_1">人机协作控制面<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>控制面通过 <code>AntiShortcutSkill.control</code> 组织 Diff、任务看板、Goal、权限和本地维护任务；
+文件写入、命令执行和阶段推进仍经过原来的拦截器、校验器和五道防线。
+默认工作区保持现有工具行为；创建权限策略后，未认证会话一律拒绝。
+未初始化时不缓存写前 Diff，任务写操作和 Goal 管理也不可用；状态查询仍兼容旧工作区。
+Task Board 不会推进阶段，Goal 只能在未开始的初始状态或干净交付后绑定新循环。</p>
+<h2 id="_2">启动与身份<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">'phase-barrier[tui]'</span>
+anti-shortcut<span class="w"> </span>permissions-init<span class="w"> </span>--workspace<span class="w"> </span>.
+</code></pre></div>
+<p><code>permissions-init</code> 是可信本地初始化命令，输出一次人工 admin 令牌；策略存在后不能重新初始化。
+将令牌放入 <code>PHASE_BARRIER_SESSION_TOKEN</code>，不要提交到仓库，也不要交给 Agent。
+CLI 从这个环境变量取令牌，HTTP 使用 <code>Authorization: Bearer &lt;token&gt;</code>，gRPC 使用
+<code>authorization</code> metadata。服务端只存令牌的 SHA-256；令牌绑定角色、会话 ID、
+actor（<code>human</code> / <code>agent</code>）、过期时间，客户端不能自行声明角色。</p>
+<div class="highlight"><pre><span></span><code>anti-shortcut<span class="w"> </span>control<span class="w"> </span>session_issue<span class="w"> </span>--data<span class="w"> </span><span class="s1">'{"role":"worker","actor":"agent"}'</span>
+anti-shortcut<span class="w"> </span>control<span class="w"> </span>session_issue<span class="w"> </span>--data<span class="w"> </span><span class="s1">'{"role":"observer","actor":"human"}'</span>
+anti-shortcut<span class="w"> </span>sidecar<span class="w"> </span>--workspace<span class="w"> </span>.<span class="w"> </span>--host<span class="w"> </span><span class="m">127</span>.0.0.1<span class="w"> </span>--port<span class="w"> </span><span class="m">8080</span>
+anti-shortcut<span class="w"> </span>tui<span class="w"> </span>--url<span class="w"> </span>http://127.0.0.1:8080
+</code></pre></div>
+<p>命令示例使用 POSIX shell 的 JSON 引号；PowerShell 可用单引号包围同样的 JSON。
+新令牌默认 24 小时有效，<code>ttl</code> 可指定 1–604800 秒。
+撤销会话：<code>control session_revoke --data '{"session_id":"..."}'</code>。
+<code>admin</code> 仅允许人工身份；发令牌、改策略和紧急授权都要求人工 admin。</p>
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>能力</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>observer</td>
+<td>查询状态、证据、审计、diff、任务与 Goal</td>
+</tr>
+<tr>
+<td>worker</td>
+<td>上述 + 受阶段约束的写入/执行/推进、捕获/认领/完成任务</td>
+</tr>
+<tr>
+<td>maintainer</td>
+<td>上述 + 任务排队/丢弃、Goal 管理；人工身份可复核和配置调度</td>
+</tr>
+<tr>
+<td>admin</td>
+<td>上述 + 人工会话管理、权限策略管理、一次性授权</td>
+</tr>
+</tbody>
+</table>
+<p>进程内使用 <code>AntiShortcutSkill(..., session_token=token)</code> 或
+<code>PhaseBarrier(..., session_token=token)</code>；HTTP 客户端使用 <code>GateClient(url, token=token)</code>。
+在进程内拥有 Python 对象和文件系统权限的代码仍属于可信代码；部署隔离边界与
+<a href="../k8s/">sidecar 部署</a>一致，Agent 不应拥有门禁目录、服务端令牌或进程访问权。</p>
+<h2 id="diff">权限策略与人工 Diff 复核<a class="headerlink" href="#diff" title="Permanent link">&para;</a></h2>
+<p><code>.agent_gate/permissions.yaml</code> 示例（经 <code>control policy_update</code> 的 <code>policy</code> 参数提交）：</p>
+<div class="highlight"><pre><span></span><code><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="nt">roles</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">observer</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">read_state</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">read_evidence</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">read_diff</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">read_audit</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">read_tasks</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">read_goals</span><span class="p p-Indicator">]</span>
+<span class="nt">write_paths</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">worker</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'spec.md'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'src/*'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'tests/*'</span><span class="p p-Indicator">]</span>
+<span class="nt">review_writes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'spec.md'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'src/*'</span><span class="p p-Indicator">]</span>
+<span class="nt">rate_limits</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">write_file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
+</code></pre></div>
+<p>省略角色采用内置权限；显式角色列表只能缩小权限；空列表拒绝该角色全部操作。
+路径使用工作区相对 POSIX 路径和 <code>fnmatch</code> 模式，<code>*</code> 可跨目录。
+空白、绝对路径、反斜杠、盘符、<code>.</code>/<code>..</code> 路径段与未闭合字符类均视为配置错误，
+更新时拒绝；已落盘的非法策略按损坏策略处理。合法但拼错的范围只会不匹配，不会回退放行。
+策略损坏或初始化标记存在而策略缺失时拒绝访问。
+速率限制按会话/操作在 SQLite 中计数，窗口为 60 秒。</p>
+<p><code>write_file</code> 在阶段检查通过后、落盘前计算 unified diff，缓存到
+<code>.agent_gate/diff/latest.json</code>，复核队列持久化在 <code>tasks.db</code>。
+文本差异含新增文件、原内容与目标内容哈希、阶段、会话、Goal 和里程碑上下文。
+二进制文件显示摘要；超过 2 MiB 的文件仅缓存哈希和提示，不生成完整可视化。
+需要复核的写入返回拒绝，原文件保持原状；人工决定后由调用者重试原写入。</p>
+<div class="highlight"><pre><span></span><code>anti-shortcut<span class="w"> </span>control<span class="w"> </span>diff_decide<span class="w"> </span>--data<span class="w"> </span><span class="s1">'{"review_id":"...","approved":true,"reason":"已核对接口"}'</span>
+</code></pre></div>
+<p>批准仅用于对应会话、内容、旧文件、阶段循环，成功写入后消费。
+内容修改、其他会话、原文件变化或阶段变化都要求重新复核。
+驳回的内容须修改后重新提交。需要复核的目标不能通过已识别的 shell 写操作修改。
+所有门禁目录写入在插件规则之前被拒绝。</p>
+<p>紧急授权采用<strong>受限的权限委托</strong>：人工 admin 可调用 <code>break_glass_issue</code>，参数为
+<code>path</code>、<code>session_id</code>、<code>reason</code>、<code>ttl</code>（最多 900 秒）；目标会话以
+<code>GateClient.write_file(..., break_glass=token)</code> 使用。令牌只允许一次、一个文件、一个会话，
+仍须通过阶段、目录与人工 Diff 复核；不会跳过证据，也不允许写门禁内部文件。
+令牌在尝试写入前消费，后续失败也不会恢复；颁发与消费都有 <code>permission.break_glass*</code> 审计。</p>
+<h2 id="tui-web">TUI / Web<a class="headerlink" href="#tui-web" title="Permanent link">&para;</a></h2>
+<p>TUI 显示阶段 0–6、防线状态、任务看板、Goal 进度、Diff 和统一事件流。
+按 <code>s</code> 切换 unified/split，<code>q</code> 退出。它通过 sidecar API 获取快照，增量订阅
+<code>GET /api/events?cursor=&lt;byte-offset&gt;</code>，不会直接打开工作区状态文件。
+事件包包含 <code>cursor</code>、<code>type</code>、<code>timestamp</code>、<code>data</code>，包括 <code>tool.start</code>、<code>tool.complete</code>、
+<code>tool.blocked</code>、<code>stage.changed</code>、<code>write.preview</code>、<code>human_input_required</code> 和控制面审计事件。</p>
+<p>唯二可写的 UI 动作是人工复核批准/驳回（diff 或交付复核）和 btw 任务认领。
+操作由服务端再次鉴权。输入对应复核 ID 和理由，或队列任务 ID 后点击操作即可；
+复核通过不会自动写入或推进阶段。Goal 创建和权限管理使用 CLI/API。
+交付复核复用现有审批文件，驳回会撤销同 request ID 的旧批准。
+Goal 不同里程碑的交付复核 ID 相互隔离。</p>
+<h2 id="_3">安全承诺与已知残余风险<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>完整案例及复现命令见<a href="../control-security/">控制面安全验证</a>。</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>承诺与边界</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>机制保证</td>
+<td>7 个 break-glass 红队案例验证文件/会话绑定、过期、复用、落盘失败后消费、目录与阶段约束；授权不授予推进阶段能力。</td>
+</tr>
+<tr>
+<td>机制保证</td>
+<td>SQLite 事务强制任务跳转与唯一认领；btw 完成须显式回主流程；stale 只加标记。</td>
+</tr>
+<tr>
+<td>机制保证</td>
+<td>Goal 的最后里程碑也先聚合状态和清单证据再标记完成；abandon 保留原状态及文件。</td>
+</tr>
+<tr>
+<td>机制保证</td>
+<td>已启用权限的 API 在服务端检查身份、角色、人工身份、到期与撤销；直接请求不降低要求。</td>
+</tr>
+<tr>
+<td>机制保证</td>
+<td>TUI 仅有两类写动作：复核决定与 btw 认领；三个按钮为批准、驳回、认领，无直接阶段修改入口。</td>
+</tr>
+<tr>
+<td>依赖人工</td>
+<td>DoD 只校验为非空文本列表；自然语言是否客观、需求是否实现、复核是否充分，需人评估。</td>
+</tr>
+<tr>
+<td>已知残余风险</td>
+<td><code>textual serve</code> 使用进程环境中的单一令牌，所有浏览器连接代表同一身份。远程部署必须另设身份认证、TLS 和访问隔离，不可直接公开管理员进程。</td>
+</tr>
+<tr>
+<td>已知残余风险</td>
+<td>拥有服务端 Python 对象、门禁目录写权限或进程访问权的代码属于可信边界内；本库不提供操作系统沙箱。shell 路径识别仍为启发式，write_audit 仅检测。</td>
+</tr>
+<tr>
+<td>已知残余风险</td>
+<td>调度租约依赖本机时间；崩溃或租约过期后可能重试，不承诺 exactly-once，不会自动推进阶段。</td>
+</tr>
+</tbody>
+</table>
+<p>一次性授权在策略、身份及目标绑定检查通过后先消费，再做阶段、Goal、Diff 检查与落盘。
+匹配令牌在这些后续检查或写入失败后不可恢复；错误路径/其他会话不会窃取消费令牌。
+传参非法或目标不是文件时，代理可在进入授权路径前拒绝。控制面红队当前无逃逸豁免；
+上述部署和观测限制不等同于允许测试逃逸。</p>
+<p>Web 复用同一应用，无独立前端：</p>
+<div class="highlight"><pre><span></span><code>textual<span class="w"> </span>serve<span class="w"> </span><span class="s2">"python -m anti_shortcut.control.tui"</span>
+</code></pre></div>
+<p>通过 <code>PHASE_BARRIER_URL</code> 和 <code>PHASE_BARRIER_SESSION_TOKEN</code> 配置服务端地址和会话。
+Web 进程令牌代表全部浏览器连接，因此远程部署时应由外层认证保护该 Web 实例，
+按身份分开部署。HTTP API 支持沿用 sidecar mTLS。</p>
+<p><code>textual-diff-view</code> 当前要求 Python ≥3.11（并使用 AGPL-3.0 许可），只作为 TUI
+可选依赖安装；核心包不导入它。Python 3.10 使用 Rich/Pygments unified diff 回退，
+无 split 视图。Textual 和 diff 插件均不成为核心强制依赖。</p>
+<h2 id="task-board">Task Board<a class="headerlink" href="#task-board" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>anti-shortcut<span class="w"> </span>task<span class="w"> </span>capture<span class="w"> </span>--type<span class="w"> </span>btw<span class="w"> </span>--title<span class="w"> </span><span class="s1">'顺便修正文档 typo'</span>
+anti-shortcut<span class="w"> </span>task<span class="w"> </span>list
+anti-shortcut<span class="w"> </span>task<span class="w"> </span>queue<span class="w"> </span>--task-id<span class="w"> </span>&lt;id&gt;<span class="w">       </span><span class="c1"># maintainer/admin</span>
+anti-shortcut<span class="w"> </span>task<span class="w"> </span>claim<span class="w"> </span>--task-id<span class="w"> </span>&lt;id&gt;<span class="w">       </span><span class="c1"># worker 或人工认领</span>
+anti-shortcut<span class="w"> </span>task<span class="w"> </span><span class="nb">complete</span><span class="w"> </span>--task-id<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--return-to-main
+</code></pre></div>
+<p>SQLite 强制 <code>captured → queued → active → done</code>，未完成任务也可由有权限的认领者丢弃。
+并发认领只允许一个会话成功；人工认领记录 <code>human_owned</code>，其他会话不能完成或丢弃。
+btw 完成必须显式 <code>--return-to-main</code>，记录审计。<code>stale</code> 是独立标记，避免破坏原状态机；
+只标记长期无人处理的 captured/queued btw，不自动完成、丢弃或抢占活跃任务。
+所有状态转换与阶段状态机独立，认领 btw 不赋予额外文件写入或阶段权限。</p>
+<h2 id="goal">Goal 多阶段循环<a class="headerlink" href="#goal" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>anti-shortcut<span class="w"> </span>goal<span class="w"> </span>create<span class="w"> </span>--title<span class="w"> </span><span class="s1">'重构模块'</span><span class="w"> </span>--done<span class="w"> </span><span class="s1">'回归测试全部通过'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--milestone<span class="w"> </span><span class="s1">'重构接口'</span><span class="w"> </span>--milestone<span class="w"> </span><span class="s1">'迁移调用方'</span>
+anti-shortcut<span class="w"> </span>goal<span class="w"> </span>status
+anti-shortcut<span class="w"> </span>goal<span class="w"> </span>pause<span class="w"> </span>--goal-id<span class="w"> </span>&lt;id&gt;
+anti-shortcut<span class="w"> </span>goal<span class="w"> </span>resume<span class="w"> </span>--goal-id<span class="w"> </span>&lt;id&gt;
+anti-shortcut<span class="w"> </span>goal<span class="w"> </span>next<span class="w"> </span>--goal-id<span class="w"> </span>&lt;id&gt;
+</code></pre></div>
+<p>DoD 和里程碑必须是非空文本列表；调用者负责提供客观可判定的条件。
+每个里程碑从阶段 0 开始；必须经过完整校验、交付测试新鲜且全绿、证据清单完整后，
+才允许 <code>next</code>。最后一次 <code>next</code> 聚合最后里程碑证据并完成 Goal。
+每次循环在签名状态里保留旧状态，在 Goal 中聚合 manifest 与阶段证据，
+新循环清除上次测试结果。完成状态表示阶段证据通过，DoD 的自然语言含义仍需人评估。</p>
+<p>暂停阻止写入、命令执行和阶段推进；恢复不重置当前循环，可跨会话继续。
+绑定循环时先持久化 Goal 意图，进程中断后用 <code>resume</code> 恢复未完成的绑定。
+同一工作区只允许一个未结束 Goal，不能创建 Goal 覆盖阶段 2–5 的现有工作。
+<code>abandon</code> 留存原阶段证据并停止该 Goal，不提供丢弃未交付证据的状态重置捷径。</p>
+<h2 id="sidecar">Sidecar 定时维护<a class="headerlink" href="#sidecar" title="Permanent link">&para;</a></h2>
+<p>人工 maintainer/admin 通过 <code>control schedule_update --data '{"config": ...}'</code> 设置
+<code>.agent_gate/schedule.yaml</code>，然后重启 sidecar。调度器仅随 sidecar 主进程启动，
+Agent API 没有运行、启动、停止调度器的方法。</p>
+<div class="highlight"><pre><span></span><code><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="nt">jobs</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">evidence_integrity_check</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">interval_seconds</span><span class="p">:</span><span class="w"> </span><span class="nv">3600</span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">residual_expiry_check</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">interval_seconds</span><span class="p">:</span><span class="w"> </span><span class="nv">86400</span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">btw_stale_cleanup</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">interval_seconds</span><span class="p">:</span><span class="w"> </span><span class="nv">86400</span><span class="p p-Indicator">,</span><span class="nt"> stale_days</span><span class="p">:</span><span class="w"> </span><span class="nv">30</span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">goal_health_report</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">interval_seconds</span><span class="p">:</span><span class="w"> </span><span class="nv">86400</span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">red_team_fast</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">interval_seconds</span><span class="p">:</span><span class="w"> </span><span class="nv">604800</span><span class="p p-Indicator">,</span><span class="nt"> enabled</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>采用标准库线程循环、持久化下次运行时间与 SQLite 执行租约；重启不重置已持久化周期，
+失败写审计并等待下次周期重试。各任务不会修改阶段状态：</p>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>evidence_integrity_check</td>
+<td>重载并验证状态签名、证据清单与文件哈希</td>
+</tr>
+<tr>
+<td>residual_expiry_check</td>
+<td>检查当前工作区 <code>benchmarks/red_team/known_residual.yaml</code> 过期项</td>
+</tr>
+<tr>
+<td>btw_stale_cleanup</td>
+<td>标记过期且未认领的 btw</td>
+</tr>
+<tr>
+<td>goal_health_report</td>
+<td>输出 <code>.agent_gate/reports/goal-health.json</code></td>
+</tr>
+<tr>
+<td>red_team_fast</td>
+<td>在可信源码安装树运行固定的 equivalent_op/timing_evade 子集，逃逸返回失败</td>
+</tr>
+</tbody>
+</table>
+<p>红队任务需要安装来源包含完整源码 checkout；普通 wheel 中不存在 benchmarks 时明确失败，
+不会运行工作区里同名脚本。所有任务结果写入 <code>scheduler.completed</code>，TUI 可见。
+本地维护只处理当前工作区，GitHub Actions 继续负责跨 PR/仓库 CI。</p>
+<h2 id="api">API<a class="headerlink" href="#api" title="Permanent link">&para;</a></h2>
+<p><code>GET /api/control</code> 返回快照。<code>POST /api/control</code> 使用
+<code>{"operation":"task_capture","data":{"title":"..."}}</code> 调用显式操作白名单。
+可用操作包括 <code>task_capture</code>、<code>task_transition</code>、<code>goal_create</code>、<code>goal_action</code>、
+<code>diff_decide</code>、<code>review_decide</code>、<code>session_issue</code>、<code>session_revoke</code>、<code>policy_update</code>、
+<code>break_glass_issue</code>、<code>schedule_update</code>。初始化与调度器生命周期不在白名单中。
+相同 API 可由 <code>GateClient.control(operation, **data)</code> 与 <code>control</code> CLI 调用。
+所有控制面成功写操作写入既有审计日志；权限拒绝与阶段拒绝分别保留原因。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.top", "navigation.tabs", "toc.integrate", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

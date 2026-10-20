@@ -47,6 +47,7 @@ nav:
   - 快速开始: quickstart.md
   - 使用指南:
       - CLI 使用: usage.md
+      - 人机控制面: control-plane.md
       - 配置指南: configuration.md
       - 语义级校验（v0.49.0）: semantic-validation.md
       - 五道防线（v0.52.0）: five-lines.md

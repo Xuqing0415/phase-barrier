@@ -42,6 +42,7 @@ SWE-bench Lite Scale-20（官方评测容器内，同模型同预算，20 实例
 - **阶段状态机**：需求 -> spec -> 测试 -> 实现 -> 测试 -> 修复 -> 交付，逐级放行、不可跳级。
 - **多语言适配**：13 种语言适配器——Python / JavaScript（含 TypeScript）/ Java / Kotlin / Scala / Go / Rust / Swift / Ruby / PHP / C#（.NET 别名）/ C++ / Dart。
 - **工具拦截**：包装 `write_file` / `execute_command`；shell 重定向、`python -c` / `node -e` 等脚本写入同样受控。
+- **人机控制面**：写前 Diff / 人工复核、只读 Textual TUI、会话权限、SQLite 任务看板、跨会话 Goal 和 sidecar 定时维护（[使用指南](docs/control-plane.md)）。
 - **防篡改**：HMAC 状态签名、证据清单（SHA-256）、`verify-evidence` Git 基线校验。
 - **安全规则包**：shell 注入 / 路径穿越 / 硬编码密钥 / 许可证头等内置规则，YAML 一键启用。
 - **集成面广**：进程内包装、CLI 透明代理、GitHub Action、K8s sidecar（Helm）、Docker 一键体验。
@@ -116,6 +117,7 @@ anti-shortcut advance --workspace . --to 2                         # 推进阶�
 |------|------|
 | 快速开始 | [docs/quickstart.md](docs/quickstart.md) |
 | CLI 使用 | [docs/usage.md](docs/usage.md) |
+| 人机控制面（TUI / Diff / Goal / 任务 / 权限 / 调度） | [docs/control-plane.md](docs/control-plane.md) |
 | 配置指南（全字段） | [docs/configuration.md](docs/configuration.md) |
 | 语言适配器 | [docs/languages.md](docs/languages.md) |
 | 架构与设计 | [docs/architecture.md](docs/architecture.md) |

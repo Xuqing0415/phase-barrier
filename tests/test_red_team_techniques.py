@@ -148,9 +148,9 @@ def test_summarize_splits_vulnerabilities_and_residual_risks():
 # ---------- 八类技术 ----------
 
 
-def test_registry_has_nineteen_techniques_with_expected_targets():
+def test_registry_includes_control_plane_techniques_with_expected_targets():
     """v0.57.0 的 8 类 + v0.60.0 扩面 10 类 + v1.0.1 紧凑语法 1 类。"""
-    assert len(ALL_TECHNIQUES) == 19
+    assert len(ALL_TECHNIQUES) == 24
     assert {t.name for t in ALL_TECHNIQUES} == {
         "template_filler",
         "coverage_disguise",
@@ -171,6 +171,7 @@ def test_registry_has_nineteen_techniques_with_expected_targets():
         "session_family_split",
         "session_family_stagger",
         "session_family_below_threshold",
+        "control_bypass", "task_state_skip", "goal_binding_escape", "break_glass_reuse", "policy_fail_open",
     }
     assert all(1 <= t.target_defense <= 5 for t in ALL_TECHNIQUES)
 
@@ -315,7 +316,11 @@ def test_all_attempts_are_replayable_and_well_formed():
         for attempt in attempts:
             assert attempt.technique == technique.name
             assert 1 <= attempt.goal_stage <= 6
-            assert attempt.calls, f"{technique.name} 未产出任何工具调用"
+            from benchmarks.control_red_team.base import ControlAttempt
+            if isinstance(attempt, ControlAttempt):
+                assert callable(attempt.probe), f"{technique.name} lacks an executable control probe"
+            else:
+                assert attempt.calls, f"{technique.name} 未产出任何工具调用"
             assert attempt.expectation in ("blocked", "escaped", "partial")
             assert attempt.enabled_defenses is None or all(
                 1 <= d <= 5 for d in attempt.enabled_defenses

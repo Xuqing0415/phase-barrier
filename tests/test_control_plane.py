@@ -53,6 +53,10 @@ def test_legacy_tools_work_but_new_admin_operations_need_enrollment(tmp_path):
     with pytest.raises(PermissionError):
         skill.control.goal_create("Goal", ["assert result"], ["first"])
     assert skill.current_stage == 1
+    with pytest.raises(PermissionError):
+        skill.control.task_capture("must opt in")
+    assert not skill.control.diffs.path.exists()
+    assert not (skill.gate_dir / "tasks.db").exists()
 
 
 def test_observer_cannot_write_execute_advance_or_report(enrolled):
@@ -174,11 +178,13 @@ def test_diff_rejection_and_nonhuman_review_are_enforced(enrolled):
 
 def test_binary_and_failed_writes_are_not_marked_written(tmp_path):
     skill = AntiShortcutSkill(tmp_path)
+    admin = skill.control.permissions.bootstrap()
     def fail(*args):
         raise OSError("write failed")
-    with pytest.raises(OSError):
-        skill.wrap_write_file(fail)("blob.bin", b"\0binary")
-    preview = skill.control.snapshot()["diff"]
+    with skill.control.permissions.session(admin):
+        with pytest.raises(OSError):
+            skill.wrap_write_file(fail)("blob.bin", b"\0binary")
+        preview = skill.control.snapshot()["diff"]
     assert preview["binary"] and preview["status"] == "preview"
 
 

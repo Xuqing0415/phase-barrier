@@ -62,7 +62,8 @@ def test_audit_offset_pagination(tmp_path):
     ws.mkdir()
     sidecar = _make_sidecar(ws)
     _write_notes(sidecar, 4)
-    result = sidecar.audit(limit=2, offset=1)
+    # Diff previews and tool lifecycle events share this log; paginate writes explicitly.
+    result = sidecar.audit(limit=2, offset=1, event="proxy_write_ok")
     assert result["count"] == 2
     assert result["offset"] == 1
     assert result["total"] >= 4

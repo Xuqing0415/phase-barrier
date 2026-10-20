@@ -30,8 +30,8 @@ SWE-bench Lite Scale-20（官方评测容器内，同模型同预算，20 实例
 完整报告与复算命令见 [`docs/benchmarks/swe-bench-scale20.md`](docs/benchmarks/swe-bench-scale20.md)，
 原始数据在 `benchmarks/swebench/results/`。
 
-**版本**：当前已发布标签为 v0.51.0；CHANGELOG 中的 1.0 API 冻结是待发布里程碑，
-控制面计划作为 v1.1.0 发布，须先满足安全与 CI 门槛。
+**版本线**：v1.0.0 冻结公开 API；v1.1.0 引入默认不启用的可选控制面。
+标签创建与正式发布须通过安全及 CI 门槛；实际发布状态以远程标签和 Release 为准。
 实际版本由 Git tag 决定，状态与兼容性策略见 [`docs/release.md`](docs/release.md)。
 
 ## 为什么需要 phase-barrier？

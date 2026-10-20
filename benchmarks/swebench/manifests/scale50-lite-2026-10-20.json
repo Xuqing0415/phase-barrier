@@ -1,0 +1,324 @@
+{
+  "dataset": "SWE-bench/SWE-bench_Lite",
+  "split": "test",
+  "count": 50,
+  "selection": {
+    "seed": 7,
+    "must_repo": [
+      "django/django",
+      "sympy/sympy"
+    ],
+    "per_repo": 2
+  },
+  "dataset_sha256": "6b122dc11bef6421c1374f6f9b793bd20d363035b0f248117d4865f6c0833128",
+  "model": "deepseek-v4-flash",
+  "max_turns": 60,
+  "modes": [
+    "baseline",
+    "gated"
+  ],
+  "concurrency": 2,
+  "harness": "swebench==5.0.2",
+  "instances": [
+    {
+      "instance_id": "django__django-10914",
+      "repo": "django/django",
+      "base_commit": "e7fd69d051eaa67cb17f172a39b57253e9cb831a",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-10914:latest"
+    },
+    {
+      "instance_id": "django__django-10924",
+      "repo": "django/django",
+      "base_commit": "bceadd2788dc2dad53eba0caae172bd8522fd483",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-10924:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-11400",
+      "repo": "sympy/sympy",
+      "base_commit": "8dcb12a6cf500e8738d6729ab954a261758f49ca",
+      "image": "swebench/sweb.eval.x86_64.sympy_1776_sympy-11400:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-11870",
+      "repo": "sympy/sympy",
+      "base_commit": "5c2e1f96a7ff562d4a778f4ca9ffc9c81557197e",
+      "image": "swebench/sweb.eval.x86_64.sympy_1776_sympy-11870:latest"
+    },
+    {
+      "instance_id": "django__django-11001",
+      "repo": "django/django",
+      "base_commit": "ef082ebb84f00e38af4e8880d04e8365c2766d34",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-11001:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-11897",
+      "repo": "sympy/sympy",
+      "base_commit": "e2918c1205c47345eb73c9be68b14c0f15fdeb17",
+      "image": "swebench/sweb.eval.x86_64.sympy_1776_sympy-11897:latest"
+    },
+    {
+      "instance_id": "astropy__astropy-12907",
+      "repo": "astropy/astropy",
+      "base_commit": "d16bfe05a744909de4b27f5875fe0d4ed41ce607",
+      "image": "swebench/sweb.eval.x86_64.astropy_1776_astropy-12907:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-18869",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "b7d05919865fc0c37a0164cf467d5d5513bd0ede",
+      "image": "swebench/sweb.eval.x86_64.matplotlib_1776_matplotlib-18869:latest"
+    },
+    {
+      "instance_id": "mwaskom__seaborn-2848",
+      "repo": "mwaskom/seaborn",
+      "base_commit": "94621cef29f80282436d73e8d2c0aa76dab81273",
+      "image": "swebench/sweb.eval.x86_64.mwaskom_1776_seaborn-2848:latest"
+    },
+    {
+      "instance_id": "pallets__flask-4045",
+      "repo": "pallets/flask",
+      "base_commit": "d8c37f43724cd9fb0870f77877b7c4c7e38a19e0",
+      "image": "swebench/sweb.eval.x86_64.pallets_1776_flask-4045:latest"
+    },
+    {
+      "instance_id": "psf__requests-1963",
+      "repo": "psf/requests",
+      "base_commit": "110048f9837f8441ea536804115e80b69f400277",
+      "image": "swebench/sweb.eval.x86_64.psf_1776_requests-1963:latest"
+    },
+    {
+      "instance_id": "pydata__xarray-3364",
+      "repo": "pydata/xarray",
+      "base_commit": "863e49066ca4d61c9adfe62aca3bf21b90e1af8c",
+      "image": "swebench/sweb.eval.x86_64.pydata_1776_xarray-3364:latest"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-5859",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "182cc539b8154c0710fcea7e522267e42eba8899",
+      "image": "swebench/sweb.eval.x86_64.pylint-dev_1776_pylint-5859:latest"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-11143",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "6995257cf470d2143ad1683824962de4071c0eb7",
+      "image": "swebench/sweb.eval.x86_64.pytest-dev_1776_pytest-11143:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-10297",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "b90661d6a46aa3619d3eec94d5281f5888add501",
+      "image": "swebench/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-10297:latest"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-10325",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "7bdc11e87c7d86dcc2a087eccb7a7c129a473415",
+      "image": "swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-10325:latest"
+    },
+    {
+      "instance_id": "django__django-11019",
+      "repo": "django/django",
+      "base_commit": "93e892bb645b16ebaf287beb5fe7f3ffe8d10408",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-11019:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-12171",
+      "repo": "sympy/sympy",
+      "base_commit": "ca6ef27272be31c9dc3753ede9232c39df9a75d8",
+      "image": "swebench/sweb.eval.x86_64.sympy_1776_sympy-12171:latest"
+    },
+    {
+      "instance_id": "astropy__astropy-14182",
+      "repo": "astropy/astropy",
+      "base_commit": "a5917978be39d13cd90b517e1de4e7a539ffaa48",
+      "image": "swebench/sweb.eval.x86_64.astropy_1776_astropy-14182:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-22711",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "f670fe78795b18eb1118707721852209cd77ad51",
+      "image": "swebench/sweb.eval.x86_64.matplotlib_1776_matplotlib-22711:latest"
+    },
+    {
+      "instance_id": "mwaskom__seaborn-3010",
+      "repo": "mwaskom/seaborn",
+      "base_commit": "0f5a013e2cf43562deec3b879458e59a73853813",
+      "image": "swebench/sweb.eval.x86_64.mwaskom_1776_seaborn-3010:latest"
+    },
+    {
+      "instance_id": "pallets__flask-4992",
+      "repo": "pallets/flask",
+      "base_commit": "4c288bc97ea371817199908d0d9b12de9dae327e",
+      "image": "swebench/sweb.eval.x86_64.pallets_1776_flask-4992:latest"
+    },
+    {
+      "instance_id": "psf__requests-2148",
+      "repo": "psf/requests",
+      "base_commit": "fe693c492242ae532211e0c173324f09ca8cf227",
+      "image": "swebench/sweb.eval.x86_64.psf_1776_requests-2148:latest"
+    },
+    {
+      "instance_id": "pydata__xarray-4094",
+      "repo": "pydata/xarray",
+      "base_commit": "a64cf2d5476e7bbda099b34c40b7be1880dbd39a",
+      "image": "swebench/sweb.eval.x86_64.pydata_1776_xarray-4094:latest"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-6506",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "0a4204fd7555cfedd43f43017c94d24ef48244a5",
+      "image": "swebench/sweb.eval.x86_64.pylint-dev_1776_pylint-6506:latest"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-11148",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "2f7415cfbc4b6ca62f9013f1abd27136f46b9653",
+      "image": "swebench/sweb.eval.x86_64.pytest-dev_1776_pytest-11148:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-10508",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "c753b77ac49e72ebc0fe5e3c2369fe628f975017",
+      "image": "swebench/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-10508:latest"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-10451",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "195e911f1dab04b8ddeacbe04b7d214aaf81bb0b",
+      "image": "swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-10451:latest"
+    },
+    {
+      "instance_id": "django__django-11039",
+      "repo": "django/django",
+      "base_commit": "d5276398046ce4a102776a1e67dcac2884d80dfe",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-11039:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-12236",
+      "repo": "sympy/sympy",
+      "base_commit": "d60497958f6dea7f5e25bc41e9107a6a63694d01",
+      "image": "swebench/sweb.eval.x86_64.sympy_1776_sympy-12236:latest"
+    },
+    {
+      "instance_id": "astropy__astropy-14365",
+      "repo": "astropy/astropy",
+      "base_commit": "7269fa3e33e8d02485a647da91a5a2a60a06af61",
+      "image": "swebench/sweb.eval.x86_64.astropy_1776_astropy-14365:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-22835",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "c33557d120eefe3148ebfcf2e758ff2357966000",
+      "image": "swebench/sweb.eval.x86_64.matplotlib_1776_matplotlib-22835:latest"
+    },
+    {
+      "instance_id": "mwaskom__seaborn-3190",
+      "repo": "mwaskom/seaborn",
+      "base_commit": "4a9e54962a29c12a8b103d75f838e0e795a6974d",
+      "image": "swebench/sweb.eval.x86_64.mwaskom_1776_seaborn-3190:latest"
+    },
+    {
+      "instance_id": "pallets__flask-5063",
+      "repo": "pallets/flask",
+      "base_commit": "182ce3dd15dfa3537391c3efaf9c3ff407d134d4",
+      "image": "swebench/sweb.eval.x86_64.pallets_1776_flask-5063:latest"
+    },
+    {
+      "instance_id": "psf__requests-2317",
+      "repo": "psf/requests",
+      "base_commit": "091991be0da19de9108dbe5e3752917fea3d7fdc",
+      "image": "swebench/sweb.eval.x86_64.psf_1776_requests-2317:latest"
+    },
+    {
+      "instance_id": "pydata__xarray-4248",
+      "repo": "pydata/xarray",
+      "base_commit": "98dc1f4ea18738492e074e9e51ddfed5cd30ab94",
+      "image": "swebench/sweb.eval.x86_64.pydata_1776_xarray-4248:latest"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7080",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "3c5eca2ded3dd2b59ebaf23eb289453b5d2930f0",
+      "image": "swebench/sweb.eval.x86_64.pylint-dev_1776_pylint-7080:latest"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5103",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "10ca84ffc56c2dd2d9dc4bd71b7b898e083500cd",
+      "image": "swebench/sweb.eval.x86_64.pytest-dev_1776_pytest-5103:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-10949",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "3b5abf76597ce6aff76192869f92647c1b5259e7",
+      "image": "swebench/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-10949:latest"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-11445",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "71db08c05197545944949d5aa76cd340e7143627",
+      "image": "swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-11445:latest"
+    },
+    {
+      "instance_id": "django__django-11049",
+      "repo": "django/django",
+      "base_commit": "17455e924e243e7a55e8a38f45966d8cbb27c273",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-11049:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-12419",
+      "repo": "sympy/sympy",
+      "base_commit": "479939f8c65c8c2908bbedc959549a257a7c0b0b",
+      "image": "swebench/sweb.eval.x86_64.sympy_1776_sympy-12419:latest"
+    },
+    {
+      "instance_id": "astropy__astropy-14995",
+      "repo": "astropy/astropy",
+      "base_commit": "b16c7d12ccbc7b2d20364b89fb44285bcbfede54",
+      "image": "swebench/sweb.eval.x86_64.astropy_1776_astropy-14995:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23299",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "3eadeacc06c9f2ddcdac6ae39819faa9fbee9e39",
+      "image": "swebench/sweb.eval.x86_64.matplotlib_1776_matplotlib-23299:latest"
+    },
+    {
+      "instance_id": "mwaskom__seaborn-3407",
+      "repo": "mwaskom/seaborn",
+      "base_commit": "515286e02be3e4c0ff2ef4addb34a53c4a676ee4",
+      "image": "swebench/sweb.eval.x86_64.mwaskom_1776_seaborn-3407:latest"
+    },
+    {
+      "instance_id": "psf__requests-2674",
+      "repo": "psf/requests",
+      "base_commit": "0be38a0c37c59c4b66ce908731da15b401655113",
+      "image": "swebench/sweb.eval.x86_64.psf_1776_requests-2674:latest"
+    },
+    {
+      "instance_id": "pydata__xarray-4493",
+      "repo": "pydata/xarray",
+      "base_commit": "a5f53e203c52a7605d5db799864046471115d04f",
+      "image": "swebench/sweb.eval.x86_64.pydata_1776_xarray-4493:latest"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7114",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "397c1703e8ae6349d33f7b99f45b2ccaf581e666",
+      "image": "swebench/sweb.eval.x86_64.pylint-dev_1776_pylint-7114:latest"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5221",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "4a2fdce62b73944030cff9b3e52862868ca9584d",
+      "image": "swebench/sweb.eval.x86_64.pytest-dev_1776_pytest-5221:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-11040",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "96a02f3934952d486589dddd3f00b40d5a5ab5f2",
+      "image": "swebench/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-11040:latest"
+    }
+  ]
+}

@@ -248,7 +248,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-        with:/n          fetch-depth: 1
+        with:
+          fetch-depth: 1
       - name: Alert when the loop produced nothing for 2 weeks
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

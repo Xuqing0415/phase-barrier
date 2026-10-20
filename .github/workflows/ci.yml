@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, codex/release-v1.0.0]
   pull_request:
 
 concurrency:

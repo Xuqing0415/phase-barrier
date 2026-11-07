@@ -13,6 +13,7 @@
 | `gold_check.py` | 宿主（评分 venv） | **自检**：用数据集里的 gold patch 打分，必须 resolved=1 —— 跑 Agent 评测前先过这一关 |
 | `regrade_cross_shard.py` | 宿主（评分 venv） | 把已产出的补丁在另一分片（如 Verified）上重新评分，不重跑 Agent |
 | `analyze_results.py` | 任意（只读 CSV） | 把 `results.csv` 汇总成可复算统计：resolve 率 + Wilson 95% 区间、拦截/阶段 6/交付全绿/空补丁、逐实例「被门禁救回 / 拖累」清单 |
+| `run_status.py` | 任意（只读；`--write` 可选） | 读取 `status.json`：`running` 但 `runner_pid` 不存在时标记 `stale` 并写入 `stale_reason`，避免僵尸状态被当成仍在运行 |
 
 编排由仓库既有的 `scripts/run_swebench_batch_container.py` 负责；分层抽样由
 `scripts/select_swe_tasks.py` 负责；批量拉取官方评测镜像由

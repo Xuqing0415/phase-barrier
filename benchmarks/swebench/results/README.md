@@ -9,6 +9,10 @@
 |---|---|---|
 | `scale20_lite_container.csv` | Scale-20（SWE-bench Lite `test` 分片，20 实例 × baseline/gated = 40 行） | `scripts/run_swebench_batch_container.py`（官方 eval 镜像内跑 Agent + 宿主侧官方 harness 评分） |
 | `verified_regrade.csv` | 上表补丁在 SWE-bench Verified 分片上的重新评分（4 实例 × 2 组 = 8 行） | `benchmarks/swebench/regrade_cross_shard.py`（不重跑 Agent，只换分片打分） |
+| `verified15_cached.csv` | Verified 缓存子样本（15 实例 × 2 组 = 30 行，7 个仓库） | `scripts/run_swebench_batch_container.py`（官方 eval 镜像内跑 Agent + 宿主侧官方 harness 评分） |
+| `verified15_cached_summary.json` | 上表的 resolved、Wilson 区间、配对差异与成本汇总 | `benchmarks/swebench/analyze_results.py` / 运行脚本汇总 |
+| `verified15_cached_audit.csv` | 逐实例评分审计：patch 应用、infra failure、F2P/P2P 计数 | 从官方 harness 的 `report.json` 抽取 |
+| `verified15_cached_selection.json` | 选择元数据与选中实例清单（不含 gold patch） | `scripts/select_swe_tasks.py --balance-difficulty` |
 
 CSV 列见 `run_swebench_batch_container.py` 的 `COLUMNS`：`instance_id, repo, mode, resolved,
 turns, seconds, diff_chars, gate_intercepts, gate_final_stage, gate_completed, note`
@@ -45,6 +49,13 @@ PY
 |---|---|---|---|---|---|---|---|
 | baseline | 20 | 18（90%） | 0 | — | — | 43.1 | 262s |
 | gated | 20 | 20（100%） | 78 | 14 | 14 | 49.8 | 462s |
+
+## Verified 缓存-15 交叉验证
+
+这不是 Scale-50，也不是预注册的 12 仓库样本。样本只取本地已缓存镜像的 Verified 实例，
+覆盖 7 个仓库，存在可用性选择偏差。结果：baseline 12/15（80.0%），gated 13/15（86.7%），
+gated-only 1、baseline-only 0；McNemar 精确双侧 p=1.0，不能宣称显著提升。
+完整报告见 `docs/benchmarks/verified15-cached-2026-11-08.md`。
 
 ## 口径与已知限制
 

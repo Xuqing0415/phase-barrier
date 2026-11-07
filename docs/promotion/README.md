@@ -32,7 +32,7 @@ v0.52.0 起叠加「五道防线」——需求模板 / 双模型交叉复核 / 
 | 支持语言 | 13 | Python / JavaScript（含 TypeScript）/ Java / Kotlin / Scala / Go / Rust / Swift / Ruby / PHP / C#（.NET 别名）/ C++ / Dart |
 | 测试 | 1439（82 个文件） | 覆盖率门禁 ≥90%（实测 93%） |
 | CI 矩阵 | Linux / Windows / macOS × Python 3.10-3.14 | 真实语言工具链全量激活 |
-| SWE-bench 双组实测 | Scale-20（官方评测容器内，同模型同预算）：baseline 18/20（90%）vs gated **20/20（100%）**，78 次拦截，0 空补丁，0 例拖累；Verified 分片复核 8/8 一致 | 报告 `docs/benchmarks/swe-bench-scale20.md`，原始 CSV `benchmarks/swebench/results/` |
+| SWE-bench 双组实测 | Scale-20（官方评测容器内，同模型同预算）：baseline 18/20（90%）vs gated **20/20（100%）**，78 次拦截，0 空补丁，0 例拖累；Verified 重评分 8/8 一致；Verified 缓存-15（非 Scale-50）交叉验证 baseline 12/15 vs gated 13/15，0 例拖累，McNemar p=1.0（不宣称显著提升） | 报告 `docs/benchmarks/swe-bench-scale20.md`、`docs/benchmarks/verified15-cached-2026-11-08.md`；原始 CSV `benchmarks/swebench/results/` |
 | 插件生态 | `plugins.json` 4 条（2 官方示例 + 2 自动发现），全部 passed | 打 `phase-barrier-plugin` topic 即被每周自动收录；增量刷新已实证 |
 | 分发 | PyPI + GitHub Release（sigstore 签名） | GitHub Action Marketplace |
 | 文档站 | <https://docs.xshayncka.dev/> | MkDocs |

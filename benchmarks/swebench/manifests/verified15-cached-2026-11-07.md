@@ -44,3 +44,16 @@ python scripts/select_swe_tasks.py \
 
 `selection_meta.excluded` 记录了被配额排除的实例；完整候选集来自
 `.pytest_tmp/verified15/local_images.txt` 与 `dataset.json` 的交集。
+
+## 结果（2026-11-08）
+
+- baseline 12/15（80.0%），Wilson 95% [54.8%, 93.0%]。
+- gated 13/15（86.7%），Wilson 95% [62.1%, 96.3%]，拦截 104 次，交付全绿 14/15。
+- 配对：both 12、baseline-only 0、gated-only 1（`astropy__astropy-7336`）、neither 2。
+- McNemar 精确双侧 p=1.0；不能宣称显著提升。
+- `astropy__astropy-7336` baseline 的官方 report 为 `patch_successfully_applied=false`，
+  原因是 Agent 修改了 test patch 准备重命名的旧测试文件；gated 未触碰该文件，故 resolved。
+  该差异不能在报告中单独解释为“门禁提升实现能力”。
+- 原始结果：`benchmarks/swebench/results/verified15_cached.csv`；
+  评分审计：`benchmarks/swebench/results/verified15_cached_audit.csv`；
+  并列报告：`docs/benchmarks/verified15-cached-2026-11-08.md`。

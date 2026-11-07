@@ -137,6 +137,11 @@ python benchmarks/swebench/regrade_cross_shard.py \
   --out-csv benchmarks/swebench/results/verified_regrade.csv
 ```
 
+2026-11-08 补充：另用本地缓存的 Verified 15 实例做了独立 Agent 运行交叉验证
+（baseline 12/15 vs gated 13/15，0 例拖累，McNemar p=1.0，不宣称显著提升）。
+该样本覆盖 7 个仓库、存在缓存选择偏差，不是 Scale-50。详见
+`docs/benchmarks/verified15-cached-2026-11-08.md`。
+
 ## 七、已知限制
 
 - **n=20，非排行榜结论**；Wilson 区间有重叠，方向性结论不等于统计显著。

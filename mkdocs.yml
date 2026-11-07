@@ -76,6 +76,7 @@ nav:
       - SWE-bench 门禁基准: tutorials/swe-bench-gate.md
       - SWE-bench 真实评测 harness: tutorials/swe-bench-real.md
       - SWE-bench Scale-20 实测报告: benchmarks/swe-bench-scale20.md
+      - SWE-bench Verified 缓存-15 交叉验证: benchmarks/verified15-cached-2026-11-08.md
       - 视频教程模板: video-tutorial-template.md
   - FAQ: faq.md
   - Roadmap: roadmap.md

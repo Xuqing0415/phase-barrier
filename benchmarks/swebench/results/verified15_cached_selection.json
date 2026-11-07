@@ -1,0 +1,248 @@
+{
+    "schema_version":  1,
+    "source":  "SWE-bench_Verified test split; locally cached images",
+    "sample":  "cached15",
+    "generated_at":  "2026-11-08",
+    "candidate_count":  17,
+    "selected_count":  15,
+    "repo_count":  7,
+    "selection_meta":  {
+                           "count_requested":  15,
+                           "count_selected":  15,
+                           "balance_difficulty":  true,
+                           "seed":  7,
+                           "repos":  {
+                                         "astropy/astropy":  {
+                                                                 "available":  4,
+                                                                 "quota":  3,
+                                                                 "selected":  3,
+                                                                 "difficulty_available":  {
+                                                                                              "15 min - 1 hour":  3,
+                                                                                              "\u003c15 min fix":  1
+                                                                                          },
+                                                                 "difficulty_selected":  {
+                                                                                             "15 min - 1 hour":  2,
+                                                                                             "\u003c15 min fix":  1
+                                                                                         },
+                                                                 "balance_note":  "only 2 difficulty bucket(s) for quota 3"
+                                                             },
+                                         "django/django":  {
+                                                               "available":  6,
+                                                               "quota":  5,
+                                                               "selected":  5,
+                                                               "difficulty_available":  {
+                                                                                            "1-4 hours":  1,
+                                                                                            "15 min - 1 hour":  1,
+                                                                                            "\u003c15 min fix":  4
+                                                                                        },
+                                                               "difficulty_selected":  {
+                                                                                           "1-4 hours":  1,
+                                                                                           "15 min - 1 hour":  1,
+                                                                                           "\u003c15 min fix":  3
+                                                                                       },
+                                                               "balance_note":  "only 3 difficulty bucket(s) for quota 5"
+                                                           },
+                                         "matplotlib/matplotlib":  {
+                                                                       "available":  2,
+                                                                       "quota":  2,
+                                                                       "selected":  2,
+                                                                       "difficulty_available":  {
+                                                                                                    "15 min - 1 hour":  1,
+                                                                                                    "\u003c15 min fix":  1
+                                                                                                },
+                                                                       "difficulty_selected":  {
+                                                                                                   "15 min - 1 hour":  1,
+                                                                                                   "\u003c15 min fix":  1
+                                                                                               },
+                                                                       "balance_note":  ""
+                                                                   },
+                                         "mwaskom/seaborn":  {
+                                                                 "available":  2,
+                                                                 "quota":  2,
+                                                                 "selected":  2,
+                                                                 "difficulty_available":  {
+                                                                                              "15 min - 1 hour":  2
+                                                                                          },
+                                                                 "difficulty_selected":  {
+                                                                                             "15 min - 1 hour":  2
+                                                                                         },
+                                                                 "balance_note":  "only 1 difficulty bucket(s) for quota 2"
+                                                             },
+                                         "pallets/flask":  {
+                                                               "available":  1,
+                                                               "quota":  1,
+                                                               "selected":  1,
+                                                               "difficulty_available":  {
+                                                                                            "\u003c15 min fix":  1
+                                                                                        },
+                                                               "difficulty_selected":  {
+                                                                                           "\u003c15 min fix":  1
+                                                                                       },
+                                                               "balance_note":  ""
+                                                           },
+                                         "psf/requests":  {
+                                                              "available":  1,
+                                                              "quota":  1,
+                                                              "selected":  1,
+                                                              "difficulty_available":  {
+                                                                                           "\u003c15 min fix":  1
+                                                                                       },
+                                                              "difficulty_selected":  {
+                                                                                          "\u003c15 min fix":  1
+                                                                                      },
+                                                              "balance_note":  ""
+                                                          },
+                                         "scikit-learn/scikit-learn":  {
+                                                                           "available":  1,
+                                                                           "quota":  1,
+                                                                           "selected":  1,
+                                                                           "difficulty_available":  {
+                                                                                                        "15 min - 1 hour":  1
+                                                                                                    },
+                                                                           "difficulty_selected":  {
+                                                                                                       "15 min - 1 hour":  1
+                                                                                                   },
+                                                                           "balance_note":  ""
+                                                                       }
+                                     },
+                           "difficulty_available":  {
+                                                        "1-4 hours":  1,
+                                                        "15 min - 1 hour":  8,
+                                                        "\u003c15 min fix":  8
+                                                    },
+                           "difficulty_selected":  {
+                                                       "1-4 hours":  1,
+                                                       "15 min - 1 hour":  7,
+                                                       "\u003c15 min fix":  7
+                                                   },
+                           "difficulty_distribution":  {
+                                                           "1-4 hours":  1,
+                                                           "15 min - 1 hour":  7,
+                                                           "\u003c15 min fix":  7
+                                                       },
+                           "excluded":  [
+                                            {
+                                                "instance_id":  "astropy__astropy-13033",
+                                                "repo":  "astropy/astropy",
+                                                "difficulty":  "15 min - 1 hour",
+                                                "reason":  "not_selected_by_quota"
+                                            },
+                                            {
+                                                "instance_id":  "django__django-10880",
+                                                "repo":  "django/django",
+                                                "difficulty":  "\u003c15 min fix",
+                                                "reason":  "not_selected_by_quota"
+                                            }
+                                        ],
+                           "warnings":  [
+
+                                        ]
+                       },
+    "selected_instances":  [
+                               {
+                                   "instance_id":  "astropy__astropy-12907",
+                                   "repo":  "astropy/astropy",
+                                   "difficulty":  "15 min - 1 hour",
+                                   "base_commit":  "d16bfe05a744909de4b27f5875fe0d4ed41ce607",
+                                   "image":  "swebench/sweb.eval.x86_64.astropy_1776_astropy-12907:latest"
+                               },
+                               {
+                                   "instance_id":  "astropy__astropy-14182",
+                                   "repo":  "astropy/astropy",
+                                   "difficulty":  "15 min - 1 hour",
+                                   "base_commit":  "a5917978be39d13cd90b517e1de4e7a539ffaa48",
+                                   "image":  "swebench/sweb.eval.x86_64.astropy_1776_astropy-14182:latest"
+                               },
+                               {
+                                   "instance_id":  "astropy__astropy-7336",
+                                   "repo":  "astropy/astropy",
+                                   "difficulty":  "\u003c15 min fix",
+                                   "base_commit":  "732d89c2940156bdc0e200bb36dc38b5e424bcba",
+                                   "image":  "swebench/sweb.eval.x86_64.astropy_1776_astropy-7336:latest"
+                               },
+                               {
+                                   "instance_id":  "django__django-10097",
+                                   "repo":  "django/django",
+                                   "difficulty":  "\u003c15 min fix",
+                                   "base_commit":  "b9cf764be62e77b4777b3a75ec256f6209a57671",
+                                   "image":  "swebench/sweb.eval.x86_64.django_1776_django-10097:latest"
+                               },
+                               {
+                                   "instance_id":  "django__django-10554",
+                                   "repo":  "django/django",
+                                   "difficulty":  "1-4 hours",
+                                   "base_commit":  "14d026cccb144c6877294ba4cd4e03ebf0842498",
+                                   "image":  "swebench/sweb.eval.x86_64.django_1776_django-10554:latest"
+                               },
+                               {
+                                   "instance_id":  "django__django-10914",
+                                   "repo":  "django/django",
+                                   "difficulty":  "\u003c15 min fix",
+                                   "base_commit":  "e7fd69d051eaa67cb17f172a39b57253e9cb831a",
+                                   "image":  "swebench/sweb.eval.x86_64.django_1776_django-10914:latest"
+                               },
+                               {
+                                   "instance_id":  "django__django-10973",
+                                   "repo":  "django/django",
+                                   "difficulty":  "15 min - 1 hour",
+                                   "base_commit":  "ddb293685235fd09e932805771ae97f72e817181",
+                                   "image":  "swebench/sweb.eval.x86_64.django_1776_django-10973:latest"
+                               },
+                               {
+                                   "instance_id":  "django__django-10999",
+                                   "repo":  "django/django",
+                                   "difficulty":  "\u003c15 min fix",
+                                   "base_commit":  "36300ef336e3f130a0dadc1143163ff3d23dc843",
+                                   "image":  "swebench/sweb.eval.x86_64.django_1776_django-10999:latest"
+                               },
+                               {
+                                   "instance_id":  "matplotlib__matplotlib-13989",
+                                   "repo":  "matplotlib/matplotlib",
+                                   "difficulty":  "\u003c15 min fix",
+                                   "base_commit":  "a3e2897bfaf9eaac1d6649da535c4e721c89fa69",
+                                   "image":  "swebench/sweb.eval.x86_64.matplotlib_1776_matplotlib-13989:latest"
+                               },
+                               {
+                                   "instance_id":  "matplotlib__matplotlib-14623",
+                                   "repo":  "matplotlib/matplotlib",
+                                   "difficulty":  "15 min - 1 hour",
+                                   "base_commit":  "d65c9ca20ddf81ef91199e6d819f9d3506ef477c",
+                                   "image":  "swebench/sweb.eval.x86_64.matplotlib_1776_matplotlib-14623:latest"
+                               },
+                               {
+                                   "instance_id":  "mwaskom__seaborn-3069",
+                                   "repo":  "mwaskom/seaborn",
+                                   "difficulty":  "15 min - 1 hour",
+                                   "base_commit":  "54cab15bdacfaa05a88fbc5502a5b322d99f148e",
+                                   "image":  "swebench/sweb.eval.x86_64.mwaskom_1776_seaborn-3069:latest"
+                               },
+                               {
+                                   "instance_id":  "mwaskom__seaborn-3187",
+                                   "repo":  "mwaskom/seaborn",
+                                   "difficulty":  "15 min - 1 hour",
+                                   "base_commit":  "22cdfb0c93f8ec78492d87edb810f10cb7f57a31",
+                                   "image":  "swebench/sweb.eval.x86_64.mwaskom_1776_seaborn-3187:latest"
+                               },
+                               {
+                                   "instance_id":  "pallets__flask-5014",
+                                   "repo":  "pallets/flask",
+                                   "difficulty":  "\u003c15 min fix",
+                                   "base_commit":  "7ee9ceb71e868944a46e1ff00b506772a53a4f1d",
+                                   "image":  "swebench/sweb.eval.x86_64.pallets_1776_flask-5014:latest"
+                               },
+                               {
+                                   "instance_id":  "psf__requests-5414",
+                                   "repo":  "psf/requests",
+                                   "difficulty":  "\u003c15 min fix",
+                                   "base_commit":  "39d0fdd9096f7dceccbc8f82e1eda7dd64717a8e",
+                                   "image":  "swebench/sweb.eval.x86_64.psf_1776_requests-5414:latest"
+                               },
+                               {
+                                   "instance_id":  "scikit-learn__scikit-learn-10297",
+                                   "repo":  "scikit-learn/scikit-learn",
+                                   "difficulty":  "15 min - 1 hour",
+                                   "base_commit":  "b90661d6a46aa3619d3eec94d5281f5888add501",
+                                   "image":  "swebench/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-10297:latest"
+                               }
+                           ]
+}

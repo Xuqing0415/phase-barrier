@@ -1,0 +1,54 @@
+{
+  "n": 15,
+  "baseline_resolved": 12,
+  "gated_resolved": 13,
+  "baseline_rate": 0.8,
+  "gated_rate": 0.8666666666666667,
+  "baseline_wilson95": [
+    0.5481406466534955,
+    0.9295257935638959
+  ],
+  "gated_wilson95": [
+    0.6211750079348376,
+    0.9626395301086407
+  ],
+  "paired": {
+    "both": 12,
+    "baseline_only": [],
+    "gated_only": [
+      "astropy__astropy-7336"
+    ],
+    "neither": [
+      "django__django-10999",
+      "mwaskom__seaborn-3187"
+    ]
+  },
+  "turns": {
+    "baseline_total": 674.0,
+    "gated_total": 656.0,
+    "baseline_avg": 44.93333333333333,
+    "gated_avg": 43.733333333333334
+  },
+  "seconds": {
+    "baseline_total": 4888.7,
+    "gated_total": 3357.7000000000003,
+    "baseline_avg": 325.9133333333333,
+    "gated_avg": 223.8466666666667
+  },
+  "intercepts": {
+    "baseline_total": 0.0,
+    "gated_total": 104.0,
+    "gated_min": 5,
+    "gated_avg": 6.933333333333334
+  },
+  "hit_turn_cap_unresolved": {
+    "baseline": [
+      "mwaskom__seaborn-3187"
+    ],
+    "gated": []
+  },
+  "gate_completed": 14,
+  "notes": [
+    "graded"
+  ]
+}

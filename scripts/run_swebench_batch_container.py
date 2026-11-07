@@ -249,6 +249,22 @@ def build_agent_mounts(*, agent_script: Path | str, repo_root: Path | str,
     ]
 
 
+def write_run_status(path: Path, *, state: str, **fields) -> None:
+    """写 status.json；``runner_pid`` 供 run_status.load_status 判断僵尸运行。"""
+    payload = {
+        "state": state,
+        "runner_pid": os.getpid(),
+        "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        **fields,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
 def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
     iid, mode = job["instance_id"], job["mode"]
     label = f"{short_id(iid)}_{mode}{args.label_suffix}"
@@ -415,6 +431,17 @@ def main() -> int:
                 for t in tasks for m in modes]
     print(f"待跑 {len(jobs)} 个 (instance, mode)", flush=True)
 
+    status_path = args.results.parent / "status.json"
+    write_run_status(
+        status_path,
+        state="running",
+        results=str(args.results),
+        tasks=len(tasks),
+        jobs=len(jobs),
+        modes=modes,
+        concurrency=args.concurrency,
+    )
+
     args.results.parent.mkdir(parents=True, exist_ok=True)
     fresh = not args.results.exists() or args.results.stat().st_size == 0
     fh = open(args.results, "a", newline="", encoding="utf-8")
@@ -442,6 +469,15 @@ def main() -> int:
     for thread in threads:
         thread.join()
     fh.close()
+    write_run_status(
+        status_path,
+        state="completed",
+        results=str(args.results),
+        tasks=len(tasks),
+        jobs=len(jobs),
+        modes=modes,
+        concurrency=args.concurrency,
+    )
     print("PB_CONTAINER_BATCH_DONE=" + str(len(jobs)), flush=True)
     return 0
 

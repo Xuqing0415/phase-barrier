@@ -321,3 +321,13 @@ def test_cli_balance_difficulty_writes_meta(tmp_path):
     assert len(payload["tasks"]) == 5
     assert payload["selection_meta"]["balance_difficulty"] is True
     assert payload["selection_meta"]["count_selected"] == 5
+
+
+def test_balanced_selection_records_excluded_instances():
+    rows = _mixed_rows(3)
+    chosen, meta = sel.select_tasks_balanced(rows, count=5, seed=7)
+    chosen_ids = {r["instance_id"] for r in chosen}
+    excluded_ids = {e["instance_id"] for e in meta["excluded"]}
+    assert chosen_ids.isdisjoint(excluded_ids)
+    assert len(chosen_ids) + len(excluded_ids) == len(rows)
+    assert all(e["reason"] == "not_selected_by_quota" for e in meta["excluded"])

@@ -381,3 +381,14 @@ def test_build_agent_mounts_never_exposes_repo_root(tmp_path):
     assert [ro for _host, _container, ro in mounts] == [True, True, True, False]
     # 宿主仓库根只能以 anti_shortcut 子目录的形式出现，不能整体挂载。
     assert all(str(host) != str(tmp_path.resolve()) for host, _container, _ro in mounts)
+
+
+def test_write_run_status_records_runner_pid(tmp_path):
+    path = tmp_path / "status.json"
+    container.write_run_status(path, state="running", results="results.csv")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    assert data["state"] == "running"
+    assert data["runner_pid"] == os.getpid()
+    assert data["results"] == "results.csv"
+    status = _load(HARNESS / "run_status.py")
+    assert status.load_status(path)["state"] == "running"

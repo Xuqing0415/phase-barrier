@@ -264,6 +264,18 @@ def select_tasks_balanced(
         }
 
     chosen.sort(key=lambda r: (str(r["repo"]), str(r["instance_id"])))
+    selected_ids = {str(r.get("instance_id")) for r in chosen}
+    excluded = [
+        {
+            "instance_id": str(row.get("instance_id")),
+            "repo": str(row.get("repo")),
+            "difficulty": str(row.get("difficulty") or "-"),
+            "reason": "not_selected_by_quota",
+        }
+        for repo in sorted(pools)
+        for row in pools[repo]
+        if str(row.get("instance_id")) not in selected_ids
+    ]
     warnings: list[str] = []
     if len(chosen) < count:
         warnings.append(f"only {len(chosen)}/{count} selected (dataset exhausted)")
@@ -279,6 +291,7 @@ def select_tasks_balanced(
         "difficulty_available": dict(sorted(available_total.items())),
         "difficulty_selected": dict(sorted(selected_total.items())),
         "difficulty_distribution": dict(sorted(selected_total.items())),
+        "excluded": excluded,
         "warnings": warnings,
     }
     return chosen, meta

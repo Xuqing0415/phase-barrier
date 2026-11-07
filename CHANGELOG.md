@@ -26,6 +26,10 @@
   `selection_meta.difficulty_distribution` 记录实际难度分布，不宣称“完全均衡”。
 - `load_rows()` 接受选择器自身输出的 `{"tasks": [...]}` 包装，选出的任务清单可直接
   回喂给 `run_swebench_batch_container.py`。
+- `selection_meta.excluded` 记录未入选实例及原因（如 `not_selected_by_quota`），
+  便于复现缓存子样本的筛选过程。
+- `run_swebench_batch_container.py` 启动和结束时写 `status.json`，包含
+  `runner_pid` / `state`，让 `run_status.py` 的僵尸运行检测对正式批跑生效。
 
 ## [1.1.0] - 2026-10-20
 

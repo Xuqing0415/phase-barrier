@@ -260,3 +260,23 @@ def test_dd_source_write_allowed_after_impl(tmp_path, fake_tools):
     tools["write_file"]("test_fib.py", GOOD_TESTS)
     assert tools["advance_stage"](3)["success"]
     skill.check_exec_permission("dd if=/dev/zero of=fib.py bs=1024 count=1")
+
+def test_exec_redirect_to_dev_null_does_not_escape_workspace(tmp_path, fake_tools):
+    """工作区外的重定向目标（/dev/null、/tmp）不应触发 relative_to ValueError。"""
+    skill = make_skill(tmp_path)
+    skill.check_exec_permission("find . 2>/dev/null")
+    skill.check_exec_permission("echo hi > /tmp/pb-out.txt")
+
+
+def test_check_write_permission_outside_workspace_is_permission_error(tmp_path):
+    skill = make_skill(tmp_path)
+    for path in ("/tmp/pb-outside.py", "../outside.py"):
+        with pytest.raises(PermissionError, match="不在工作区"):
+            skill.check_write_permission(path)
+
+
+def test_gated_write_file_outside_workspace_is_permission_error(tmp_path, fake_tools):
+    skill = make_skill(tmp_path)
+    tools = skill.install(fake_tools)
+    with pytest.raises(PermissionError, match="不在工作区"):
+        tools["write_file"]("/tmp/pb-outside.py", "x")

@@ -217,7 +217,12 @@ class AntiShortcutSkill:
         （如 no_hardcoded_secrets / require_license_header）。
         """
         target = (self.workspace / path).resolve()
-        relative = target.relative_to(self.workspace).as_posix()
+        try:
+            relative = target.relative_to(self.workspace).as_posix()
+        except ValueError as exc:
+            raise PermissionError(
+                f"路径 {path} 不在工作区 {self.workspace} 内"
+            ) from exc
         if break_glass is not None:
             self.control.consume_break_glass(break_glass, str(path))
         else:
@@ -280,12 +285,19 @@ class AntiShortcutSkill:
             raise PermissionError(
                 "当前阶段不允许运行测试命令：请先完成实现代码（阶段 3）并通过 advance_stage 校验"
             )
+        from fnmatch import fnmatch
         for written in extract_written_paths(cmd):
             if written.startswith("<"):
                 continue
+            # /dev/null、/tmp/... 等系统路径不是工作区写入。不能对它们做
+            # relative_to(workspace)，否则会抛 ValueError 并被当成工具失败，浪费轮数。
+            target = Path(written)
+            resolved = target.resolve() if target.is_absolute() else (self.workspace / target).resolve()
+            try:
+                relative = resolved.relative_to(self.workspace).as_posix()
+            except ValueError:
+                continue
             self.check_write_permission(written)
-            from fnmatch import fnmatch
-            relative = (self.workspace / written).resolve().relative_to(self.workspace).as_posix()
             if any(fnmatch(relative, p) for p in self.control.permissions.policy().get("review_writes", [])):
                 raise PermissionError("需要人工复核的文件必须通过 write_file 写入，不能通过 shell 写入")
 

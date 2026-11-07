@@ -9,6 +9,7 @@ v0.9.0：密钥轮换——``hmac_keys`` 指定轮换期仍接受的旧密钥（
 ``rotate_key()`` 用新密钥重新签名；环境变量 ``PHASE_BARRIER_HMAC_KEYS`` 支持
 逗号 / 空白分隔的多个旧密钥。未配置密钥时行为与旧版本完全一致。
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -56,7 +57,9 @@ class StateLockTimeoutError(TimeoutError):
     """等待状态文件锁超时：另一进程持锁过久（可能长时间阻塞或异常退出）。"""
 
 
-def _acquire_lock_fcntl(fd: int, deadline: float, lock_path: Path) -> None:  # pragma: no cover（POSIX 专属分支）
+def _acquire_lock_fcntl(
+    fd: int, deadline: float, lock_path: Path
+) -> None:  # pragma: no cover（POSIX 专属分支）
     """POSIX ``fcntl.flock`` 获取独占锁（与 Windows 分支互斥，不计入覆盖率）。"""
     while True:
         try:
@@ -70,7 +73,9 @@ def _acquire_lock_fcntl(fd: int, deadline: float, lock_path: Path) -> None:  # p
             time.sleep(0.02)
 
 
-def _acquire_lock_msvcrt(fd: int, deadline: float, lock_path: Path) -> None:  # pragma: no cover（Windows 专属分支）
+def _acquire_lock_msvcrt(
+    fd: int, deadline: float, lock_path: Path
+) -> None:  # pragma: no cover（Windows 专属分支）
     """Windows ``msvcrt.locking`` 获取独占锁（与 POSIX 分支互斥，不计入覆盖率）。"""
     os.lseek(fd, 0, os.SEEK_SET)
     if os.fstat(fd).st_size == 0:
@@ -162,7 +167,9 @@ class StateManager:
         hmac_keys: list[str] | None = None,
     ) -> None:
         self.state_file = Path(state_file)
-        self._validation_basis: ContextVar[dict | None] = ContextVar("validation_basis", default=None)
+        self._validation_basis: ContextVar[dict | None] = ContextVar(
+            "validation_basis", default=None
+        )
         # HMAC-SHA256 状态签名：显式密钥优先，其次环境变量 PHASE_BARRIER_HMAC_KEY
         self._hmac_key = hmac_key or os.environ.get("PHASE_BARRIER_HMAC_KEY")
         if hmac_keys is None:
@@ -281,15 +288,16 @@ class StateManager:
                 pass
             raise
 
+    """跨进程安全地“读-改-写”状态：独占锁 + 写前重载最新状态。
+
+               多 Agent / 多进程共享同一 ``state.json`` 时（v0.26.3）：
+               - 文件锁保证同一时刻只有一个写入者；
+               - 写前重载保证在他人写入的基础上修改（不丢更新）；
+               - 唯一临时文件 + ``os.replace`` 保证磁盘上始终是完整文件。
+               """
+
     @contextmanager
     def _mutate(self, *, reload: bool = True):
-        """跨进程安全地“读-改-写”状态：独占锁 + 写前重载最新状态。
-
-        多 Agent / 多进程共享同一 ``state.json`` 时（v0.26.3）：
-        - 文件锁保证同一时刻只有一个写入者；
-        - 写前重载保证在他人写入的基础上修改（不丢更新）；
-        - 唯一临时文件 + ``os.replace`` 保证磁盘上始终是完整文件。
-        """
         with _file_lock(_state_lock_path(self.state_file)):
             if reload and self.state_file.exists():
                 self._data = self._load()
@@ -301,8 +309,9 @@ class StateManager:
                 self._validation_basis.set(self.snapshot())
 
     @contextmanager
-    def validated_transition(self):
-        """乐观事务：允许校验器自身写入，但拒绝基于并发更新前的证据提交。"""
+    def validated_transition(
+        self,
+    ):  # 乐观事务：允许校验器自身写入，但拒绝基于并发更新前的证据提交。
         with _file_lock(_state_lock_path(self.state_file)):
             self._data = self._load()
             token = self._validation_basis.set(self.snapshot())
@@ -347,8 +356,15 @@ class StateManager:
 
     # ---------- 修改 ----------
 
-    def start_goal_cycle(self, goal_id: str, milestone_index: int, request: str, *,
-                         expected: dict, allow_initial: bool = False) -> None:
+    def start_goal_cycle(
+        self,
+        goal_id: str,
+        milestone_index: int,
+        request: str,
+        *,
+        expected: dict,
+        allow_initial: bool = False,
+    ) -> None:
         """Bind a milestone at stage 0, preserving signed history of prior cycles.
 
         This can only replace an unused initial state or a clean delivery. A Goal
@@ -357,16 +373,27 @@ class StateManager:
         with self._mutate():
             if self.snapshot() != expected:
                 raise StateChangedError("Goal 绑定期间状态已变化，请 resume 重试")
-            if self._data.get("goal_id") == goal_id and self._data.get("milestone_index") == milestone_index:
+            if (
+                self._data.get("goal_id") == goal_id
+                and self._data.get("milestone_index") == milestone_index
+            ):
                 return
-            pristine = (allow_initial and self.current_stage == 1 and self.completed_stages == [0])
+            pristine = (
+                allow_initial
+                and self.current_stage == 1
+                and self.completed_stages == [0]
+            )
             if not pristine and not (self.is_complete and self.delivery_clean()):
                 raise ValueError("不能重置尚未交付的阶段循环")
             cycles = list(self._data.get("goal_cycles", []))
             if not pristine:
-                cycles.append({k: v for k, v in self.snapshot().items() if k != "goal_cycles"})
+                cycles.append(
+                    {k: v for k, v in self.snapshot().items() if k != "goal_cycles"}
+                )
             self._data = self._bootstrap(request, 0)
-            self._data.update(goal_id=goal_id, milestone_index=milestone_index, goal_cycles=cycles)
+            self._data.update(
+                goal_id=goal_id, milestone_index=milestone_index, goal_cycles=cycles
+            )
             self._data["completed_stages"] = []
             self._data["stage_history"] = []
             self._atomic_write()
@@ -374,7 +401,10 @@ class StateManager:
     def record_user_request(self, request: str) -> None:
         with self._mutate():
             self._data["evidence"]["user_request"] = request
-            if self._data["stage_history"] and self._data["stage_history"][0]["stage"] == 0:
+            if (
+                self._data["stage_history"]
+                and self._data["stage_history"][0]["stage"] == 0
+            ):
                 self._data["stage_history"][0]["evidence"]["user_request"] = request
             self._atomic_write()
 
@@ -407,7 +437,9 @@ class StateManager:
     def mark_source_change(self, path: str, *, at_epoch: float | None = None) -> None:
         """记录代码/测试文件发生变更的时间戳（用于“修复后必须重测”校验）。"""
         with self._mutate():
-            self._data["evidence"]["last_source_change_at_epoch"] = time.time() if at_epoch is None else at_epoch
+            self._data["evidence"]["last_source_change_at_epoch"] = (
+                time.time() if at_epoch is None else at_epoch
+            )
             self._data["evidence"]["last_source_change_path"] = path
             self._atomic_write()
 
@@ -477,15 +509,28 @@ class StateManager:
                     "状态文件已签名，但未提供任何验证密钥（--from / state_hmac_key / 环境变量）"
                 )
             self._verify_signature(self._data)
-        old_key, old_keys, old_data = self._hmac_key, self._rotation_keys, self.snapshot()
+        old_key, old_keys, old_data = (
+            self._hmac_key,
+            self._rotation_keys,
+            self.snapshot(),
+        )
         self._rotation_keys = list(old_keys) if keep_old else []
-        if keep_old and old_key and old_key != new_key and old_key not in self._rotation_keys:
+        if (
+            keep_old
+            and old_key
+            and old_key != new_key
+            and old_key not in self._rotation_keys
+        ):
             self._rotation_keys.insert(0, old_key)
         self._hmac_key = new_key
         try:
             self._atomic_write()
         except BaseException:
-            self._hmac_key, self._rotation_keys, self._data = old_key, old_keys, old_data
+            self._hmac_key, self._rotation_keys, self._data = (
+                old_key,
+                old_keys,
+                old_data,
+            )
             raise
 
     # ---------- 审计辅助 ----------

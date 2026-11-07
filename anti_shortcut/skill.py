@@ -595,9 +595,8 @@ class AntiShortcutSkill:
             self.remote_sink = None
 
     # ---------- 阶段推进 ----------
-
+    """验证阶段证据后提交推进；遇到并发状态更新时拒绝并提示重试。"""
     def advance_stage(self, new_stage: int, evidence: dict | None = None) -> dict:
-        """验证阶段证据后提交推进；遇到并发状态更新时拒绝并提示重试。"""
         self.control.permissions.require("advance_stage")
         from .state import _file_lock
         try:

@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -65,6 +66,9 @@ def test_load_rows_wrappers(tmp_path):
     f4.write_text('{"foo": 1}', encoding="utf-8")
     with pytest.raises(ValueError):
         sel.load_rows(f4)
+    f5 = tmp_path / "tasks.json"
+    f5.write_text(json.dumps({"tasks": arr}), encoding="utf-8")
+    assert sel.load_rows(f5) == arr
 
 
 def _mixed_rows(n_per_repo: int = 3) -> list[dict]:
@@ -186,3 +190,134 @@ def test_container_parse_pb_and_short_id():
     assert container.short_id("pylint-dev__pylint-5859") == "pylint-dev_pylint-5859"
     meta = container.parse_pb("PB_MODE=gated\nPB_GATE_COMPLETED=1\nnoise")
     assert meta == {"PB_MODE": "gated", "PB_GATE_COMPLETED": "1"}
+
+# ---------- --balance-difficulty（2026-11） ----------
+
+
+def _repo_rows(repo: str, diffs: list[str]) -> list[dict]:
+    owner, name = repo.split("/")
+    return [
+        _row(f"{owner}__{name}-{100 + i}", repo, diff=diff)
+        for i, diff in enumerate(diffs)
+    ]
+
+
+def test_quota_by_repo_largest_remainder():
+    pools = {
+        "django/django": [{}] * 10,
+        "sympy/sympy": [{}] * 5,
+        "pallets/flask": [{}] * 1,
+    }
+    quota = sel.quota_by_repo(pools, 5)
+    assert quota == {"django/django": 2, "pallets/flask": 1, "sympy/sympy": 2}
+    assert sum(quota.values()) == 5
+
+
+def test_quota_by_repo_count_less_than_repo_count():
+    pools = {f"o/r{i}": [{}] * (i + 1) for i in range(3)}
+    quota = sel.quota_by_repo(pools, 2)
+    assert sum(quota.values()) == 2
+    assert quota["o/r2"] == 1 and quota["o/r1"] == 1 and quota["o/r0"] == 0
+
+
+def test_quota_by_repo_caps_at_available():
+    quota = sel.quota_by_repo({"a/a": [{}] * 2, "b/b": [{}] * 1}, 10)
+    assert quota == {"a/a": 2, "b/b": 1}
+
+
+def test_rotate_by_difficulty_round_robin():
+    rows = _repo_rows("django/django", ["hard", "easy", "medium", "hard", "easy"])
+    out = sel.rotate_by_difficulty(rows, quota=4, seed=7, repo="django/django")
+    levels = ["easy", "medium", "hard"]
+    start = int.from_bytes(
+        hashlib.sha256(b"7:django/django").digest()[:4], "big"
+    ) % len(levels)
+    expected = levels[start:] + levels[:start]
+    assert [r["difficulty"] for r in out[:3]] == expected
+    assert len(out) == 4 and {r["difficulty"] for r in out} == set(levels)
+
+
+def test_rotate_by_difficulty_verified_time_buckets():
+    rows = _repo_rows(
+        "x/x", ["15 min - 1 hour", "<15 min fix", "1-4 hours", ">4 hours"]
+    )
+    out = sel.rotate_by_difficulty(rows, quota=4, seed=1, repo="x/x")
+    assert {r["difficulty"] for r in out} == {
+        "<15 min fix",
+        "15 min - 1 hour",
+        "1-4 hours",
+        ">4 hours",
+    }
+
+
+def test_balanced_selection_meta_and_min_one_repo():
+    rows: list[dict] = []
+    for repo, n in [
+        ("django/django", 20),
+        ("sympy/sympy", 8),
+        ("sphinx-doc/sphinx", 5),
+        ("pallets/flask", 1),
+        ("psf/requests", 3),
+    ]:
+        rows += _repo_rows(
+            repo, ["<15 min fix", "15 min - 1 hour", "1-4 hours"] * 10
+        )[:n]
+
+    chosen, meta = sel.select_tasks_balanced(rows, count=10, seed=7)
+    assert len(chosen) == 10
+    assert {r["repo"] for r in chosen} == {r["repo"] for r in rows}
+    assert all(info["quota"] >= 1 for info in meta["repos"].values())
+    assert sum(info["quota"] for info in meta["repos"].values()) == 10
+    assert all(info["selected"] == info["quota"] for info in meta["repos"].values())
+    assert meta["count_selected"] == 10
+    assert meta["difficulty_distribution"] == meta["difficulty_selected"]
+    assert sum(meta["difficulty_distribution"].values()) == 10
+
+
+def test_balanced_selection_deterministic():
+    rows = _mixed_rows(4)
+    first, first_meta = sel.select_tasks_balanced(rows, count=9, seed=42)
+    second, second_meta = sel.select_tasks_balanced(rows, count=9, seed=42)
+    assert [r["instance_id"] for r in first] == [r["instance_id"] for r in second]
+    assert first_meta == second_meta
+
+
+def test_balanced_flag_off_is_backward_compatible():
+    rows = _mixed_rows(4)
+    old = sel.select_tasks(rows, count=9, seed=42)
+    new = sel.select_tasks(rows, count=9, seed=42, balance_difficulty=False)
+    assert [r["instance_id"] for r in old] == [r["instance_id"] for r in new]
+
+
+def test_balanced_selection_records_skewed_repo_note():
+    rows = _repo_rows("only/medium", ["medium"] * 3) + _repo_rows(
+        "other/other", ["easy", "hard"]
+    )
+    _chosen, meta = sel.select_tasks_balanced(rows, count=3, seed=7)
+    info = meta["repos"]["only/medium"]
+    assert info["quota"] == 2
+    assert info["balance_note"]
+
+
+def test_cli_balance_difficulty_writes_meta(tmp_path):
+    rows = _mixed_rows(3)
+    src = tmp_path / "dataset.json"
+    src.write_text(json.dumps(rows), encoding="utf-8")
+    out = tmp_path / "out.json"
+    assert sel.main(
+        [
+            "--dataset",
+            str(src),
+            "--count",
+            "5",
+            "--balance-difficulty",
+            "--seed",
+            "7",
+            "--out",
+            str(out),
+        ]
+    ) == 0
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert len(payload["tasks"]) == 5
+    assert payload["selection_meta"]["balance_difficulty"] is True
+    assert payload["selection_meta"]["count_selected"] == 5

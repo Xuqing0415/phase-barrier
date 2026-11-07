@@ -54,6 +54,9 @@ GATE_DEPS_MOUNT = "/pb_gate_deps"
 GATE_DEPS_VOLUME = "pb_gate_deps"
 GATE_DEPS_PACKAGES = "pydantic PyYAML structlog"
 
+#: 只给 Agent 的字段。gold patch / test_patch / FAIL_TO_PASS 等评分信息绝不能进容器。
+AGENT_DATASET_FIELDS = ("instance_id", "repo", "base_commit", "problem_statement")
+
 
 def gate_deps_bootstrap(gate_python: str) -> str:
     """返回容器内前置 shell 片段：按门禁解释器的小版本缓存并安装门禁依赖。
@@ -147,14 +150,25 @@ def patch_is_fresh(patch: Path, since: float) -> bool:
     return stat.st_size > 0 and stat.st_mtime >= since
 
 
-def build_agent_docker_command(*, image: str, repo_mount: Path | str, agent_script: str,
-                               dataset: str, instance_id: str, mode: str, label: str,
-                               outdir: str, testbed_python: str, gate_python: str,
+def build_agent_docker_command(*, image: str, repo_mount: Path | str | None = None,
+                               mounts: list[tuple[Path | str, str, bool]] | None = None,
+                               agent_script: str, dataset: str, instance_id: str,
+                               mode: str, label: str, outdir: str,
+                               testbed_python: str, gate_python: str,
                                max_turns: int, exec_timeout: int = 300,
                                mount_point: str = MOUNT_POINT,
                                extra_env: dict[str, str] | None = None,
                                docker: str = "docker") -> list[str]:
-    """构造在官方镜像里运行 run_agent.py 的 ``docker run`` argv（纯函数，便于测试）。"""
+    """构造在官方镜像里运行 run_agent.py 的 ``docker run`` argv（纯函数，便于测试）。
+
+    ``mounts`` 为 ``(宿主路径, 容器路径, 只读)``。正式评测传入最小挂载集：
+    只读的 agent 脚本 / anti_shortcut / 脱敏数据集 + 可写的 runs 目录；
+    不挂载整个仓库，避免 Agent 读到 gold patch。
+    """
+    if mounts is None:
+        if repo_mount is None:
+            raise ValueError("build_agent_docker_command 需要 repo_mount 或 mounts")
+        mounts = [(repo_mount, mount_point, False)]
     script = (
         gate_deps_bootstrap(gate_python)
         + f"{gate_python} {agent_script}"
@@ -162,10 +176,11 @@ def build_agent_docker_command(*, image: str, repo_mount: Path | str, agent_scri
         f" --venv {testbed_python} --mode {mode} --label {label}"
         f" --outdir {outdir} --max-turns {max_turns} --exec-timeout {exec_timeout}"
     )
-    argv = [docker, "run", "--rm",
-            "-v", f"{repo_mount}:{mount_point}",
-            "-v", f"{GATE_DEPS_VOLUME}:{GATE_DEPS_MOUNT}",
-            "-w", "/testbed"]
+    argv = [docker, "run", "--rm"]
+    for host_path, container_path_, readonly in mounts:
+        spec = f"{host_path}:{container_path_}" + (":ro" if readonly else "")
+        argv += ["-v", spec]
+    argv += ["-v", f"{GATE_DEPS_VOLUME}:{GATE_DEPS_MOUNT}", "-w", "/testbed"]
     for key, value in (extra_env or {}).items():
         argv += ["-e", f"{key}={value}"]
     argv += ["--entrypoint", "/bin/bash", image, "-lc", script]
@@ -217,6 +232,23 @@ def _run(cmd: list[str], timeout: int, log_path: Path | None = None):
     return proc, combined
 
 
+def build_agent_mounts(*, agent_script: Path | str, repo_root: Path | str,
+                       agent_dataset: Path | str,
+                       agent_runs: Path | str) -> list[tuple[Path, str, bool]]:
+    """正式评测的最小挂载集：脚本 / 门禁包 / 脱敏数据集只读，runs 目录可写。
+
+    绝不挂载宿主仓库根，否则 Agent 可通过 shell 读到 ``dataset.json`` 里的
+    gold patch / test_patch。
+    """
+    return [
+        (Path(agent_script).resolve(),
+         "/pb/benchmarks/swebench/run_agent.py", True),
+        (Path(repo_root).resolve() / "anti_shortcut", "/pb/anti_shortcut", True),
+        (Path(agent_dataset).resolve(), "/pb/dataset_agent.json", True),
+        (Path(agent_runs).resolve(), "/pb_runs", False),
+    ]
+
+
 def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
     iid, mode = job["instance_id"], job["mode"]
     label = f"{short_id(iid)}_{mode}{args.label_suffix}"
@@ -227,15 +259,20 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
     if label_dir.exists():
         shutil.rmtree(label_dir, ignore_errors=True)
     started_at = time.time()
+    agent_mounts = build_agent_mounts(
+        agent_script=args.agent_script,
+        repo_root=args.repo_mount,
+        agent_dataset=args.agent_dataset,
+        agent_runs=args.agent_runs,
+    )
     argv = build_agent_docker_command(
-        image=container_image(instance), repo_mount=args.repo_mount,
-        agent_script=container_path(args.agent_script, args.repo_mount, args.mount_point),
-        dataset=container_path(args.dataset, args.repo_mount, args.mount_point),
+        image=container_image(instance), mounts=agent_mounts,
+        agent_script="/pb/benchmarks/swebench/run_agent.py",
+        dataset="/pb/dataset_agent.json",
         instance_id=iid, mode=mode, label=label,
-        outdir=container_path(args.agent_runs, args.repo_mount, args.mount_point),
+        outdir="/pb_runs",
         testbed_python=args.testbed_python, gate_python=args.gate_python,
         max_turns=args.max_turns, exec_timeout=args.exec_timeout,
-        mount_point=args.mount_point,
         extra_env={"DEEPSEEK_API_KEY": os.environ.get("DEEPSEEK_API_KEY", ""),
                    **({"PB_DS_MODEL": os.environ["PB_DS_MODEL"]} if os.environ.get("PB_DS_MODEL") else {})},
     )
@@ -284,6 +321,22 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
     if gproc.returncode not in (0, 2):  # grade.py: 0=resolved, 2=unresolved
         row["note"] = (row["note"] + f" grade_exit_{gproc.returncode}").strip()
     return row
+
+
+def write_agent_dataset(dataset: Path, instance_ids: set[str], out: Path) -> Path:
+    """写出仅含 Agent 必需字段的数据集（不含 gold patch / test_patch / 测试名）。"""
+    safe_rows: list[dict] = []
+    for row in _load_rows(dataset):
+        if str(row.get("instance_id")) not in instance_ids:
+            continue
+        safe_rows.append({key: row.get(key, "") for key in AGENT_DATASET_FIELDS})
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(safe_rows, ensure_ascii=False, indent=1) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return out
 
 
 def _load_rows(path: Path) -> list[dict]:
@@ -339,6 +392,14 @@ def main() -> int:
         before = len(tasks)
         tasks = filter_ready(tasks, local_images())
         print(f"--only-ready：{len(tasks)}/{before} 个实例的镜像已缓存", flush=True)
+
+    args.results.parent.mkdir(parents=True, exist_ok=True)
+    Path(args.agent_runs).mkdir(parents=True, exist_ok=True)
+    args.agent_dataset = write_agent_dataset(
+        args.dataset,
+        {str(t["instance_id"]) for t in tasks},
+        args.results.parent / "_agent_dataset.json",
+    )
 
     done: set[tuple[str, str]] = set()
     if args.results.exists():

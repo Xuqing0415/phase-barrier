@@ -6,6 +6,27 @@
 
 ## [Unreleased]
 
+### Security
+
+- **SWE-bench 评测容器最小挂载**：Agent 容器不再挂载整个宿主仓库，只读挂载
+  `run_agent.py`、`anti_shortcut/` 和脱敏后的 `dataset_agent.json`；`gold patch` /
+  `test_patch` / `FAIL_TO_PASS` / `PASS_TO_PASS` / `hints_text` 不再进入容器。
+  `run_agent.py` 的 `read_file` / `write_file` 解析路径后强制限制在 `/testbed` 内，
+  绝对路径和 `..` 越界一律拒绝。
+- 修复 shell 重定向到 `/dev/null`、`/tmp/...` 等工作区外目标时 `relative_to()` 抛
+  `ValueError` 被误计为工具失败的问题；现在跳过工作区外目标，正常放行。
+- 修复 gated 模式 `write_file` 传入工作区外绝对路径时，`check_write_permission`
+  抛 `ValueError` 而不是 `PermissionError` 的问题；现在与 `AgentTools._resolve`
+  一致，清晰拒绝并提示路径不在工作区。
+
+### Changed
+
+- `scripts/select_swe_tasks.py --balance-difficulty`：按仓库 largest-remainder 配额 +
+  仓内难度轮转；起始难度按 `sha256(seed:repo)` 偏移，避免所有仓库都从 easy 开始。
+  `selection_meta.difficulty_distribution` 记录实际难度分布，不宣称“完全均衡”。
+- `load_rows()` 接受选择器自身输出的 `{"tasks": [...]}` 包装，选出的任务清单可直接
+  回喂给 `run_swebench_batch_container.py`。
+
 ## [1.1.0] - 2026-10-20
 
 ### 人机协作控制面

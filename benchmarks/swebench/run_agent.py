@@ -164,7 +164,7 @@ class AgentTools:
     """Agent 可调用的工具集；gated 模式下会被 AntiShortcutSkill 包装。"""
 
     def __init__(self, workdir: Path, venv: str | None, exec_timeout: int) -> None:
-        self.workdir = workdir
+        self.workdir = Path(workdir).resolve()
         self.venv = venv
         self.exec_timeout = exec_timeout
         self.env = _venv_env(venv)
@@ -173,7 +173,15 @@ class AgentTools:
 
     def _resolve(self, path: str) -> Path:
         p = Path(path)
-        return p if p.is_absolute() else (self.workdir / p)
+        target = p if p.is_absolute() else (self.workdir / p)
+        resolved = target.resolve()
+        try:
+            resolved.relative_to(self.workdir)
+        except ValueError as exc:
+            raise PermissionError(
+                f"路径 {target} 不在工作区 {self.workdir} 内"
+            ) from exc
+        return resolved
 
     def write_file(self, path: str, content: str) -> dict:
         target = self._resolve(str(path))

@@ -287,3 +287,97 @@ def test_patch_is_fresh_rejects_stale_and_empty(tmp_path):
     assert container.patch_is_fresh(patch, started) is False   # 上一轮遗留
     os.utime(patch, (started + 1, started + 1))
     assert container.patch_is_fresh(patch, started) is True     # 本次产出
+
+
+def test_agent_tools_reject_paths_outside_workdir(tmp_path):
+    workdir = tmp_path / "testbed"
+    workdir.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("do not read", encoding="utf-8")
+    tools = run_agent.AgentTools(workdir, None, 30)
+    for path in (str(outside), "../outside.txt"):
+        with pytest.raises(PermissionError, match="不在工作区"):
+            tools.read_file(path)
+        with pytest.raises(PermissionError, match="不在工作区"):
+            tools.write_file(path, "x")
+    # 工作区内缺失文件仍是普通错误，不会被误判成越界。
+    assert tools.read_file("missing.py")["ok"] is False
+
+def test_write_agent_dataset_strips_scoring_fields(tmp_path):
+    rows = [
+        {
+            "instance_id": "a__a-1",
+            "repo": "a/a",
+            "base_commit": "c1",
+            "problem_statement": "fix it",
+            "patch": "GOLD-PATCH",
+            "test_patch": "TEST-PATCH",
+            "FAIL_TO_PASS": ["test_fail"],
+            "PASS_TO_PASS": ["test_pass"],
+            "hints_text": "the fix is ...",
+            "image": "some-image",
+        },
+        {
+            "instance_id": "b__b-1",
+            "repo": "b/b",
+            "base_commit": "c2",
+            "problem_statement": "another",
+            "patch": "GOLD-2",
+        },
+    ]
+    src = tmp_path / "dataset.json"
+    src.write_text(json.dumps({"instances": rows}), encoding="utf-8")
+    out = container.write_agent_dataset(src, {"a__a-1"}, tmp_path / "agent.json")
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert [row["instance_id"] for row in payload] == ["a__a-1"]
+    assert set(payload[0]) == set(container.AGENT_DATASET_FIELDS)
+    assert "GOLD-PATCH" not in out.read_text(encoding="utf-8")
+    assert "TEST-PATCH" not in out.read_text(encoding="utf-8")
+    assert "hints_text" not in payload[0]
+
+
+def test_build_agent_docker_command_minimal_mounts(tmp_path):
+    script = tmp_path / "run_agent.py"
+    script.write_text("", encoding="utf-8")
+    dataset = tmp_path / "agent.json"
+    dataset.write_text("[]", encoding="utf-8")
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    mounts = [
+        (script, "/pb/benchmarks/swebench/run_agent.py", True),
+        (tmp_path / "anti_shortcut", "/pb/anti_shortcut", True),
+        (dataset, "/pb/dataset_agent.json", True),
+        (runs, "/pb_runs", False),
+    ]
+    argv = container.build_agent_docker_command(
+        image="swebench/sweb.eval.x86_64.x_1776_x-1:latest",
+        mounts=mounts,
+        agent_script="/pb/benchmarks/swebench/run_agent.py",
+        dataset="/pb/dataset_agent.json",
+        instance_id="x__x-1", mode="gated", label="x_x-1_gated", outdir="/pb_runs",
+        testbed_python="/opt/miniconda3/envs/testbed/bin/python",
+        gate_python="/opt/miniconda3/bin/python", max_turns=60,
+    )
+    assert f"{script}:/pb/benchmarks/swebench/run_agent.py:ro" in argv
+    assert f"{dataset}:/pb/dataset_agent.json:ro" in argv
+    assert f"{runs}:/pb_runs" in argv
+    # 不能把宿主仓库根整体挂进容器，否则 Agent 可读到评分数据集。
+    assert f"{tmp_path}:/pb" not in argv
+    assert all(":/pb:ro" not in item and ":/pb" != item for item in argv)
+
+def test_build_agent_mounts_never_exposes_repo_root(tmp_path):
+    mounts = container.build_agent_mounts(
+        agent_script=tmp_path / "run_agent.py",
+        repo_root=tmp_path,
+        agent_dataset=tmp_path / "agent.json",
+        agent_runs=tmp_path / "runs",
+    )
+    assert [container_path for _host, container_path, _ro in mounts] == [
+        "/pb/benchmarks/swebench/run_agent.py",
+        "/pb/anti_shortcut",
+        "/pb/dataset_agent.json",
+        "/pb_runs",
+    ]
+    assert [ro for _host, _container, ro in mounts] == [True, True, True, False]
+    # 宿主仓库根只能以 anti_shortcut 子目录的形式出现，不能整体挂载。
+    assert all(str(host) != str(tmp_path.resolve()) for host, _container, _ro in mounts)

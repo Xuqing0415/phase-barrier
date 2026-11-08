@@ -10,6 +10,10 @@
 - ``--balance-difficulty``（默认关闭）：按 largest-remainder 给每个仓库分配配额
   （每仓至少 1 个），再在仓库内按难度等级轮转。输出带 ``selection_meta``，
   记录每仓配额、实际选中数与难度分布。关闭时行为与旧版完全一致。
+- ``--repo-quota REPO=COUNT``：显式固定每个仓库的预注册配额，必须覆盖全部输入仓库
+  且总和等于 ``--count``；此时不再使用 largest-remainder。
+- ``--exclude-file``：从文本或 JSON 文件读取前序批次实例，记录在
+  ``selection_meta.pre_excluded``。
 
 用法::
 
@@ -23,6 +27,11 @@
     # Verified：12 个仓库分层 + 难度均衡，抽 15 个
     python scripts/select_swe_tasks.py --dataset verified.json --count 15 \
         --balance-difficulty --seed 7 --out verified_15.json
+
+    # 预注册固定配额（可复现，不按镜像可用性换样本）
+    python scripts/select_swe_tasks.py --dataset verified.json --count 20 \
+        --repo-quota django/django=4 sympy/sympy=3 ... --exclude-file prior.txt \
+        --out verified_20.json
 """
 from __future__ import annotations
 
@@ -59,6 +68,41 @@ def load_rows(path: Path) -> list[dict]:
             if isinstance(raw.get(key), list):
                 return raw[key]
     raise ValueError(f"{path}: 无法识别为 JSON 数组或 tasks/instances/data/rows 包装")
+
+
+def load_exclude_ids(path: Path) -> list[str]:
+    """读取排除清单：JSON 字符串数组，或每行一个 instance_id（支持 # 注释）。"""
+    text = path.read_text(encoding="utf-8-sig")
+    if not text.strip():
+        return []
+    try:
+        raw = json.loads(text)
+    except json.JSONDecodeError:
+        return [
+            line.split("#", 1)[0].strip()
+            for line in text.splitlines()
+            if line.split("#", 1)[0].strip()
+        ]
+    if isinstance(raw, list) and all(isinstance(item, str) for item in raw):
+        return [str(item) for item in raw]
+    raise ValueError(f"{path}: 排除清单须为 JSON 字符串数组或每行一个 instance_id")
+
+
+def parse_repo_quotas(items: list[str]) -> dict[str, int]:
+    """解析 ``--repo-quota`` 的 ``REPO=COUNT`` 形式。"""
+    quotas: dict[str, int] = {}
+    for item in items:
+        repo, sep, raw = item.rpartition("=")
+        if not sep or not repo or not raw:
+            raise ValueError(f"无效的仓库配额：{item!r}，应为 REPO=COUNT")
+        try:
+            count = int(raw)
+        except ValueError as exc:
+            raise ValueError(f"无效的仓库配额：{item!r}，COUNT 必须是整数") from exc
+        if count < 0:
+            raise ValueError(f"无效的仓库配额：{item!r}，COUNT 不能为负")
+        quotas[repo] = count
+    return quotas
 
 
 def clean_rows(rows: list[dict]) -> list[dict]:
@@ -213,8 +257,13 @@ def select_tasks_balanced(
     include_repos: tuple[str, ...] = (),
     exclude: tuple[str, ...] = (),
     seed: int = 7,
+    repo_quotas: dict[str, int] | None = None,
 ) -> tuple[list[dict], dict]:
-    """仓库分层 + largest-remainder 配额 + 难度轮转，返回 (选中行, selection_meta)。"""
+    """仓库分层 + 配额 + 难度轮转，返回 (选中行, selection_meta)。
+
+    ``repo_quotas`` 为显式预注册配额时，必须覆盖输入中的全部仓库且总和等于
+    ``count``；此时不再使用 largest-remainder，也不调整 must-repo 配额。
+    """
     cleaned = _filter_rows(rows, include_repos, exclude)
     by_repo: dict[str, list[dict]] = {}
     for row in cleaned:
@@ -223,22 +272,50 @@ def select_tasks_balanced(
         repo: sorted(repo_rows, key=lambda r: str(r["instance_id"]))
         for repo, repo_rows in by_repo.items()
     }
-    quota = quota_by_repo(pools, count)
+    if repo_quotas is not None:
+        unknown = sorted(set(repo_quotas) - set(pools))
+        missing = sorted(set(pools) - set(repo_quotas))
+        if unknown:
+            raise ValueError(f"显式配额包含未知仓库：{', '.join(unknown)}")
+        if missing:
+            raise ValueError(f"显式配额缺少仓库：{', '.join(missing)}")
+        quota = {repo: int(repo_quotas[repo]) for repo in sorted(pools)}
+        if sum(quota.values()) != count:
+            raise ValueError(
+                f"显式配额总和 {sum(quota.values())} != --count {count}"
+            )
+        over = [repo for repo, n in quota.items() if n > len(pools[repo])]
+        if over:
+            raise ValueError(
+                "显式配额超过可用实例数："
+                + ", ".join(f"{repo}={quota[repo]}/{len(pools[repo])}" for repo in over)
+            )
+        quota_mode = "explicit"
+    else:
+        quota = quota_by_repo(pools, count)
+        quota_mode = "largest_remainder"
 
     # must-repo 是下限；缺口从配额 >1 的仓库按配额降序、仓库名升序让位。
     need = max(per_repo, 1) if per_repo else 1
-    for repo in must_repos:
-        if repo not in quota:
-            continue
-        while quota[repo] < need:
-            donors = sorted(
-                (r for r in pools if r != repo and quota[r] > 1),
-                key=lambda r: (-quota[r], r),
-            )
-            if not donors:
-                break
-            quota[donors[0]] -= 1
-            quota[repo] += 1
+    if repo_quotas is not None:
+        for repo in must_repos:
+            if quota.get(repo, 0) < need:
+                raise ValueError(
+                    f"显式配额 {repo}={quota.get(repo, 0)} 低于 must-repo 下限 {need}"
+                )
+    else:
+        for repo in must_repos:
+            if repo not in quota:
+                continue
+            while quota[repo] < need:
+                donors = sorted(
+                    (r for r in pools if r != repo and quota[r] > 1),
+                    key=lambda r: (-quota[r], r),
+                )
+                if not donors:
+                    break
+                quota[donors[0]] -= 1
+                quota[repo] += 1
 
     chosen: list[dict] = []
     meta_repos: dict[str, dict] = {}
@@ -286,12 +363,20 @@ def select_tasks_balanced(
         "count_requested": count,
         "count_selected": len(chosen),
         "balance_difficulty": True,
+        "quota_mode": quota_mode,
+        "repo_quotas_requested": (
+            dict(sorted(repo_quotas.items())) if repo_quotas is not None else None
+        ),
         "seed": seed,
         "repos": meta_repos,
         "difficulty_available": dict(sorted(available_total.items())),
         "difficulty_selected": dict(sorted(selected_total.items())),
         "difficulty_distribution": dict(sorted(selected_total.items())),
         "excluded": excluded,
+        "pre_excluded": [
+            {"instance_id": iid, "reason": "excluded_by_caller"}
+            for iid in sorted(set(exclude))
+        ],
         "warnings": warnings,
     }
     return chosen, meta
@@ -306,13 +391,14 @@ def select_tasks(
     exclude: tuple[str, ...] = (),
     seed: int = 7,
     balance_difficulty: bool = False,
+    repo_quotas: dict[str, int] | None = None,
 ) -> list[dict]:
     """分层选择 count 个实例。must_repos 每个至少 per_repo 个（per_repo=0 时至少 1 个）。
 
     ``balance_difficulty=False`` 时保持旧行为；为 True 时委托给
     :func:`select_tasks_balanced`（只返回选中行，元数据请直接调用后者）。
     """
-    if balance_difficulty:
+    if balance_difficulty or repo_quotas is not None:
         return select_tasks_balanced(
             rows,
             count=count,
@@ -321,6 +407,7 @@ def select_tasks(
             include_repos=include_repos,
             exclude=exclude,
             seed=seed,
+            repo_quotas=repo_quotas,
         )[0]
 
     cleaned = _filter_rows(rows, include_repos, exclude)
@@ -380,6 +467,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--include-repo", nargs="*", default=[],
                     help="仅从这些仓库选（默认全部）")
     ap.add_argument("--exclude", nargs="*", default=[])
+    ap.add_argument("--exclude-file", type=Path, default=None,
+                    help="排除清单文件（JSON 字符串数组或每行一个 instance_id）")
+    ap.add_argument("--repo-quota", nargs="*", default=[], metavar="REPO=COUNT",
+                    help="显式预注册配额；使用后自动进入平衡选择模式")
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--balance-difficulty", action="store_true",
                     help="仓库分层 + largest-remainder 配额 + 难度轮转（默认关闭）")
@@ -389,16 +480,25 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     rows = load_rows(args.dataset)
+    try:
+        exclude = list(args.exclude)
+        if args.exclude_file:
+            exclude += load_exclude_ids(args.exclude_file)
+        repo_quotas = parse_repo_quotas(args.repo_quota) if args.repo_quota else None
+    except ValueError as exc:
+        ap.error(str(exc))
+    balanced = args.balance_difficulty or repo_quotas is not None
     meta = None
-    if args.balance_difficulty:
+    if balanced:
         chosen, meta = select_tasks_balanced(
             rows,
             count=args.count,
             must_repos=tuple(args.must_repo),
             per_repo=args.per_repo,
             include_repos=tuple(args.include_repo),
-            exclude=tuple(args.exclude),
+            exclude=tuple(exclude),
             seed=args.seed,
+            repo_quotas=repo_quotas,
         )
     else:
         chosen = select_tasks(
@@ -407,7 +507,7 @@ def main(argv: list[str] | None = None) -> int:
             must_repos=tuple(args.must_repo),
             per_repo=args.per_repo,
             include_repos=tuple(args.include_repo),
-            exclude=tuple(args.exclude),
+            exclude=tuple(exclude),
             seed=args.seed,
         )
 

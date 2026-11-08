@@ -30,6 +30,10 @@
   便于复现缓存子样本的筛选过程。
 - `run_swebench_batch_container.py` 启动和结束时写 `status.json`，包含
   `runner_pid` / `state`，让 `run_status.py` 的僵尸运行检测对正式批跑生效。
+- `select_swe_tasks.py` 新增 `--repo-quota REPO=COUNT` 与 `--exclude-file`：
+  支持先固定仓库配额再选样，并在 `selection_meta.pre_excluded` 记录前序批次排除项。
+  Verified 第二批 20 实例清单已固化为
+  `benchmarks/swebench/manifests/verified20-preregistered-2026-11-08.json`。
 - `grade.py` 新增 `PB_GRADE_NOTE`，把 `patch_successfully_applied=false` 细分为
   `test_patch_conflict`、`patch_not_applied` 与 `grade_infra_failure`；两个批处理
   编排脚本原样透传，避免把 test patch 冲突继续记成普通 `graded`。修复同时纠正了

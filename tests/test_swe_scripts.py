@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -241,6 +242,72 @@ def test_quota_by_repo_caps_at_available():
     assert quota == {"a/a": 2, "b/b": 1}
 
 
+def test_parse_repo_quotas():
+    assert sel.parse_repo_quotas(["a/a=2", "b/b=0"]) == {"a/a": 2, "b/b": 0}
+    with pytest.raises(ValueError, match="REPO=COUNT"):
+        sel.parse_repo_quotas(["bad"])
+    with pytest.raises(ValueError, match="整数"):
+        sel.parse_repo_quotas(["a/a=x"])
+    with pytest.raises(ValueError, match="不能为负"):
+        sel.parse_repo_quotas(["a/a=-1"])
+
+
+def test_load_exclude_ids_text_and_json(tmp_path):
+    text = tmp_path / "exclude.txt"
+    text.write_text("# prior batch\na__a-1\nb__b-1  # inline\n\n", encoding="utf-8")
+    assert sel.load_exclude_ids(text) == ["a__a-1", "b__b-1"]
+    js = tmp_path / "exclude.json"
+    js.write_text(json.dumps(["c__c-1", "d__d-1"]), encoding="utf-8")
+    assert sel.load_exclude_ids(js) == ["c__c-1", "d__d-1"]
+    bad = tmp_path / "bad.json"
+    bad.write_text('{"foo": 1}', encoding="utf-8")
+    with pytest.raises(ValueError):
+        sel.load_exclude_ids(bad)
+
+
+def test_select_balanced_explicit_repo_quotas():
+    rows = _mixed_rows(3)
+    quotas = {"django/django": 2, "psf/requests": 1, "sympy/sympy": 1}
+    chosen, meta = sel.select_tasks_balanced(
+        rows, count=4, seed=7, repo_quotas=quotas
+    )
+    counts = Counter(row["repo"] for row in chosen)
+    assert counts == quotas
+    assert meta["quota_mode"] == "explicit"
+    assert meta["repo_quotas_requested"] == quotas
+    assert meta["count_selected"] == 4
+
+
+def test_select_balanced_explicit_quota_validation():
+    rows = _mixed_rows(3)
+    with pytest.raises(ValueError, match="总和"):
+        sel.select_tasks_balanced(
+            rows, count=5, repo_quotas={"django/django": 2, "psf/requests": 1,
+                                       "sympy/sympy": 1},
+        )
+    with pytest.raises(ValueError, match="缺少"):
+        sel.select_tasks_balanced(
+            rows, count=3, repo_quotas={"django/django": 3},
+        )
+    with pytest.raises(ValueError, match="未知"):
+        sel.select_tasks_balanced(
+            rows, count=3, repo_quotas={"missing/repo": 1,
+                                       "django/django": 2},
+        )
+
+
+def test_select_tasks_repo_quotas_implies_balanced_mode():
+    rows = _mixed_rows(3)
+    chosen = sel.select_tasks(
+        rows,
+        count=3,
+        repo_quotas={"django/django": 1, "psf/requests": 1, "sympy/sympy": 1},
+    )
+    assert {row["repo"] for row in chosen} == {
+        "django/django", "psf/requests", "sympy/sympy"
+    }
+
+
 def test_rotate_by_difficulty_round_robin():
     rows = _repo_rows("django/django", ["hard", "easy", "medium", "hard", "easy"])
     out = sel.rotate_by_difficulty(rows, quota=4, seed=7, repo="django/django")
@@ -339,6 +406,34 @@ def test_cli_balance_difficulty_writes_meta(tmp_path):
     assert payload["selection_meta"]["count_selected"] == 5
 
 
+def test_cli_repo_quota_and_exclude_file(tmp_path):
+    rows = _mixed_rows(3)
+    src = tmp_path / "dataset.json"
+    src.write_text(json.dumps(rows), encoding="utf-8")
+    exclude = tmp_path / "exclude.txt"
+    exclude.write_text("django__django-100\n", encoding="utf-8")
+    out = tmp_path / "out.json"
+    assert sel.main(
+        [
+            "--dataset", str(src),
+            "--count", "4",
+            "--repo-quota", "django/django=2", "sympy/sympy=1", "psf/requests=1",
+            "--exclude-file", str(exclude),
+            "--seed", "7",
+            "--out", str(out),
+        ]
+    ) == 0
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert len(payload["tasks"]) == 4
+    assert payload["selection_meta"]["quota_mode"] == "explicit"
+    assert "django__django-100" not in {
+        row["instance_id"] for row in payload["tasks"]
+    }
+    assert payload["selection_meta"]["pre_excluded"] == [
+        {"instance_id": "django__django-100", "reason": "excluded_by_caller"}
+    ]
+
+
 def test_balanced_selection_records_excluded_instances():
     rows = _mixed_rows(3)
     chosen, meta = sel.select_tasks_balanced(rows, count=5, seed=7)
@@ -347,3 +442,19 @@ def test_balanced_selection_records_excluded_instances():
     assert chosen_ids.isdisjoint(excluded_ids)
     assert len(chosen_ids) + len(excluded_ids) == len(rows)
     assert all(e["reason"] == "not_selected_by_quota" for e in meta["excluded"])
+
+
+def test_verified20_preregistered_manifest_is_fixed_and_sanitized():
+    path = ROOT / "benchmarks" / "swebench" / "manifests" / \
+        "verified20-preregistered-2026-11-08.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    instances = data["instances"]
+    assert data["count"] == len(instances) == 20
+    assert len({row["repo"] for row in instances}) == 12
+    assert sum(data["selection"]["repo_quotas_requested"].values()) == 20
+    assert all("patch" not in row and "test_patch" not in row for row in instances)
+    assert data["prior_overlap"]["cached15"] == [
+        "mwaskom__seaborn-3069",
+        "pallets__flask-5014",
+    ]
+    assert data["analysis_plan"]["significance"].startswith("n=20")

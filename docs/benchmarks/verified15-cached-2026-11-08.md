@@ -89,19 +89,33 @@ baseline 官方评分为 unresolved，但根因不是实现错误：
 ### `django__django-10554`
 
 gated 官方 resolved，但 60 轮结束时仍在阶段 4，`gate_completed=0`。
-这说明“官方 harness resolved”与“门禁交付全绿”不是同一个指标；报告应分别列出。
+这说明“官方 harness resolved”与“门禁交付全绿”是两个独立指标：前者只表示补丁通过了
+官方测试，后者要求阶段 6 完成、最近一次测试全绿且晚于最后一次源码/测试变更。
+该实例不能作为“门禁流程有效”或“门禁交付全绿”的证据，只能作为“官方评分通过”计入
+resolved 统计。
 
-## 五、评分审计与一个报告缺陷
+## 五、评分审计与 note 透传修复
 
 30 次评分中无 `infra_failure`，无空补丁、超时或 driver error。完整逐实例审计见
 `benchmarks/swebench/results/verified15_cached_audit.csv`。
 
-但发现一个评分报告缺陷：`astropy-7336` baseline 的官方 report 是
-`patch_successfully_applied=false`、`tests_status` 缺失，`grade.py` 仍输出
+本轮发现并修复了一个评分报告缺陷：`astropy-7336` baseline 的官方 report 是
+`patch_successfully_applied=false`、`tests_status` 缺失，而旧版 `grade.py` 仍输出
 `PB_GRADE_SUMMARY`，上层脚本因此把 CSV 的 `note` 标成 `graded`。
-这会把“test patch 应用冲突”误显示为普通评分失败。建议后续在 `grade.py` 或
-`run_swebench_batch_container.py` 中把该类情况标为 `test_patch_conflict` /
-`patch_apply_failed`；本次报告先按官方 resolved 结果统计，并在审计 CSV 中标注。
+
+修复内容：
+
+- `grade.py` 在 `patch_successfully_applied=false` 时读取该实例的 `test_output.txt`。
+- 同时出现 `Checking patch` 与 `patch failed` / `patch does not apply` /
+  `did not match any file(s) known to git` 时，标记为 `test_patch_conflict`。
+- 其他未应用情况标记为 `patch_not_applied`；基础设施错误标记为
+  `grade_infra_failure`；正常评分保持 `graded`。
+- 通过 `PB_GRADE_NOTE` 透传到 `run_swebench_batch_container.py` 和
+  `run_swebench_batch.py`，新产生的 CSV 不再无条件写 `graded`。
+
+审计 CSV 中 `astropy__astropy-7336` baseline 的 `eval_note` 已标为
+`test_patch_conflict`。原始结果 CSV 保留当时产物，不重写 `note`；本次 resolved
+统计也不受该标注修复影响。该修复只影响后续运行。
 
 ## 六、隔离局限
 
@@ -123,6 +137,19 @@ gated 官方 resolved，但 60 轮结束时仍在阶段 4，`gate_completed=0`�
 89 行 `test_pb_repro.py` 复现测试；核心 `ridge.py` 改动只有 13 行新增、7 行删除。
 官方 harness 判定 resolved。初步检查未发现测试篡改或绕过证据，但该补丁属于
 异常大补丁，不应作为“干净实现”的样本引用，建议人工复核兼容层来源。
+
+补丁大小分布（字符）：
+
+| 组别 | 最小 | 中位 | 均值 | P90 | 最大 |
+|---|---:|---:|---:|---:|---:|
+| baseline | 1,118 | 2,292 | 2,474.5 | 3,649 | 6,540 |
+| gated | 1,458 | 3,981 | 11,874.1 | 10,840 | 117,007 |
+
+`scikit-learn-10297` 是明显离群值：其 gated 补丁为同实例 baseline 的 49.1 倍、
+gated 中位数的 29.4 倍、gated P90 的 10.8 倍。gated 第二大补丁是
+`django-10973` 的 10,840 字符，因此这不是“一批实例普遍堆代码”的分布，而是单个
+实例的异常行为。是否由门禁诱导仍需结合 trace 人工分析；在确认前，不应把它当成
+门禁提升或门禁负面效应的证据。
 
 ## 八、复现
 
@@ -162,7 +189,8 @@ python benchmarks/swebench/analyze_results.py \
 - 不是 Scale-50，不能与 Scale-20 合并成“50 个配对”，也不能替代 Scale-50。
 - 预注册的 12 仓库 Verified 样本仍在 `.pytest_tmp/verified15/verified_15_offset.json`；
   等镜像补齐后单独跑第二批，两批结果方向一致才有更强的交叉验证价值。
-- 建议先修评分 note 的 `test_patch_conflict` 透传，再启动第二批，避免同类审计盲点。
+- 评分 note 的 `test_patch_conflict` 透传已修复；第二批应使用修复后的 `grade.py`，
+  避免同类审计盲点。
 - 人工复核 `scikit-learn-10297` 的 117k 补丁，再决定是否在对外材料中引用该实例。
 
 ## 十、结论

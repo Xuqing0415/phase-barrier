@@ -10,8 +10,8 @@
 | `scale20_lite_container.csv` | Scale-20（SWE-bench Lite `test` 分片，20 实例 × baseline/gated = 40 行） | `scripts/run_swebench_batch_container.py`（官方 eval 镜像内跑 Agent + 宿主侧官方 harness 评分） |
 | `verified_regrade.csv` | 上表补丁在 SWE-bench Verified 分片上的重新评分（4 实例 × 2 组 = 8 行） | `benchmarks/swebench/regrade_cross_shard.py`（不重跑 Agent，只换分片打分） |
 | `verified15_cached.csv` | Verified 缓存子样本（15 实例 × 2 组 = 30 行，7 个仓库） | `scripts/run_swebench_batch_container.py`（官方 eval 镜像内跑 Agent + 宿主侧官方 harness 评分） |
-| `verified15_cached_summary.json` | 上表的 resolved、Wilson 区间、配对差异与成本汇总 | `benchmarks/swebench/analyze_results.py` / 运行脚本汇总 |
-| `verified15_cached_audit.csv` | 逐实例评分审计：patch 应用、infra failure、F2P/P2P 计数 | 从官方 harness 的 `report.json` 抽取 |
+| `verified15_cached_summary.json` | 上表的 resolved、Wilson 区间、配对差异、成本与补丁大小分布 | `benchmarks/swebench/analyze_results.py` / 运行脚本汇总 |
+| `verified15_cached_audit.csv` | 逐实例评分审计：patch 应用、infra failure、F2P/P2P 计数、评分 note | 从官方 harness 的 `report.json` 与 `test_output.txt` 抽取 |
 | `verified15_cached_selection.json` | 选择元数据与选中实例清单（不含 gold patch） | `scripts/select_swe_tasks.py --balance-difficulty` |
 
 CSV 列见 `run_swebench_batch_container.py` 的 `COLUMNS`：`instance_id, repo, mode, resolved,
@@ -64,6 +64,11 @@ gated-only 1、baseline-only 0；McNemar 精确双侧 p=1.0，不能宣称显著
 - gated 数据是**修复阶段 2 存量仓库假阳性之后**重跑的；修复前同批量 gated 为 13/20（65%），
   6 个实例永久卡在阶段 2（详见教程 §8.3）。
 - `seconds` 是容器内 Agent 自身的墙钟耗时；宿主休眠会把它和驱动的看门狗一起拉长，
-  这类行已按 `container_timeout` 剔除后重跑，入库行 `note` 全为 `graded`。
+  这类行已按 `container_timeout` 剔除后重跑。Scale-20 入库行 `note` 全为 `graded`；
+  Verified-15 中 `astropy__astropy-7336` baseline 的审计 note 为
+  `test_patch_conflict`（原始 CSV 保持当时产物，未回写）。
+- 新评分链路通过 `PB_GRADE_NOTE` 输出 `graded`、`test_patch_conflict`、
+  `patch_not_applied`、`grade_infra_failure`；`test_patch_conflict` 表示模型补丁
+  触碰了 test patch 需要修改的文件，不能与模型补丁本身应用失败混为一谈。
 - 复现需要：本机已缓存对应官方 eval 镜像、`DEEPSEEK_API_KEY`、宿主 `.pytest_tmp/sweb_venv`
   （`swebench==5.0.2` + docker SDK）。

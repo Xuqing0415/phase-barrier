@@ -41,6 +41,35 @@
     "gated_min": 5,
     "gated_avg": 6.933333333333334
   },
+  "diff_chars_distribution": {
+    "baseline": {
+      "n": 15,
+      "min": 1118,
+      "median": 2292,
+      "mean": 2474.5,
+      "p90": 3649,
+      "max": 6540
+    },
+    "gated": {
+      "n": 15,
+      "min": 1458,
+      "median": 3981,
+      "mean": 11874.1,
+      "p90": 10840,
+      "max": 117007
+    },
+    "outliers": [
+      {
+        "instance_id": "scikit-learn__scikit-learn-10297",
+        "mode": "gated",
+        "diff_chars": 117007,
+        "baseline_diff_chars": 2383,
+        "gated_to_baseline_ratio": 49.1,
+        "gated_to_gated_median_ratio": 29.4,
+        "gated_to_gated_p90_ratio": 10.8
+      }
+    ]
+  },
   "hit_turn_cap_unresolved": {
     "baseline": [
       "mwaskom__seaborn-3187"
@@ -50,5 +79,14 @@
   "gate_completed": 14,
   "notes": [
     "graded"
+  ],
+  "audit_note_corrections": [
+    {
+      "instance_id": "astropy__astropy-7336",
+      "mode": "baseline",
+      "from": "graded",
+      "to": "test_patch_conflict",
+      "reason": "官方 test patch 与模型补丁冲突；原始 CSV 保留旧标注，审计 CSV 已修正"
+    }
   ]
 }

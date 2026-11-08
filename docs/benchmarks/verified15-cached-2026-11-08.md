@@ -187,8 +187,11 @@ python benchmarks/swebench/analyze_results.py \
 
 - n=15，缓存样本，7 个仓库；Wilson 区间重叠，不能做排行榜或显著性声明。
 - 不是 Scale-50，不能与 Scale-20 合并成“50 个配对”，也不能替代 Scale-50。
-- 预注册的 12 仓库 Verified 样本仍在 `.pytest_tmp/verified15/verified_15_offset.json`；
-  等镜像补齐后单独跑第二批，两批结果方向一致才有更强的交叉验证价值。
+- 预注册第二批 20 实例已固定，清单见
+  `benchmarks/swebench/manifests/verified20-preregistered-2026-11-08.md`。
+  其中 `mwaskom__seaborn-3069`、`pallets__flask-5014` 因 Verified 没有剩余替代实例
+  而与缓存-15 重叠；第二批不能称为完全独立样本，报告必须单列。
+- 第二批仍单独报告，不与本批合并统计；三批方向一致才有更强的交叉验证价值。
 - 评分 note 的 `test_patch_conflict` 透传已修复；第二批应使用修复后的 `grade.py`，
   避免同类审计盲点。
 - 人工复核 `scikit-learn-10297` 的 117k 补丁，再决定是否在对外材料中引用该实例。

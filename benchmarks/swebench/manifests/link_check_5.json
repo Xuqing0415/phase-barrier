@@ -1,0 +1,45 @@
+{
+  "purpose": "Five-repository infrastructure link check only; not a replacement for the preregistered 20-instance batch.",
+  "source_manifest": "benchmarks/swebench/manifests/verified20-preregistered-2026-11-08.json",
+  "source_manifest_sha256": "a4dedd5aeec73c009610916e9fcc3b10e91ac2c8c3ce0fbb1e92734b87892540",
+  "selection_snapshot_at": "2026-11-08T12:35:55.621772+00:00",
+  "count": 5,
+  "selection_note": "Selected from 14 ready official tags. Neither scikit-learn target was ready; astropy provides the fifth repository. Reused instances are excluded from this chain-check selection.",
+  "instances": [
+    {
+      "instance_id": "django__django-16901",
+      "repo": "django/django",
+      "base_commit": "ee36e101e8f8c0acde4bb148b738ab7034e902a0",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-16901:latest",
+      "difficulty": "15 min - 1 hour"
+    },
+    {
+      "instance_id": "sympy__sympy-18211",
+      "repo": "sympy/sympy",
+      "base_commit": "b4f1aa3540fe68d078d76e78ba59d022dd6df39f",
+      "image": "swebench/sweb.eval.x86_64.sympy_1776_sympy-18211:latest",
+      "difficulty": "15 min - 1 hour"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9281",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "8ec06e9a1bd862cd713b9db748e039ccc7b3e15b",
+      "image": "swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9281:latest",
+      "difficulty": "<15 min fix"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23476",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "33a0599711d26dc2b79f851c6daed4947df7c167",
+      "image": "swebench/sweb.eval.x86_64.matplotlib_1776_matplotlib-23476:latest",
+      "difficulty": "<15 min fix"
+    },
+    {
+      "instance_id": "astropy__astropy-14369",
+      "repo": "astropy/astropy",
+      "base_commit": "fa4e8d1cd279acf9b24560813c8652494ccd5922",
+      "image": "swebench/sweb.eval.x86_64.astropy_1776_astropy-14369:latest",
+      "difficulty": "1-4 hours"
+    }
+  ]
+}

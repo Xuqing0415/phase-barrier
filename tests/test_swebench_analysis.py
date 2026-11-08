@@ -7,6 +7,9 @@ from __future__ import annotations
 
 import csv
 import importlib.util
+import json
+import math
+import statistics
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -133,3 +136,25 @@ def test_real_scale20_csv_still_matches_published_numbers():
         "sympy__sympy-11400",
     ]
     assert summary["regressed_under_gate"] == []
+
+
+def test_verified15_summary_patch_size_distribution_matches_csv():
+    results = ROOT / "benchmarks" / "swebench" / "results" / "verified15_cached.csv"
+    summary_path = ROOT / "benchmarks" / "swebench" / "results" / "verified15_cached_summary.json"
+    rows = analyze._load(results)
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    for mode in ("baseline", "gated"):
+        values = sorted(int(row["diff_chars"]) for row in rows if row["mode"] == mode)
+        recorded = summary["diff_chars_distribution"][mode]
+        assert recorded == {
+            "n": len(values),
+            "min": min(values),
+            "median": statistics.median(values),
+            "mean": round(statistics.mean(values), 1),
+            "p90": values[max(0, math.ceil(0.9 * len(values)) - 1)],
+            "max": max(values),
+        }
+    outlier = summary["diff_chars_distribution"]["outliers"][0]
+    assert outlier["instance_id"] == "scikit-learn__scikit-learn-10297"
+    assert outlier["diff_chars"] == 117007
+    assert outlier["baseline_diff_chars"] == 2383

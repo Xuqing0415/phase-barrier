@@ -121,6 +121,14 @@ def parse_pb(text: str) -> dict[str, str]:
     return meta
 
 
+def grade_note_from_pb(meta: dict[str, str]) -> str:
+    """从评分标记中取审计 note；旧版 grade.py 没有 PB_GRADE_NOTE 时回退 graded。"""
+    note = (meta.get("PB_GRADE_NOTE") or "").strip()
+    if note:
+        return note
+    return "graded" if meta.get("PB_GRADE_SUMMARY") else ""
+
+
 def container_image(instance: dict) -> str:
     """实例对应的官方评测镜像：优先取数据集 ``image`` 列，否则按命名规则推导。"""
     image = str(instance.get("image") or "").strip()
@@ -332,8 +340,10 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
         return row
     gpb = parse_pb(gout)
     row["resolved"] = gpb.get("PB_RESOLVED", "0")
-    if row["note"] == "" and "PB_GRADE_SUMMARY" in gpb:
-        row["note"] = "graded"
+    if row["note"] == "":
+        note = grade_note_from_pb(gpb)
+        if note:
+            row["note"] = note
     if gproc.returncode not in (0, 2):  # grade.py: 0=resolved, 2=unresolved
         row["note"] = (row["note"] + f" grade_exit_{gproc.returncode}").strip()
     return row

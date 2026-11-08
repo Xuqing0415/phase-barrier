@@ -9,7 +9,7 @@
         --label L --out-dir EVAL_RUNS --timeout 1800
 
 - 退出码：``0`` = resolved，``2`` = unresolved，``3`` = 评分过程出错
-- stdout 标记：``PB_RESOLVED=1|0``、``PB_GRADE_SUMMARY=<json>``
+- stdout 标记：``PB_RESOLVED=1|0``、``PB_GRADE_NOTE=<note>``、``PB_GRADE_SUMMARY=<json>``
 - 日志：``{out-dir}/logs/run_evaluation/{run_id}/{model}/{instance}/``
 
 数据集须是官方行结构（含 ``instance_id`` / ``image`` / ``eval_script`` / ``FAIL_TO_PASS`` 等
@@ -60,6 +60,48 @@ def load_rows(path: Path) -> list[dict]:
     raise SystemExit(f"{path}: 无法识别数据集结构")
 
 
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def _looks_like_test_patch_conflict(test_output: str) -> bool:
+    """test patch 在 eval.sh 中应用失败的特征。
+
+    模型补丁由官方 harness 在进入 eval.sh 前应用；eval.sh 里只会应用 test patch。
+    因此 ``test_output.txt`` 中同时出现 ``Checking patch`` 与 ``patch failed`` /
+    ``patch does not apply`` / pathspec 不匹配，基本可判定为 test patch 冲突。
+    """
+    lowered = (test_output or "").lower()
+    if "checking patch" not in lowered:
+        return False
+    markers = (
+        "patch failed",
+        "patch does not apply",
+        "did not match any file(s) known to git",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+def grade_note_for_entry(entry: dict, log_dir: Path) -> str:
+    """把官方 report 的失败状态翻译成可审计的 note。
+
+    官方 ``patch_successfully_applied`` 只在能解析到测试输出时为 True；它为 False
+    既可能是模型补丁没打上，也可能是 test patch 与模型补丁冲突。后者需要读
+    ``test_output.txt`` 才能与前者区分。
+    """
+    if entry.get("patch_successfully_applied") is True:
+        return "graded"
+    if entry.get("infra_failure"):
+        return "grade_infra_failure"
+    test_output = _read_text(log_dir / "test_output.txt")
+    if _looks_like_test_patch_conflict(test_output):
+        return "test_patch_conflict"
+    return "patch_not_applied"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="SWE-bench 官方 harness 评分")
     parser.add_argument("--instance", required=True)
@@ -72,7 +114,8 @@ def main() -> int:
     parser.add_argument("--model-name", default="phase-barrier")
     args = parser.parse_args()
 
-    args.out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = args.out_dir.resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
     dataset = str(args.dataset.resolve())
     patch_path = args.patch_file.resolve()
 
@@ -95,7 +138,7 @@ def main() -> int:
     # 结果（幂等、快），不同补丁必然重新评测。
     patch_digest = hashlib.sha256(patch_text.encode("utf-8")).hexdigest()[:12]
     run_id = args.run_id or f"{args.label}-{patch_digest}"
-    predictions_dir = args.out_dir / "predictions"
+    predictions_dir = out_dir / "predictions"
     predictions_dir.mkdir(parents=True, exist_ok=True)
     predictions_path = predictions_dir / f"{args.label}.json"
     prediction = {
@@ -107,7 +150,7 @@ def main() -> int:
                                 encoding="utf-8")
 
     # 官方 harness 把日志写到相对路径 logs/run_evaluation/...；切到 out_dir 让其落盘在此
-    os.chdir(args.out_dir)
+    os.chdir(out_dir)
 
     try:
         import docker
@@ -144,16 +187,21 @@ def main() -> int:
     entry = (report or {}).get(args.instance) or {}
     resolved = bool(entry.get("resolved"))
     status = entry.get("tests_status") or {}
+    log_dir = (out_dir / "logs" / "run_evaluation" / run_id /
+               args.model_name.replace("/", "__") / args.instance)
+    note = grade_note_for_entry(entry, log_dir)
     summary = {
         "resolved": resolved,
+        "note": note,
         "f2p": {k: len(v) for k, v in (status.get("FAIL_TO_PASS") or {}).items()},
         "p2p": {k: len(v) for k, v in (status.get("PASS_TO_PASS") or {}).items()},
     }
-    report_path = args.out_dir / "reports" / f"{args.label}.json"
+    report_path = out_dir / "reports" / f"{args.label}.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print(f"PB_RESOLVED={1 if resolved else 0}")
+    print(f"PB_GRADE_NOTE={note}")
     print("PB_GRADE_SUMMARY=" + json.dumps(summary, ensure_ascii=False))
     return 0 if resolved else 2
 

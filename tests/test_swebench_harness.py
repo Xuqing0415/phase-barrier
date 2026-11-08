@@ -161,6 +161,43 @@ def test_grade_load_rows(tmp_path):
         grade.load_rows(f3)
 
 
+def test_grade_note_distinguishes_test_patch_conflict(tmp_path):
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    (log_dir / "test_output.txt").write_text(
+        "Checking patch astropy/units/tests/test_quantity_annotations.py...\n"
+        "error: patch failed: astropy/units/tests/test_quantity_annotations.py:219\n"
+        "error: astropy/units/tests/test_quantity_annotations.py: patch does not apply\n",
+        encoding="utf-8",
+    )
+    assert grade.grade_note_for_entry(
+        {"patch_successfully_applied": False}, log_dir
+    ) == "test_patch_conflict"
+    assert grade.grade_note_for_entry(
+        {"patch_successfully_applied": True}, log_dir
+    ) == "graded"
+    assert grade.grade_note_for_entry(
+        {"patch_successfully_applied": False, "infra_failure": True}, log_dir
+    ) == "grade_infra_failure"
+
+
+def test_grade_note_without_conflict_markers_is_patch_not_applied(tmp_path):
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    (log_dir / "test_output.txt").write_text(
+        "error: patch failed: src/service.py:12\n",
+        encoding="utf-8",
+    )
+    assert grade.grade_note_for_entry(
+        {"patch_successfully_applied": False}, tmp_path / "missing"
+    ) == "patch_not_applied"
+    assert grade.grade_note_for_entry(
+        {"patch_successfully_applied": False}, log_dir
+    ) == "patch_not_applied"
+    assert not grade._looks_like_test_patch_conflict("patch failed without context")
+    assert not grade._looks_like_test_patch_conflict("Checking patch only")
+
+
 # ---------- prepare_dataset ----------
 
 def test_image_for_prefers_dataset_field():

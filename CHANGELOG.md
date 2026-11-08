@@ -30,6 +30,10 @@
   便于复现缓存子样本的筛选过程。
 - `run_swebench_batch_container.py` 启动和结束时写 `status.json`，包含
   `runner_pid` / `state`，让 `run_status.py` 的僵尸运行检测对正式批跑生效。
+- `grade.py` 新增 `PB_GRADE_NOTE`，把 `patch_successfully_applied=false` 细分为
+  `test_patch_conflict`、`patch_not_applied` 与 `grade_infra_failure`；两个批处理
+  编排脚本原样透传，避免把 test patch 冲突继续记成普通 `graded`。修复同时纠正了
+  相对 `--out-dir` 在 `chdir` 后导致的 report 路径重复拼接。
 
 ## [1.1.0] - 2026-10-20
 

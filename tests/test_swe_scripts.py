@@ -143,6 +143,14 @@ def test_batch_parse_pb():
     assert "junk" not in meta
 
 
+def test_batch_grade_note_from_pb():
+    assert batch.grade_note_from_pb(
+        {"PB_GRADE_NOTE": "test_patch_conflict", "PB_GRADE_SUMMARY": "{}"}
+    ) == "test_patch_conflict"
+    assert batch.grade_note_from_pb({"PB_GRADE_SUMMARY": "{}"}) == "graded"
+    assert batch.grade_note_from_pb({}) == ""
+
+
 
 def test_container_image_prefers_dataset_field():
     assert container.container_image(
@@ -190,6 +198,14 @@ def test_container_parse_pb_and_short_id():
     assert container.short_id("pylint-dev__pylint-5859") == "pylint-dev_pylint-5859"
     meta = container.parse_pb("PB_MODE=gated\nPB_GATE_COMPLETED=1\nnoise")
     assert meta == {"PB_MODE": "gated", "PB_GATE_COMPLETED": "1"}
+
+
+def test_container_grade_note_from_pb():
+    assert container.grade_note_from_pb(
+        {"PB_GRADE_NOTE": "patch_not_applied", "PB_GRADE_SUMMARY": "{}"}
+    ) == "patch_not_applied"
+    assert container.grade_note_from_pb({"PB_GRADE_SUMMARY": "{}"}) == "graded"
+    assert container.grade_note_from_pb({}) == ""
 
 # ---------- --balance-difficulty（2026-11） ----------
 

@@ -88,6 +88,14 @@ def parse_pb(proc_out: str) -> dict:
     return meta
 
 
+def grade_note_from_pb(meta: dict) -> str:
+    """从评分标记中取审计 note；旧版 grade.py 没有 PB_GRADE_NOTE 时回退 graded。"""
+    note = (meta.get("PB_GRADE_NOTE") or "").strip()
+    if note:
+        return note
+    return "graded" if meta.get("PB_GRADE_SUMMARY") else ""
+
+
 def prepare_workdir(workdir: Path, repo: str, base_commit: str, timeout: int) -> None:
     """workdir 不存在时创建 git checkout（init + fetch --depth 1 + checkout base）。"""
     if workdir.exists() and (workdir / ".git").exists():
@@ -278,8 +286,10 @@ def main() -> int:
                     continue
                 gpb = parse_pb(gproc.stdout)
                 row["resolved"] = gpb.get("PB_RESOLVED", "0")
-                if row["note"] == "" and gpb.get("PB_GRADE_SUMMARY"):
-                    row["note"] = "graded"
+                if row["note"] == "":
+                    note = grade_note_from_pb(gpb)
+                    if note:
+                        row["note"] = note
                 rows_out.append(row)
                 writer.writerow(row)
                 fh.flush()

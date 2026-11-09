@@ -69,7 +69,27 @@ scikit-learn 的两个目标均未就绪，因此第五个仓库使用 astropy�
 
 | 实例 | 上次结果 | 本批结果 | 是否一致 |
 |---|---|---|---|
-| seaborn-3069 | gated unresolved（60 轮截断） | 待运行 | 待比较 |
-| flask-5014 | gated resolved（54 轮） | 待运行 | 待比较 |
+| seaborn-3069 | 缓存-15 正式批：gated resolved（54 轮） | 待运行 | 待比较 |
+| flask-5014 | 缓存-15 正式批：gated resolved（39 轮） | 待运行 | 待比较 |
 
-上次结果按已确定的复用比较口径列示；本批结束后以原始运行记录复核。一致性单独讨论；不一致时记录非确定性及环境差异，不直接归因于门禁。正式报告继续三批并列，不做 pooled 成功率统计。
+上次正式批结果以 `benchmarks/swebench/results/verified15_cached.csv` 为准。
+早先链路检查另有记录：`pilot5_results.csv` 中 seaborn-3069 的 gated 为 unresolved（60 轮），
+`pilot_one_results.csv` 中 flask-5014 的 gated 为 resolved（54 轮）。这些是不同运行，
+不能把早先 pilot 的轮数或结果标成缓存-15 正式批结果。
+一致性单独讨论；不一致时记录非确定性及环境差异，不直接归因于门禁。
+正式报告继续三批并列，不做 pooled 成功率统计。
+
+## 跨批实例去重核验（2026-11-09）
+
+按已提交的 `scale20_lite_container.csv`、`verified15_cached.csv` 和本批预注册清单的
+`instance_id` 集合核对，Lite-20 与缓存-15 共有 4 个实例：
+
+- `astropy__astropy-12907`
+- `astropy__astropy-14182`
+- `django__django-10914`
+- `scikit-learn__scikit-learn-10297`
+
+因此，“一次新的 Agent 运行”不等于“一个跨批新增独立实例”。各批仍分别报告原有
+配对结果，但跨批新增实例数依次为 20、11、18；若本批 20 个全部执行，三批去重后
+共 49 个实例，不能写成累计独立 n=53。这是实例身份核验，不是合并成功率或合并检验。
+本批的 20 个预注册实例、12 仓库覆盖以及 18 个新增独立实例 + 2 个复用实例口径均不变。

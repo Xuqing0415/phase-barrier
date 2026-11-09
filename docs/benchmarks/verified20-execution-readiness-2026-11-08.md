@@ -93,3 +93,29 @@ scikit-learn 的两个目标均未就绪，因此第五个仓库使用 astropy�
 配对结果，但跨批新增实例数依次为 20、11、18；若本批 20 个全部执行，三批去重后
 共 49 个实例，不能写成累计独立 n=53。这是实例身份核验，不是合并成功率或合并检验。
 本批的 20 个预注册实例、12 仓库覆盖以及 18 个新增独立实例 + 2 个复用实例口径均不变。
+
+## 镜像补齐与容器预检（2026-11-09）
+
+- `mirror-downloader@1.0.3` 通过 hf-mirror，以 16 条配置连接下载
+  `LogicStar/SWE-Bench-Verified-Compressed` 的 `layout.tar.zst`。
+  文件为 5,401,822,437 字节，SHA256 已核验为
+  `e44d0f4271ee2e32a4b64bb9a369be99bf2fa1ba689a6f3f9628d9245ae5272a`。
+- 仅导入固定 20 个目标，逐项核对 OCI config、RootFS diff IDs 和运行配置，
+  20/20 就绪。上游 `load.py` 使用 Podman；本机采用保留 config/layer 原始字节的
+  OCI → Docker-save 转换。Docker 29 的 image ID 不能直接当作 OCI config digest。
+- Docker 重启恢复完成，重启后再次确认 20/20 镜像与导入前一致。
+  原有 PostgreSQL 容器也已恢复并通过健康检查。
+- Agent 和官方评分器共用运行时数据集中的 `logicstar/` 镜像名称；预注册清单未改，
+  未将压缩镜像重新标记为官方 namespace。
+- 源码审计：17 个镜像的 HEAD tree 与 `base_commit` tree 相同。
+  Astropy-14369 和 Sphinx-9281 的环境适配文件与对应本地官方镜像 tree 完全一致。
+  Sphinx-8593 没有本地官方镜像可直接比对；其 `setup.py` 依赖约束和 `tox.ini`
+  测试输出参数的增删，与官方 Sphinx-9281 的适配完全相同，没有其他文件差异。
+  此项仅核验了环境适配，不声称该实例整个镜像与官方逐字节相同。
+- 五个固定候选均通过容器预检：工作区干净、源码 tree 符合上述审计、
+  Agent 数据仅含四个允许字段、输入挂载只读、输出可写，六个越界读写尝试均被拒绝。
+  保留上游环境适配，Agent 与评分器使用相同初始源码树。
+
+可复核的环境摘要保存在 `benchmarks/swebench/results/verified20_environment.json`。
+本节是环境就绪与无模型调用预检证据，不代表 5 实例链路检查或 20 实例正式批已完成；
+实际运行及官方评分结果另行记录。

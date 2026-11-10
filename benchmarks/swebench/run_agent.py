@@ -16,6 +16,7 @@ testbed 解释器，两者互不影响。
 - ``{outdir}/{label}/model_patch.diff``：``git add -A && git diff HEAD`` 的结果
   （``.agent_gate`` 与 spec.md 经 ``.git/info/exclude`` 排除，不进补丁）
 - ``{outdir}/{label}/stats.json``：轮数、耗时、门禁指标
+- gated 的 ``trace.jsonl`` / ``state.json``：工具事件和最终门禁状态
 - stdout 标记：``PB_TURNS`` / ``PB_DIFF_CHARS`` / ``PB_GATE_INTERCEPTS`` /
   ``PB_GATE_FINAL_STAGE`` / ``PB_GATE_COMPLETED``
 """
@@ -267,6 +268,17 @@ def gate_completed(skill) -> int:
         return 0
 
 
+def write_audit_event(outdir: Path, record: dict, api_key: str) -> None:
+    """Persist an untruncated, redacted event; logging failures stop the run."""
+    from anti_shortcut.defense._common import redact_mapping
+
+    payload = json.dumps(redact_mapping(record), ensure_ascii=False)
+    if api_key:
+        payload = payload.replace(api_key, "***")
+    with (outdir / "trace.jsonl").open("a", encoding="utf-8") as stream:
+        stream.write(payload + "\n")
+
+
 def _clamp(text: str, limit: int = MAX_TOOL_OUTPUT) -> str:
     text = text if isinstance(text, str) else json.dumps(text, ensure_ascii=False)
     return text if len(text) <= limit else text[:limit] + f"\n...[截断，共 {len(text)} 字符]"
@@ -353,6 +365,8 @@ def run(args) -> int:
     turns = 0
     idle = 0
     model_used = args.model
+    if gate is not None:
+        (outdir / "trace.jsonl").write_text("", encoding="utf-8")
     for turn in range(1, args.max_turns + 1):
         turns = turn
         try:
@@ -383,23 +397,33 @@ def run(args) -> int:
                 call_args = {}
             if not isinstance(call_args, dict):
                 call_args = {}
+            stage_before = gate.current_stage if gate is not None else None
             if name == "advance_stage":
                 try:
                     result = gate.advance_stage(int(call_args.get("new_stage", 0)))
                 except Exception as exc:  # noqa: BLE001
                     result = {"success": False, "error": f"{type(exc).__name__}: {exc}"}
-                if not result.get("success"):
-                    intercepts += 1
             else:
                 try:
                     result = tools.dispatch(name, call_args)
                 except PermissionError as exc:
-                    intercepts += 1
                     result = {"gate_denied": str(exc)}
                 except Exception as exc:  # noqa: BLE001
                     result = {"error": f"{type(exc).__name__}: {exc}"}
-                if isinstance(result, dict) and result.get("gate_denied"):
-                    intercepts += 1
+            blocked = bool(not result.get("success") if name == "advance_stage"
+                           else isinstance(result, dict) and result.get("gate_denied"))
+            intercepts += int(blocked)
+            if gate is not None:
+                write_audit_event(outdir, {
+                    "schema_version": 1, "event": "blocked" if blocked else "tool_call",
+                    "blocked": blocked,
+                    "reason": ("stage_rejected" if name == "advance_stage" else "tool_denied") if blocked else "",
+                    "turn": turn, "tool_call_id": call.get("id", ""),
+                    "tool": name, "args": call_args,
+                    "stage_before": stage_before, "stage_after": gate.current_stage,
+                    "outcome": {key: result[key] for key in
+                                ("success", "gate_denied", "error", "exit_code") if key in result},
+                }, api_key)
             print(f"[turn {turn}] {name} -> "
                   f"{_clamp(json.dumps(result, ensure_ascii=False), 160)}")
             messages.append({"role": "tool", "tool_call_id": call.get("id", ""),
@@ -416,6 +440,11 @@ def run(args) -> int:
 
     final_stage = gate.current_stage if gate else ""
     completed = gate_completed(gate)  # 交付收尾校验：最终测试全绿才算完成
+    if gate is not None:
+        from anti_shortcut.defense._common import redact_mapping
+
+        state_text = json.dumps(redact_mapping(gate.state.snapshot()), ensure_ascii=False, indent=2)
+        (outdir / "state.json").write_text(state_text.replace(api_key, "***"), encoding="utf-8")
     stats = {
         "instance_id": args.instance,
         "mode": args.mode,

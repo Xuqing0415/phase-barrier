@@ -93,6 +93,8 @@
 | sphinx-doc__sphinx-9281 | gated | 1 | 1 | 33 | 141.8 | 5 | 2372 | graded |
 | matplotlib__matplotlib-23476 | baseline | 1 | 0 | 35 | 333.7 | 0 | 1401 | graded |
 | matplotlib__matplotlib-23476 | gated | 1 | 1 | 53 | 390.2 | 11 | 1720 | graded |
+| astropy__astropy-14369 | gated | 0 | 1 | 36 | 510.5 | 5 | 14618 | graded |
+| astropy__astropy-14369 | baseline | 0 | 0 | 60 | 676.1 | 0 | 15530 | graded |
 
 运行中的 `results.csv` 在每个配对任务完成时追加并 flush 一行；上表只是已核对快照，
 不是 pilot 最终完成声明。baseline 的 gate_completed=0 不用于门禁有效性评价。
@@ -134,6 +136,24 @@ SymPy gated 为 35 轮 / 2187 字符，baseline 为 49 轮 / 1771 字符；
 阶段 3 才修改实现、阶段 4 执行测试，4→6 是状态机支持的“测试通过无需修复”转换，
 不要求人为经过阶段 5。已有信息未证明绕过，但缺少完整参数和持久化状态，
 暂标记 `zero_interception_suspicious`（证据不足待复核），不能直接声称 benign。
+
+### pilot 收尾与修复状态
+
+pilot 于 2026-11-10 14:53:52（北京时间）完成，10/10 配对任务均为 `graded`；
+baseline 与 gated 各 4/5 resolved，仅描述 pilot，不作为正式统计。
+Astropy gated 的 `gate_completed=1` 但官方 unresolved，触发约定的验收阻断。
+补丁成功应用，官方报告 `infra_failure=false`，FAIL_TO_PASS 为 2 成功 / 1 失败，
+PASS_TO_PASS 为 730 成功 / 2 失败；因此不能作为评分基础设施错误重试至通过。
+未通过的 FAIL_TO_PASS 包括 `test_cds_grammar_fail[km/s.Mpc-1]`。
+门禁只证明 Agent 提交的测试证据满足当时交付条件，不保证覆盖官方全部测试。
+需进一步核对测试覆盖和识别范围，保留失败观察；正式批仍未放行。
+
+原 pilot 完成后，runner 已修复同一 PermissionError 重复计数，并新增持久化
+`trace.jsonl`（每次工具调用的参数、前后阶段、拒绝类型及结果状态）及最终 `state.json`。
+工具拒绝与阶段推进拒绝统一各计一个 blocked 事件，日志落盘失败不静默忽略。
+新增测试覆盖异常拒绝与返回值拒绝两条路径、计数与 trace 一致、阶段记录、密钥脱敏和写盘失败。
+44 项相关测试通过；尚不能以单元测试替代新的容器链路及拦截完整性验证。
+原 pilot 历史计数保持原样，未回填修复后的新定义。
 
 ## 正式结果（待填）
 

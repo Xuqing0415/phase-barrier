@@ -81,6 +81,60 @@
 官方 `PB_GRADE_NOTE=graded`，FAIL_TO_PASS 为 1 成功 / 0 失败，PASS_TO_PASS 为 6 成功 / 0 失败。
 这些是 pilot 观察，不能预填到正式批 Django 结果中。
 
+### pilot 已完成记录（阶段性快照）
+
+| 实例 | 组别 | resolved | gate_completed | 轮数 | 耗时秒 | 拦截次数 | 补丁字符数 | note |
+|------|------|---------:|---------------:|-----:|-------:|---------:|-----------:|------|
+| django__django-16901 | gated | 1 | 0 | 60 | 509.1 | 8 | 4972 | graded |
+| django__django-16901 | baseline | 1 | 0 | 31 | 166.9 | 0 | 1395 | graded |
+| sympy__sympy-18211 | gated | 1 | 1 | 35 | 330.0 | 0 | 2187 | graded |
+| sphinx-doc__sphinx-9281 | baseline | 1 | 0 | 34 | 835.9 | 0 | 2480 | graded |
+| sympy__sympy-18211 | baseline | 1 | 0 | 49 | 1551.4 | 0 | 1771 | graded |
+| sphinx-doc__sphinx-9281 | gated | 1 | 1 | 33 | 141.8 | 5 | 2372 | graded |
+| matplotlib__matplotlib-23476 | baseline | 1 | 0 | 35 | 333.7 | 0 | 1401 | graded |
+| matplotlib__matplotlib-23476 | gated | 1 | 1 | 53 | 390.2 | 11 | 1720 | graded |
+
+运行中的 `results.csv` 在每个配对任务完成时追加并 flush 一行；上表只是已核对快照，
+不是 pilot 最终完成声明。baseline 的 gate_completed=0 不用于门禁有效性评价。
+SymPy gated 的零拦截需单独审查：日志在第 24、28、31、35 轮分别成功进入
+阶段 2、3、4、6，最后因测试通过跳过修复阶段而进入交付。
+该轨迹说明门禁有参与，零拦截本身既不能证明绕过，也不能证明没有绕过；
+最终审计需结合写入顺序及执行命令判断。
+
+五个 pilot 实例均包含在正式预注册 20 个中；正式批使用独立输出目录全部重新执行，
+不合并、不跳过 pilot 已解决实例。最终报告须披露这五个实例的先前 pilot 暴露，
+“新增 18”是相对于前两批正式实验的实例身份口径，不表示所有实例从未运行过。
+
+正式启动前必须同时确认 pilot 审计通过、运行代码已推送且 CI 全绿、Docker 稳定、
+四个复用实例/模式输出目录检查通过。旧自动启动监督器已停止，pilot runner 不受影响。
+若本次续跑期间 Docker 再次出现 socket 异常，正式批前先恢复/重启并重新核验。
+正式批每小时核对 PID 和 stale 判定，每完成 5 个双组实例核对 note 分布；
+发现评分基础设施错误即停止推进并排查，低拦截实例单列分析。
+
+### 拦截完整性审计发现：正式批暂不放行
+
+上述表中的拦截值保留原始计数，不作为已校准指标。只读审计发现 runner 在捕获
+`PermissionError` 时先加一，生成 `gate_denied` 结果后又加一，同一工具拒绝被重复计数。
+
+| pilot gated 实例 | 原始计数 | 日志工具拒绝事件 | 阶段推进拒绝事件 | 两类事件合计 |
+|------------------|---------:|-----------------:|-----------------:|-------------:|
+| Django-16901 | 8 | 2 | 4 | 6 |
+| Matplotlib-23476 | 11 | 3 | 5 | 8 |
+| Sphinx-9281 | 5 | 1 | 3 | 4 |
+| SymPy-18211 | 0 | 0 | 0 | 0 |
+
+当前产物只保存补丁、stats 和截断的 stdout，未导出门禁 state 或独立 trace。
+Skill 的可选 behavior trace 默认关闭，且其 tool_call 记录不等同于 blocked 事件，
+不能用 `grep blocked` 代替明确的工具拒绝与阶段拒绝口径。
+需待原 pilot 完成后修复计数并持久化审计事件，再验证完整性；原 pilot 运行中不改代码。
+历史批次拦截成本也可能受相同实现影响，不能把修复前后的计数直接比较。
+
+SymPy gated 为 35 轮 / 2187 字符，baseline 为 49 轮 / 1771 字符；
+补丁不是小于 100 字符的表面改动。日志显示先写 spec、再写复现测试、
+阶段 3 才修改实现、阶段 4 执行测试，4→6 是状态机支持的“测试通过无需修复”转换，
+不要求人为经过阶段 5。已有信息未证明绕过，但缺少完整参数和持久化状态，
+暂标记 `zero_interception_suspicious`（证据不足待复核），不能直接声称 benign。
+
 ## 正式结果（待填）
 
 | 批次 | 来源 | 配对实例数 | baseline resolved | gated resolved | baseline-only | gated-only | 备注 |

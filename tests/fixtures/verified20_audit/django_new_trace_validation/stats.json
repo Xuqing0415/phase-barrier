@@ -1,0 +1,13 @@
+{
+  "instance_id": "django__django-16901",
+  "mode": "gated",
+  "label": "django__django-16901",
+  "model": "offline-fixture",
+  "turns": 1,
+  "seconds": 17.0,
+  "diff_chars": 0,
+  "gate_intercepts": 2,
+  "gate_final_stage": 1,
+  "gate_completed": 0,
+  "delivery_clean": 0
+}

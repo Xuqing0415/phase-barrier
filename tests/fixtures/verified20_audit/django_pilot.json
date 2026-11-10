@@ -1,0 +1,27 @@
+{
+  "provenance": "Original pilot stats and compact official report; no historical state/trace available",
+  "stats": {
+    "instance_id": "django__django-16901",
+    "mode": "gated",
+    "label": "django_django-16901_gated_verified20_pilot",
+    "model": "deepseek-flash",
+    "turns": 60,
+    "seconds": 509.1,
+    "diff_chars": 4972,
+    "gate_intercepts": 8,
+    "gate_final_stage": 4,
+    "gate_completed": 0,
+    "delivery_clean": 0
+  },
+  "report": {
+    "resolved": true,
+    "patch_successfully_applied": true,
+    "infra_failure": false,
+    "failed_tests": {
+      "FAIL_TO_PASS": [],
+      "PASS_TO_PASS": [],
+      "FAIL_TO_FAIL": [],
+      "PASS_TO_FAIL": []
+    }
+  }
+}

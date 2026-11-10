@@ -1,0 +1,32 @@
+{
+  "provenance": "Original pilot stats and compact official report; no historical state/trace available",
+  "stats": {
+    "instance_id": "astropy__astropy-14369",
+    "mode": "gated",
+    "label": "astropy_astropy-14369_gated_verified20_pilot",
+    "model": "deepseek-flash",
+    "turns": 36,
+    "seconds": 510.5,
+    "diff_chars": 14618,
+    "gate_intercepts": 5,
+    "gate_final_stage": 6,
+    "gate_completed": 1,
+    "delivery_clean": 1
+  },
+  "report": {
+    "resolved": false,
+    "patch_successfully_applied": true,
+    "infra_failure": false,
+    "failed_tests": {
+      "FAIL_TO_PASS": [
+        "astropy/units/tests/test_format.py::test_cds_grammar_fail[km/s.Mpc-1]"
+      ],
+      "PASS_TO_PASS": [
+        "astropy/units/tests/test_format.py::test_cds_grammar_fail[km",
+        "astropy/units/tests/test_format.py::test_cds_grammar_fail[/s.Mpc]"
+      ],
+      "FAIL_TO_FAIL": [],
+      "PASS_TO_FAIL": []
+    }
+  }
+}

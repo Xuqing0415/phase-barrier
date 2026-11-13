@@ -16,8 +16,9 @@ phase-barrier 的核心是阶段门禁的不可绕过性（以 sidecar 与文件
 > 每个阶段要求可验证证据（spec 章节 / 测试 AST / 语法检查 / 测试结果 / 覆盖率），
 > 跳步、偷步、伪造产出会被自动拦截——先有证据，才放行下一步。
 
-## 为什么需要 phase-barrier？
 ## 实测数据
+
+### SWE-bench Lite Scale-20
 
 SWE-bench Lite Scale-20（官方评测容器内，同模型同预算，20 实例配对，2026-09）：
 
@@ -26,9 +27,25 @@ SWE-bench Lite Scale-20（官方评测容器内，同模型同预算，20 实例
 | baseline（无门禁） | 18/20（90%） | 0 | — | 0 | 262s |
 | gated（阶段门禁） | **20/20（100%）** | **78** | 14 | 0 | 462s |
 
-门禁把 baseline 失败的 2 个实例救了回来，0 例拖累；代价是平均耗时约 1.8 倍（n=20，仅同条件对比）。
+该批 gated 解决了 baseline 未解决的 2 个实例，未观察到 baseline-only；平均耗时约为 baseline 的 1.8 倍。
+这是 n=20 的同条件配对观察，不代表其他样本上的解决率保证。
 完整报告与复算命令见 [`docs/benchmarks/swe-bench-scale20.md`](docs/benchmarks/swe-bench-scale20.md)，
 原始数据在 `benchmarks/swebench/results/`。
+
+### Verified 预注册-20 与证据审计（2026-11-13）
+
+后续验证采用预注册的 20 个实例、12 个仓库；18 个独立实例与 2 个跨批复用实例分开报告，
+pilot、诊断重放与正式评分分别记录。最新进度、逐项结果和成本口径见
+[Verified20 执行报告](docs/benchmarks/verified20-preregistered-report.md)。
+正式结果定稿要求 40 项 instance/mode 官方证据全部核验，未完成结果不记作 unresolved，
+不同批次不合并成功率或显著性检验。
+
+- **中断恢复**：核对已保存补丁、统计、prediction、官方报告和门禁轨迹，区分跳过、仅补评分与重新运行；
+  模型调用或评分基础设施故障触发停止策略，已保存补丁可用于恢复评分。
+- **成本报告**：同时呈现配对解决率、轮数与耗时；独立/复用样本分开，原始墙钟与排除跨中断耗时的口径并列。
+- **机制边界**：门禁完成不等于官方测试通过。Xarray 审计发现阶段 2 的关键断言在阶段 3 被替换，
+  当前门禁尚未保证测试演进保持既定行为覆盖；详见[正式批门禁差异审计](docs/benchmarks/verified20-formal-gate-audit.md)。
+  该问题与官方警告类型断言失败分别记录。
 
 **版本线**：v1.0.0 冻结公开 API；v1.1.0 引入默认不启用的可选控制面。
 标签创建与正式发布须通过安全及 CI 门槛；实际发布状态以远程标签和 Release 为准。
@@ -46,6 +63,7 @@ SWE-bench Lite Scale-20（官方评测容器内，同模型同预算，20 实例
 ## 核心特性
 
 - **阶段状态机**：需求 -> spec -> 测试 -> 实现 -> 测试 -> 修复 -> 交付，逐级放行、不可跳级。
+- **共享状态与交付校验**：跨进程文件锁、写前重载与原子持久化；校验期间状态变化会拒绝旧证据提交，交付要求最近测试通过且晚于最后代码/测试变更。
 - **多语言适配**：13 种语言适配器——Python / JavaScript（含 TypeScript）/ Java / Kotlin / Scala / Go / Rust / Swift / Ruby / PHP / C#（.NET 别名）/ C++ / Dart。
 - **工具拦截**：包装 `write_file` / `execute_command`；shell 重定向、`python -c` / `node -e` 等脚本写入同样受控。
 - **人机控制面**：写前 Diff / 人工复核、只读 Textual TUI、会话权限、SQLite 任务看板、跨会话 Goal 和 sidecar 定时维护（[使用指南](docs/control-plane.md)）。
@@ -127,6 +145,8 @@ anti-shortcut advance --workspace . --to 2                         # 推进阶�
 | 配置指南（全字段） | [docs/configuration.md](docs/configuration.md) |
 | 语言适配器 | [docs/languages.md](docs/languages.md) |
 | 架构与设计 | [docs/architecture.md](docs/architecture.md) |
+| Verified20 预注册评测、恢复与成本报告 | [docs/benchmarks/verified20-preregistered-report.md](docs/benchmarks/verified20-preregistered-report.md) |
+| 正式批门禁与官方评分差异审计 | [docs/benchmarks/verified20-formal-gate-audit.md](docs/benchmarks/verified20-formal-gate-audit.md) |
 | 拦截规则与安全加固 | [docs/security-rules.md](docs/security-rules.md) |
 | 红队 Agent（自己打自己，18 类逃逸技术 / CI 常态化，v0.60.0） | [docs/red-team.md](docs/red-team.md) |
 | 形式化不变量（TLA+ 模型检查，v0.58.0） | [docs/formal-invariants.md](docs/formal-invariants.md) |
@@ -142,6 +162,16 @@ anti-shortcut advance --workspace . --to 2                         # 推进阶�
 | Roadmap | [docs/roadmap.md](docs/roadmap.md) |
 | 发布与供应链安全 | [docs/release.md](docs/release.md) |
 | 贡献指南 | [CONTRIBUTING.md](CONTRIBUTING.md) |
+
+## 核心代码入口
+
+| 模块 | 入口与职责 |
+|------|------------|
+| 阶段推进 | [`anti_shortcut/skill.py`](anti_shortcut/skill.py)：`advance_stage()` 串联权限、证据、语义与防线校验 |
+| 状态一致性 | [`anti_shortcut/state.py`](anti_shortcut/state.py)：`validated_transition()`、原子写入与 `delivery_clean()` |
+| 证据与工具拦截 | [`anti_shortcut/validators.py`](anti_shortcut/validators.py)、[`anti_shortcut/interceptors.py`](anti_shortcut/interceptors.py)：阶段产物校验、命令写入路径识别与测试结果解析 |
+| 评测恢复与审计 | [`scripts/verified20_checks.py`](scripts/verified20_checks.py)、[`scripts/verified20_runtime.py`](scripts/verified20_runtime.py)：证据核验、恢复计划、停止状态持久化与本批容器清理 |
+| 结果与成本报告 | [`scripts/verified20_report.py`](scripts/verified20_report.py)：完整配对统计、跨批去重与成本口径，证据不足时拒绝定稿 |
 
 ## 支持的语言与框架
 

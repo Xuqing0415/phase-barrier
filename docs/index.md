@@ -41,6 +41,17 @@ docker run --rm -it ghcr.io/xuqing0415/phase-barrier-demo
 ```
 
 详细步骤见 [快速开始](quickstart.md)。
+
+## 评测与审计进展（2026-11-13）
+
+[Verified20 预注册执行报告](benchmarks/verified20-preregistered-report.md) 跟踪 20 个实例、12 个仓库的
+正式评分与成本，18 个独立实例与 2 个跨批复用实例分开报告。恢复工具核对保存的补丁、统计、
+官方报告和门禁轨迹，区分仅补评分与重新运行；正式定稿要求全部 40 项官方证据核验齐全。
+
+门禁完成不等于官方测试通过。[正式批差异审计](benchmarks/verified20-formal-gate-audit.md)
+记录环境干扰、测试覆盖差异与断言弱化。当前门禁尚未保证测试演进保持既定行为覆盖，
+相关限制与官方解决率、耗时一起报告；pilot 与诊断重放不并入正式统计。
+
 ## 最佳实践与教程
 
 - [最佳实践](best-practices.md)：阶段建模、证据设计、配置建议、常见坑、性能与安全加固清单。

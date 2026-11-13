@@ -63,3 +63,45 @@ stats 与 trace 一致，最终 state 可被新审计器读取，模型请求为
 `tests/fixtures/verified20_audit/` 明确区分原 pilot 的统计/官方报告摘要与新验证的 state/trace；
 新文件不是历史重建。`tests/test_audit_pipeline.py` 覆盖真实产物解析、反向组合需显式审查、
 计数损坏及交付时间戳无效时拒绝；连同 runner、采样和 delivery_clean 测试共 56 项通过。
+
+## 独立模型复核完成（2026-11-10）
+
+新 Astropy gated 补丁 SHA256 为
+`af0e1e461558946c82f2bf539f50fba873e13fe619c776bf3ce696e621220539`，
+44 轮、15,625 字符。它与原 pilot 补丁分开审查，不沿用旧补丁的豁免。
+
+- `stats.json`、`state.json`、`trace.jsonl` 均可由新审计器读取；51 个事件，
+  其中 3 次阶段拒绝，与 `gate_intercepts=3` 一致。
+- 完整 trace 显示阶段按 1→2→3→4→6 推进；尝试进入交付前的三个不充分测试
+  结果触发阶段拒绝，最终第 43 轮执行 `python -m pytest test_pb_repro.py -q`，
+  `2 passed`，第 44 轮进入交付。
+- 最近源码变更时间为 `1794295224.9678733`，最终测试时间为 `1794295392.5259397`，
+  交付确认时间为 `1794295394.381405`。最终测试严格晚于源码变更，未见交付后改码。
+- 新补丁仍只修改 CDS 实现、生成的解析表，并新增复现测试；未修改既有测试。
+  新增两个测试函数覆盖连续除法和表格读取，没有断言混用除号与点乘应抛 ValueError。
+- 官方仍 unresolved：FAIL_TO_PASS 2/3，PASS_TO_PASS 731/732，note=graded，
+  `patch_successfully_applied=true`、`infra_failure=false`；失败 FAIL_TO_PASS 仍为
+  `test_cds_grammar_fail[km/s.Mpc-1]`。
+
+该新补丁也按上述具体证据归类 A：`gate_completed_insufficient`。完整新 trace 支持
+此运行的交付新鲜度核验，不据此填补原 pilot 的历史缺失。复核不并入正式结果。
+复核评分曾因宿主 runner 消失中断；已保留中断日志，对同一保存补丁使用独立 recovery
+run ID 恢复官方评分，零新增模型请求，未以 resolved 为验收条件。
+
+## 正式批首次运行与历史差异（2026-11-10）
+
+正式批 `formal20_logicstar/results.csv` 中，该实例 baseline 与 gated 均为
+resolved、note=graded；两份官方报告均显示 FAIL_TO_PASS 3/3、PASS_TO_PASS 732/732，
+补丁成功应用且 `infra_failure=false`。
+
+| 运行 | baseline | gated | gated 轮数 | gated 补丁字符 | gated 拦截 |
+|------|----------|-------|-----------:|---------------:|-----------:|
+| 原 pilot | unresolved | unresolved | 36 | 14,618 | 5（旧原始值；重算 4） |
+| 独立审计复核 | 未运行 | unresolved | 44 | 15,625 | 3 |
+| 正式批 | resolved | resolved | 37 | 13,887 | 4 |
+
+正式 gated 的完整 trace 为 45 个事件、4 个 blocked，与 stats/state 一致，
+交付新鲜度核验通过。正式 baseline 为 34 轮、346.1 秒，gated 为 37 轮、237.0 秒。
+正式结果仅进入本批正式统计；旧 pilot 和复核的 A 类结论继续限定于各自补丁。
+三次运行产生不同补丁和结果，保留运行间变异；没有控制实验，不将差异归因于门禁，
+也不因新结果为 resolved 而覆盖旧失败记录。

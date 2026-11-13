@@ -30,12 +30,13 @@ Python 版本与老仓库依赖不匹配（例如宿主 py3.14 跑不动 astropy
 ``benchmarks/swebench/{run_agent,grade}.py``，无需显式传入。
 
 输出：``--results`` CSV 追加 ``(instance_id, mode)`` 行；已存在的组合自动跳过，可断点续跑。
-缺镜像、缺 patch、超时都会按行记录 note，不中断整批。
+缺镜像、缺 patch、超时按行记录 note；模型调用/评分基础设施故障按根因策略停止推进。
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import importlib.util
 import json
 import os
 import shutil
@@ -46,6 +47,14 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+# Load the sibling by path: launchers may import this module from another cwd,
+# where a third-party package named "scripts" would otherwise shadow the repo.
+_checks_spec = importlib.util.spec_from_file_location(
+    "pb_verified20_checks", Path(__file__).with_name("verified20_checks.py"))
+_checks = importlib.util.module_from_spec(_checks_spec)
+_checks_spec.loader.exec_module(_checks)
+model_call_failed = _checks.model_call_failed
+monitoring_decision = _checks.monitoring_decision
 MOUNT_POINT = "/pb"
 # 官方评测镜像的 base conda 里没有 phase-barrier 的运行时依赖（pydantic/PyYAML/structlog），
 # 而镜像自带的 testbed 环境又不满足 requires-python>=3.10。用命名卷缓存一份按 Python 小版本
@@ -166,7 +175,8 @@ def build_agent_docker_command(*, image: str, repo_mount: Path | str | None = No
                                max_turns: int, exec_timeout: int = 300,
                                mount_point: str = MOUNT_POINT,
                                extra_env: dict[str, str] | None = None,
-                               docker: str = "docker") -> list[str]:
+                               docker: str = "docker",
+                               dns_servers: list[str] | None = None) -> list[str]:
     """构造在官方镜像里运行 run_agent.py 的 ``docker run`` argv（纯函数，便于测试）。
 
     ``mounts`` 为 ``(宿主路径, 容器路径, 只读)``。正式评测传入最小挂载集：
@@ -185,6 +195,8 @@ def build_agent_docker_command(*, image: str, repo_mount: Path | str | None = No
         f" --outdir {outdir} --max-turns {max_turns} --exec-timeout {exec_timeout}"
     )
     argv = [docker, "run", "--rm"]
+    for server in dns_servers or []:
+        argv += ["--dns", server]
     for host_path, container_path_, readonly in mounts:
         spec = f"{host_path}:{container_path_}" + (":ro" if readonly else "")
         argv += ["-v", spec]
@@ -231,12 +243,17 @@ def _run(cmd: list[str], timeout: int, log_path: Path | None = None):
     env = dict(os.environ)
     env.setdefault("PYTHONIOENCODING", "utf-8")
     env.setdefault("PYTHONUTF8", "1")
+    if log_path is not None:
+        # Keep partial output even if the supervisor/CLI disappears. Capturing
+        # everything in RAM and writing only after completion loses the most
+        # useful evidence on interruption.
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("wb") as log:
+            proc = subprocess.run(cmd, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=timeout)
+        return proc, log_path.read_text(encoding="utf-8", errors="replace")
     proc = subprocess.run(cmd, env=env, capture_output=True, text=True,
                           encoding="utf-8", errors="replace", timeout=timeout)
     combined = (proc.stdout or "") + ("\n" + proc.stderr if proc.stderr else "")
-    if log_path is not None:
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        log_path.write_text(combined, encoding="utf-8", errors="replace")
     return proc, combined
 
 
@@ -297,6 +314,7 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
         outdir="/pb_runs",
         testbed_python=args.testbed_python, gate_python=args.gate_python,
         max_turns=args.max_turns, exec_timeout=args.exec_timeout,
+        dns_servers=getattr(args, "dns", None),
         extra_env={"DEEPSEEK_API_KEY": os.environ.get("DEEPSEEK_API_KEY", ""),
                    **({"PB_DS_MODEL": os.environ["PB_DS_MODEL"]} if os.environ.get("PB_DS_MODEL") else {})},
     )
@@ -322,6 +340,12 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
             row["seconds"] = stats.get("seconds", "")
         except Exception:
             pass
+    if model_call_failed(out):
+        row["note"] = "model_call_error" + (" empty_patch" if not patch_is_fresh(patch, started_at) else "")
+        # A transport failure is not an official unresolved result. Preserve any
+        # saved patch so the recovery plan can schedule grading without a model rerun.
+        row["resolved"] = ""
+        return row
     if not patch_is_fresh(patch, started_at):
         row["note"] = (row["note"] + " empty_patch").strip()
         row["resolved"] = "0"
@@ -407,6 +431,8 @@ def main() -> int:
     ap.add_argument("--concurrency", type=int, default=2)
     ap.add_argument("--label-suffix", default="")
     ap.add_argument("--skip-existing", action="store_true")
+    ap.add_argument("--dns", action="append", default=[],
+                    help="DNS server for Agent containers; repeat for a fallback server")
     args = ap.parse_args()
 
     if not os.environ.get("DEEPSEEK_API_KEY"):
@@ -460,6 +486,8 @@ def main() -> int:
         writer.writeheader()
         fh.flush()
     threads: list[threading.Thread] = []
+    stop_event = threading.Event()
+    new_rows: list[dict] = []
 
     def worker(job: dict) -> None:
         try:
@@ -469,10 +497,16 @@ def main() -> int:
         with _LOCK:
             writer.writerow(row)
             fh.flush()
+            new_rows.append(row)
+            if monitoring_decision(new_rows, args.log_dir or "", args.label_suffix)["stop"]:
+                stop_event.set()
 
     for job in jobs:
-        while sum(1 for t in threads if t.is_alive()) >= max(1, args.concurrency):
+        while (not stop_event.is_set()
+               and sum(1 for t in threads if t.is_alive()) >= max(1, args.concurrency)):
             time.sleep(5)
+        if stop_event.is_set():
+            break
         thread = threading.Thread(target=worker, args=(job,), daemon=True)
         thread.start()
         threads.append(thread)
@@ -481,15 +515,15 @@ def main() -> int:
     fh.close()
     write_run_status(
         status_path,
-        state="completed",
+        state="halted" if stop_event.is_set() else "completed",
         results=str(args.results),
         tasks=len(tasks),
         jobs=len(jobs),
         modes=modes,
         concurrency=args.concurrency,
     )
-    print("PB_CONTAINER_BATCH_DONE=" + str(len(jobs)), flush=True)
-    return 0
+    print("PB_CONTAINER_BATCH_DONE=" + str(len(threads)), flush=True)
+    return 3 if stop_event.is_set() else 0
 
 
 if __name__ == "__main__":

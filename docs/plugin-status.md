@@ -16,10 +16,10 @@
 <!-- plugins-index:start -->
 | 插件 | 来源 | 收录 | 入口点 | 状态 | 最近验证 | 提交 |
 |------|------|------|--------|------|----------|------|
-| phase-barrier-foo-adapter | `./examples/custom_adapter` | 官方/人工 | languages: foo | passed | 2026-11-02T10:20:43Z | — |
-| phase-barrier-plugin-example | `./examples/plugin_rules` | 官方/人工 | validators: strict_design; interceptors: deny_vendor | passed | 2026-11-02T10:20:43Z | — |
-| Xuqing0415/phase-barrier-plugin-template | `https://github.com/Xuqing0415/phase-barrier-plugin-template` | 自动发现 | integrations: demo_integration; interceptors: deny_vendor; languages: demo; validators: require_design_review | passed | 2026-11-02T10:20:43Z | 6208a4e6 |
-| Xuqing0415/phase-barrier-plugin-foo-adapter | `https://github.com/Xuqing0415/phase-barrier-plugin-foo-adapter` | 自动发现 | languages: foo | passed | 2026-11-02T10:20:43Z | 175b0002 |
+| phase-barrier-foo-adapter | `./examples/custom_adapter` | 官方/人工 | languages: foo | passed | 2026-11-09T10:40:33Z | — |
+| phase-barrier-plugin-example | `./examples/plugin_rules` | 官方/人工 | validators: strict_design; interceptors: deny_vendor | passed | 2026-11-09T10:40:33Z | — |
+| Xuqing0415/phase-barrier-plugin-template | `https://github.com/Xuqing0415/phase-barrier-plugin-template` | 自动发现 | integrations: demo_integration; interceptors: deny_vendor; languages: demo; validators: require_design_review | passed | 2026-11-09T10:40:33Z | 6208a4e6 |
+| Xuqing0415/phase-barrier-plugin-foo-adapter | `https://github.com/Xuqing0415/phase-barrier-plugin-foo-adapter` | 自动发现 | languages: foo | passed | 2026-11-09T10:40:33Z | 175b0002 |
 <!-- plugins-index:end -->
 
 ## 状态说明

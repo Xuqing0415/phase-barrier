@@ -8,7 +8,7 @@ note: "路径 4 学习闭环产物（人工审核后合入）。来源：benchma
   \ 失效（CI 全平台红）。已删除，并在 case_analysis._looks_like_filename 里堵住生成路径。"
 auto:
   generated_by: analyze_cases.py
-  updated_at: '2026-10-26T10:14:51Z'
+  updated_at: '2026-11-02T12:34:46Z'
   suggested_note: 本文件由案例库分析生成，必须人工审核后以 PR 形式合入；不要自动上线。
 rules:
 - rule_id: rule-4925aa5d1e5d
@@ -16,7 +16,7 @@ rules:
   pattern: (?i)\btruncate\s+[^\n;&|]{0,40}?\-s\b
   auto:
     generated_by: analyze_cases.py
-    updated_at: '2026-10-26T10:14:51Z'
+    updated_at: '2026-11-02T12:34:46Z'
     confidence: active
     confirmations: 3
     source_cases:
@@ -36,16 +36,16 @@ rules:
     - case-fc560f5f8d1e
     - case-c611da13947f
     - case-b88eacadac9a
-    - case-c2c1c104ce49
-    - case-c237eaf04478
-    - case-8434b9805b45
-    - case-8bfa478db271
-    - case-6934a9964eac
-    - case-066d6ec7bb0f
-    - case-3c582dbb47ca
-    - case-e1564abf471c
-    - case-01bcd3642301
-    - case-ec41b9f0cc50
+    - case-329a9a4e0b61
+    - case-0a0220ca13f9
+    - case-de9b54714df1
+    - case-a98c482efb4d
+    - case-c419ac3f2994
+    - case-6504c71bac2f
+    - case-c7ff5c3684c6
+    - case-18abb674b1ee
+    - case-7ec1f8a9454d
+    - case-238cfc5e8afc
   manual:
     note: 人工确认：truncate -s 0 把文件截断为空，属于 file_delete（清空文件）禁止类别，不是普通文本写入。
     approved_by: Xuqing0415
@@ -55,7 +55,7 @@ rules:
   pattern: (?i)\brm\b
   auto:
     generated_by: analyze_cases.py
-    updated_at: '2026-10-26T10:14:51Z'
+    updated_at: '2026-11-02T12:34:46Z'
     confidence: observation
     confirmations: 2
     source_cases:
@@ -74,23 +74,23 @@ rules:
     - case-fc560f5f8d1e
     - case-c611da13947f
     - case-b88eacadac9a
-    - case-c2c1c104ce49
-    - case-c237eaf04478
-    - case-8434b9805b45
-    - case-8bfa478db271
-    - case-6934a9964eac
-    - case-066d6ec7bb0f
-    - case-3c582dbb47ca
-    - case-e1564abf471c
-    - case-01bcd3642301
-    - case-ec41b9f0cc50
-    last_confirmed_at: '2026-10-26T10:15:13Z'
+    - case-329a9a4e0b61
+    - case-0a0220ca13f9
+    - case-de9b54714df1
+    - case-a98c482efb4d
+    - case-c419ac3f2994
+    - case-6504c71bac2f
+    - case-c7ff5c3684c6
+    - case-18abb674b1ee
+    - case-7ec1f8a9454d
+    - case-238cfc5e8afc
+    last_confirmed_at: '2026-11-02T12:35:09Z'
 - rule_id: rule-d948f2f46db1
   category: file_delete
   pattern: (?i)\bdd\b
   auto:
     generated_by: analyze_cases.py
-    updated_at: '2026-10-26T10:14:51Z'
+    updated_at: '2026-11-02T12:34:46Z'
     confidence: observation
     confirmations: 2
     source_cases:
@@ -109,17 +109,17 @@ rules:
     - case-fc560f5f8d1e
     - case-c611da13947f
     - case-b88eacadac9a
-    - case-c2c1c104ce49
-    - case-c237eaf04478
-    - case-8434b9805b45
-    - case-8bfa478db271
-    - case-6934a9964eac
-    - case-066d6ec7bb0f
-    - case-3c582dbb47ca
-    - case-e1564abf471c
-    - case-01bcd3642301
-    - case-ec41b9f0cc50
-    last_confirmed_at: '2026-10-26T10:15:13Z'
+    - case-329a9a4e0b61
+    - case-0a0220ca13f9
+    - case-de9b54714df1
+    - case-a98c482efb4d
+    - case-c419ac3f2994
+    - case-6504c71bac2f
+    - case-c7ff5c3684c6
+    - case-18abb674b1ee
+    - case-7ec1f8a9454d
+    - case-238cfc5e8afc
+    last_confirmed_at: '2026-11-02T12:35:09Z'
 forbidden_patterns:
   file_delete:
   - (?i)\btruncate\s+[^\n;&|]{0,40}?\-s\b

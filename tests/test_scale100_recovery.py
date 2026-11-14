@@ -217,3 +217,18 @@ def test_tampered_recovery_controller_blocks_final_verification(simulated,tmp_pa
 @pytest.mark.parametrize("label",["../escape","a/b","..","a\\b",""])
 def test_untrusted_evidence_labels_fail_closed(label):
     with pytest.raises(ValueError):evidence.safe_label(label)
+
+
+@pytest.mark.parametrize("changed",[None,"host_dataset_sha256","model_request","dns","source_hashes","agent_dataset"])
+def test_resume_rejects_changed_private_inputs_and_agent_dataset(changed):
+    original={key:"frozen" for key in ("manifest_sha256","host_dataset_sha256","image_provenance_sha256",
+              "testbed_audit_sha256","model_request","test_preservation","dns","source_hashes")}
+    current=dict(original)
+    safe=[{"instance_id":"a__a-1","problem_statement":"original"}]
+    rebuilt=safe
+    if changed=="agent_dataset":rebuilt=[{"instance_id":"a__a-1","problem_statement":"changed"}]
+    elif changed:current[changed]="changed"
+    if changed:
+        with pytest.raises(ValueError,match="differs"):
+            recovery.verify_resume_inputs(original,current,safe,rebuilt)
+    else:recovery.verify_resume_inputs(original,current,safe,rebuilt)

@@ -53,6 +53,7 @@
   },
   "root_cause": "Unretried PermissionError during monitor_status atomic replace; original external handle owner was not captured.",
   "production_resume_requires_published_green_ci": true,
+  "resume_input_guards": {"tests_passed": 6, "original_private_dataset_hash_matches": true, "agent_allowlist_data_matches": true, "model_strict_dns_source_match": true},
   "post_push_correction": "6eac776 CI found three Git text-mode queries missing explicit encoding; tracked-file hygiene now covers the committed recovery script. UTF-8 added; production remains blocked until corrected commit CI succeeds.",
   "unchanged_execution": "Original Agent/gate/rules/sample/protocol remain in the execution workspace; recovery controller is versioned and hashed separately."
 }

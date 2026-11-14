@@ -226,6 +226,15 @@ def published_ci():
     return {"commit":commit, "runs":runs}
 
 
+def verify_resume_inputs(original, current, saved_agent_rows, rebuilt_agent_rows):
+    for key in ("manifest_sha256", "host_dataset_sha256", "image_provenance_sha256",
+                "testbed_audit_sha256", "model_request", "test_preservation", "dns", "source_hashes"):
+        if key not in original or current.get(key) != original[key]:
+            raise ValueError("resume input differs from original launch: "+key)
+    if saved_agent_rows != rebuilt_agent_rows:
+        raise ValueError("saved Agent allowlist dataset differs from original host inputs")
+
+
 def prepare(args):
     root, source = args.run_root.resolve(), args.execution_root.resolve()
     configure(source,root)
@@ -249,6 +258,8 @@ def prepare(args):
     if not simulated.get("passed") or not simulated.get("simulation",{}).get("passed"):
         raise ValueError("crash/resume simulation has not passed")
     preflight = runtime.preflight(probe_testbeds=False, allow_existing=True)
+    verify_resume_inputs(read(root/"prelaunch.json"),preflight,
+                         read(root/"_agent_dataset.json"),read(runtime.PREP/"agent_dataset_validation.json"))
     if preflight["source_hashes"] != launch["source_hashes"]:
         raise ValueError("preflight frozen source set changed")
     folder = root / "attempts" / attempt

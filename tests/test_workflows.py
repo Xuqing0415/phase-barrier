@@ -78,6 +78,16 @@ def test_workflow_files_are_discovered():
     assert {p.name for p in WORKFLOWS} >= {"ci.yml", "red-team.yml", "learning-loop.yml"}
 
 
+@pytest.mark.parametrize(
+    "path",
+    sorted((REPO_ROOT / ".github" / "ISSUE_TEMPLATE").glob("*.yml")),
+    ids=lambda p: p.name,
+)
+def test_issue_templates_parse_without_duplicate_keys(path: Path):
+    data = _load(path)
+    assert isinstance(data, dict)
+
+
 @pytest.mark.parametrize("path", WORKFLOWS, ids=lambda p: p.name)
 def test_workflows_parse_without_duplicate_keys(path: Path):
     data = _load(path)

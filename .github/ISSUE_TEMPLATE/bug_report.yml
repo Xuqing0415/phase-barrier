@@ -11,7 +11,7 @@ body:
     id: version
     attributes:
       label: 版本
-      description: `python -m anti_shortcut --version` 或 pip show phase-barrier
+      description: "`python -m anti_shortcut --version` 或 pip show phase-barrier"
       placeholder: "0.26.0"
     validations:
       required: true

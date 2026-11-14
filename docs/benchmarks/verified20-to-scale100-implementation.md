@@ -5,8 +5,8 @@
 | 阶段 | 状态 | 验收 |
 |---|---|---|
 | 一：异常复核 | 已完成 | 40/40 证据重新核验；三 SymPy suspicious，命令漏识别而非日志漏写；后期未完成 7、早期实现校验未完成 1；SymPy 双组跨睡眠 |
-| 二：最终报告 | 本地验收通过，待推送及 CI | 56 项相关测试通过，MkDocs strict 构建通过；报告、脚本和脱敏证据待提交，须核验新提交远程 CI |
-| 三：测试演进约束 | 待阶段二验收 | warn/strict/off、有理由的删除声明与审计、真实 Xarray fixture、全量覆盖率和红队、三实例容器冒烟、v1.2.0 发布 |
+| 二：最终报告 | 已完成 | 提交 dff58c9 已推送 main；CI、docs、Security、Plugin CI 均 success；56 项相关测试及 MkDocs strict 通过 |
+| 三：测试演进约束 | 本地回归通过，真实冒烟运行中 | warn/strict/off、删除理由审计、真实 Xarray fixture、Java/Go 名字及复合命令修复；1807 passed / 22 skipped，核心覆盖率 93.68%；待三实例结果、远程 CI、v1.2.0 |
 | 四：100 个新增实例扩样 | 待阶段三验收 | 排除历史 49 个不同实例，预注册 100 个新实例、200 个任务，strict、镜像/DNS/监督前置检查、完整配对统计 |
 
 ## 复核导致的方案修正
@@ -22,5 +22,16 @@
 
 ## 当前环境
 
-Docker Desktop Linux engine 当前未运行；容器冒烟和扩样须先恢复 Docker，再验证镜像和模型凭据。
-GitHub 查询已通过授权网络执行成功；原 main 的 CI / Security 为 success，新提交仍须独立验证。
+Docker Desktop Linux engine 已恢复（服务端 29.6.1）；三实例镜像 3/3 就绪，模型凭据仅检查存在性，未输出或写入报告。
+2026-11-14 已独立确认 dff58c9 的四项远程工作流全部 success。
+Docker 恢复：Windows 原生文件移动/重命名无法处理旧重解析点；在 Docker 停止时通过 WSL 无覆盖备份 `docker-secrets-engine/engine.sock`，再备份仅含旧 `dockerInference` 的 `Docker/run` 目录并重建，启动成功。未清理凭据或重置 Docker；保留全部备份（含先前留下的空目录）。
+
+## 阶段三本地验收（2026-11-14）
+
+- 全量 `coverage run -m pytest tests/`：1829 项收集，1807 passed、22 skipped、0 failed；核心行+分支覆盖率 93.6781%。
+- 同一覆盖率报告的 control 97.0332%、permissions 99.1489%、service 98.7915%，`check_control_coverage.py` passed。
+- 新增测试保留专项 28 项，另增复合命令/运行器接线测试；Xarray 两份真实 `write_file` 内容连同 SHA256 来源记录入 fixture。
+- 红队使用工作流定义的十项快速技术：54 案例中 53 blocked、1 inconclusive，无未豁免逃逸、无过期豁免。首次运行仅输出阶段遇到 GBK 编码错误，使用 UTF-8 与新工作目录重跑成功。
+- MkDocs strict 与 `git diff --check` 通过。摘要见 `benchmarks/swebench/results/v120-validation.json`；原始本地证据位于 `.pytest_tmp/stage3-*`。
+- 三实例 strict 冒烟清单固定为 Xarray-3993、SymPy-13480、Flask-5014；60 轮、并发 2、显式 DNS；运行目录 `.pytest_tmp/v120_smoke_20261114`。结果与门禁完成分别核对，不按结果替换实例；源码哈希已在启动前保存。
+- 当前仍为 Unreleased，未打 v1.2.0 标签，未开始阶段四。

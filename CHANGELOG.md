@@ -6,6 +6,21 @@
 
 ## [Unreleased]
 
+### Added
+
+- 阶段 3 新增 `stages.implementation.test_preservation: strict|warn|off`，默认 `warn`。
+  按文件核对阶段 2 登记的测试名；strict 拒绝未声明删除/重命名，允许通过
+  `advance_stage(..., evidence={"test_removals": [...]})` 逐项声明理由，并记录
+  `test_removed_with_reason`。同名文件内容变化只告警；不保证断言强度或覆盖率不下降。
+  包含 Xarray-3993 原始阶段 2/3 测试替换 fixture 回归。
+- SWE-bench Agent/容器批处理支持 `--test-preservation`，记录策略及专门的拒绝计数。
+  Java/Go 适配器登记真实测试名，避免序号/注解占位名掩盖重命名。
+
+### Fixed
+
+- 修复正式 SymPy 审计确认的 `cd /testbed && python -m pytest ...` 复合命令漏识别。
+  识别引号外的命令分隔符，并区分输出文字、注释和 heredoc 正文。
+
 ### Security
 
 - **SWE-bench 评测容器最小挂载**：Agent 容器不再挂载整个宿主仓库，只读挂载

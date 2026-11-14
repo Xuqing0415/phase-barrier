@@ -176,13 +176,16 @@ def build_agent_docker_command(*, image: str, repo_mount: Path | str | None = No
                                mount_point: str = MOUNT_POINT,
                                extra_env: dict[str, str] | None = None,
                                docker: str = "docker",
-                               dns_servers: list[str] | None = None) -> list[str]:
+                               dns_servers: list[str] | None = None,
+                               test_preservation: str = "warn") -> list[str]:
     """构造在官方镜像里运行 run_agent.py 的 ``docker run`` argv（纯函数，便于测试）。
 
     ``mounts`` 为 ``(宿主路径, 容器路径, 只读)``。正式评测传入最小挂载集：
     只读的 agent 脚本 / anti_shortcut / 脱敏数据集 + 可写的 runs 目录；
     不挂载整个仓库，避免 Agent 读到 gold patch。
     """
+    if test_preservation not in ("strict", "warn", "off"):
+        raise ValueError("test_preservation must be strict, warn or off")
     if mounts is None:
         if repo_mount is None:
             raise ValueError("build_agent_docker_command 需要 repo_mount 或 mounts")
@@ -193,6 +196,7 @@ def build_agent_docker_command(*, image: str, repo_mount: Path | str | None = No
         f" --dataset {dataset} --instance {instance_id} --workdir /testbed"
         f" --venv {testbed_python} --mode {mode} --label {label}"
         f" --outdir {outdir} --max-turns {max_turns} --exec-timeout {exec_timeout}"
+        f" --test-preservation {test_preservation}"
     )
     argv = [docker, "run", "--rm"]
     for server in dns_servers or []:
@@ -315,6 +319,7 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
         testbed_python=args.testbed_python, gate_python=args.gate_python,
         max_turns=args.max_turns, exec_timeout=args.exec_timeout,
         dns_servers=getattr(args, "dns", None),
+        test_preservation=getattr(args, "test_preservation", "warn"),
         extra_env={"DEEPSEEK_API_KEY": os.environ.get("DEEPSEEK_API_KEY", ""),
                    **({"PB_DS_MODEL": os.environ["PB_DS_MODEL"]} if os.environ.get("PB_DS_MODEL") else {})},
     )
@@ -425,6 +430,7 @@ def main() -> int:
     ap.add_argument("--only-ready", action="store_true",
                     help="只跑本机已缓存镜像的实例（扩样本时边拉边跑；配合 --skip-existing 可续跑）")
     ap.add_argument("--max-turns", type=int, default=60)
+    ap.add_argument("--test-preservation", choices=["strict", "warn", "off"], default="warn")
     ap.add_argument("--exec-timeout", type=int, default=300)
     ap.add_argument("--agent-timeout", type=int, default=5400)
     ap.add_argument("--grade-timeout", type=int, default=1800)

@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-14",
+  "status": "local_regression_passed_real_smoke_and_remote_ci_pending",
+  "base_commit": "dff58c9b370ec5df61f54deda32b26fc5d16535e",
+  "pytest": {
+    "collected": 1829,
+    "passed": 1807,
+    "skipped": 22,
+    "failed": 0
+  },
+  "coverage": {
+    "line_and_branch_percent": 93.67806364251862,
+    "threshold": 90,
+    "control_percent": 97.03315881326353,
+    "permissions_percent": 99.14893617021276,
+    "service_percent": 98.79154078549848,
+    "control_gate_passed": true
+  },
+  "red_team": {
+    "total": 54,
+    "counts": {
+      "inconclusive": 1,
+      "blocked": 53
+    },
+    "control_incomplete": [],
+    "unwaived_escapes": [],
+    "expired_waivers": []
+  },
+  "docs_strict": "passed",
+  "diff_check": "passed",
+  "real_smoke": {
+    "manifest": "benchmarks/swebench/manifests/v120-smoke-2026-11-14.json",
+    "run_root": ".pytest_tmp/v120_smoke_20261114",
+    "status": "running",
+    "policy": "strict",
+    "source_hashes": ".pytest_tmp/v120_smoke_20261114/source_hashes.json"
+  },
+  "evidence": [
+    {
+      "path": ".pytest_tmp/stage3-full-01.log",
+      "sha256": "a2adc3aa1d2aa172bd442c32894aecb48a90a45319fdf0e9d6bd8539e7f17f17"
+    },
+    {
+      "path": ".pytest_tmp/stage3-coverage.json",
+      "sha256": "71ee8e7a794184fb1a9b2f4cbaa6d5aaff270cca8919e2743d5e628e2ad5fe41"
+    },
+    {
+      "path": ".pytest_tmp/stage3-redteam-02/report.json",
+      "sha256": "060259414b7900ca80f2f0635883e50810978fe25ca84c3496947922d134d550"
+    },
+    {
+      "path": ".pytest_tmp/stage3-docs.log",
+      "sha256": "7709c99499f0da8a8757ac4ab66b9a24e1f144103fe5735f5fd54217760634e7"
+    }
+  ],
+  "release_v120": "not_tagged",
+  "limitations": [
+    "Test-name preservation does not establish assertion-strength, semantic or coverage preservation.",
+    "The quick red-team suite has one inconclusive case; it is not counted as blocked.",
+    "Smoke instances reuse historical cases and are not new scale100 observations."
+  ]
+}

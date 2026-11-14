@@ -647,10 +647,25 @@ class AntiShortcutSkill:
                 ok, msg, ev = True, "需求已记录", {"user_request": self.state.get_evidence("user_request")}
             else:
                 return {"success": False, "stage": cur, "error": f"阶段 {cur} 无对应校验器"}
+        elif validator is validate_implementation:
+            ok, msg, ev = validator(self.workspace, self.config, self.state, self.adapter, evidence=evidence)
         else:
             ok, msg, ev = validator(self.workspace, self.config, self.state, self.adapter)
         if evidence:
-            ev = {**(ev or {}), **evidence}
+            # 阶段 2/3 的测试登记和比较结果必须来自校验器，调用方不能覆盖基线/结果。
+            supplied = dict(evidence)
+            if cur in (2, 3):
+                for key in ("test_functions", "test_functions_by_file", "test_count", "parsers",
+                            "files", "sha256", "test_preservation"):
+                    supplied.pop(key, None)
+            ev = {**(ev or {}), **supplied}
+        preservation = (ev or {}).get("test_preservation", {})
+        if cur == 3 and validator is validate_implementation and preservation:
+            for removal in preservation.get("declared_removals", []):
+                self.logger.warning("test_removed_with_reason", stage=cur, **removal)
+            if preservation.get("status") in ("warning", "rejected"):
+                self.logger.warning("test_preservation_" + preservation["status"], stage=cur,
+                                    evidence=preservation)
 
         if not ok:
             self.logger.warning("stage_advance_rejected", stage=cur, reason=msg, evidence=ev)

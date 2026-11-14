@@ -120,8 +120,8 @@ class GoAdapter(LanguageAdapter):
         funcs = _GO_TEST_FUNC_RE.findall(text)
         assertions_total = len(_GO_ASSERT_RE.findall(text))
         tests = [
-            {"name": f"<{i + 1}:{name}>", "assertions": 0, "heuristic": True}
-            for i, name in enumerate(funcs)
+            {"name": name, "assertions": 0, "heuristic": True}
+            for name in funcs
         ]
         return {
             "file": str(path),

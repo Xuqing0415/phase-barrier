@@ -1,6 +1,8 @@
 """工具拦截辅助模块测试。"""
 from pathlib import Path
 
+import pytest
+
 from anti_shortcut.config import GateConfig
 from anti_shortcut.interceptors import (
     extract_written_paths,
@@ -129,6 +131,42 @@ def test_is_language_test_command_config_pattern():
     cfg = GateConfig(test_commands=[r"^\s*run-my-tests\b"])
     assert is_language_test_command("run-my-tests -v", cfg)
     assert not is_language_test_command("pytest", cfg)
+
+
+@pytest.mark.parametrize("command", [
+    "cd /testbed && python -m pytest test_pb_repro.py -q",
+    "cd /testbed&&python -m pytest test_pb_repro.py",
+    "true;pytest -q", "false||python3 -m pytest", "cd /tmp\npytest -q",
+    "(cd /testbed && python -m pytest)", "echo ready | pytest",
+    "env FLAG=1 python -m pytest", "FLAG=1 command pytest -q",
+    "bash -lc 'cd /testbed && python -m pytest'",
+    "cat <<'EOF'\nnotes\nEOF\npython -m pytest",
+])
+def test_compound_shell_test_commands_recognized(command):
+    assert is_language_test_command(command, GateConfig())
+
+
+@pytest.mark.parametrize("command", [
+    "echo 'pytest -q; python -m pytest'", 'printf "cd /tmp && pytest"',
+    "grep pytest README.md", "rg 'python -m pytest' docs", "echo test",
+    "cat <<'EOF'\npytest\npython -m pytest\nEOF\ntrue",
+    "cat <<-EOF\n\tpytest\n\tEOF\necho ok",
+    "# pytest\necho ok", 'python -c "print(\'pytest\')"',
+    "bash -lc 'echo pytest'",
+])
+def test_shell_data_is_not_a_test_invocation(command):
+    assert not is_language_test_command(command, GateConfig())
+
+
+def test_formal_sympy_compound_command_blocked_before_implementation(tmp_path):
+    from anti_shortcut import AntiShortcutSkill
+    from conftest import SPEC
+
+    skill = AntiShortcutSkill(tmp_path, user_request="reproduce")
+    (tmp_path / "spec.md").write_text(SPEC, encoding="utf-8")
+    assert skill.advance_stage(2)["success"]
+    with pytest.raises(PermissionError):
+        skill.check_exec_permission("cd /testbed && python -m pytest test_pb_repro.py -q")
 
 
 def test_touches_gate_dir_path_segments():

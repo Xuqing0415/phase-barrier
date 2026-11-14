@@ -273,6 +273,57 @@ def test_container_bootstraps_gate_deps(tmp_path):
     assert "/opt/miniconda3/bin/python /pb/benchmarks/swebench/run_agent.py" in argv[-1]
 
 
+@pytest.mark.parametrize("mode", ["strict", "warn", "off"])
+def test_container_passes_test_preservation_to_agent(tmp_path, mode):
+    argv = container.build_agent_docker_command(
+        image="example:latest", repo_mount=tmp_path, agent_script="/pb/run_agent.py",
+        dataset="/pb/ds.json", instance_id="x__x-1", mode="gated", label="smoke",
+        outdir="/pb_runs", testbed_python="python", gate_python="python", max_turns=60,
+        test_preservation=mode)
+    assert f"--test-preservation {mode}" in argv[-1]
+
+
+def test_agent_forwards_removal_evidence_and_counts_rejection(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    import anti_shortcut
+
+    removal = {"file": "test_repro.py", "name": "test_old", "reason": "replaced after review"}
+    captured = {}
+    class FakeGate:
+        current_stage = 3
+        is_complete = False
+        state = SimpleNamespace(snapshot=lambda: {})
+        def __init__(self, workdir, config, user_request):
+            captured["config"] = config
+        def install(self, tools):
+            return tools
+        def advance_stage(self, stage, evidence):
+            captured["stage"] = stage
+            captured["evidence"] = evidence
+            return {"success": False, "error": "test_preservation strict",
+                    "evidence": {"test_preservation": {"status": "rejected"}}}
+    monkeypatch.setattr(anti_shortcut, "AntiShortcutSkill", FakeGate)
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "unit-test-key")
+    monkeypatch.setattr(run_agent.subprocess, "run", lambda *a, **kw: subprocess.CompletedProcess(a, 0))
+    monkeypatch.setattr(run_agent, "extract_patch", lambda _: ("diff", ""))
+    monkeypatch.setattr(run_agent, "gate_completed", lambda _: 0)
+    args_payload = {"new_stage": 4, "evidence": {"test_removals": [removal]}}
+    monkeypatch.setattr(run_agent, "call_model", lambda *a: {"choices": [{"message": {
+        "role": "assistant", "tool_calls": [{"id": "1", "type": "function", "function": {
+            "name": "advance_stage", "arguments": json.dumps(args_payload)}}]}}]})
+    dataset = tmp_path / "dataset.json"
+    dataset.write_text(json.dumps([_instance()]), encoding="utf-8")
+    args = SimpleNamespace(workdir=tmp_path / "work", outdir=tmp_path / "out", label="test",
+                           dataset=dataset, instance="x__x-1", venv=None, exec_timeout=1,
+                           mode="gated", model="unit", max_turns=1, test_preservation="strict")
+    assert run_agent.run(args) == 0
+    assert captured["config"]["stages"]["implementation"]["test_preservation"] == "strict"
+    assert captured["stage"] == 4 and captured["evidence"] == args_payload["evidence"]
+    stats = json.loads((args.outdir / "test/stats.json").read_text())
+    assert stats["gate_intercepts"] == stats["test_preservation_intercepts"] == 1
+    assert stats["test_preservation"] == "strict"
+
+
 def test_gate_deps_bootstrap_verifies_import_before_ready():
     """依赖卷必须「只读复制到容器私有目录 + import 校验 + 原子发布」，坏卷不会污染容器。
 

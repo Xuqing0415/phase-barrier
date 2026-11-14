@@ -1,0 +1,38 @@
+{
+  "purpose": "v1.2.0 regression smoke; diagnostic reuse, excluded from scale100 new-instance outcomes",
+  "created_date": "2026-11-14",
+  "selection_rationale": [
+    "Xarray: audited stage2/stage3 replacement",
+    "SymPy: audited compound pytest command",
+    "Flask: general workflow regression"
+  ],
+  "count": 3,
+  "modes": [
+    "gated"
+  ],
+  "test_preservation": "strict",
+  "max_turns": 60,
+  "concurrency": 2,
+  "dns": [
+    "223.5.5.5",
+    "1.1.1.1"
+  ],
+  "acceptance": "All three complete a fresh container run and official grading; gate completion and resolved reported separately; no outcome-based replacement",
+  "instances": [
+    {
+      "instance_id": "pydata__xarray-3993",
+      "repo": "pydata/xarray",
+      "image": "logicstar/sweb.eval.x86_64.pydata_1776_xarray-3993:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-13480",
+      "repo": "sympy/sympy",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-13480:latest"
+    },
+    {
+      "instance_id": "pallets__flask-5014",
+      "repo": "pallets/flask",
+      "image": "logicstar/sweb.eval.x86_64.pallets_1776_flask-5014:latest"
+    }
+  ]
+}

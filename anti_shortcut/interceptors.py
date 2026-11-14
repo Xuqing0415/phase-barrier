@@ -50,16 +50,95 @@ def is_language_test_command(
     防御优先：宁可多拦一步，也不让测试命令在实现完成前漏网；
     真正的识别以适配器规则与 ``config.test_commands`` 为准。
     """
-    cmd = (command or "").strip()
-    if not cmd:
+    return _contains_test_command(command or "", config, adapter)
+
+
+def _shell_command_segments(command: str) -> list[str]:
+    """切分引号外的复合命令；不把注释、引号参数或 heredoc 正文当命令执行。
+
+    这是字面 shell 命令识别，不是完整 shell 解释器或沙箱。
+    """
+    segments: list[str] = []
+    start, i, size = 0, 0, len(command)
+    quote = None
+    heredocs: list[tuple[str, bool]] = []
+    while i < size:
+        char = command[i]
+        if char == "\\" and quote != "'" and i + 1 < size:
+            i += 2
+            continue
+        if quote:
+            if char == quote:
+                quote = None
+            i += 1
+            continue
+        if char in ("'", '"'):
+            quote = char
+        elif char == "#" and (i == 0 or command[i - 1].isspace()):
+            segments.append(command[start:i])
+            newline = command.find("\n", i)
+            i = size if newline < 0 else newline
+            start = i
+            continue
+        elif command.startswith("<<", i) and not command.startswith("<<<", i):
+            match = re.match(r"<<(-?)\s*(['\"]?)([\w.-]+)\2", command[i:])
+            if match:
+                heredocs.append((match[3], bool(match[1])))
+                i += match.end()
+                continue
+        elif char in ";|&()\n":
+            segments.append(command[start:i])
+            if char == "\n" and heredocs:
+                i += 1
+                for delimiter, strip_tabs in heredocs:
+                    while i < size:
+                        end = command.find("\n", i)
+                        end = size if end < 0 else end
+                        line = command[i:end].rstrip("\r")
+                        i = min(end + 1, size)
+                        if (line.lstrip("\t") if strip_tabs else line) == delimiter:
+                            break
+                heredocs.clear()
+                start = i
+                continue
+            start = i + 1
+        i += 1
+    segments.append(command[start:])
+    return segments
+
+
+def _contains_test_command(command: str, config: GateConfig, adapter: Any, depth: int = 0) -> bool:
+    if depth > 4:
         return False
-    if adapter is not None:
+    for segment in _shell_command_segments(command):
+        try:
+            tokens = shlex.split(segment, posix=True)
+        except ValueError:
+            tokens = segment.split()
+        while tokens and (re.match(r"^[A-Za-z_]\w*=", tokens[0])
+                          or tokens[0] in ("env", "command", "exec", "!")):
+            tokens.pop(0)
+        if not tokens:
+            continue
+        head = Path(tokens[0]).name.lower()
+        if head in ("sh", "bash", "dash", "zsh") and len(tokens) > 2:
+            for idx, token in enumerate(tokens[1:-1], 1):
+                if token.startswith("-") and "c" in token:
+                    if _contains_test_command(tokens[idx + 1], config, adapter, depth + 1):
+                        return True
+                    break
+        # 输出/查找命令的参数可能包含 pytest/test 等文字；不代表运行了测试。
+        if head in ("echo", "printf", "cat", "grep", "rg", "sed", "head", "tail", "ls", "cd"):
+            continue
+        cmd = shlex.join(tokens)
         identify = getattr(adapter, "identify_test_command", None)
         if callable(identify) and identify(cmd):
             return True
-    if is_test_command(cmd, config):
-        return True
-    return bool(re.search(r"(^|[/\s])test([/\s]|$)", cmd, flags=re.IGNORECASE))
+        if is_test_command(cmd, config):
+            return True
+        if any(re.search(r"(^|[/])test([/]|$)", token, re.I) for token in tokens):
+            return True
+    return False
 
 
 # ---------- 门禁目录保护 ----------

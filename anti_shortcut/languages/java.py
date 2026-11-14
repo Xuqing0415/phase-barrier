@@ -38,7 +38,13 @@ _JUNIT_ASSERT_RE = re.compile(
     r"assertTimeoutPreemptively|assertAll|assertThat|fail)\b",
     re.M,
 )
-_TEST_ANNOTATION_RE = re.compile(r"^\s*@Test\b", re.M)
+_TEST_METHOD_RE = re.compile(
+    r"@(?:[\w]+\.)*(?:Test|ParameterizedTest|RepeatedTest|TestFactory|TestTemplate)\b"
+    r"(?:\s*\([^)]*\))?\s*"
+    r"(?:@(?:[\w]+\.)*\w+(?:\s*\([^)]*\))?\s*)*"
+    r"(?:(?:public|protected|private|static|final|synchronized)\s+)*"
+    r"[\w<>\[\].?]+\s+(\w+)\s*\(", re.M,
+)
 
 # javac 对“单文件无法解析依赖”的典型报错：这些不算语法错误
 _DEPENDENCY_MARKERS = (
@@ -373,11 +379,13 @@ class JavaAdapter(LanguageAdapter):
 
     def analyze_tests(self, path: Path) -> dict[str, Any]:
         text = path.read_text(encoding="utf-8", errors="replace")
-        test_count = len(_TEST_ANNOTATION_RE.findall(text))
+        # 去除注释/字符串后提取方法名；序号或 @Test 占位名不能检测重命名。
+        code = re.sub(r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"', ' ', text, flags=re.S)
+        names = _TEST_METHOD_RE.findall(code)
         assertions_total = len(_JUNIT_ASSERT_RE.findall(text))
         tests = [
-            {"name": f"<{i + 1}:@Test>", "assertions": 0, "heuristic": True}
-            for i in range(test_count)
+            {"name": name, "assertions": 0, "heuristic": True}
+            for name in names
         ]
         return {
             "file": str(path),

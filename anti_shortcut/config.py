@@ -561,6 +561,18 @@ class SemanticOptions(BaseModel):
     # 第三方语义校验器的自由配置（校验器按 config.semantic.<name>.enabled 开关）
     plugin_options: dict[str, Any] = Field(default_factory=dict)
 
+class ImplementationStageOptions(BaseModel):
+    """阶段 3 的测试名保留策略；不验证同名断言的强度。"""
+
+    model_config = {"extra": "forbid"}
+    test_preservation: Literal["strict", "warn", "off"] = "warn"
+
+
+class StageOptions(BaseModel):
+    model_config = {"extra": "forbid"}
+    implementation: ImplementationStageOptions = Field(default_factory=ImplementationStageOptions)
+
+
 class GateConfig(BaseModel):
     """反捷径校验 Skill 的可配置项。所有字段都有合理默认值，YAML 可部分覆盖。"""
 
@@ -586,6 +598,7 @@ class GateConfig(BaseModel):
     # ---- 阶段 3：实现 ----
     source_file_patterns: list[str] = Field(default_factory=lambda: list(DEFAULT_SOURCE_FILE_PATTERNS))
     require_implementation: bool = True
+    stages: StageOptions = Field(default_factory=StageOptions)
     # ---- 阶段 4/5：测试运行 ----
     test_commands: list[str] = Field(default_factory=lambda: list(DEFAULT_TEST_COMMANDS))
     max_test_output_tail: int = 4000

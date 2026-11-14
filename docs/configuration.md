@@ -38,6 +38,7 @@ python -m anti_shortcut init --with-coverage --rules no_path_traversal,no_shell_
 | `stage2_test_scope` | str | `changed` | 阶段 2 校验范围：`changed` 只校验 Git 工作区相对 HEAD 的新增/修改测试文件（避免拿仓库历史测试蒙混、也避免存量夹具误伤）；`workspace` 退回全量扫描。非 Git 仓库 / 工作区干净时自动退回全量 |
 | `source_file_patterns` | list | `PydanticUndefined` |  |
 | `require_implementation` | bool | `True` |  |
+| `stages.implementation.test_preservation` | str | `warn` | 阶段 3 核对阶段 2 登记测试名；`strict` 拒绝未声明的删除/重命名，`warn` 仅告警，`off` 不检查 |
 | `test_commands` | list | `PydanticUndefined` |  |
 | `max_test_output_tail` | int | `4000` |  |
 | `coverage_threshold` | Union | `None` / 空 |  |
@@ -68,6 +69,43 @@ python -m anti_shortcut init --with-coverage --rules no_path_traversal,no_shell_
 > `license_header`）是 v0.26.0 新增字段，见下文「内置安全规则包」。
 
 
+
+## 阶段 3 测试名保留约束
+
+```yaml
+stages:
+  implementation:
+    test_preservation: strict   # 默认 warn；新项目可启用 strict
+```
+
+阶段 2 校验通过时保存每个文件的测试函数名和 SHA256；阶段 3 完成时重新解析这些
+登记文件，按文件与名字比较。`strict` 拒绝未声明的删除、重命名或不可读取的测试；
+`warn` 返回警告并记录审计；`off` 跳过检查。增加测试、重排测试不被拒绝。
+同名测试所在文件哈希变化会告警，但允许继续。
+
+确需删除/重命名时，应在 `advance_stage` 的 `evidence` 中逐项提供文件、原名和非空理由：
+
+```python
+skill.advance_stage(4, evidence={
+    "test_removals": [{
+        "file": "test_repro.py",   # 与阶段 2 evidence 中的 files 路径一致
+        "name": "test_old_behavior",
+        "reason": "需求已取消该行为，改由 test_new_behavior 验证新契约",
+    }],
+})
+```
+
+匹配的声明以 `test_removed_with_reason` 审计事件记录；其他缺失测试仍会被 strict
+拒绝。生成的测试登记、文件哈希与比较结果不接受调用方 evidence 覆盖。
+旧状态只有平铺名字时，在原登记文件中比较名字，并标记 `baseline_format: legacy_flat`；
+没有阶段 2 登记时跳过检查。旧 Java 占位名无法恢复为历史真实方法名，迁移到 strict
+前应使用新版本完成阶段 2 登记。Python 使用 AST 名字，Java/Go 提取真实方法/函数名；
+Java 等启发式适配器仍有语法覆盖限制，其他语言沿用其适配器的名称提取能力。
+
+此约束只防止未声明的测试删除或重命名，不保证同名断言强度、测试语义或覆盖率不下降。
+检查点为阶段 3 完成时；后续阶段的测试演进仍需代码审查。SWE-bench 容器运行器支持
+`--test-preservation strict|warn|off`，并在 `stats.json` 记录策略和
+`test_preservation_intercepts`（该约束拒绝推进的次数）。
 
 ## 语义级校验（v0.51.0）
 

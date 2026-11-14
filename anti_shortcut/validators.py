@@ -170,6 +170,10 @@ def validate_tests(
         "files": [item["file"] for item in parsed],
         "sha256": {item["file"]: sha256_file(workspace / item["file"]) for item in parsed},
         "test_functions": [t["name"] for t in all_tests],
+        "test_functions_by_file": {
+            item["file"]: [t["name"] for t in item.get("test_functions", [])]
+            for item in parsed
+        },
         "test_count": len(all_tests),
         "parsers": parsers,
     }
@@ -183,6 +187,8 @@ def validate_implementation(
     config: GateConfig,
     state,
     adapter: LanguageAdapter | None = None,
+    *,
+    evidence: dict | None = None,
 ) -> tuple[bool, str, dict]:
     """校验实现代码：存在源文件 + 通过适配器做语法检查。"""
     adapter = _resolve_adapter(config, workspace, adapter)
@@ -198,11 +204,92 @@ def validate_implementation(
         if not ok:
             return False, msg, {}
 
-    evidence = {
+    result = {
         "files": [str(sf.relative_to(workspace)) for sf in source_files],
         "sha256": {str(sf.relative_to(workspace)): sha256_file(sf) for sf in source_files},
     }
-    return True, f"实现代码校验通过（{len(source_files)} 个文件，语法检查 OK）", evidence
+    ok, msg, preservation = _validate_test_preservation(workspace, config, state, adapter, evidence)
+    if preservation:
+        result["test_preservation"] = preservation
+    if not ok:
+        return False, msg, result
+    suffix = f"；{msg}" if msg else ""
+    return True, f"实现代码校验通过（{len(source_files)} 个文件，语法检查 OK）{suffix}", result
+
+
+def _validate_test_preservation(
+    workspace: Path, config: GateConfig, state, adapter: LanguageAdapter, evidence: dict | None,
+) -> tuple[bool, str, dict]:
+    """比较阶段 2 登记的测试名；仅接受逐项、非空理由的删除声明。
+
+    新状态按文件比较，防止用另一个文件中的同名测试替代。旧状态只有平铺名时，
+    在登记文件中比较名字并明确标记 legacy_flat；不会从当前文件重建历史基线。
+    文件哈希变化仅告警，不声称断言强度或覆盖率保持不变。
+    """
+    mode = config.stages.implementation.test_preservation
+    if mode == "off" or state is None:
+        return True, "", {}
+    history = state.snapshot().get("stage_history", [])
+    baseline = next((item.get("evidence", {}) for item in reversed(history)
+                     if item.get("stage") == 2), {})
+    if not baseline.get("test_functions") and not baseline.get("test_functions_by_file"):
+        return True, "", {}
+    by_file = baseline.get("test_functions_by_file")
+    legacy = by_file is None
+    files = list(baseline.get("files", [])) if legacy else list(by_file)
+    current: dict[str, set[str]] = {}
+    changed, unreadable = [], []
+    root = workspace.resolve()
+    for file in files:
+        path = (root / file).resolve()
+        if not path.is_relative_to(root):
+            unreadable.append(file)
+            current[file] = set()
+            continue
+        try:
+            info = adapter.analyze_tests(path) if path.is_file() else None
+            current[file] = {test["name"] for test in info.get("test_functions", [])} if info else set()
+            if info is None:
+                unreadable.append(file)
+            elif baseline.get("sha256", {}).get(file) != sha256_file(path):
+                changed.append(file)
+        except (OSError, UnicodeError):
+            current[file] = set()
+            unreadable.append(file)
+    if legacy:
+        present = set().union(*current.values()) if current else set()
+        missing = [{"file": None, "name": name}
+                   for name in sorted(set(baseline.get("test_functions", [])) - present)]
+    else:
+        missing = [{"file": file, "name": name} for file, names in sorted(by_file.items())
+                   for name in sorted(set(names) - current.get(file, set()))]
+    declarations = (evidence or {}).get("test_removals", [])
+    if not isinstance(declarations, list):
+        declarations = []
+    declared, undeclared = [], []
+    for test in missing:
+        removal = next((item for item in declarations if isinstance(item, dict)
+                        and item.get("name") == test["name"]
+                        and (legacy or item.get("file") == test["file"])
+                        and isinstance(item.get("reason"), str) and item["reason"].strip()), None)
+        if removal is None:
+            undeclared.append(test)
+        else:
+            declared.append({**test, "reason": removal["reason"].strip()})
+    result = {"mode": mode, "baseline_format": "legacy_flat" if legacy else "per_file",
+              "missing": missing, "undeclared": undeclared, "declared_removals": declared,
+              "changed_files": changed, "unreadable_files": unreadable}
+    # 无法读取且无缺失名（如空测试文件）也不应在 strict 下静默放行。
+    unresolved = [file for file in unreadable if not any(t["file"] == file for t in missing)]
+    rejected = mode == "strict" and bool(undeclared or unresolved)
+    result["status"] = "rejected" if rejected else "warning" if missing or changed or unreadable else "preserved"
+    if undeclared or unresolved:
+        names = ", ".join(f"{t['file'] or '*'}::{t['name']}" for t in undeclared)
+        detail = names or ", ".join(unresolved)
+        return not rejected, f"test_preservation {mode}：阶段 2 测试缺失或不可读取：{detail}；请恢复或通过 evidence.test_removals 声明删除理由", result
+    if missing or changed or unreadable:
+        return True, "test_preservation：测试已变化；已记录警告及删除声明，请复核断言语义", result
+    return True, "", result
 
 
 def _check_coverage(config: GateConfig, tr: dict) -> tuple[bool, str]:

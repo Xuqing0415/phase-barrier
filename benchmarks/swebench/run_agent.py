@@ -65,6 +65,8 @@ SYSTEM_GATED = SYSTEM_COMMON + """
 - 阶段 2（测试用例）：写出能复现该问题的测试文件（如 test_pb_repro.py），至少 1 个 test 函数且带 assert；
   然后 advance_stage(3)。
 - 阶段 3（实现）：修改源码完成修复；然后 advance_stage(4)。
+  保留阶段 2 登记的测试名。若确需删除/重命名，advance_stage 的 evidence.test_removals
+  必须逐项提供 {"file": "test_pb_repro.py", "name": "test_old", "reason": "具体原因"}。
 - 阶段 4（运行测试）：用 execute_command 运行你写的测试；全部通过后 advance_stage(5)（门禁会自动确认交付）。
 - 若测试未通过：修复后重新运行测试，再 advance_stage(5)。
 
@@ -129,7 +131,18 @@ ADVANCE_SCHEMA = {
         "parameters": {
             "type": "object",
             "properties": {
-                "new_stage": {"type": "integer", "description": "要进入的阶段号（当前阶段 + 1）"}
+                "new_stage": {"type": "integer", "description": "要进入的阶段号（当前阶段 + 1）"},
+                "evidence": {
+                    "type": "object",
+                    "properties": {"test_removals": {
+                        "type": "array", "items": {
+                            "type": "object", "properties": {
+                                "file": {"type": "string"}, "name": {"type": "string"},
+                                "reason": {"type": "string", "minLength": 1},
+                            }, "required": ["file", "name", "reason"],
+                        },
+                    }},
+                },
             },
             "required": ["new_stage"],
         },
@@ -333,6 +346,7 @@ def run(args) -> int:
 
     gate = None
     intercepts = 0
+    preservation_intercepts = 0
     tools = AgentTools(workdir, args.venv, args.exec_timeout)
     schemas = list(TOOL_SCHEMAS)
     if args.mode == "gated":
@@ -348,6 +362,9 @@ def run(args) -> int:
                 # 只校验本次变更里的测试文件：SWE-bench 镜像里挂着几十年的存量测试，
                 # 全量扫描既会误伤（夹具 / 非 Python 测试），也允许 Agent 白嫖存量测试。
                 "stage2_test_scope": "changed",
+                "stages": {"implementation": {
+                    "test_preservation": getattr(args, "test_preservation", "warn"),
+                }},
             },
             user_request=problem or args.instance,
         )
@@ -400,7 +417,10 @@ def run(args) -> int:
             stage_before = gate.current_stage if gate is not None else None
             if name == "advance_stage":
                 try:
-                    result = gate.advance_stage(int(call_args.get("new_stage", 0)))
+                    target = int(call_args.get("new_stage", 0))
+                    evidence = call_args.get("evidence")
+                    result = (gate.advance_stage(target, evidence=evidence) if evidence is not None
+                              else gate.advance_stage(target))
                 except Exception as exc:  # noqa: BLE001
                     result = {"success": False, "error": f"{type(exc).__name__}: {exc}"}
             else:
@@ -413,6 +433,9 @@ def run(args) -> int:
             blocked = bool(not result.get("success") if name == "advance_stage"
                            else isinstance(result, dict) and result.get("gate_denied"))
             intercepts += int(blocked)
+            if blocked and name == "advance_stage":
+                preservation = (result.get("evidence") or {}).get("test_preservation") or {}
+                preservation_intercepts += int(preservation.get("status") == "rejected")
             if gate is not None:
                 write_audit_event(outdir, {
                     "schema_version": 1, "event": "blocked" if blocked else "tool_call",
@@ -454,6 +477,8 @@ def run(args) -> int:
         "seconds": seconds,
         "diff_chars": len(patch),
         "gate_intercepts": intercepts if gate else 0,
+        "test_preservation": getattr(args, "test_preservation", "warn") if gate else "off",
+        "test_preservation_intercepts": preservation_intercepts if gate else 0,
         "gate_final_stage": final_stage,
         "gate_completed": completed,
         "delivery_clean": completed,
@@ -480,6 +505,7 @@ def main() -> int:
     parser.add_argument("--label", required=True, help="本次运行的标签（输出子目录名）")
     parser.add_argument("--outdir", required=True, type=Path, help="输出根目录")
     parser.add_argument("--max-turns", type=int, default=60)
+    parser.add_argument("--test-preservation", choices=["strict", "warn", "off"], default="warn")
     parser.add_argument("--exec-timeout", type=int, default=300)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     return run(parser.parse_args())

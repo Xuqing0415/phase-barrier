@@ -1,0 +1,37 @@
+import warnings
+
+import numpy as np
+import pytest
+
+import xarray as xr
+
+
+def test_integrate_coord_keyword():
+    da = xr.DataArray(
+        np.arange(12).reshape(4, 3),
+        dims=["x", "y"],
+        coords={"x": [0, 0.1, 1.1, 1.2]},
+    )
+    expected = da.integrate("x")
+    actual = da.integrate(coord="x")
+    assert np.allclose(expected.values, actual.values)
+    assert actual.dims == ("y",)
+
+
+def test_integrate_dim_deprecated():
+    da = xr.DataArray(
+        np.arange(12).reshape(4, 3),
+        dims=["x", "y"],
+        coords={"x": [0, 0.1, 1.1, 1.2]},
+    )
+    with pytest.warns(DeprecationWarning):
+        actual = da.integrate(dim="x")
+    expected = da.integrate("x")
+    assert np.allclose(expected.values, actual.values)
+    assert actual.dims == ("y",)
+
+
+def test_integrate_coord_and_dim_raises():
+    da = xr.DataArray(np.arange(4), dims=["x"], coords={"x": [0, 1, 2, 3]})
+    with pytest.raises(TypeError):
+        da.integrate("x", dim="x")

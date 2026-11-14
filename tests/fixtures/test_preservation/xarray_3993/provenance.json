@@ -1,0 +1,22 @@
+{
+  "instance_id": "pydata__xarray-3993",
+  "source": ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pydata_xarray-3993_gated_verified20_formal/trace.jsonl",
+  "trace_sha256": "3a8ef7039ac9b4d0094b412b7cab94391740b4eb54519974655b77d5cc42c81b",
+  "extraction": "Exact write_file args.content; UTF-8 with LF; parsed only, never executed.",
+  "fixtures": [
+    {
+      "file": "stage2.py.txt",
+      "turn": 7,
+      "stage_before": 2,
+      "original_path": "test_pb_repro.py",
+      "sha256": "ba73dc68bea6a85c9d8d8698a7c30dfbfce1b9e366bace2b1fa50452ded01e7e"
+    },
+    {
+      "file": "stage3.py.txt",
+      "turn": 11,
+      "stage_before": 3,
+      "original_path": "test_pb_repro.py",
+      "sha256": "1d62652cd5adbfb695d5535709412b29cce9fa9a96d72d5c497b94be21306121"
+    }
+  ]
+}

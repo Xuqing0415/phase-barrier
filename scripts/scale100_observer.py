@@ -112,6 +112,10 @@ def review(root: Path, *, previous: dict | None = None,
         "completion_evidence_review_required"} or review_state == "stale")
     if state == "verified_complete_pending_report_review":
         alerts.append("completion_requires_anomaly_and_report_review")
+    elif state in {"completion_evidence_review_required", "interrupted_review_required"}:
+        alerts.append(state)
+    elif state.startswith("halted") and not reason:
+        alerts.append("halted_without_saved_reason")
     return {"checked_at": datetime.fromtimestamp(now, timezone.utc).isoformat(),
             "review_kind": "automated_hourly_observation", "state": review_state,
             "monitor_state": state, "monitor_checked_at": monitor.get("checked_at"),

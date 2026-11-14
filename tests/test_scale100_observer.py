@@ -40,6 +40,17 @@ def test_two_hours_unchanged_only_flags_attention(tmp_path):
     assert "completed_jobs_unchanged_for_two_hours" in result["alerts"]
 
 
+def test_completion_verification_failure_requires_attention(tmp_path):
+    root = setup_run(tmp_path / "run")
+    path = root / "monitor_status.json"
+    state = json.loads(path.read_text(encoding="utf-8"))
+    state["state"] = "completion_evidence_review_required"
+    path.write_text(json.dumps(state), encoding="utf-8")
+    result = observer.review(root, now=100, pid_probe=lambda _: False)
+    assert result["terminal_observation"] and result["human_review_required"]
+    assert "completion_evidence_review_required" in result["alerts"]
+
+
 def test_preservation_reason_retains_test_name_and_location(tmp_path):
     root = setup_run(tmp_path / "run")
     trace = root / "agent_runs/a_a-1_gated_scale100_20261114/trace.jsonl"

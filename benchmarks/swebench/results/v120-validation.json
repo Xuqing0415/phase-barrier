@@ -1,10 +1,11 @@
 {
   "date": "2026-11-14",
-  "status": "local_regression_passed_real_smoke_and_remote_ci_pending",
-  "base_commit": "dff58c9b370ec5df61f54deda32b26fc5d16535e",
+  "status": "release_candidate_local_verification_passed",
+  "version": "v1.2.0",
+  "code_commit": "d079f69ca88ac52dd99078a49b22f5f69ec49c64",
   "pytest": {
-    "collected": 1829,
-    "passed": 1807,
+    "collected": 1830,
+    "passed": 1808,
     "skipped": 22,
     "failed": 0
   },
@@ -30,33 +31,56 @@
   "diff_check": "passed",
   "real_smoke": {
     "manifest": "benchmarks/swebench/manifests/v120-smoke-2026-11-14.json",
-    "run_root": ".pytest_tmp/v120_smoke_20261114",
-    "status": "running",
+    "run_root": ".pytest_tmp/v120_smoke_final_20261114",
+    "summary": "benchmarks/swebench/results/v120-smoke.json",
+    "status": "workflow_and_evidence_passed",
     "policy": "strict",
-    "source_hashes": ".pytest_tmp/v120_smoke_20261114/source_hashes.json"
+    "gate_completed": 3,
+    "official_resolved": 2,
+    "test_preservation_intercepts": 0
   },
+  "previous_smoke": {
+    "code_commit": "fddb818a316923373a4f3bb5e38ae26aa72f24ff",
+    "run_root": ".pytest_tmp/v120_smoke_20261114",
+    "gate_completed": 3,
+    "official_resolved": 2,
+    "reason_for_repeat": "Empty stage2 registration boundary fixed; all three same instances rerun, no outcome-based replacement."
+  },
+  "remote_ci_runs": {
+    "code_ci": 43564460848,
+    "final_code_red_team": 43564774497
+  },
+  "tagging_rule": "Require success of all release-candidate workflows before creating v1.2.0 tag.",
   "evidence": [
     {
-      "path": ".pytest_tmp/stage3-full-01.log",
-      "sha256": "a2adc3aa1d2aa172bd442c32894aecb48a90a45319fdf0e9d6bd8539e7f17f17"
+      "path": ".pytest_tmp/stage3-final-full.log",
+      "sha256": "134c1e35d3dc075869d9305c799941cd2e83319d389782a147388c35e12c552b"
     },
     {
-      "path": ".pytest_tmp/stage3-coverage.json",
-      "sha256": "71ee8e7a794184fb1a9b2f4cbaa6d5aaff270cca8919e2743d5e628e2ad5fe41"
+      "path": ".pytest_tmp/stage3-final-coverage.json",
+      "sha256": "692a7490a696303ef7aa347ac1176dda4f4c27561da9477ba5e014b95335ba4f"
     },
     {
-      "path": ".pytest_tmp/stage3-redteam-02/report.json",
-      "sha256": "060259414b7900ca80f2f0635883e50810978fe25ca84c3496947922d134d550"
+      "path": ".pytest_tmp/stage3-final-redteam/report.json",
+      "sha256": "53ba811b78210a2c4f6c0195f0716ef7e39f83c388d7a9deec59e72cdda290d1"
     },
     {
-      "path": ".pytest_tmp/stage3-docs.log",
-      "sha256": "7709c99499f0da8a8757ac4ab66b9a24e1f144103fe5735f5fd54217760634e7"
+      "path": ".pytest_tmp/stage3-final-docs.log",
+      "sha256": "d2e30ab99ea9ff5fb30929099efe67d87b84e16cfd0d391bee2a1df5e34874ea"
+    },
+    {
+      "path": ".pytest_tmp/v120_smoke_final_20261114/completion_verification.json",
+      "sha256": "47a995e40629b4e91bc1a57edde6aace009db9539a1c694e12e0d98c0e46c1e9"
+    },
+    {
+      "path": ".pytest_tmp/v120_smoke_final_20261114/source_hashes.json",
+      "sha256": "85efef404f4963d7e4531e8f19f99a90f86722543067891deaa910f2fcb89453"
     }
   ],
-  "release_v120": "not_tagged",
   "limitations": [
-    "Test-name preservation does not establish assertion-strength, semantic or coverage preservation.",
-    "The quick red-team suite has one inconclusive case; it is not counted as blocked.",
-    "Smoke instances reuse historical cases and are not new scale100 observations."
+    "Name preservation does not establish assertion-strength, semantic or coverage preservation.",
+    "One quick red-team case is inconclusive without reviewer model credentials; not counted as blocked.",
+    "Xarray official unresolved is a known warning-type contract mismatch despite all registered names being retained.",
+    "Both smoke rounds reuse the same three historical cases; neither contributes new scale100 observations."
   ]
 }

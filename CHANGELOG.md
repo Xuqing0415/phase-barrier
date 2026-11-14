@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-14
+
 ### Added
 
 - 阶段 3 新增 `stages.implementation.test_preservation: strict|warn|off`，默认 `warn`。

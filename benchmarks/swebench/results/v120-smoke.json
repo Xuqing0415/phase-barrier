@@ -1,0 +1,193 @@
+{
+  "passed": true,
+  "meaning": "All three fresh strict container workflows completed; traces, stats, patches and official grading are consistent. Official solve rate is reported separately.",
+  "source_commit": "d079f69ca88ac52dd99078a49b22f5f69ec49c64",
+  "source_hashes_match": true,
+  "gate_completed": 3,
+  "official_resolved": 2,
+  "runs": [
+    {
+      "instance_id": "sympy__sympy-13480",
+      "resolved": 1,
+      "gate_completed": 1,
+      "model": "deepseek-flash",
+      "turns": 21,
+      "seconds": 70.6,
+      "gate_intercepts": 1,
+      "test_preservation_intercepts": 0,
+      "audit": {
+        "passed": true,
+        "errors": [],
+        "events": 25,
+        "blocked": 1
+      },
+      "stage3_test_preservation": {
+        "mode": "strict",
+        "baseline_format": "per_file",
+        "missing": [],
+        "undeclared": [],
+        "declared_removals": [],
+        "changed_files": [],
+        "unreadable_files": [],
+        "status": "preserved"
+      },
+      "blocked_commands": [
+        {
+          "turn": 9,
+          "stage": 2,
+          "command": "cd /testbed && python -m pytest test_pb_repro.py -q 2>&1 | tail -25"
+        }
+      ],
+      "evidence": [
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/sympy_sympy-13480_gated_v120_smoke_final_20261114/stats.json",
+          "sha256": "7fc60706ed92a234596363c9ec11a0ffd529765cb95f3a91e07f8de84e0050f4"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/sympy_sympy-13480_gated_v120_smoke_final_20261114/state.json",
+          "sha256": "abcb49fb4cae1b4ac0d5eb4c9209b9014cdeefac23f28ed191f401597fd4df95"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/sympy_sympy-13480_gated_v120_smoke_final_20261114/trace.jsonl",
+          "sha256": "fd11c4ac6d91a398be9da10699685010be73bc8af3adcce35baeb79d336e74d0"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/sympy_sympy-13480_gated_v120_smoke_final_20261114/model_patch.diff",
+          "sha256": "29ef697b834356ad0141334303f2af1b7b01a50fa9477ebf9478008cc4e35860"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/eval_runs/reports/sympy_sympy-13480_gated_v120_smoke_final_20261114.json",
+          "sha256": "5be0ac24139a90c00d52336ddde0dd091404f361248c9a165001ed799f64380e"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/eval_runs/predictions/sympy_sympy-13480_gated_v120_smoke_final_20261114.json",
+          "sha256": "90ae6339a605d02d2a073a43bd31e683d5b59e559a0261f7823d2c7882fe1f60"
+        }
+      ]
+    },
+    {
+      "instance_id": "pydata__xarray-3993",
+      "resolved": 0,
+      "gate_completed": 1,
+      "model": "deepseek-flash",
+      "turns": 18,
+      "seconds": 66.9,
+      "gate_intercepts": 1,
+      "test_preservation_intercepts": 0,
+      "audit": {
+        "passed": true,
+        "errors": [],
+        "events": 24,
+        "blocked": 1
+      },
+      "stage3_test_preservation": {
+        "mode": "strict",
+        "baseline_format": "per_file",
+        "missing": [],
+        "undeclared": [],
+        "declared_removals": [],
+        "changed_files": [],
+        "unreadable_files": [],
+        "status": "preserved"
+      },
+      "blocked_commands": [
+        {
+          "turn": 9,
+          "stage": 2,
+          "command": "cd /testbed && python -m pytest test_pb_repro.py -x -q 2>&1 | tail -20"
+        }
+      ],
+      "evidence": [
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/pydata_xarray-3993_gated_v120_smoke_final_20261114/stats.json",
+          "sha256": "35c2d0caee66b7ecb9bdc4465c41afe86ac63971ada05480b41d67692c8a0712"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/pydata_xarray-3993_gated_v120_smoke_final_20261114/state.json",
+          "sha256": "3709a9cb1278d8b73cbdacbeb1be86f678a5104138ece80dfbf4e617352a7aec"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/pydata_xarray-3993_gated_v120_smoke_final_20261114/trace.jsonl",
+          "sha256": "05a833c24b54e373dc627e40ac6db2d9364c38d8a18334a5756895f9f6b01267"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/pydata_xarray-3993_gated_v120_smoke_final_20261114/model_patch.diff",
+          "sha256": "c1f65c010217883f8c9133963b1a91f0e951f348f8d5cca0c259c3a1523505ce"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/eval_runs/reports/pydata_xarray-3993_gated_v120_smoke_final_20261114.json",
+          "sha256": "3f848614dce077e1833696672e25589ad138c23b65de7741431f827114762e7d"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/eval_runs/predictions/pydata_xarray-3993_gated_v120_smoke_final_20261114.json",
+          "sha256": "bccca95992ca7b0c3bd05953710d465c6164c25b9fadb5a10d5aab6bf62c8076"
+        }
+      ]
+    },
+    {
+      "instance_id": "pallets__flask-5014",
+      "resolved": 1,
+      "gate_completed": 1,
+      "model": "deepseek-flash",
+      "turns": 26,
+      "seconds": 62.2,
+      "gate_intercepts": 2,
+      "test_preservation_intercepts": 0,
+      "audit": {
+        "passed": true,
+        "errors": [],
+        "events": 32,
+        "blocked": 2
+      },
+      "stage3_test_preservation": {
+        "mode": "strict",
+        "baseline_format": "per_file",
+        "missing": [],
+        "undeclared": [],
+        "declared_removals": [],
+        "changed_files": [],
+        "unreadable_files": [],
+        "status": "preserved"
+      },
+      "blocked_commands": [
+        {
+          "turn": 7,
+          "stage": 1,
+          "command": "cd /testbed && python -m pytest tests/test_blueprints.py -q 2>&1 | tail -3"
+        }
+      ],
+      "evidence": [
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/pallets_flask-5014_gated_v120_smoke_final_20261114/stats.json",
+          "sha256": "ae92e544b0914d71d050e59d3a11feff29119650d1687720540fa4d9a8e2cf68"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/pallets_flask-5014_gated_v120_smoke_final_20261114/state.json",
+          "sha256": "833cbe249be003506c6317eaf023d0a46d8f25746b5de3f110fc0061e7ec2693"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/pallets_flask-5014_gated_v120_smoke_final_20261114/trace.jsonl",
+          "sha256": "127b2f75e797b97456f69f83ec5a784c7fa4661caf5823d3f8c229bce0f840e8"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/agent_runs/pallets_flask-5014_gated_v120_smoke_final_20261114/model_patch.diff",
+          "sha256": "47e6c34780c6ab0821ae9e8d12d4f6013756865a084f2149a270aaf51dca90b7"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/eval_runs/reports/pallets_flask-5014_gated_v120_smoke_final_20261114.json",
+          "sha256": "25f5548662a0a66a4bb8e5d23daf793d463f31d39f223b53f0974bf83e080ef4"
+        },
+        {
+          "path": ".pytest_tmp/v120_smoke_final_20261114/eval_runs/predictions/pallets_flask-5014_gated_v120_smoke_final_20261114.json",
+          "sha256": "f310bebed65e227e5cb041d54774911c86cecd8368000888b3235a5e30dc0f72"
+        }
+      ]
+    }
+  ],
+  "known_unresolved": {
+    "instance_id": "pydata__xarray-3993",
+    "classification": "gate_completed_insufficient",
+    "warning_contract": "Agent uses DeprecationWarning; official FAIL_TO_PASS requires FutureWarning. Registered test names are retained.",
+    "approval_scope": "Workflow regression only; not evidence of semantic correctness or three official solves."
+  }
+}

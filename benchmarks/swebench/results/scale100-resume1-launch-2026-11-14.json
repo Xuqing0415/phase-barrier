@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "kind": "recovery_startup_checkpoint_not_final_results",
+  "resumed_at": "2026-11-14T11:29:29.022917+00:00",
+  "checked_at": "2026-11-14T11:34:30.080841+00:00",
+  "state": "running",
+  "attempt_label": "resume1",
+  "controller_commit": "518d384453bac7fd5a669349d6bf367cf44b2778",
+  "controller_hashes": {
+    "scripts/verified20_runtime.py": "cb5f544b98e5db7ee1f732a925b93d8662be91375b27365f236f5f8f3bb9636a",
+    "scripts/scale100_runtime.py": "72a1bf43b297f6e16d8389b594df2acd89a1f74389ecaeb4c336440edfd1dbd2",
+    "scripts/scale100_recovery.py": "b71a40698e2401667cb1105a77536f92da272782a7256b443332541273d41f6f",
+    "scripts/scale100_classify_existing.py": "2bb6a941f81afbe9836b06c0851b769fdbb18490710691c149c783520310360d",
+    "scripts/scale100_analysis.py": "991df8a388023de2cbd5aea584dff7bd5fcc3a0658a0ffc3dd3555d8823b88f7",
+    "scripts/scale100_observer.py": "1d9f8b80930accd0d4fee8f91bc92db15101ee46e745adfa9aec24d03272ed61"
+  },
+  "published_ci": [
+    {
+      "conclusion": "success",
+      "databaseId": 43589385497,
+      "name": "Plugin CI",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 43589385653,
+      "name": "Security",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 43589385483,
+      "name": "docs",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 43589385469,
+      "name": "CI",
+      "status": "completed"
+    }
+  ],
+  "runner_pid": 22604,
+  "supervisor_pid": 19452,
+  "planned_instances": 100,
+  "planned_jobs": 200,
+  "repository_count": 10,
+  "completed_official_jobs": 26,
+  "completed_pairs": 13,
+  "halt_reason": null,
+  "test_preservation_intercepts": 0,
+  "five_minute_startup_passed": true,
+  "frozen_source_files": 70,
+  "source_hashes_match": true,
+  "preflight_passed": true,
+  "fixed_testbeds_ready": 100,
+  "agent_rows": 100,
+  "archive_files_verified": 331,
+  "archive_proof_sha256": "fcca6dc48cb85d6158f17609b091193d8feb22d146a6c7c6b81c70a30a01f171",
+  "preservation": {
+    "original_rows_unchanged": 23,
+    "original_evidence_files_unchanged": 266,
+    "launch_and_prelaunch_preserved": true
+  },
+  "classification_at_resume": {
+    "skip": 23,
+    "regrade_only": 1,
+    "rerun": 1,
+    "pending": 175
+  },
+  "model_request": "deepseek-v4-flash",
+  "test_preservation": "strict",
+  "dns": [
+    "223.5.5.5",
+    "1.1.1.1"
+  ],
+  "max_turns": 60,
+  "concurrency": 2,
+  "observer": {
+    "first_review_at": "2026-11-14T11:30:07.146173+00:00",
+    "first_review_alerts": [],
+    "interval_seconds": 3600,
+    "automatic_restart": false,
+    "chat_notifications": false
+  },
+  "pending": [
+    "remaining official grading",
+    "200 unique results and 100-pair evidence verification",
+    "interruption cost and anomaly review",
+    "preregistered statistics and final report",
+    "v1.2.1 release"
+  ]
+}

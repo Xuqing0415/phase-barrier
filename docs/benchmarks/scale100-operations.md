@@ -2,7 +2,13 @@
 
 本文件落实2026-11-14补充方案。样本、预注册协议及正在运行的代码保持启动时的冻结版本；本文件和独立观察器不改变Agent、评分、停止规则或统计。
 
-## 本次小时复核
+## 当前恢复状态
+
+2026-11-14 17:34:56 北京时间发生监督器 `PermissionError` 停机，保留23项官方评分；归档、修复、故障注入验收与四项远程CI通过后，于19:29:29启动`resume1`。原Agent及协议继续冻结，新控制器从隔离工作区执行。19:30:07观察器首次复核无告警，下一次定时留档20:30:07。完整时间线及安全恢复入口见[恢复记录](scale100-recovery-2026-11-14.md)。
+
+当前进程身份以`current_launch.json`为准，旧`launch.json`与停机证据保留。恢复启动五分钟证据位于`attempts/resume1/startup_verification.json`，冻结字段为`source_hashes_match`；原首次启动检查格式另行保留。
+
+## 首次运行的历史复核
 
 2026-11-14 17:05北京时间观测：官方评分10/200、完整配对5/100、`test_preservation_intercepts=0`。runner 26288和监督器2156存活、PID与启动记录一致；`halt.json`不存在，运行状态为running。此观测没有评估中途解决率、方向或显著性。
 
@@ -26,39 +32,38 @@ Get-Content .pytest_tmp/scale100_20261114/hourly_review/latest.json -Encoding UT
 
 主要读取`completed_jobs`、`completed_pairs`、`test_preservation_intercepts`、`halt_reason`。完整配对仅统计同一实例baseline/gated都已官方graded，不用不同实例数代替配对数。
 
-运行中的`monitor_status.json`没有`halt_reason`字段，不能仅凭缺失字段断言无停机。观察器从`halt.json.reason`或`status.json.halt_reason`补齐，并同时检查PID及monitor状态。runner死亡但monitor仍running时，在**观察器自己的记录**标记stale，不覆盖实验原始记录。需要干预的阈值仅生成审阅信号；普通异常、未知空补丁及超过60分钟的记录不会由观察器停止或重跑。
+首次运行的`monitor_status.json`没有`halt_reason`字段，恢复控制器会显式写入；不能仅凭缺失字段断言无停机。观察器结合`status.json`和不早于本次恢复的`halt.json`，同时检查PID及monitor状态，避免把旧停机当成新故障。runner死亡但monitor仍running时，在**观察器自己的记录**标记stale，不覆盖实验原始记录。需要干预的阈值仅生成审阅信号；普通异常、未知空补丁及超过60分钟的记录不会由观察器停止或重跑。
 
 测试保留拒绝从持久化trace的`advance_stage`拒绝错误提取，保留实例ID、turn、文件行号、完整错误及其中可恢复的缺失测试名。若计数为正却没有可恢复的拒绝证据，记录证据缺口，不凭猜测补写测试名。新指标的最终次数仍按预注册的gated stats计数，与观察器发现时间分别报告。
 
 ## 只在中断或停滞时处理
 
-先读`halt.json`、`status.json`、`supervisor_error.json`、容器及评分日志，再决定模型或评分基础设施的诊断步骤。当前无停机，因此没有执行恢复、归档运行根目录或重跑实例。
+先读`status.json`、`current_launch.json`、本次attempt的`supervisor_error.json`、容器及评分日志，并将旧`halt.json`时间与`resumed_at`比较，再决定诊断步骤。本次停机现场已完整归档，原始停机证据继续保留。
 
 归档必须用正式运行根目录的**同级目录**。禁止把`$ROOT`递归复制到`$ROOT/recovery_*`，防止源目录包含目标目录。保留原始CSV、label、stats、patch、prediction、report、trace和启动快照；不得覆盖旧label。
 
-现有证据恢复计划生成器的正确调用为：
+当前恢复分类器从隔离控制器工作区调用：
 
 ```powershell
-.venv\Scripts\python.exe -X utf8 scripts/verified20_checks.py --verify-completed `
-  --results .pytest_tmp/scale100_20261114/results.csv `
-  --tasks benchmarks/swebench/manifests/scale100-verified-2026-11-14.json `
-  --label-suffix _scale100_20261114 `
-  --output .pytest_tmp/scale100_20261114/recovery_review_plan.json
+<原执行工作区的Python> -X utf8 scripts/scale100_classify_existing.py `
+  --root <正式运行根> --manifest <原冻结清单> --output <新的审阅计划路径>
 ```
 
-省略`--tasks`和`--label-suffix`会误用旧Verified20的默认清单/label。计划的`passed`仅证明分类覆盖，不是200项完成证明；未知空补丁若被分入rerun仍须按本批协议单列，不得直接照计划全部重跑。缺失官方证据也不能自动分配unresolved=0。
+分类器逐项比较官方与Agent证据，不能用旧Verified20默认清单或label替代。恢复计划不是200项完成证明；已完成的未知空补丁不得自动重新采样。缺失官方证据也不能自动分配unresolved=0。
 
-旧`.pytest_tmp/verified20/run_verified_stage.py scale100 --resume-plan ...`不是本批已实现的恢复入口；当前`scripts/scale100_runtime.py run`只支持新输出根，并明确拒绝覆盖已有实验。中断时须先审阅已保存证据，验证保留旧产物的恢复路径：已完整评分项跳过，有可信补丁项只补评分，需要重新调用模型的基础设施中断项使用新attempt标签，并保留原始失败记录与成本中断证据。此时再落实和测试相应恢复代码，不热改当前冻结运行器。
+`scripts/scale100_runtime.py resume`是已实现并通过独立故障注入验收的入口，强制检查归档、分类、发布CI及原输入；`run`继续只支持新输出根。恢复从隔离工作区调用并显式指定`--execution-root`，完整命令见恢复记录。已完整评分项跳过，有可信补丁项只补评分，中断Agent使用新attempt标签；本次`resume1`已存在，不得重复启动。若再次出现`supervisor_error`，停止并回到诊断，不自动反复恢复。
 
 ## 完成后的核验入口
 
-本仓库没有`scripts/scale100_verify.py`。已有`scripts/scale100_analysis.py`的`verify()`逐项核验200个唯一(instance_id, mode)键、100配对、patch/stats/prediction/report、gated trace/state及冻结源码，并写`completion_verification.json`。需要只核验而不计算统计时，可调用已有函数：
+`scripts/scale100_analysis.py`逐项核验200个唯一(instance_id, mode)键、100配对、patch/stats/prediction/report、gated trace/state及冻结源码，并写`completion_verification.json`。恢复完成后从隔离控制器工作区运行以下入口；监督器也会自动执行相同收尾步骤：
 
 ```powershell
-.venv\Scripts\python.exe -X utf8 -c "from pathlib import Path; from scripts.scale100_analysis import verify; p,_,_=verify(Path('benchmarks/swebench/manifests/scale100-verified-2026-11-14.json'),Path('.pytest_tmp/scale100_20261114')); print(p); raise SystemExit(0 if p['passed'] else 1)"
+<原执行工作区的Python> -X utf8 scripts/scale100_analysis.py `
+  --manifest <原冻结清单> --run-root <正式运行根> `
+  --source-root <原冻结执行工作区> --cost-exclusions <已审阅的成本排除JSON>
 ```
 
-只在200项完成后执行。失败时先审阅缺失证据与原始运行，不计算完整配对统计，不将缺失证据记为失败解决。预注册核对同时检查提交历史和工作区；镜像核对同时比较已冻结来源证明与实际使用的ID/RootFS。`startup_verification.json`的冻结检查字段是`checks.source_hashes_unchanged`，它只表示启动后5分钟；收尾须重新比对`launch.json.source_hashes`，不能把启动检查当作收尾检查。
+只在200项完成后执行。失败时先审阅缺失证据与原始运行，不计算完整配对统计，不将缺失证据记为失败解决。预注册核对同时检查提交历史和工作区；镜像核对同时比较已冻结来源证明与实际使用的ID/RootFS。原首次启动检查字段为`checks.source_hashes_unchanged`，恢复检查为`source_hashes_match`，均只表示启动后5分钟；收尾须重新比对原执行工作区与`launch.json.source_hashes`，不能把启动检查当作收尾检查。
 
 监督器正常完成后会查询Windows电源事件，生成`host_power_events.json`、`cost_exclusions.json`，再运行上述完整性核验与统计，最终状态为待报告审阅。异常或失败也必须保留记录，不能把进程退出等同于完成。
 
@@ -73,4 +78,4 @@ Get-Content .pytest_tmp/scale100_20261114/hourly_review/latest.json -Encoding UT
 - 每个gate完成但官方未解决实例、gate未完成但官方解决实例、零拦截、测试保留拒绝及长耗时实例都须审阅。超过15个可按类别合并呈现，但保留逐项证据与分类，不能用类别合并替代逐项核查。
 - 双侧差异检验不显著不能证明“不降低解决率”，也不构成非劣效性检验。结论按实际方向与p值书写；支持、无显著差异或方向反转均须如实呈现。
 
-完整报告必须包含主表、成本及敏感性、新机制、历史并列、异常分类、中断恢复和局限。只有证据、成本及异常审阅完成后，才发布最终报告与统计产物并等待CI；当前仅落实运行观察，不生成提前结果或结论。
+完整报告必须包含主表、成本及敏感性、新机制、历史并列、异常分类、中断恢复和局限。只有证据、成本及异常审阅完成后，才发布最终报告与统计产物并等待CI；当前已落实安全续跑和运行观察，完整结果、报告及v1.2.1仍待验收。

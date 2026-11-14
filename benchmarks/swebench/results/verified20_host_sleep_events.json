@@ -1,0 +1,14 @@
+[
+    {
+        "provider":  "Microsoft-Windows-Power-Troubleshooter",
+        "event_id":  1,
+        "record_id":  51905,
+        "recorded_at_utc":  "2026-11-13T06:22:44.0773558Z",
+        "data":  {
+                     "WakeDuration":  "816",
+                     "WakeTime":  "2026-11-13T06:22:42.3183628Z",
+                     "SleepTime":  "2026-11-13T03:59:40.6427993Z",
+                     "SleepDuration":  "1119"
+                 }
+    }
+]

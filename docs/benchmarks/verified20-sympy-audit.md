@@ -1,5 +1,9 @@
 # SymPy pilot 零拦截复核
 
+> 本页仅审计 pilot，不能套用于正式批。2026-11-14 正式批三个 SymPy 已分别归为
+> `zero_interception_suspicious`：阶段 2 的复合 shell pytest 命令漏识别，stdout/trace 对账无漏写。
+> SymPy-18211 正式双组长耗时跨宿主机睡眠，已排除主要成本；见 [正式批审计](verified20-formal-gate-audit.md)。
+
 对象为 `sympy__sympy-18211` 原 pilot gated：35 轮、2,187 字符、0 次拦截，
 官方 resolved，门禁阶段 6 且 `delivery_clean=1`。
 

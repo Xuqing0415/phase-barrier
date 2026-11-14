@@ -1,6 +1,7 @@
 # 正式批门禁与官方评分差异：证据审计
 
-2026-11-13，已完成原产物核对和两项独立容器重放，不等待全批结束。
+2026-11-14 完成正式批异常机制复核。40 项官方证据已重新逐项核验，20/20 配对完整。
+2026-11-13 已完成下述两项独立容器重放；2026-11-14 补查三个正式 SymPy、八个反向组合和宿主机睡眠。
 模板见 [共用模板](verified20-gate-audit-template.md)。两次诊断均使用原 LogicStar 镜像 ID、
 原 base commit 和原 gated 补丁；先运行自写测试，再应用评分器原 test patch 并运行目标官方测试。
 未调用模型、未关闭 TLS 校验、未改正式证据或运行中的门禁，也未覆盖原官方评分。
@@ -17,6 +18,10 @@
 | astropy-14369 | 正式 baseline / gated | 两组均 3/3；732/732 | gated 完成，阶段 6 | 两组 resolved，不是正式批该异常组合 |
 
 当前正式批该组合为 2 个，不是 3 个；不得写成“三个均为 A 类”。
+正式异常计数：门禁完成且官方 unresolved **2**；门禁未完成且官方 resolved **8**；零拦截 **3**；
+SymPy-18211 超 60 分钟 **2**（baseline/gated），Matplotlib-24970 baseline 跨中断另列。
+四类有 15 次类别归属、14 个不同任务（SymPy-18211 gated 同时属于零拦截和长耗时），
+加 Matplotlib baseline 后异常表为 **15 个不同 instance/mode、15 行**，不能把类别相加当作唯一任务数。
 Astropy 的既有同补丁重放见 [专项审计](verified20-astropy-audit.md)。
 本次两项证据及其 SHA256 清单保存在
 `.pytest_tmp/verified20/formal20_logicstar/formal_gate_preliminary_audit.json`。
@@ -95,27 +100,86 @@ Astropy 的既有同补丁重放见 [专项审计](verified20-astropy-audit.md)�
 源码核对：`validate_tests()` 保存测试哈希与测试名；阶段 3 的 `validate_implementation()`
 检查实现语法，`delivery_clean()` 检查最新测试结果和变更时间，未保证阶段 2 的行为断言仍被保留。
 Xarray 暴露“允许测试演进但未强制保持或增强既定断言覆盖”的门禁设计边界，列入后续改进，
-不在当前批运行期间静默修改门禁。两类问题的其他实例受影响范围尚未审完；未发现 C 类具体违例。
+原正式批没有因诊断结论静默修改门禁；评分和原始证据保留。未发现 C 类具体违例。
+
+## 正式批零拦截：三个均为 suspicious，已定位机制
+
+本节逐一核对正式运行，未复用 pilot 的 benign 结论。阶段历史记录的是已完成阶段，
+末尾的 current_stage=6 需与 trace 合并解读；4→6 是合法转换。
+
+| 正式 gated 实例 | 阶段轨迹 | trace 事件 / blocked | 补丁字符（字节） | 归类 | 依据 |
+|---|---|---:|---:|---|---|
+| sympy-13480 | 0→1→2→3→4→6 | 23 / 0 | 1,954（1,954） | zero_interception_suspicious | 第 10 轮阶段 2 执行复合 pytest 命令，blocked=false |
+| sympy-17630 | 0→1→2→3→4→6 | 69 / 0 | 1,968（1,968） | zero_interception_suspicious | 第 39 轮阶段 2 执行复合 pytest 命令，blocked=false |
+| sympy-18211 | 0→1→2→3→4→6 | 33 / 0 | 2,342（2,342） | zero_interception_suspicious | 第 10 轮阶段 2 执行复合 pytest 命令，blocked=false |
+
+三项都包含 `cd /testbed && python -m pytest test_pb_repro.py ...`。现有
+`check_exec_permission()` 规定阶段 <3 拒绝已识别的测试命令，但 Python/通用命令
+识别器未识别 cd 前缀后的 pytest；原调用被执行，并非“按 SOP 首次即通过”。
+stdout 的 `(turn, tool)` 序列与 trace 逐项一致，23/69/33 条均完整；
+trace、stats 均为 0 blocked，未发现“拒绝发生但日志漏写”证据。结论是
+**`shell_test_command_not_recognized`，命令漏识别，而非计数器漏记**。
+补丁均包含目标源码修改和新增复现测试，未见 <200 字符的表面补丁；完整阶段轨迹不消除该已观察到的漏拦截。
+修复及回归纳入后续门禁修复阶段，不改写本轮原始拦截数。
+
+## 官方 resolved 但门禁未完成：按模式归类
+
+| 模式 | 实例与最终阶段 / 轮数 | 数量 | 归类依据 |
+|---|---|---:|---|
+| 后期预算耗尽或接近上限 | Django-14631（4/60）、16333（4/60）、16901（5/53）；Matplotlib-24970（5/60）；Seaborn-3069（4/60）；scikit-learn-25102（5/60）；Sphinx-9281（4/60） | 7 | budget_exhausted_at_late_stage；Django-16901 另有历史模型错误，53 轮只是接近上限，不声称必然由轮数预算停止 |
+| 早期阶段未完成 | Pylint-4970（3/60） | 1 | early_stage_incomplete；测试阶段已经通过，在实现校验被拒绝 |
+| 其他 / 未归类 | 无 | 0 | 没有阶段 6 且 gate_completed=0 的实例 |
+
+Pylint 的已完成历史为 0→1→2，current_stage=3，不能写成“测试没写完”。
+第 24、30 轮的 3→4 推进都被拒绝：存量 `tests/functional/a/async_functions.py:57`
+的负向语法夹具包含重复参数，项目全量实现语法扫描把它视为实现错误。
+该文件不是最终补丁修改对象，Agent 后续多轮查找门禁源码及配置并耗尽 60 轮；
+这与 Django 的阶段 4/5 模式不同，揭示存量夹具误分类边界。
+Sphinx 的三次 4→5 拒绝为未识别测试运行记录，不能只将这一模式解释为 Agent 没有运行测试。
+
+所有八项的官方 resolved 均不证明门禁全流程有效。预算、多阶段开销和命令识别的交互尚未做对照；
+`budget_exhausted_at_late_stage` 是轨迹描述，不是门禁造成失败的因果结论。
+轨迹还显示部分 Agent 在线获取上游版本或 PR 内容，本轮没有禁止网络检索，
+因此不把这些运行解释为排除了上游答案接触的独立求解实验。
+
+## 超 60 分钟：SymPy 双组跨宿主机睡眠
+
+Windows `Microsoft-Windows-Power-Troubleshooter` 事件 1、record 51905 记录：
+睡眠 **2026-11-13 11:59:40.6427993**，唤醒 **14:22:42.3183628**（北京时间）。
+脱敏事件字段已保存到 `benchmarks/swebench/results/verified20_host_sleep_events.json`。
+
+| 实例 / 模式 | runner run→grade（北京时间，2026-11-13） | 原始秒数 | 结论 |
+|---|---|---:|---|
+| sympy-18211 baseline | 11:55:07→14:26:23 | 9,070.8 | cross_interruption；主要耗时统计排除 |
+| sympy-18211 gated | 11:58:27→14:25:25 | 8,814.0 | cross_interruption；主要耗时统计排除 |
+
+gated 阶段 1→2 的完成时间为 11:59:22→14:23:11，亦跨越同一睡眠区间。
+长耗时不应解释为真实连续模型执行。原 stats 没有 started_at/finished_at，故采用
+runner 边界、state 阶段时间及系统事件交叉核对；不从墙钟估算扣减睡眠时长。
+与既有 Matplotlib baseline 一起，正式主成本时间样本修正为 **baseline n=16、gated n=17**；
+轮数、拦截、补丁及全部 18 个独立配对结果仍保留。
+此前 n=17/18、P90 比值 1.35× 是发现宿主机睡眠前的口径，已由重新生成的成本表替代。
+
+复核脚本：`python scripts/verified20_anomaly_audit.py --output benchmarks/swebench/results/verified20_anomaly_audit.json`。
+该产物保存原文件相对路径及 SHA-256、每项归类、日志/trace 对账和系统事件；脚本不执行历史命令。
 
 ## 收尾次序与结论边界
 
-上述两项目标重放和 Seaborn 对照已提前完成，见 [Seaborn 对照](verified20-seaborn-comparison.md)。
-全批结束后先核验 40 个预期 instance/mode 的官方证据，再检查新增异常是否均已审计，
-并与 Astropy 已审计历史作对照；不能将当前两项核查当作剩余实例的批量豁免。
-自动表格可更新，存在待归类项时保持机制审查未定稿。
-后续新增异常加入同一汇总表，不因该二元组合停止跑批。
+两项目标重放和 Seaborn 对照已完成，见 [Seaborn 对照](verified20-seaborn-comparison.md)。
+2026-11-14 重新核验 40 个官方任务及全部异常后，本轮机制审查定稿；
+定稿表示观察和缺陷已归类，不表示上述缺陷已修复或门禁已证实有效。
 本批复用为 2 个实例、4 项任务；前两批 4 个重叠实例的 8 项模式比较另行核对。
 
-最终核对按以下清单执行，当前跑批尚未完成，不预勾完成：
+最终核对（2026-11-14，本地证据与报告；推送和远程 CI 单独验收）：
 
-1. 40 个预期 instance/mode 唯一键齐全，逐项 patch、stats、prediction、官方 report 可验证；不能只数 CSV 行。
-2. Seaborn/Flask 两个实例的 baseline/gated 共 4 项齐全；不使用错误的“应有 8 项”验收条件。
-3. 本次恢复之后的 `completion_verification.json` 为 passed，40/40 已核验，不仅是文件存在。
-4. 三批身份去重 55−4−2=49，仓库与实际执行数量按最终证据填，去重数不冒充完全独立观测。
-5. 正式独立 18 配对、复用 2 配对分开；pilot 及诊断重放不进入正式统计。
-6. 成本基于全 40 项证据重算，独立/复用分开，原始墙钟与排除跨中断口径并列；时间 n 为 baseline 17、gated 18。
-7. Requests、Xarray、Astropy 的运行身份和现有审计保留，新增反向组合及零拦截、large_patch、长耗时按证据复核。
-8. Seaborn 对照保留已定位的显式 y 范围差异，不能简化为“截断导致失败”。
-9. 交集按实际实例计算：链路 pilot-5→正式 5 个；前两批原 4 个重叠与正式交集为 0；缓存-15→正式复用 2 个。缓存批 Seaborn pilot 单独对照。
-10. 局限保留样本与依赖、复用、无 chroot、缓存偏差、门禁≠官方、禁止 pooled、扩样不保证显著、P90 敏感、测试演进缺少覆盖不减约束。
-11. 最终 diff 核对自动表格与手工审计无冲突；有 baseline-only 如实报告，存在未审机制项不宣称审计定稿。
+1. [x] 40 个唯一键的 patch、stats、prediction、官方 report 已逐项验证。
+2. [x] Seaborn/Flask 共 4 项；前两批重叠的 8 项模式比较另列。
+3. [x] 原 completion_verification passed，当前重新核验 skip=40、其余=0，原证据未修改。
+4. [x] 三批 55−4−2=49 个不同实例；正式批实际 20 实例、12 仓库，不冒充相互独立。
+5. [x] 独立 18、复用 2；pilot 和诊断不入正式统计。
+6. [x] 全 40 项成本重算；依据新发现的睡眠证据，时间 n 修正为 16/17，保留原始墙钟敏感性表。
+7. [x] 两个正向异常、八个反向异常、三个零拦截、长耗时均已复核；无十万字符补丁。零拦截三项为命令漏识别，无拒绝事件漏写证据。
+8. [x] Seaborn 的显式 y 范围差异与 60 轮截断分开报告。
+9. [x] 实际交集分别为 5、0、2；缓存批 Seaborn pilot 单独对照。
+10. [x] 最终报告保留十一条局限，增加命令识别、存量夹具及网络检索观察，不宣称样本量保证显著性。
+11. [x] 自动结果及成本与人工审计交叉核对，Xarray baseline-only 原样保留，历史快照和最终结论明确区分。

@@ -9,7 +9,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CROSS_INTERRUPTION_ELAPSED = {("matplotlib__matplotlib-24970", "baseline")}
+CROSS_INTERRUPTION_ELAPSED = {("matplotlib__matplotlib-24970", "baseline"),
+                              ("sympy__sympy-18211", "baseline"),
+                              ("sympy__sympy-18211", "gated")}
 spec = importlib.util.spec_from_file_location("report_checks", Path(__file__).with_name("verified20_checks.py"))
 checks = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checks)
@@ -95,7 +97,7 @@ def tradeoff_text(summary):
     lines.append("这是两组 P90 的描述性比值，不是逐实例平均减速，也不能隔离门禁、测试和模型重试各自的耗时贡献。"
                  "部分结果不能证明总体解决率不降低；最终结论须同时报告配对解决率和成本。")
     lines.append("最终成本结论须基于全部 40 项核验证据，独立与复用分开；全量独立配对 n=18，"
-                 "排除跨中断耗时后 baseline 时间 n=17、gated n=18。P90 对离群值敏感，"
+                 "排除跨中断耗时后 baseline 时间 n=16、gated n=17。P90 对离群值敏感，"
                  "样本量有限；同一正式批的中途估计曾随样本增加由 2.16× 漂移至 1.87×，"
                  "这些中间数字及最终比值均为点估计，不是精确值或置信区间。")
     return lines
@@ -219,8 +221,9 @@ def render(summary):
     for v in s["costs"]:
         if v["n"]:
             lines.append(f"| {v['group']} | {v['mode']} | {v['metric']} | {v['scope']} | {v['n']} | {v['median']:.1f} | {v['p90']:.1f} |")
-    lines += ["", "matplotlib-24970 baseline 的 220,038.7 秒跨两次中断，不计入主要成本 P90；该实例单列，不作为执行效率证据。",
-              "原始记录保持不变。以下敏感性表保留包含它的原始墙钟 P90，供核对排除影响。", "",
+    lines += ["", "matplotlib-24970 baseline 的 220,038.7 秒跨两次中断；SymPy-18211 baseline/gated 的 9,070.8/8,814.0 秒跨宿主机睡眠。三项均排除出主要耗时统计，原始结果、轮数和拦截数保留。",
+              "宿主机在 2026-11-13 11:59:40–14:22:42（北京时间）睡眠，Windows Power-Troubleshooter 事件 1（record 51905）与两组 run/grade 边界相符。证据见 [机制审计](verified20-formal-gate-audit.md)。",
+              "不从原始墙钟中估算扣减睡眠时间；以下敏感性表保留完整原始墙钟，供核对排除影响。", "",
               "| 部分 | 口径 | baseline n | baseline P90 秒 | gated n | gated P90 秒 |", "|---|---|---:|---:|---:|---:|"]
     for name in s["groups"]:
         for scope in ("全部实例（原始墙钟）", "排除跨中断耗时"):
@@ -258,19 +261,36 @@ def render(summary):
               "结果差异记录为运行间变异；代码与环境存在变化，不直接归因于门禁或模型采样。", "",
               "### 异常实例", "", "| 实例 | 模式 | 标记 |", "|---|---|---|"]
     for v in s["anomalies"]:
-        lines.append("| " + " | ".join([v["instance_id"], v["mode"], ", ".join(v["tags"])]) + " |")
+        tags = list(v["tags"])
+        reviewed = s.get("mechanism_audit", {})
+        for item in reviewed.get("zero_interception", []) + reviewed.get("resolved_gate_incomplete", []):
+            if item["instance_id"] == v["instance_id"] and v["mode"] == "gated":
+                tags = [t for t in tags if not t.endswith("requires_analysis") and not t.endswith("requires_benign_suspicious_review")]
+                tags.append(item["classification"])
+        if reviewed and (v["instance_id"], v["mode"]) in CROSS_INTERRUPTION_ELAPSED:
+            tags.append("cross_interruption_excluded_from_efficiency")
+        if reviewed and "gate_complete_official_unresolved_requires_A_B_C_review" in tags:
+            tags.remove("gate_complete_official_unresolved_requires_A_B_C_review")
+            tags += ["gate_complete_official_unresolved", "env_tls_interference" if v["instance_id"] == "psf__requests-2317" else "A_warning_mismatch+B_test_assertion_weakened"]
+        lines.append("| " + " | ".join([v["instance_id"], v["mode"], ", ".join(tags)]) + " |")
+    if s.get("mechanism_audit"):
+        lines += ["", "正式异常已逐项复核：门禁完成但官方未通过 2 项、官方通过但门禁未完成 8 项、零拦截 3 项、SymPy 超 60 分钟 2 项；Matplotlib baseline 跨中断单列。",
+                  "四类合计 15 次类别归属、14 个不同任务（SymPy-18211 gated 重叠），加上 Matplotlib baseline 后异常实例表共 15 行。",
+                  "零拦截三项均归为 `zero_interception_suspicious`：阶段 2 的 `cd /testbed && python -m pytest ...` 未被命令识别器识别；stdout 工具调用与 trace 的轮次/工具逐项一致，系命令漏识别，未发现拒绝事件漏写证据。",
+                  "8 个门禁未完成且官方 resolved 的实例：7 个在阶段 4/5 耗尽或接近轮数预算，Pylint 在阶段 3 因存量负向语法夹具阻断。详见 [完整归类与检查清单](verified20-formal-gate-audit.md)。"]
     reverse = [v for v in s["anomalies"]
                if "gate_complete_official_unresolved_requires_A_B_C_review" in v["tags"]]
     lines += ["", f"### 门禁完成但官方未通过：正式批 {len(reverse)} 项", "",
               "此处只计正式批 gated，不把 Astropy pilot 的 A 类混入正式批计数；Astropy 正式批双组 resolved。",
               "| 正式实例 | 归类 | 待核验依据 |", "|---|---|---|"]
     for v in reverse:
-        lines.append(f"| {v['instance_id']} | 机制判断见统一审计记录 | 已审与新增项分开核对；自动标签不代替环境核验、同补丁重放或测试完整性审查 |")
+        verdict = "env_tls_interference（环境混杂）" if v['instance_id'] == "psf__requests-2317" else "A 类警告断言差异 + B 类 test_assertion_weakened"
+        lines.append(f"| {v['instance_id']} | {verdict} | 原产物及同补丁独立容器重放已核验，详见统一审计记录 |")
     if not reverse:
         lines.append("| 无 | — | 继续监测新增组合 |")
     lines += ["", "A 为测试覆盖不足；B 为测试篡改；C 为 delivery_clean 缺陷。仅凭两个结果标记不能判定归类，"
               "也不能断言门禁通过是官方 resolved 的必要条件；官方 resolved 且门禁未完成的观察另列。",
-              "[统一审计记录](verified20-formal-gate-audit.md) 保留 Requests 环境混杂与 Xarray 的 A/B 两项证据；新增项仍须核验。",
+              "[统一审计记录](verified20-formal-gate-audit.md) 保留 Requests 环境混杂与 Xarray 的 A/B 两项证据。",
               "[Seaborn 专项对照](verified20-seaborn-comparison.md) 已核对缓存批 pilot 与正式批的补丁及阶段；共同触达 60 轮不能单独解释官方结果差异。"]
     if len(s["django_gated"]) == 4:
         rows = s["django_gated"]
@@ -287,7 +307,7 @@ def render(summary):
     if any(r["instance_id"] == "matplotlib__matplotlib-23476" for r in s["completion_examples"]):
         lines += ["", "正式批最早完成全流程的是 Astropy-14369；Matplotlib-23476 是另一个接近 60 轮上限仍完成的实例。"
                   "它表明该预算下存在完成全流程的案例，60 轮不是绝对阻断，但不能据此确定 Django 未完成的原因。"]
-    lines += ["", "门禁完成且官方 unresolved 的实例仍须逐项审计 A/B/C；零拦截须审计 benign/suspicious。自动统计不替代这些机制审查。", "",
+    lines += ["", "机制审查与二元评分分别报告；自动统计不替代原产物核对和独立重放。", "",
               "## 局限与结论", "", "- 全量三批涉及 49 个不同实例（名义 n=49），不保证观测独立，不足以宣称 p<0.05。",
               "- 本批 2 个复用实例非完全独立。",
               "- 缓存-15 存在选择偏差。",
@@ -298,8 +318,9 @@ def render(summary):
               "- Xarray 重放证实阶段 2 的关键自写断言在阶段 3 被替换，最终测试通过而原登记断言失败；"
               "当前门禁未保证测试演进保留既定行为覆盖。证据与 A/B 两项解释见 [统一审计](verified20-formal-gate-audit.md)，不单独归因于官方 warning 失败。",
               "- 成本 P90 样本量有限且对离群值敏感；2.16×→1.87× 是同一正式批随样本增加的中途漂移。"
-              "最终仅在全部 40 项证据齐全后重算，独立配对 n=18，排除跨中断耗时后的时间 n 为 baseline 17、gated 18；比值视为点估计。",
-              "- 扩展到 100+ 实例仅为规划，不能保证显著性；所需样本量取决于效应及配对不一致率。", ""]
+              "全部 40 项证据齐全后重算，独立配对 n=18，排除跨中断耗时后的时间 n 为 baseline 16、gated 17；此前只排除 Matplotlib 得到的 1.35× 已被宿主机睡眠证据修正，最终比值见成本表，均为点估计。",
+              "- 扩展到 100+ 实例仅为规划，不能保证显著性；所需样本量取决于效应及配对不一致率。",
+              "- 8 个门禁未完成且官方 resolved 的实例不构成门禁全流程有效的证据；预算与门禁开销未做对照。另发现复合 shell 测试命令漏识别，以及 Pylint 存量负向语法夹具误阻断，均保留为待修复机制缺口。", ""]
     if not s["complete"]:
         lines.append("正式批尚未全部完成，暂不对三批方向一致性下结论。")
     elif any(v["baseline_only"] for v in {**s["batches"], **s["groups"]}.values()):
@@ -313,7 +334,7 @@ def render(summary):
 def cost_review(summary):
     lines = ["### 跨中断耗时：成本口径修正（自动更新）", "",
              "截至 " + summary.get("checked_at", "本次快照") + "；仅计双组均 graded 的配对，独立与复用分开。", "",
-             "matplotlib-24970 baseline 的 220,038.7 秒跨两次中断，不计入主要成本 P90；该实例单列，不作为执行效率证据。",
+             "Matplotlib-24970 baseline 跨两次中断，SymPy-18211 双组跨宿主机睡眠；三项秒数排除出主要成本，其他指标保留。",
              "原始秒数和其他指标保留。文末运行快照的 seconds 表是原始墙钟核对口径，主要效率口径见下表的排除行。", "",
              "| 部分 | 口径 | baseline n | baseline P90 秒 | gated n | gated P90 秒 |", "|---|---|---:|---:|---:|---:|"]
     for group in summary["groups"]:
@@ -392,6 +413,13 @@ def main():
     if isinstance(tasks, dict):
         tasks = next(tasks[k] for k in ("tasks", "instances", "rows", "data") if isinstance(tasks.get(k), list))
     summary = summarize(*(read_rows(p) for p in paths), tasks, initial_graded=read_rows(initial))
+    audit_path = ROOT / "benchmarks/swebench/results/verified20_anomaly_audit.json"
+    if audit_path.exists():
+        audit = json.loads(audit_path.read_text(encoding="utf-8"))
+        for relative, digest in audit["sources_sha256"].items():
+            if hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() != digest:
+                raise ValueError("Mechanism review source changed: " + relative)
+        summary["mechanism_audit"] = audit
     summary.update(checked_at=datetime.now(timezone.utc).isoformat(),
                    generator_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                    sources={str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in [*paths, initial]})

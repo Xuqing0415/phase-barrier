@@ -106,6 +106,21 @@ def test_cost_origin_uses_archived_job_keys_not_csv_order():
     assert "不等于 Agent 全程使用新规则" in report.render(summary)
 
 
+def test_host_sleep_excludes_both_sympy_times_without_discarding_outcomes():
+    iid = "sympy__sympy-18211"
+    formal = pair(iid) + pair("x__ordinary")
+    formal[0]["seconds"], formal[1]["seconds"] = "9070.8", "8814.0"
+    summary = report.summarize(formal, [], [], [], [], [{"instance_id": i} for i in (iid, "x__ordinary")])
+    costs = {(v["mode"], v["metric"]): v for v in summary["costs"] if v["group"] == "独立部分"}
+    for mode in ("baseline", "gated"):
+        assert costs[mode, "seconds"]["n"] == 1
+        assert costs[mode, "seconds"]["p90"] == 100
+        assert costs[mode, "turns"]["n"] == 2
+    assert summary["groups"]["独立部分"]["baseline"] == 2
+    assert len(summary["elapsed_exclusions"]) == 2
+    assert "宿主机睡眠" in report.render(summary)
+
+
 def test_completion_examples_do_not_call_matplotlib_first():
     formal = pair("astropy__astropy-14369") + pair("matplotlib__matplotlib-23476")
     for r in formal:

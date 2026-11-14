@@ -1,0 +1,588 @@
+{
+  "checked_at": "2026-11-14T05:25:50.009254+00:00",
+  "verification": {
+    "counts": {
+      "skip": 40,
+      "regrade_only": 0,
+      "rerun": 0,
+      "pending": 0
+    },
+    "completed_pairs": 20
+  },
+  "counts": {
+    "gate_complete_official_unresolved": 2,
+    "official_resolved_gate_incomplete": 8,
+    "zero_interception": 3,
+    "sympy_over_60_minutes": 2,
+    "matplotlib_cross_interruption_separate": 1
+  },
+  "zero_interception": [
+    {
+      "instance_id": "sympy__sympy-13480",
+      "turns": 18,
+      "stage": 6,
+      "events": 23,
+      "blocked": 0,
+      "diff_chars": 1954,
+      "patch_bytes": 1954,
+      "tool_log_matches_trace": true,
+      "history": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "persisted_audit": {
+        "passed": true,
+        "errors": [],
+        "events": 23,
+        "blocked": 0
+      },
+      "classification": "zero_interception_suspicious",
+      "premature_pytest": [
+        {
+          "turn": 10,
+          "stage": 2,
+          "command": "cd /testbed && python -m pytest test_pb_repro.py -x -q 2>&1 | tail -20",
+          "blocked": false
+        }
+      ],
+      "mechanism": "shell_test_command_not_recognized",
+      "logging_conclusion": "complete_for_stdout_tool_calls"
+    },
+    {
+      "instance_id": "sympy__sympy-17630",
+      "turns": 46,
+      "stage": 6,
+      "events": 69,
+      "blocked": 0,
+      "diff_chars": 1968,
+      "patch_bytes": 1968,
+      "tool_log_matches_trace": true,
+      "history": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "persisted_audit": {
+        "passed": true,
+        "errors": [],
+        "events": 69,
+        "blocked": 0
+      },
+      "classification": "zero_interception_suspicious",
+      "premature_pytest": [
+        {
+          "turn": 39,
+          "stage": 2,
+          "command": "cd /testbed && python -m pytest test_pb_repro.py -q 2>&1 | tail -25",
+          "blocked": false
+        }
+      ],
+      "mechanism": "shell_test_command_not_recognized",
+      "logging_conclusion": "complete_for_stdout_tool_calls"
+    },
+    {
+      "instance_id": "sympy__sympy-18211",
+      "turns": 26,
+      "stage": 6,
+      "events": 33,
+      "blocked": 0,
+      "diff_chars": 2342,
+      "patch_bytes": 2342,
+      "tool_log_matches_trace": true,
+      "history": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "persisted_audit": {
+        "passed": true,
+        "errors": [],
+        "events": 33,
+        "blocked": 0
+      },
+      "classification": "zero_interception_suspicious",
+      "premature_pytest": [
+        {
+          "turn": 10,
+          "stage": 2,
+          "command": "cd /testbed && python -m pytest test_pb_repro.py -q 2>&1 | tail -20",
+          "blocked": false
+        }
+      ],
+      "mechanism": "shell_test_command_not_recognized",
+      "logging_conclusion": "complete_for_stdout_tool_calls"
+    }
+  ],
+  "resolved_gate_incomplete": [
+    {
+      "instance_id": "django__django-14631",
+      "turns": 60,
+      "stage": 4,
+      "events": 68,
+      "blocked": 3,
+      "diff_chars": 10787,
+      "patch_bytes": 10787,
+      "tool_log_matches_trace": true,
+      "history": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "persisted_audit": {
+        "passed": true,
+        "errors": [],
+        "events": 68,
+        "blocked": 3
+      },
+      "classification": "budget_exhausted_at_late_stage",
+      "stage_rejections": [
+        {
+          "turn": 27,
+          "error": "实现文件 tests_syntax_error.py 存在语法错误: invalid decimal literal (tests_syntax_error.py, line 11)"
+        }
+      ]
+    },
+    {
+      "instance_id": "django__django-16333",
+      "turns": 60,
+      "stage": 4,
+      "events": 63,
+      "blocked": 8,
+      "diff_chars": 5227,
+      "patch_bytes": 5227,
+      "tool_log_matches_trace": true,
+      "history": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "persisted_audit": {
+        "passed": true,
+        "errors": [],
+        "events": 63,
+        "blocked": 8
+      },
+      "classification": "budget_exhausted_at_late_stage",
+      "stage_rejections": [
+        {
+          "turn": 23,
+          "error": "实现文件 tests_syntax_error.py 存在语法错误: invalid decimal literal (tests_syntax_error.py, line 11)"
+        },
+        {
+          "turn": 28,
+          "error": "实现文件 tests_syntax_error.py 存在语法错误: invalid decimal literal (tests_syntax_error.py, line 11)"
+        },
+        {
+          "turn": 36,
+          "error": "未检测到测试运行记录：请先运行测试命令（如 pytest）"
+        },
+        {
+          "turn": 43,
+          "error": "未检测到测试运行记录：请先运行测试命令（如 pytest）"
+        },
+        {
+          "turn": 45,
+          "error": "未检测到测试运行记录：请先运行测试命令（如 pytest）"
+        },
+        {
+          "turn": 47,
+          "error": "未检测到测试运行记录：请先运行测试命令（如 pytest）"
+        },
+        {
+          "turn": 49,
+          "error": "未检测到测试运行记录：请先运行测试命令（如 pytest）"
+        }
+      ]
+    },
+    {
+      "instance_id": "django__django-16901",
+      "turns": 53,
+      "stage": 5,
+      "events": 59,
+      "blocked": 9,
+      "diff_chars": 6054,
+      "patch_bytes": 6054,
+      "tool_log_matches_trace": true,
+      "history": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "persisted_audit": {
+        "passed": true,
+        "errors": [],
+        "events": 59,
+        "blocked": 9
+      },
+      "classification": "budget_exhausted_at_late_stage",
+      "stage_rejections": [
+        {
+          "turn": 19,
+          "error": "实现文件 tests_syntax_error.py 存在语法错误: invalid decimal literal (tests_syntax_error.py, line 11)"
+        },
+        {
+          "turn": 40,
+          "error": "不允许跳跃阶段：当前阶段 5（修复与回归），只能进入阶段 6（交付）"
+        },
+        {
+          "turn": 41,
+          "error": "检测到代码/测试文件在最近一次测试运行之后被修改：请重新运行测试确认回归通过"
+        },
+        {
+          "turn": 43,
+          "error": "检测到代码/测试文件在最近一次测试运行之后被修改：请重新运行测试确认回归通过"
+        },
+        {
+          "turn": 47,
+          "error": "检测到代码/测试文件在最近一次测试运行之后被修改：请重新运行测试确认回归通过"
+        },
+        {
+          "turn": 49,
+          "error": "检测到代码/测试文件在最近一次测试运行之后被修改：请重新运行测试确认回归通过"
+        }
+      ]
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-24970",
+      "turns": 60,
+      "stage": 5,
+      "events": 65,
+      "blocked": 10,
+      "diff_chars": 5153,
+      "patch_bytes": 5153,
+      "tool_log_matches_trace": true,
+      "history": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "persisted_audit": {
+        "passed": true,
+        "errors": [],
+        "events": 65,
+        "blocked": 10
+      },
+      "classification": "budget_exhausted_at_late_stage",
+      "stage_rejections": [
+        {
+          "turn": 13,
+          "error": "实现文件 chktrcmp.py 存在语法错误: Missing parentheses in call to 'print'. Did you mean print(...)? (chktrcmp.py, line 27)"
+        },
+        {
+          "turn": 45,
+          "error": "不允许跳跃阶段：当前阶段 5（修复与回归），只能进入阶段 6（交付）"
+        },
+        {
+          "turn": 46,
+          "error": "检测到代码/测试文件在最近一次测试运行之后被修改：请重新运行测试确认回归通过"
+        },
+        {
+          "turn": 48,
+          "error": "检测到代码/测试文件在最近一次测试运行之后被修改：请重新运行测试确认回归通过"
+        },
+        {
+          "turn": 50,
+          "error": "检测到代码/测试文件在最近一次测试运行之后被修改：请重新运行测试确认回归通过"
+        },
+        {
+          "turn": 52,
+          "error": "检测到代码/测试文件在最近一次测试运行之后被修改：请重新运行测试确认回归通过"
+        }
+      ]
+    },
+    {
+      "instance_id": "mwaskom__seaborn-3069",
+      "turns": 60,
+      "stage": 4,
+      "events": 65,
+      "blocked": 3,
+      "diff_chars": 4805,
+      "patch_bytes": 4805,
+      "tool_log_matches_trace": true,
+      "history": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "persisted_audit": {
+        "passed": true,
+        "errors": [],
+        "events": 65,
+        "blocked": 3
+      },
+      "classification": "budget_exhausted_at_late_stage",
+      "stage_rejections": [
+        {
+          "turn": 55,
+          "error": "未检测到测试运行记录：请先运行测试命令（如 pytest）"
+        },
+        {
+          "turn": 57,
+          "error": "未检测到测试运行记录：请先运行测试命令（如 pytest）"
+        },
+        {
+          "turn": 59,
+          "error": "未检测到测试运行记录：请先运行测试命令（如 pytest）"
+        }
+      ]
+    },
+    {
+      "instance_id": "pylint-dev__pylint-4970",
+      "turns": 60,
+      "stage": 3,
+      "events": 73,
+      "blocked": 4,
+      "diff_chars": 1959,
+      "patch_bytes": 1959,
+      "tool_log_matches_trace": true,
+      "history": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "persisted_audit": {
+        "passed": true,
+        "errors": [],
+        "events": 73,
+        "blocked": 4
+      },
+      "classification": "early_stage_incomplete",
+      "stage_rejections": [
+        {
+          "turn": 24,
+          "error": "实现文件 async_functions.py 存在语法错误: duplicate argument 'a' in function definition (async_functions.py, line 57)"
+        },
+        {
+          "turn": 30,
+          "error": "实现文件 async_functions.py 存在语法错误: duplicate argument 'a' in function definition (async_functions.py, line 57)"
+        }
+      ]
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-25102",
+      "turns": 60,
+      "stage": 5,
+      "events": 75,
+      "blocked": 1,
+      "diff_chars": 6442,
+      "patch_bytes": 6442,
+      "tool_log_matches_trace": true,
+      "history": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "persisted_audit": {
+        "passed": true,
+        "errors": [],
+        "events": 75,
+        "blocked": 1
+      },
+      "classification": "budget_exhausted_at_late_stage",
+      "stage_rejections": []
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9281",
+      "turns": 60,
+      "stage": 4,
+      "events": 66,
+      "blocked": 5,
+      "diff_chars": 1680,
+      "patch_bytes": 1680,
+      "tool_log_matches_trace": true,
+      "history": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "persisted_audit": {
+        "passed": true,
+        "errors": [],
+        "events": 66,
+        "blocked": 5
+      },
+      "classification": "budget_exhausted_at_late_stage",
+      "stage_rejections": [
+        {
+          "turn": 17,
+          "error": "未检测到测试运行记录：请先运行测试命令（如 pytest）"
+        },
+        {
+          "turn": 19,
+          "error": "未检测到测试运行记录：请先运行测试命令（如 pytest）"
+        },
+        {
+          "turn": 21,
+          "error": "未检测到测试运行记录：请先运行测试命令（如 pytest）"
+        }
+      ]
+    }
+  ],
+  "long_elapsed": [
+    {
+      "instance_id": "sympy__sympy-18211",
+      "mode": "baseline",
+      "seconds": 9070.8,
+      "classification": "cross_interruption",
+      "excluded_from_efficiency": true,
+      "run_local": "2026-11-13T11:55:07+08:00",
+      "grade_local": "2026-11-13T14:26:23+08:00"
+    },
+    {
+      "instance_id": "sympy__sympy-18211",
+      "mode": "gated",
+      "seconds": 8814.0,
+      "classification": "cross_interruption",
+      "excluded_from_efficiency": true,
+      "run_local": "2026-11-13T11:58:27+08:00",
+      "grade_local": "2026-11-13T14:25:25+08:00"
+    }
+  ],
+  "host_sleep_events": [
+    {
+      "provider": "Microsoft-Windows-Power-Troubleshooter",
+      "event_id": 1,
+      "record_id": 51905,
+      "recorded_at_utc": "2026-11-13T06:22:44.0773558Z",
+      "data": {
+        "WakeDuration": "816",
+        "WakeTime": "2026-11-13T06:22:42.3183628Z",
+        "SleepTime": "2026-11-13T03:59:40.6427993Z",
+        "SleepDuration": "1119"
+      }
+    }
+  ],
+  "anomaly_category_memberships": 16,
+  "unique_anomalous_jobs": 15,
+  "count_note": "The four main categories contain 15 memberships and 14 unique jobs; SymPy-18211 gated belongs to two categories. The separately listed Matplotlib baseline adds one unique job (15 table rows).",
+  "sources_sha256": {
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/astropy_astropy-14369_gated_verified20_formal/state.json": "974047ac56c37d51dd71c3bac76e477e19d1e3e73160e7127bc08fb3f315f68c",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/astropy_astropy-14369_gated_verified20_formal/stats.json": "70dc00d146b6068b9b39c91031496d405ca92ddc5cd65d8be9e87065cf4315fe",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/astropy_astropy-14369_gated_verified20_formal/trace.jsonl": "e73fab107842e961538d77d3529f23192ef76cec42aece0489f130d64b43bbf5",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/astropy_astropy-14369_gated_verified20_formal/model_patch.diff": "70a36a160f01af18859d640538ec94dd560515525ea74a54564ce89fb6a65ad9",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/astropy_astropy-14369_gated_verified20_formal.container.log": "9f52f79cac918f0d2def0dbec110acb5946c771a20c7e41dd57de6d2e5e01451",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-14631_gated_verified20_formal/state.json": "4604cffd0a633c50e01407156f86fa677b244af01e2c4ba7757e524855ab369c",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-14631_gated_verified20_formal/stats.json": "231ec7d6f3cfa39bdc8dae529f205b9298a2e1b00fce3acba6815a6bb5a9d4fd",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-14631_gated_verified20_formal/trace.jsonl": "bb29eee9abd1e2711587f063f1cc45b4cb4f59f180feb73d9d5da20afcf7abf0",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-14631_gated_verified20_formal/model_patch.diff": "7a6473c7c1539fcd9ba717ceb62f6d1e772a770c532aac46f10a33c3c2418cc5",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/django_django-14631_gated_verified20_formal.container.log": "ea4986b925314319e536f4a7f9ec69db49e004a25485d7002db1fca1f974151d",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16333_gated_verified20_formal/state.json": "f09c8c4260893584a13ded1529bb34cd28e489c63eb114d93b574c4afad6ff52",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16333_gated_verified20_formal/stats.json": "defc518e25152ff9df54d1bdb9ad0e0de3a109b68906aa2b6db848f4e40ab3e8",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16333_gated_verified20_formal/trace.jsonl": "569c8335758669f4bdb71212838862edff4d0e732add0d6ba7c31d7d62ad9e99",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16333_gated_verified20_formal/model_patch.diff": "93df2245f7e49a5213af4fbd9cc8afa431cb10308d0f5ee1ef49e305fcd68d64",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/django_django-16333_gated_verified20_formal.container.log": "4b7e5c892b025b885f95a827952d2f4d9318c8dd60f1360697569fabef4e20df",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16631_gated_verified20_formal/state.json": "45be92ce1f20f1c0a34b30f66f5e8e28b0158937a6bc533772f8c637f4f17ecf",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16631_gated_verified20_formal/stats.json": "83b508e2d0f86fd1e2b6c0bd4ab8603930bfa28b6d1a70d9cc96f5d14cbf80e0",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16631_gated_verified20_formal/trace.jsonl": "f1e580dae9160ff25dc6fead1ba70346d8ce8880ef1279abf33644150976ad04",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16631_gated_verified20_formal/model_patch.diff": "bd288248f5b9592466dd07353d04f369ae64857cf22549994d2f10dde5f90e36",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/django_django-16631_gated_verified20_formal.container.log": "40160695cfba62a5c390b4e48fff50e0fb844bdda9f43a01726992497f4dde57",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16901_gated_verified20_formal/state.json": "bace26989de7b57e72335104cc2895dd57f85a33862a430b43bbfe3fe8c4d1bc",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16901_gated_verified20_formal/stats.json": "fa2c8ed8f8f1da81da248abd3d84bd1287707376677755d0a61ee116f17a1a0f",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16901_gated_verified20_formal/trace.jsonl": "8392deaf7b10f61b96a7ccfdd69ea2b0edb89ace1d67117c682a518138a829a7",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/django_django-16901_gated_verified20_formal/model_patch.diff": "7eeecb445e105bbfa3cf4c6c74f1d4a3aef28f662fedde63487bf6e4a50f3574",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/django_django-16901_gated_verified20_formal.container.log": "f161507c2bca2117737a2cba9a18b361d9bafeda46f85e539cbf62721dead6b1",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/matplotlib_matplotlib-23476_gated_verified20_formal/state.json": "9532d84f733dfe255f3fb03da8f750f3d076a2873ce883a56fb4a96026e99911",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/matplotlib_matplotlib-23476_gated_verified20_formal/stats.json": "737738fe06ee74013367e0cdd4ac48750a78d8fa0c69393f788c4eeba1caaa1c",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/matplotlib_matplotlib-23476_gated_verified20_formal/trace.jsonl": "9c78c7d32ebb5a72cf59b9821922400551a7d400b83965f15085cf52f286d180",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/matplotlib_matplotlib-23476_gated_verified20_formal/model_patch.diff": "3e52a6e290f6fe2f59129dab7b253518ab29c48625527547b0cb585d30c326dd",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/matplotlib_matplotlib-23476_gated_verified20_formal.container.log": "c998edc88c8a8f413c88e3b0bc0cf85cc6ed1c19bfb8f2b8769494ae3061542a",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/matplotlib_matplotlib-24970_gated_verified20_formal/state.json": "8563aa6c4b5dda7c003ae19611dd430c0e5e92ab1190d100cac7d1ac5d60dd10",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/matplotlib_matplotlib-24970_gated_verified20_formal/stats.json": "05a8bc8458a195fe079fbb505b7f83c57be5a69e0152b5ec79d122b3cc4ecf4f",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/matplotlib_matplotlib-24970_gated_verified20_formal/trace.jsonl": "fba4e00e9d64879b45822c1f2cf4105bf36c6f2fd323257f99c9aa7ea4d63fa8",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/matplotlib_matplotlib-24970_gated_verified20_formal/model_patch.diff": "b4e2ab15cfe3a639f491e3fbdb69aa8f7334eb767e2ad014ef0d5be3810c409f",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/matplotlib_matplotlib-24970_gated_verified20_formal.container.log": "eb9994db537b57da2fea33db044f91f83a60b6b98e907febc8070ea6a3390db8",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pallets_flask-5014_gated_verified20_formal/state.json": "6b7f627ab3421bea1bed273bf5ca4cca933fc83b4b04cfc1069952102330c674",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pallets_flask-5014_gated_verified20_formal/stats.json": "8d7ea16f501f94f3d82a21c43ccb2cde09c742e436ae84e92e3d7778ef9d253e",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pallets_flask-5014_gated_verified20_formal/trace.jsonl": "fe851e1d5476cb3ac1ffdbd23ca8fa68ada8c925dda5df98f5ab7c51f68aae42",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pallets_flask-5014_gated_verified20_formal/model_patch.diff": "35a594178b7b64c6f3f03eb82dcf1e0c32d6911b76c807187b4447e115324488",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/pallets_flask-5014_gated_verified20_formal.container.log": "f15e202b46cdf27a0a546e38249f074a9c78dcf2d6430c57cde84c7f60eff0c5",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/mwaskom_seaborn-3069_gated_verified20_formal/state.json": "91e4f13f2a36dfd547a1907ae8565a200f8f5bc4e4f529d45e28b13030bf7806",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/mwaskom_seaborn-3069_gated_verified20_formal/stats.json": "a6bcfcf549ac7ffa187da4dbc39edff59fef238f220ffd2932a11057cc2294b6",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/mwaskom_seaborn-3069_gated_verified20_formal/trace.jsonl": "0391a0667de0ef9f7a178dfbb2859d2b760d6140c181ef332e942161a74fada2",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/mwaskom_seaborn-3069_gated_verified20_formal/model_patch.diff": "a083803d4a683516055d8ba061e73f9d502a581fc329bdb0f50963c5f03b6f29",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/mwaskom_seaborn-3069_gated_verified20_formal.container.log": "4307369554ddc04bcce73e1771b550d8fe7858d55cffd7e8b5f6f7394f61d3b9",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/psf_requests-2317_gated_verified20_formal/state.json": "ba6169f2b89d03a521f3f04fc79c8caed648cd535a71868a1c6d7fa2d55f07e6",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/psf_requests-2317_gated_verified20_formal/stats.json": "1834592db46f91578f727054ff263ec3835477c4c0075623e065440455cb745c",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/psf_requests-2317_gated_verified20_formal/trace.jsonl": "c781222159df94e9c11357f1123e39227c9198f574c214d26d7c348389e57259",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/psf_requests-2317_gated_verified20_formal/model_patch.diff": "323dbb2dab0bd8b63820cdfd51d8528804b5583d73e1eb9af851861723628dfc",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/psf_requests-2317_gated_verified20_formal.container.log": "2819be9793ed53c3a218ab00b8bd16f3651bbabf1006d1ed08bef33c5986bae0",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pydata_xarray-3993_gated_verified20_formal/state.json": "336621541ffdc4c7f522850a5633c1d7733592368a6816c785814aa8ff00ad6a",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pydata_xarray-3993_gated_verified20_formal/stats.json": "a36e9ea24a76b49648aca7ab87feaf97727fc7aed99efe79fc8c5476167f82db",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pydata_xarray-3993_gated_verified20_formal/trace.jsonl": "3a8ef7039ac9b4d0094b412b7cab94391740b4eb54519974655b77d5cc42c81b",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pydata_xarray-3993_gated_verified20_formal/model_patch.diff": "d76ac5d83f8119feeaf7329f2674435693a789ea3da5fbbe6c06f84b4bc57478",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/pydata_xarray-3993_gated_verified20_formal.container.log": "9e565acd2753605902ea9978621ebbf58bbf8781edc923bd0d74f981c57c9d64",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pylint-dev_pylint-4970_gated_verified20_formal/state.json": "0df0aca2e1474fb0bbf2553aab01a3e6cdc2c4856d2d2806a07af42037c1062d",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pylint-dev_pylint-4970_gated_verified20_formal/stats.json": "bc5c182a78253a5f1de00c3c303dc5aaaac7d314094ee0a6db012bcaeaa30e6d",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pylint-dev_pylint-4970_gated_verified20_formal/trace.jsonl": "3ced3624256537c5336b4817f8026b267a480bf6713528e2d656b1e7c25532ae",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pylint-dev_pylint-4970_gated_verified20_formal/model_patch.diff": "cc8241692968bd0f87e758119aa66ad9099675a9ef9999ab610ab7f4dbbb8297",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/pylint-dev_pylint-4970_gated_verified20_formal.container.log": "b69516489346d3f7cdcea443df12f2bbcc823abbd3e2b223390591b2c70c5b8e",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pytest-dev_pytest-7205_gated_verified20_formal/state.json": "4d3bb6573ee475a582c0fe9068b6b1350cc88330586ceee906fa162f0959fd03",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pytest-dev_pytest-7205_gated_verified20_formal/stats.json": "44d0afbda4b0617262997a6b7943d58d18ec172cebb7f20695d514b2b87fa8aa",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pytest-dev_pytest-7205_gated_verified20_formal/trace.jsonl": "1186ed90157089aae981eb29b6ec1540befcce5137a240facef6f25bcc7675b2",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/pytest-dev_pytest-7205_gated_verified20_formal/model_patch.diff": "b96c46d4d7de5a4175de8425b710bed51d45f26828f72f9b02603f1bc40ed28f",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/pytest-dev_pytest-7205_gated_verified20_formal.container.log": "fb62d4e51920ed42edcbbe94043dd479ba9ba5603b27de9df133e3b7a7566d1f",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/scikit-learn_scikit-learn-15100_gated_verified20_formal/state.json": "2dd263914dc84bee06a934562514341433070de7be13b17461a738265b6daba3",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/scikit-learn_scikit-learn-15100_gated_verified20_formal/stats.json": "5b595be42540f473b5c0700643b114bc22176ea3a14efb708259258988e8dd77",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/scikit-learn_scikit-learn-15100_gated_verified20_formal/trace.jsonl": "ccda18eed7a2070b207e59534ef2cd1df7ae57b8922a5fd98d15032afe159b26",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/scikit-learn_scikit-learn-15100_gated_verified20_formal/model_patch.diff": "e6c52639cbb6752b12cc2935473a8b32d74075e5d4f3c35127872e1cce473d59",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/scikit-learn_scikit-learn-15100_gated_verified20_formal.container.log": "8ee24652a42f223beb9ea4a60e929135e77c1585f174df8b5df54dd85d80da60",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/scikit-learn_scikit-learn-25102_gated_verified20_formal/state.json": "e633d19c8ea514862abf766a13635407548661a850acebb8f90db48247cde2ae",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/scikit-learn_scikit-learn-25102_gated_verified20_formal/stats.json": "dfa3f510c840be4cd71336b9cb74135bcfe92de434444bbb9ccd89665301094e",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/scikit-learn_scikit-learn-25102_gated_verified20_formal/trace.jsonl": "85269eb6c2c289576c983a401221260532538841357c3df73a748e87a0d1e3e9",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/scikit-learn_scikit-learn-25102_gated_verified20_formal/model_patch.diff": "7a0a5bc8d2bdbb52ba479a7fcbe98a5e6ab181c2a088105fe457065518a26553",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/scikit-learn_scikit-learn-25102_gated_verified20_formal.container.log": "46bda7eabe6a142e95e6bfa87960664fffb53e5c90ba9723f2b6aa4ef646ac1d",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sphinx-doc_sphinx-8593_gated_verified20_formal/state.json": "37c01afd0fcb74efac02af9a5d660d8a35e16a299793efcb8ce134445e48b8dd",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sphinx-doc_sphinx-8593_gated_verified20_formal/stats.json": "e731a1bb793e5003d6685fe1f6870e661283ead391dbf86317ae35940bed17b7",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sphinx-doc_sphinx-8593_gated_verified20_formal/trace.jsonl": "444d0abef7063006ae65ef4332060ceadd6c548b95fd42a64c345aa69cd8d287",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sphinx-doc_sphinx-8593_gated_verified20_formal/model_patch.diff": "9f67761f37a1ff1924ffbe50893b2822f557c290bc5a7cf4ecca9edc0f546d8d",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/sphinx-doc_sphinx-8593_gated_verified20_formal.container.log": "19acd20382bcfe92b004deae889aaf2008b4e11c8feb33222f32a5ce4f37f171",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sphinx-doc_sphinx-9281_gated_verified20_formal/state.json": "8473c705e92c5b43b3994af6c167e55f364a6cb66602f538cba175d273ad714f",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sphinx-doc_sphinx-9281_gated_verified20_formal/stats.json": "42af0f7e90ea841beeba773f70d1354ec7341839017223fc167cb35d0f3d41d0",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sphinx-doc_sphinx-9281_gated_verified20_formal/trace.jsonl": "775a3a4c94075f81b78da229d9ad2a8390233c61c55b3347f54df9636257ccaf",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sphinx-doc_sphinx-9281_gated_verified20_formal/model_patch.diff": "509e9290468325f7524044de329abde7e615a9f56b30d160cb00d15c29dd88db",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/sphinx-doc_sphinx-9281_gated_verified20_formal.container.log": "b88ba6ed9e91391995963a9eae4ceb6b9f9be515f667fd8c78d427fee353b867",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-13480_gated_verified20_formal/state.json": "bd1fc3c077552b59a8c92e0a95f91537bc158fc2bbb4fd97639e12348a886db0",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-13480_gated_verified20_formal/stats.json": "4b9b17b7aad39ad277a909014aaf8cb9bf9a6d71f16e10da2f276b18f07aee02",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-13480_gated_verified20_formal/trace.jsonl": "7dcf0379aab3cfdc1cdbde61d57696b9a85b0d35c3d04ad049965608fdedbbc8",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-13480_gated_verified20_formal/model_patch.diff": "4cef95da77a1a587f717d4fb6199d498dbdf879b20c647d35f126632364feb81",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/sympy_sympy-13480_gated_verified20_formal.container.log": "4a2e3555bb96b89f82ea966689accbbdffc3a0da7bd4e932ebb74243db9e5dea",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-17630_gated_verified20_formal/state.json": "c2cc59e954932c595b98253ad2a4630d10c3b861b507ea8da13d32c8099a748f",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-17630_gated_verified20_formal/stats.json": "f8f6a7eaffa87c781f144c79eec996d5e4d0d39b8c822f6fceb48bd77f35ce26",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-17630_gated_verified20_formal/trace.jsonl": "04fa859f3494c776e3b27c897297ad0d2ffc0f52516c57a8ca5cdffce35fece6",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-17630_gated_verified20_formal/model_patch.diff": "fa7bbcbbe9e23cdb3a9bb5a7fcb6f5400472f2440d08ea256150a3caf33bef0d",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/sympy_sympy-17630_gated_verified20_formal.container.log": "5f148bc963e76fd401815882513bd400e7a63a2d1a5eea34b1a0f5524d88f680",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-18211_gated_verified20_formal/state.json": "1c876b80f164dae66566bcc86c2ab21558190665d041d7cbd2ac0d0b8d655b81",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-18211_gated_verified20_formal/stats.json": "d2350eb5cdcd682de64d8d65b3ec0d6ac5d449c1286e4879897b2ed159b5f53a",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-18211_gated_verified20_formal/trace.jsonl": "340d76b94dea19e1d844223afaf662e1d0c876db85d8c0aa6902eae379139c00",
+    ".pytest_tmp/verified20/formal20_logicstar/agent_runs/sympy_sympy-18211_gated_verified20_formal/model_patch.diff": "d39b8c3e78e9de5fcf83cac4b5619cee745176a0fba2ba7e5f818cfd0b7cb7ad",
+    ".pytest_tmp/verified20/formal20_logicstar/logs/sympy_sympy-18211_gated_verified20_formal.container.log": "d3798b9a9abd5f572655546fa1b4c1908927ab2fee69e48aeb05875c9efaeb9c"
+  }
+}

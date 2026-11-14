@@ -107,8 +107,8 @@ def verify_testbed_records(checks: list[dict], audit: dict) -> dict:
     return {"passed": True, "count": 100, "audit_sha256": sha256(TESTBED_AUDIT), "checks": checks}
 
 
-def preflight(*, probe_testbeds: bool) -> dict:
-    if RUN_ROOT.exists():
+def preflight(*, probe_testbeds: bool, allow_existing: bool = False) -> dict:
+    if RUN_ROOT.exists() and not allow_existing:
         raise ValueError("fresh run root must not already exist; resume requires evidence review")
     if not os.environ.get("DEEPSEEK_API_KEY"):
         raise ValueError("required model credential is absent")
@@ -439,6 +439,9 @@ def supervise() -> int:
 
 
 def main() -> int:
+    if len(sys.argv) > 1 and sys.argv[1] in ("resume", "simulate"):
+        from scripts.scale100_recovery import main as recovery_main
+        return recovery_main(sys.argv[1:])
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["preflight", "run"])
     args = parser.parse_args()

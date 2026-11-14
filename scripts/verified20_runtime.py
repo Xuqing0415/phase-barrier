@@ -3,15 +3,44 @@ import json
 import os
 import subprocess
 import sys
+import threading
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from anti_shortcut.state import _file_lock
+
+_WRITE_LOCK = threading.RLock()
+
+
+def _replace_with_retry(src, dst, *, retries=5, delay=0.1):
+    for attempt in range(retries):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError:
+            if attempt == retries - 1:
+                raise
+            time.sleep(delay * 2**attempt)
+
 
 def save_json(path, value):
+    atomic_write(path, json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+
+
+def atomic_write(path, text):
     path = Path(path)
     tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(tmp, path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # A common lock covers the fixed .tmp name across threads and processes.
+    # Failed .tmp content survives until the next deliberate write, for diagnosis.
+    with _WRITE_LOCK, _file_lock(path.with_name(path.name + ".lock")):
+        tmp.unlink(missing_ok=True)
+        with tmp.open("w", encoding="utf-8", newline="\n") as stream:
+            stream.write(text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        _replace_with_retry(tmp, path)
 
 
 def _host_path(value):

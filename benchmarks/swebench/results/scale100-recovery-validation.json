@@ -1,0 +1,57 @@
+{
+  "checked_at": "2026-11-14T11:04:26.889128+00:00",
+  "passed": true,
+  "scope": "Recovery tooling acceptance; not a completed Scale-100 result.",
+  "archive": {
+    "files": 331,
+    "bytes": 8772176,
+    "frozen_sources": 70,
+    "hashes_verified": true
+  },
+  "local_regression": {
+    "passed": 1856,
+    "skipped": 22,
+    "exit_code": 0,
+    "core_coverage_percent_rounded": 94,
+    "note": "Full suite before the final PID registration refinement; final targeted checks and post-push full CI additionally gate production recovery."
+  },
+  "final_targeted_tests": {
+    "passed": 41,
+    "failed": 0
+  },
+  "simulation": {
+    "passed": true,
+    "synthetic": true,
+    "instances": 2,
+    "jobs": 4,
+    "first_exit": 4,
+    "resume_exit": 0,
+    "skipped_after_crash": 1,
+    "unique_simulated_model_calls": 4,
+    "real_model_calls": 0,
+    "supervisor_failure_path_exercised": true,
+    "completion_evidence_passed": true,
+    "first_attempt_unchanged": true
+  },
+  "classification": {
+    "counts": {
+      "skip": 23,
+      "regrade_only": 1,
+      "rerun": 1,
+      "pending": 175
+    },
+    "completed_pairs": 11,
+    "total_remaining": 177,
+    "total_model_calls_needed": 176,
+    "total_regrade_only": 1
+  },
+  "preflight": {
+    "passed": true,
+    "testbed_count": 100,
+    "agent_rows": 100,
+    "manifest_sha256": "400554bff9c43a5990a545f6cf9ea16a68ce14379adfd41629806439e562757f"
+  },
+  "root_cause": "Unretried PermissionError during monitor_status atomic replace; original external handle owner was not captured.",
+  "production_resume_requires_published_green_ci": true,
+  "unchanged_execution": "Original Agent/gate/rules/sample/protocol remain in the execution workspace; recovery controller is versioned and hashed separately."
+}

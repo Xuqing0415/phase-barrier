@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 sys.path.insert(0, str(ROOT))
 from scripts.verified20_checks import audit_persisted_run
+from scripts.scale100_classify_existing import evidence_labels
 
 
 def percentile(values: list[float], q: float) -> float:
@@ -116,10 +117,17 @@ def verify(manifest_path: Path, root: Path) -> tuple[dict, list[dict], list[str]
             errors.append("unexpected_or_duplicate_result:" + repr(key))
         else:
             by_key[key] = row
-    if len(rows) != 200:
-        errors.append(f"expected_200_rows_got_{len(rows)}")
-    if len(by_key) != 200:
-        errors.append(f"expected_200_unique_jobs_got_{len(by_key)}")
+    if len(rows) != len(expected):
+        errors.append(f"expected_{len(expected)}_rows_got_{len(rows)}")
+    if len(by_key) != len(expected):
+        errors.append(f"expected_{len(expected)}_unique_jobs_got_{len(by_key)}")
+    active = root / "current_launch.json"
+    if active.exists():
+        recovery = json.loads(active.read_text(encoding="utf-8"))
+        for relative, expected_hash in recovery.get("controller_hashes", {}).items():
+            path = Path(recovery["controller_root"]) / relative
+            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != expected_hash:
+                errors.append("recovery_controller_changed:" + relative)
 
     preservation = 0
     composite_blocked = 0
@@ -131,7 +139,7 @@ def verify(manifest_path: Path, root: Path) -> tuple[dict, list[dict], list[str]
             row = by_key.get((iid, mode))
             if row is None:
                 continue
-            label = _label(iid, mode)
+            label, grade_label = evidence_labels(root, iid, mode)
             run_dir = root / "agent_runs" / label
             if "initial_artifacts" in prelaunch:
                 try:
@@ -145,8 +153,8 @@ def verify(manifest_path: Path, root: Path) -> tuple[dict, list[dict], list[str]
                     errors.append(f"initial_artifacts_evidence_missing:{iid}:{mode}")
             patch = run_dir / "model_patch.diff"
             stats_path = run_dir / "stats.json"
-            report_path = root / "eval_runs" / "reports" / (label + ".json")
-            prediction_path = root / "eval_runs" / "predictions" / (label + ".json")
+            report_path = root / "eval_runs" / "reports" / (grade_label + ".json")
+            prediction_path = root / "eval_runs" / "predictions" / (grade_label + ".json")
             if row.get("note") != "graded":
                 errors.append(f"not_officially_graded:{iid}:{mode}:{row.get('note')}")
                 continue
@@ -201,7 +209,7 @@ def verify(manifest_path: Path, root: Path) -> tuple[dict, list[dict], list[str]
                                   "baseline": pair["baseline"], "gated": pair["gated"]})
     proof = {
         "checked_at": datetime.now(timezone.utc).isoformat(),
-        "passed": not errors and len(verified_rows) == 100,
+        "passed": not errors and len(verified_rows) == len(tasks),
         "planned_instances": len(tasks), "unique_instances_with_verified_pairs": len(verified_rows),
         "expected_jobs": len(expected), "unique_result_jobs": len(by_key), "result_rows": len(rows),
         "gate_modes": {"gated_test_preservation": "strict"},
@@ -319,10 +327,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--run-root", type=Path, required=True)
+    parser.add_argument("--source-root", type=Path)
     parser.add_argument("--cost-exclusions", type=Path)
     parser.add_argument("--bootstrap-reps", type=int, default=10000)
     parser.add_argument("--seed", type=int, default=2026)
     args = parser.parse_args()
+    if args.source_root:
+        global ROOT
+        ROOT = args.source_root.resolve()
     proof, pairs, errors = verify(args.manifest, args.run_root)
     if not proof["passed"]:
         print(json.dumps({"passed": False, "verified_pairs": len(pairs), "errors": errors[:20]}, ensure_ascii=False))

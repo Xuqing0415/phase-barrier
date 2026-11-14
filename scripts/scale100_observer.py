@@ -14,6 +14,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 from benchmarks.swebench.run_status import pid_is_alive
+from scripts.verified20_runtime import save_json as durable_save_json
 
 INTERVAL_SECONDS = 3600
 DEFAULT_ROOT = REPO / ".pytest_tmp/scale100_20261114"
@@ -35,9 +36,7 @@ def read_json(path: Path, *, optional: bool = False) -> dict:
 
 
 def save_json(path: Path, data: dict) -> None:
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+    durable_save_json(path, data)
 
 
 def preservation_events(root: Path) -> list[dict]:
@@ -71,10 +70,12 @@ def review(root: Path, *, previous: dict | None = None,
            now: float | None = None, pid_probe=pid_is_alive) -> dict:
     now = time.time() if now is None else now
     previous = previous or {}
-    launch = read_json(root / "launch.json")
+    launch = read_json(root / ("current_launch.json" if (root / "current_launch.json").exists() else "launch.json"))
     monitor = read_json(root / "monitor_status.json")
     status = read_json(root / "status.json")
     halt = read_json(root / "halt.json", optional=True)
+    if launch.get("resumed_at") and halt.get("observed_at", "") < launch["resumed_at"]:
+        halt = {}
     runner_alive = pid_probe(launch["runner_pid"])
     supervisor_alive = pid_probe(launch["supervisor_pid"])
     reason = monitor.get("halt_reason") or halt.get("reason") or status.get("halt_reason")
@@ -97,9 +98,10 @@ def review(root: Path, *, previous: dict | None = None,
         last_progress = now
     if state == "running" and now - last_progress >= 2 * INTERVAL_SECONDS:
         alerts.append("completed_jobs_unchanged_for_two_hours")
+    source = Path(launch.get("source_root", REPO))
     changed = [relative for relative, expected in launch["source_hashes"].items()
-               if not (REPO / relative).is_file()
-               or hashlib.sha256((REPO / relative).read_bytes()).hexdigest() != expected]
+               if not (source / relative).is_file()
+               or hashlib.sha256((source / relative).read_bytes()).hexdigest() != expected]
     if changed:
         alerts.append("frozen_source_changed")
     events = preservation_events(root)
@@ -171,6 +173,10 @@ def main() -> int:
         save_json(out / "latest.json", result)
         if result["alerts"]:
             save_json(out / "attention_required.json", result)
+        elif (out / "attention_required.json").exists():
+            save_json(out / "attention_required.json", {"active": False,
+                "checked_at": result["checked_at"], "cleared_by_latest_review": True,
+                "state": result["state"]})
         print(json.dumps({key: result.get(key) for key in (
             "checked_at", "completed_jobs", "completed_pairs", "test_preservation_intercepts",
             "halt_reason", "state", "alerts", "next_review_at")}), flush=True)

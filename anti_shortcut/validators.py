@@ -232,9 +232,9 @@ def _validate_test_preservation(
     history = state.snapshot().get("stage_history", [])
     baseline = next((item.get("evidence", {}) for item in reversed(history)
                      if item.get("stage") == 2), {})
-    if not baseline.get("test_functions") and not baseline.get("test_functions_by_file"):
-        return True, "", {}
     by_file = baseline.get("test_functions_by_file")
+    if not baseline.get("test_functions") and not any((by_file or {}).values()):
+        return True, "", {}
     legacy = by_file is None
     files = list(baseline.get("files", [])) if legacy else list(by_file)
     current: dict[str, set[str]] = {}

@@ -128,6 +128,9 @@ def test_off_does_not_read_tests(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize("state", [None, SimpleNamespace(snapshot=lambda: {}),
+                                 SimpleNamespace(snapshot=lambda: {"stage_history": [{"stage": 2, "evidence": {
+                                     "files": ["test_empty.py"], "test_functions": [],
+                                     "test_functions_by_file": {"test_empty.py": []}}}]}),
                                  SimpleNamespace(snapshot=lambda: {"stage_history": [{"stage": 2, "evidence": {}}]})])
 def test_no_registered_tests_skips_check(tmp_path, state):
     assert result(tmp_path, GateConfig(require_implementation=False), state)[0] is True

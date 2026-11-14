@@ -59,6 +59,7 @@ def test_two_unknown_empty_patches_must_be_consecutive(tmp_path):
     b = {**a, "instance_id": "x__x-2"}
     assert not checks.monitoring_decision([a], tmp_path)["stop"]
     assert checks.monitoring_decision([a, b], tmp_path)["reason"] == "two_consecutive_unknown_empty_patches"
+    assert not checks.monitoring_decision([a, b], tmp_path, stop_on_unknown_empty=False)["stop"]
     assert not checks.monitoring_decision([a, {**a, "note": "graded"}, b], tmp_path)["stop"]
 
 

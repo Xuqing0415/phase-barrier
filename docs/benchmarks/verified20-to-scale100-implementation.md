@@ -6,8 +6,8 @@
 |---|---|---|
 | 一：异常复核 | 已完成 | 40/40 证据重新核验；三 SymPy suspicious，命令漏识别而非日志漏写；后期未完成 7、早期实现校验未完成 1；SymPy 双组跨睡眠 |
 | 二：最终报告 | 已完成 | 提交 dff58c9 已推送 main；CI、docs、Security、Plugin CI 均 success；56 项相关测试及 MkDocs strict 通过 |
-| 三：测试演进约束 | 最终源码回归与冒烟验收完成，待远端 CI / 标签 | warn/strict/off、删除理由审计、真实 Xarray fixture、Java/Go 名字及复合命令修复；1808 passed / 22 skipped，核心覆盖率 93.68%；两轮三实例均门禁完成 3/3、官方 resolved 2/3 |
-| 四：100 个新增实例扩样 | 待阶段三验收 | 排除历史 49 个不同实例，预注册 100 个新实例、200 个任务，strict、镜像/DNS/监督前置检查、完整配对统计 |
+| 三：测试演进约束 | 已完成并发布 v1.2.0 | 发布提交 db48bf8；2026-11-14 14:26 北京时间正式发布；CI、docs、Security、Plugin CI 及发布工作流 success；1808 passed / 22 skipped，核心覆盖率 93.68%；冒烟门禁完成 3/3、官方 resolved 2/3 |
+| 四：100 个新增实例扩样 | 预注册准备完成，待提交及镜像导入 | 历史49排除清单已固化；用户确认10个剩余仓库、100个全新实例、seed=2026；零历史重叠；统计协议、OCI子集导入与分析工具已准备，尚未启动Agent |
 
 ## 复核导致的方案修正
 
@@ -37,3 +37,13 @@ Docker 恢复：Windows 原生文件移动/重命名无法处理旧重解析点�
 - 最终源码哈希与启动快照一致；三个 trace / stats / state / patch / 官方 report / prediction 核验通过，门禁均完成到阶段 6，登记测试名均保留。三个实例都实际拦截了阶段 1/2 的复合 pytest 命令；测试保留专门拒绝数为 0（没有删除登记名），拒绝场景由真实 Xarray fixture 覆盖。
 - 两轮官方结果均为 SymPy / Flask resolved，Xarray unresolved（2/3），不能写为官方 3/3 通过。Xarray 仍是 Agent 实现及自测使用 DeprecationWarning、官方要求 FutureWarning 的契约差异；测试名保留不验证该语义。冒烟验收只确认门禁流程和证据链，已单独审阅此已知局限，不据此宣称门禁完成蕴含官方解决。
 - 机器可读最终证据见 `benchmarks/swebench/results/v120-smoke.json` 与 `v120-validation.json`。发布候选的远程 CI 与最终源码 `d079f69` 的手动红队（43564774497）需全部通过后才打 v1.2.0 标签；阶段四尚未启动。
+
+## 阶段三发布确认与阶段四预注册（2026-11-14）
+
+- v1.2.0 正式发布于 2026-11-14T06:26:02Z，标签指向 db48bf8；发布工作流 43566249333 success，主CI 43565279673 success，文档、Security及Plugin CI均success。
+- 历史49个不同实例中仅33个存在于当前Verified500数据，候选池实际为467。Flask/Seaborn排除后均无新实例；用户明确同意覆盖其余10仓、总样本100，原两仓9名额分配给Django/SymPy，使配额25/19，其余原配额不变。
+- 抽样seed=2026；难度使用原始时间桶，选中分布38/38/21/3（<15分钟、15分钟–1小时、1–4小时、>4小时）。不按镜像可用性、结果或显著性换样。
+- 公开JSON只包含实例ID、仓库、base_commit、difficulty及LogicStar镜像名；完整含gold数据仅宿主保留，Agent另用白名单脱敏数据和最小挂载。
+- 统计协议固定双侧精确McNemar、discordant odds的精确条件区间、按仓成对重采样10000次P90比值区间；不保证方向或显著。主成本仅排除有外部中断证据的配对，保留原始墙钟敏感性。
+- 停机规则按新方案：首次model_call_error或grade_infra_failure即停；未知空补丁仅记录，并保留旧批次的默认停机行为。
+- 下一步顺序：提交推送预注册 → 从既有OCI布局校验并导入100个固定镜像 → 核对RootFS/配置/base_commit/DNS/进程监督 → 启动200任务 → 完成证据核验、统计和最终报告。

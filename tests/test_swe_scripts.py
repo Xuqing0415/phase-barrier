@@ -259,6 +259,9 @@ def test_load_exclude_ids_text_and_json(tmp_path):
     js = tmp_path / "exclude.json"
     js.write_text(json.dumps(["c__c-1", "d__d-1"]), encoding="utf-8")
     assert sel.load_exclude_ids(js) == ["c__c-1", "d__d-1"]
+    manifest = tmp_path / "exclude-manifest.json"
+    manifest.write_text(json.dumps({"instance_ids": ["e__e-1"]}), encoding="utf-8")
+    assert sel.load_exclude_ids(manifest) == ["e__e-1"]
     bad = tmp_path / "bad.json"
     bad.write_text('{"foo": 1}', encoding="utf-8")
     with pytest.raises(ValueError):
@@ -432,6 +435,22 @@ def test_cli_repo_quota_and_exclude_file(tmp_path):
     assert payload["selection_meta"]["pre_excluded"] == [
         {"instance_id": "django__django-100", "reason": "excluded_by_caller"}
     ]
+
+
+def test_cli_accepts_historical_exclusion_manifest(tmp_path):
+    rows = _mixed_rows(3)
+    src = tmp_path / "dataset.json"
+    src.write_text(json.dumps(rows), encoding="utf-8")
+    exclusion = tmp_path / "historical.json"
+    exclusion.write_text(json.dumps({"version": 1, "instance_ids": ["django__django-100"]}), encoding="utf-8")
+    out = tmp_path / "selected.json"
+    assert sel.main([
+        "--dataset", str(src), "--count", "4",
+        "--repo-quota", "django/django=2", "sympy/sympy=1", "psf/requests=1",
+        "--exclude-file", str(exclusion), "--out", str(out),
+    ]) == 0
+    selected = json.loads(out.read_text(encoding="utf-8"))
+    assert "django__django-100" not in {row["instance_id"] for row in selected["tasks"]}
 
 
 def test_balanced_selection_records_excluded_instances():

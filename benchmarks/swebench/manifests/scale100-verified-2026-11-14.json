@@ -1,0 +1,757 @@
+{
+  "schema_version": 1,
+  "dataset": "SWE-bench/SWE-bench_Verified",
+  "split": "test",
+  "generated_at": "2026-11-14",
+  "source_release": "v1.2.0",
+  "source_commit": "db48bf87d3439d998dd9c3ce6abe9db202ead01f",
+  "count": 100,
+  "seed": 2026,
+  "dataset_sha256": "a10f66810a84bdfb40479421cd2992682ad7cd96e69e7acd88322e87e5b8748a",
+  "exclusion_manifest": "benchmarks/swebench/manifests/exclude-historical-49.json",
+  "exclusion_manifest_sha256": "5fede0c3dd244b6a8e42d2dff522c7713c1f3b32bfd5035929e6d73f818a599e",
+  "historical_excluded_count": 49,
+  "eligible_pool_count": 467,
+  "selection": {
+    "method": "fixed repository quotas with deterministic within-repository difficulty rotation",
+    "quota_mode": "explicit",
+    "repo_quotas": {
+      "astropy/astropy": 6,
+      "django/django": 25,
+      "matplotlib/matplotlib": 10,
+      "psf/requests": 4,
+      "pydata/xarray": 3,
+      "pylint-dev/pylint": 7,
+      "pytest-dev/pytest": 6,
+      "scikit-learn/scikit-learn": 12,
+      "sphinx-doc/sphinx": 8,
+      "sympy/sympy": 19
+    },
+    "repo_counts": {
+      "astropy/astropy": 6,
+      "django/django": 25,
+      "matplotlib/matplotlib": 10,
+      "psf/requests": 4,
+      "pydata/xarray": 3,
+      "pylint-dev/pylint": 7,
+      "pytest-dev/pytest": 6,
+      "scikit-learn/scikit-learn": 12,
+      "sphinx-doc/sphinx": 8,
+      "sympy/sympy": 19
+    },
+    "difficulty_distribution": {
+      "1-4 hours": 21,
+      "15 min - 1 hour": 38,
+      "<15 min fix": 38,
+      ">4 hours": 3
+    },
+    "difficulty_available": {
+      "1-4 hours": 35,
+      "15 min - 1 hour": 249,
+      "<15 min fix": 180,
+      ">4 hours": 3
+    }
+  },
+  "tasks": [
+    {
+      "instance_id": "astropy__astropy-13398",
+      "repo": "astropy/astropy",
+      "base_commit": "6500928dc0e57be8f06d1162eacc3ba5e2eff692",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-13398:latest"
+    },
+    {
+      "instance_id": "astropy__astropy-13579",
+      "repo": "astropy/astropy",
+      "base_commit": "0df94ff7097961e92fd7812036a24b145bc13ca8",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-13579:latest"
+    },
+    {
+      "instance_id": "astropy__astropy-13977",
+      "repo": "astropy/astropy",
+      "base_commit": "5250b2442501e6c671c6b380536f1edb352602d1",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-13977:latest"
+    },
+    {
+      "instance_id": "astropy__astropy-14995",
+      "repo": "astropy/astropy",
+      "base_commit": "b16c7d12ccbc7b2d20364b89fb44285bcbfede54",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-14995:latest"
+    },
+    {
+      "instance_id": "astropy__astropy-7166",
+      "repo": "astropy/astropy",
+      "base_commit": "26d147868f8a891a6009a25cd6a8576d2e1bd747",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-7166:latest"
+    },
+    {
+      "instance_id": "astropy__astropy-7671",
+      "repo": "astropy/astropy",
+      "base_commit": "a7141cd90019b62688d507ae056298507678c058",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-7671:latest"
+    },
+    {
+      "instance_id": "django__django-10880",
+      "repo": "django/django",
+      "base_commit": "838e432e3e5519c5383d12018e6c78f8ec7833c1",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-10880:latest"
+    },
+    {
+      "instance_id": "django__django-11119",
+      "repo": "django/django",
+      "base_commit": "d4df5e1b0b1c643fe0fc521add0236764ec8e92a",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-11119:latest"
+    },
+    {
+      "instance_id": "django__django-11138",
+      "repo": "django/django",
+      "base_commit": "c84b91b7603e488f7171fdff8f08368ef3d6b856",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-11138:latest"
+    },
+    {
+      "instance_id": "django__django-11163",
+      "repo": "django/django",
+      "base_commit": "e6588aa4e793b7f56f4cadbfa155b581e0efc59a",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-11163:latest"
+    },
+    {
+      "instance_id": "django__django-11490",
+      "repo": "django/django",
+      "base_commit": "a7038adbd02c916315b16939b835f021c2ee8880",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-11490:latest"
+    },
+    {
+      "instance_id": "django__django-11999",
+      "repo": "django/django",
+      "base_commit": "84633905273fc916e3d17883810d9969c03f73c2",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-11999:latest"
+    },
+    {
+      "instance_id": "django__django-12155",
+      "repo": "django/django",
+      "base_commit": "e8fcdaad5c428878d0a5d6ba820d957013f75595",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-12155:latest"
+    },
+    {
+      "instance_id": "django__django-12325",
+      "repo": "django/django",
+      "base_commit": "29c126bb349526b5f1cd78facbe9f25906f18563",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-12325:latest"
+    },
+    {
+      "instance_id": "django__django-12754",
+      "repo": "django/django",
+      "base_commit": "18759b2209ff556aed7f20d83cbf23e3d234e41c",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-12754:latest"
+    },
+    {
+      "instance_id": "django__django-13128",
+      "repo": "django/django",
+      "base_commit": "2d67222472f80f251607ae1b720527afceba06ad",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13128:latest"
+    },
+    {
+      "instance_id": "django__django-13212",
+      "repo": "django/django",
+      "base_commit": "f4e93919e4608cfc50849a1f764fd856e0917401",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13212:latest"
+    },
+    {
+      "instance_id": "django__django-13315",
+      "repo": "django/django",
+      "base_commit": "36bc47069ce071e80c8129500de3b8664d2058a7",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13315:latest"
+    },
+    {
+      "instance_id": "django__django-13344",
+      "repo": "django/django",
+      "base_commit": "e39e727ded673e74016b5d3658d23cbe20234d11",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13344:latest"
+    },
+    {
+      "instance_id": "django__django-13658",
+      "repo": "django/django",
+      "base_commit": "0773837e15bb632afffb6848a58c59a791008fa1",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13658:latest"
+    },
+    {
+      "instance_id": "django__django-13741",
+      "repo": "django/django",
+      "base_commit": "d746f28949c009251a8741ba03d156964050717f",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13741:latest"
+    },
+    {
+      "instance_id": "django__django-14351",
+      "repo": "django/django",
+      "base_commit": "06fd4df41afb5aa1d681b853c3c08d8c688ca3a5",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-14351:latest"
+    },
+    {
+      "instance_id": "django__django-14559",
+      "repo": "django/django",
+      "base_commit": "d79be3ed39b76d3e34431873eec16f6dd354ab17",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-14559:latest"
+    },
+    {
+      "instance_id": "django__django-14580",
+      "repo": "django/django",
+      "base_commit": "36fa071d6ebd18a61c4d7f1b5c9d17106134bd44",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-14580:latest"
+    },
+    {
+      "instance_id": "django__django-15128",
+      "repo": "django/django",
+      "base_commit": "cb383753c0e0eb52306e1024d32a782549c27e61",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-15128:latest"
+    },
+    {
+      "instance_id": "django__django-15268",
+      "repo": "django/django",
+      "base_commit": "0ab58c120939093fea90822f376e1866fc714d1f",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-15268:latest"
+    },
+    {
+      "instance_id": "django__django-15467",
+      "repo": "django/django",
+      "base_commit": "e0442a628eb480eac6a7888aed5a86f83499e299",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-15467:latest"
+    },
+    {
+      "instance_id": "django__django-15503",
+      "repo": "django/django",
+      "base_commit": "859a87d873ce7152af73ab851653b4e1c3ffea4c",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-15503:latest"
+    },
+    {
+      "instance_id": "django__django-15851",
+      "repo": "django/django",
+      "base_commit": "b4817d20b9e55df30be0b1b2ca8c8bb6d61aab07",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-15851:latest"
+    },
+    {
+      "instance_id": "django__django-16082",
+      "repo": "django/django",
+      "base_commit": "bf47c719719d0e190a99fa2e7f959d5bbb7caf8a",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-16082:latest"
+    },
+    {
+      "instance_id": "django__django-16116",
+      "repo": "django/django",
+      "base_commit": "5d36a8266c7d5d1994d7a7eeb4016f80d9cb0401",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-16116:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-20826",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "a0d2e399729d36499a1924e5ca5bc067c8396810",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-20826:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-21568",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "f0632c0fc7339f68e992ed63ae4cfac76cd41aad",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-21568:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23299",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "3eadeacc06c9f2ddcdac6ae39819faa9fbee9e39",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-23299:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23314",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "97fc1154992f64cfb2f86321155a7404efeb2d8a",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-23314:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-24177",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "493d608e39d32a67173c23a7bbc47d6bfedcef61",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-24177:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-24570",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "8f0003ae902952372824c9917975fb372c026a42",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-24570:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-25287",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "f8ffce6d44127d4ea7d6491262ab30046b03294b",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-25287:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-25311",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "430fb1db88843300fb4baae3edc499bbfe073b0c",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-25311:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-26208",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "f0f133943d3e4f1e2e665291fe1c8f658a84cc09",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-26208:latest"
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-26342",
+      "repo": "matplotlib/matplotlib",
+      "base_commit": "2aee6ccd7c7e1f8d282c1e7579f4ee546b838542",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-26342:latest"
+    },
+    {
+      "instance_id": "psf__requests-1142",
+      "repo": "psf/requests",
+      "base_commit": "22623bd8c265b78b161542663ee980738441c307",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.psf_1776_requests-1142:latest"
+    },
+    {
+      "instance_id": "psf__requests-1724",
+      "repo": "psf/requests",
+      "base_commit": "1ba83c47ce7b177efe90d5f51f7760680f72eda0",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.psf_1776_requests-1724:latest"
+    },
+    {
+      "instance_id": "psf__requests-2931",
+      "repo": "psf/requests",
+      "base_commit": "5f7a3a74aab1625c2bb65f643197ee885e3da576",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.psf_1776_requests-2931:latest"
+    },
+    {
+      "instance_id": "psf__requests-6028",
+      "repo": "psf/requests",
+      "base_commit": "0192aac24123735b3eaf9b08df46429bb770c283",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.psf_1776_requests-6028:latest"
+    },
+    {
+      "instance_id": "pydata__xarray-4075",
+      "repo": "pydata/xarray",
+      "base_commit": "19b088636eb7d3f65ab7a1046ac672e0689371d8",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.pydata_1776_xarray-4075:latest"
+    },
+    {
+      "instance_id": "pydata__xarray-6599",
+      "repo": "pydata/xarray",
+      "base_commit": "6bb2b855498b5c68d7cca8cceb710365d58e6048",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.pydata_1776_xarray-6599:latest"
+    },
+    {
+      "instance_id": "pydata__xarray-6992",
+      "repo": "pydata/xarray",
+      "base_commit": "45c0a114e2b7b27b83c9618bc05b36afac82183c",
+      "difficulty": ">4 hours",
+      "image": "logicstar/sweb.eval.x86_64.pydata_1776_xarray-6992:latest"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-4551",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "99589b08de8c5a2c6cc61e13a37420a868c80599",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-4551:latest"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-4661",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "1d1619ef913b99b06647d2030bddff4800abdf63",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-4661:latest"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-6528",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "273a8b25620467c1e5686aa8d2a1dbb8c02c78d0",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-6528:latest"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-6903",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "ca80f03a43bc39e4cc2c67dc99817b3c9f13b8a6",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-6903:latest"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7080",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "3c5eca2ded3dd2b59ebaf23eb289453b5d2930f0",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-7080:latest"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7277",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "684a1d6aa0a6791e20078bc524f97c8906332390",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-7277:latest"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-8898",
+      "repo": "pylint-dev/pylint",
+      "base_commit": "1f8c4d9eb185c16a2c1d881c054f015e1c2eb334",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-8898:latest"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-10051",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "aa55975c7d3f6c9f6d7f68accc41bb7cadf0eb9a",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-10051:latest"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-10356",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "3c1534944cbd34e8a41bc9e76818018fadefc9a1",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-10356:latest"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5631",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "cb828ebe70b4fa35cd5f9a7ee024272237eab351",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-5631:latest"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5809",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "8aba863a634f40560e25055d179220f0eefabe9a",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-5809:latest"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-6197",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "e856638ba086fcf5bebf1bebea32d5cf78de87b4",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-6197:latest"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7982",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "a7e38c5c61928033a2dc1915cbee8caa8544a4d0",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-7982:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-10908",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "67d06b18c68ee4452768f8a1e868565dd4354abf",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-10908:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-11310",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "553b5fb8f84ba05c8397f26dd079deece2b05029",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-11310:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-12682",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "d360ffa7c5896a91ae498b3fb9cf464464ce8f34",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-12682:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13124",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "9f0b959a8c9195d1b6e203f08b698e052b426ca9",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-13124:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13135",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "a061ada48efccf0845acae17009553e01764452b",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-13135:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-14087",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "a5743ed36fbd3fbc8e351bdab16561fbfca7dfa1",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-14087:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-14496",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "d49a6f13af2f22228d430ac64ac2b518937800d0",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-14496:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-14983",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "06632c0d185128a53c57ccc73b25b6408e90bb89",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-14983:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-25232",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "f7eea978097085a6781a0e92fc14ba7712a52d75",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-25232:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-25747",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "2c867b8f822eb7a684f0d5c4359e4426e1c9cfe0",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-25747:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-25973",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "10dbc142bd17ccf7bd38eec2ac04b52ce0d1009e",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-25973:latest"
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-26194",
+      "repo": "scikit-learn/scikit-learn",
+      "base_commit": "e886ce4e1444c61b865e7839c9cff5464ee20ace",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-26194:latest"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-7590",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "2e506c5ab457cba743bb47eb5b8c8eb9dd51d23d",
+      "difficulty": ">4 hours",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-7590:latest"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8120",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "795747bdb6b8fb7d717d5bbfc2c3316869e66a73",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8120:latest"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8459",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "68aa4fb29e7dfe521749e1e14f750d7afabb3481",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8459:latest"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9229",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "876fa81e0a038cda466925b85ccf6c5452e0f685",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9229:latest"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9230",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "567ff22716ac258b9edd2c1711d766b440ac0b11",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9230:latest"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9320",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "e05cef574b8f23ab1b57f57e7da6dee509a4e230",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9320:latest"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9461",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "939c7bb7ff7c53a4d27df067cea637540f0e1dad",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9461:latest"
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9673",
+      "repo": "sphinx-doc/sphinx",
+      "base_commit": "5fb51fb1467dc5eea7505402c3c5d9b378d3b441",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9673:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-11618",
+      "repo": "sympy/sympy",
+      "base_commit": "360290c4c401e386db60723ddb0109ed499c9f6e",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-11618:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-12489",
+      "repo": "sympy/sympy",
+      "base_commit": "aa9780761ad8c3c0f68beeef3a0ce5caac9e100b",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-12489:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-13852",
+      "repo": "sympy/sympy",
+      "base_commit": "c935e1d106743efd5bf0705fbeedbd18fadff4dc",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-13852:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-13878",
+      "repo": "sympy/sympy",
+      "base_commit": "7b127bdf71a36d85216315f80c1b54d22b060818",
+      "difficulty": ">4 hours",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-13878:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-14248",
+      "repo": "sympy/sympy",
+      "base_commit": "9986b38181cdd556a3f3411e553864f11912244e",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-14248:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-15017",
+      "repo": "sympy/sympy",
+      "base_commit": "6810dee426943c1a2fe85b5002dd0d4cf2246a05",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-15017:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-15809",
+      "repo": "sympy/sympy",
+      "base_commit": "28d913d3cead6c5646307ffa6540b21d65059dfd",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-15809:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-15875",
+      "repo": "sympy/sympy",
+      "base_commit": "b506169ad727ee39cb3d60c8b3ff5e315d443d8e",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-15875:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-15976",
+      "repo": "sympy/sympy",
+      "base_commit": "701441853569d370506514083b995d11f9a130bd",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-15976:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-16597",
+      "repo": "sympy/sympy",
+      "base_commit": "6fd65310fa3167b9626c38a5487e171ca407d988",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-16597:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-18199",
+      "repo": "sympy/sympy",
+      "base_commit": "ba80d1e493f21431b4bf729b3e0452cd47eb9566",
+      "difficulty": "1-4 hours",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-18199:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-18698",
+      "repo": "sympy/sympy",
+      "base_commit": "3dff1b98a78f28c953ae2140b69356b8391e399c",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-18698:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-19495",
+      "repo": "sympy/sympy",
+      "base_commit": "25fbcce5b1a4c7e3956e6062930f4a44ce95a632",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-19495:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-21379",
+      "repo": "sympy/sympy",
+      "base_commit": "624217179aaf8d094e6ff75b7493ad1ee47599b0",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-21379:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-21596",
+      "repo": "sympy/sympy",
+      "base_commit": "110997fe18b9f7d5ba7d22f624d156a29bf40759",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-21596:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-21847",
+      "repo": "sympy/sympy",
+      "base_commit": "d9b18c518d64d0ebe8e35a98c2fb519938b9b151",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-21847:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-21930",
+      "repo": "sympy/sympy",
+      "base_commit": "de446c6d85f633271dfec1452f6f28ea783e293f",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-21930:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-22456",
+      "repo": "sympy/sympy",
+      "base_commit": "a3475b3f9ac662cd425157dd3bdb93ad7111c090",
+      "difficulty": "15 min - 1 hour",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-22456:latest"
+    },
+    {
+      "instance_id": "sympy__sympy-24562",
+      "repo": "sympy/sympy",
+      "base_commit": "b1cb676cf92dd1a48365b731979833375b188bf2",
+      "difficulty": "<15 min fix",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-24562:latest"
+    }
+  ]
+}

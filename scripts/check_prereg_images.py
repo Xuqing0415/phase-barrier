@@ -18,7 +18,7 @@ def _images(manifest_path: Path) -> list[tuple[str, str]]:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if not isinstance(manifest, dict):
         raise ValueError("manifest must be an object")
-    rows = manifest.get("instances")
+    rows = manifest.get("instances", manifest.get("tasks"))
     if not isinstance(rows, list) or not rows:
         raise ValueError("manifest must contain a nonempty instances array")
     if manifest.get("count", len(rows)) != len(rows):
@@ -61,7 +61,7 @@ def main(argv: list[str] | None = None) -> int:
     for instance_id, image in images:
         try:
             result = subprocess.run(
-                ["docker", "image", "inspect", image],
+                ["docker", "image", "inspect", "--platform", "linux/amd64", image],
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
@@ -75,7 +75,23 @@ def main(argv: list[str] | None = None) -> int:
 
         item = {"instance_id": instance_id, "image": image}
         if result.returncode == 0:
-            ready.append(item)
+            try:
+                inspected = json.loads(result.stdout)
+                if len(inspected) != 1:
+                    raise ValueError("inspect must return exactly one image")
+                image_info = inspected[0]
+                platform = f"{image_info.get('Os', '')}/{image_info.get('Architecture', '')}"
+                if platform != "linux/amd64":
+                    errors.append({**item, "error": f"unexpected platform: {platform}"})
+                    continue
+                ready.append({
+                    **item,
+                    "image_id": image_info.get("Id"),
+                    "platform": platform,
+                    "rootfs_layers": image_info.get("RootFS", {}).get("Layers", []),
+                })
+            except (json.JSONDecodeError, ValueError, TypeError) as exc:
+                errors.append({**item, "error": f"invalid inspect response: {exc}"})
         elif "No such image" in result.stderr or "No such image" in result.stdout:
             missing.append(item)
         else:

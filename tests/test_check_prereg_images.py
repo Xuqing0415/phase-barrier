@@ -19,7 +19,10 @@ def test_exact_tags_and_daemon_errors_are_not_missing(tmp_path, monkeypatch, cap
         {'instance_id': str(i), 'image': tag} for i, tag in enumerate(tags)
     ]}), encoding='utf-8')
     responses = iter([
-        subprocess.CompletedProcess([], 0, '[]', ''),
+        subprocess.CompletedProcess([], 0, json.dumps([{
+            "Id": "sha256:image-a", "Os": "linux", "Architecture": "amd64",
+            "RootFS": {"Layers": ["sha256:layer-a"]},
+        }]), ''),
         subprocess.CompletedProcess([], 1, '[]', 'Error response from daemon: No such image: exact-b'),
         subprocess.CompletedProcess([], 1, '', 'permission denied connecting to Docker API'),
     ])
@@ -33,10 +36,12 @@ def test_exact_tags_and_daemon_errors_are_not_missing(tmp_path, monkeypatch, cap
     history = tmp_path / 'history.jsonl'
     assert checker.main(['--manifest', str(manifest), '--output', str(history)]) == 1
     report = json.loads(capsys.readouterr().out)
-    assert commands == [['docker', 'image', 'inspect', tag] for tag in tags]
+    assert commands == [['docker', 'image', 'inspect', '--platform', 'linux/amd64', tag] for tag in tags]
     assert report['ready'] == report['missing_count'] == len(report['errors']) == 1
     assert report['missing_images'][0]['instance_id'] == '1'
     assert report['errors'][0]['instance_id'] == '2'
+    assert report['ready_images'][0]['image_id'] == 'sha256:image-a'
+    assert report['ready_images'][0]['rootfs_layers'] == ['sha256:layer-a']
     assert json.loads(history.read_text(encoding='utf-8')) == report
 
 
@@ -71,3 +76,11 @@ def test_fixed_manifest_has_twenty_unique_exact_tags():
     assert len(images) == 20
     assert len({iid for iid, _ in images}) == len({tag for _, tag in images}) == 20
     assert all(tag.startswith('swebench/sweb.eval.x86_64.') for _, tag in images)
+
+
+def test_scale_manifest_tasks_shape_is_accepted(tmp_path):
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps({"count": 1, "tasks": [
+        {"instance_id": "django__django-1", "image": "logicstar/django:latest"}
+    ]}), encoding="utf-8")
+    assert checker._images(path) == [("django__django-1", "logicstar/django:latest")]

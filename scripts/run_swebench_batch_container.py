@@ -437,6 +437,8 @@ def main() -> int:
     ap.add_argument("--concurrency", type=int, default=2)
     ap.add_argument("--label-suffix", default="")
     ap.add_argument("--skip-existing", action="store_true")
+    ap.add_argument("--record-unknown-empty-patches", action="store_true",
+                    help="record unknown empty patches without the legacy two-consecutive stop")
     ap.add_argument("--dns", action="append", default=[],
                     help="DNS server for Agent containers; repeat for a fallback server")
     args = ap.parse_args()
@@ -504,7 +506,8 @@ def main() -> int:
             writer.writerow(row)
             fh.flush()
             new_rows.append(row)
-            if monitoring_decision(new_rows, args.log_dir or "", args.label_suffix)["stop"]:
+            if monitoring_decision(new_rows, args.log_dir or "", args.label_suffix,
+                                   stop_on_unknown_empty=not args.record_unknown_empty_patches)["stop"]:
                 stop_event.set()
 
     for job in jobs:

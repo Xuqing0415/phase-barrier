@@ -85,6 +85,10 @@ def load_exclude_ids(path: Path) -> list[str]:
         ]
     if isinstance(raw, list) and all(isinstance(item, str) for item in raw):
         return [str(item) for item in raw]
+    if isinstance(raw, dict) and isinstance(raw.get("instance_ids"), list):
+        ids = raw["instance_ids"]
+        if all(isinstance(item, str) for item in ids):
+            return ids
     raise ValueError(f"{path}: 排除清单须为 JSON 字符串数组或每行一个 instance_id")
 
 

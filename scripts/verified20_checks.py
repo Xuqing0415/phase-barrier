@@ -49,7 +49,7 @@ def classify_empty_patch(instance_log):
     return "unknown"
 
 
-def monitoring_decision(rows, log_dir, label_suffix="_verified20_formal"):
+def monitoring_decision(rows, log_dir, label_suffix="_verified20_formal", *, stop_on_unknown_empty=True):
     """Apply the ordered root-cause policy to completed rows."""
     unknown_streak = 0
     classifications = []
@@ -65,7 +65,7 @@ def monitoring_decision(rows, log_dir, label_suffix="_verified20_formal"):
         if "model_call_error" in note.split() or model_call_failed(log):
             return {"stop": True, "reason": "model_call_error", "classifications": classifications}
         unknown_streak = unknown_streak + 1 if cause == "unknown" else 0
-        if unknown_streak >= 2:
+        if stop_on_unknown_empty and unknown_streak >= 2:
             return {"stop": True, "reason": "two_consecutive_unknown_empty_patches",
                     "classifications": classifications}
     return {"stop": False, "reason": None, "classifications": classifications}

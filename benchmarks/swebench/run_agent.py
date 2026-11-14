@@ -23,6 +23,7 @@ testbed 解释器，两者互不影响。
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -305,6 +306,36 @@ def _strip_message(message: dict) -> dict:
     return keep
 
 
+def exclude_verified_build_copies(workdir: Path) -> dict:
+    """Keep pristine build/lib copies in place, excluding them from new patches.
+
+    Opt-in preparation for reviewed image artifacts; reject any other initial
+    untracked file or tracked change before a model is called.
+    """
+    def git(*args):
+        return subprocess.check_output(["git", *args], cwd=workdir)
+
+    if git("diff", "HEAD", "--name-only").strip():
+        raise ValueError("initial tracked testbed changes are not permitted")
+    paths = [item.decode("utf-8") for item in git("ls-files", "--others", "--exclude-standard", "-z").split(b"\0") if item]
+    records = []
+    for relative in paths:
+        path = workdir / relative
+        if not relative.startswith("build/lib/") or path.is_symlink():
+            raise ValueError("unreviewed initial artifact: " + relative)
+        source = relative[len("build/lib/"):]
+        original = git("show", "HEAD:" + source)
+        if path.read_bytes() != original or (workdir / source).read_bytes() != original:
+            raise ValueError("initial build copy differs from tracked HEAD: " + relative)
+        records.append({"path": relative, "source": source, "sha256": hashlib.sha256(original).hexdigest()})
+    if records:
+        exclude = workdir / ".git/info/exclude"
+        with exclude.open("a", encoding="utf-8") as stream:
+            stream.write("\n/build/\n")
+    return {"passed": True, "excluded_directory": "build/" if records else None,
+            "files": records, "source_files_modified": False}
+
+
 def extract_patch(workdir: Path) -> tuple[str, str]:
     """``git add -A && git diff HEAD`` 得到补丁；返回 (patch, 错误信息)。"""
     exclude = workdir / ".git" / "info" / "exclude"
@@ -343,6 +374,11 @@ def run(args) -> int:
                    capture_output=True, text=True, encoding="utf-8", errors="replace")
     subprocess.run(["git", "config", "--global", "--add", "safe.directory", str(workdir)],
                    capture_output=True, text=True, encoding="utf-8", errors="replace")
+
+    if getattr(args, "exclude_preexisting_build_copies", False):
+        artifacts = exclude_verified_build_copies(workdir)
+        (outdir / "initial_artifacts.json").write_text(
+            json.dumps(artifacts, indent=2) + "\n", encoding="utf-8")
 
     gate = None
     intercepts = 0
@@ -509,6 +545,7 @@ def main() -> int:
     parser.add_argument("--outdir", required=True, type=Path, help="输出根目录")
     parser.add_argument("--max-turns", type=int, default=60)
     parser.add_argument("--test-preservation", choices=["strict", "warn", "off"], default="warn")
+    parser.add_argument("--exclude-preexisting-build-copies", action="store_true")
     parser.add_argument("--exec-timeout", type=int, default=300)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     return run(parser.parse_args())

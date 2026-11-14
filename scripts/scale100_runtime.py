@@ -30,6 +30,7 @@ HOST_DATASET = ROOT / ".pytest_tmp/scale100_preparation/host_dataset.json"
 PREP = ROOT / ".pytest_tmp/scale100_preparation"
 RUN_ROOT = ROOT / ".pytest_tmp/scale100_20261114"
 SUFFIX = "_scale100_20261114"
+TESTBED_AUDIT = ROOT / "benchmarks/swebench/results/scale100-testbeds-2026-11-14.json"
 
 
 def read_json(path: Path) -> dict:
@@ -58,23 +59,52 @@ def frozen_files() -> dict[str, str]:
         "scripts/run_swebench_batch_container.py", "scripts/verified20_checks.py",
         "scripts/verified20_runtime.py", "scripts/scale100_runtime.py",
         "scripts/scale100_analysis.py",
+        "benchmarks/swebench/results/scale100-testbeds-2026-11-14.json",
+        "benchmarks/swebench/results/scale100-images-2026-11-14.json",
     )]
     return {path.relative_to(ROOT).as_posix(): sha256(path) for path in paths}
 
 
 def inspect_testbed(task: dict) -> dict:
-    command = "cd /testbed && git rev-parse HEAD && /opt/miniconda3/envs/testbed/bin/python -c 'import sys; print(sys.version.split()[0])'"
+    probe = '''import json,subprocess,sys
+def git(*args):
+    return subprocess.check_output(['git','-c','safe.directory=/testbed','-C','/testbed',*args],text=True,encoding='utf-8').strip()
+base=sys.argv[1]
+version=subprocess.check_output(['/opt/miniconda3/envs/testbed/bin/python','--version'],text=True,encoding='utf-8',stderr=subprocess.STDOUT).strip()
+print(json.dumps({'head':git('rev-parse','HEAD'),'head_tree':git('rev-parse','HEAD^{tree}'),
+ 'base_tree':git('rev-parse',base+'^{tree}'),'status':git('status','--porcelain'),
+ 'changed_files':git('diff','--name-only',base,'HEAD').splitlines(),
+ 'diff':git('diff',base,'HEAD'),'head_subject':git('log','-1','--format=%s'),
+ 'testbed_python':version,'gate_python':sys.version.split()[0]}))
+'''
     proc = subprocess.run([
         "docker", "run", "--rm", "--dns", "223.5.5.5", "--dns", "1.1.1.1",
-        "--entrypoint", "/bin/bash", task["image"], "-lc", command,
+        "--entrypoint", "/opt/miniconda3/bin/python", task["image"], "-c", probe, task["base_commit"],
     ], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180)
-    lines = proc.stdout.strip().splitlines()
-    matched = proc.returncode == 0 and task["base_commit"] in lines
+    actual = json.loads(proc.stdout) if proc.returncode == 0 else {}
+    matched = (proc.returncode == 0 and actual.get("head_tree") == actual.get("base_tree")
+               and not actual.get("status"))
     return {"instance_id": task["instance_id"], "image": task["image"],
             "base_commit": task["base_commit"], "passed": matched,
-            "observed_head": lines[0] if lines else None,
-            "testbed_python": lines[-1] if matched else None,
+            "observed_head": actual.get("head"),
+            "testbed_python": actual.get("testbed_python"), "actual": actual,
             "returncode": proc.returncode}
+
+
+def verify_testbed_records(checks: list[dict], audit: dict) -> dict:
+    """Match live observations to individually reviewed, frozen starting trees."""
+    approved = {row["instance_id"]: row for row in audit["records"]}
+    if not audit.get("passed") or len(approved) != 100 or len(checks) != 100:
+        raise ValueError("100 individually approved testbed records are required")
+    if len({row["instance_id"] for row in checks}) != 100:
+        raise ValueError("duplicate live testbed record")
+    for row in checks:
+        fixed = approved.get(row["instance_id"])
+        if not fixed or not fixed.get("approved") or row["returncode"] != 0:
+            raise ValueError("unapproved testbed: " + row["instance_id"])
+        if any(row[key] != fixed[key] for key in ("image", "base_commit", "actual")):
+            raise ValueError("testbed differs from reviewed starting state: " + row["instance_id"])
+    return {"passed": True, "count": 100, "audit_sha256": sha256(TESTBED_AUDIT), "checks": checks}
 
 
 def preflight(*, probe_testbeds: bool) -> dict:
@@ -125,6 +155,15 @@ def preflight(*, probe_testbeds: bool) -> dict:
     if readiness.get("ready") != 100 or readiness.get("missing_count") or readiness.get("errors"):
         raise ValueError("not all 100 fixed images are ready")
     imported = {row["instance_id"]: row for row in provenance["images"]}
+    live_images = json.loads(subprocess.run(
+        ["docker", "image", "inspect", *[task["image"] for task in tasks]],
+        capture_output=True, text=True, encoding="utf-8", check=True, timeout=60).stdout)
+    if len(live_images) != 100:
+        raise ValueError("live Docker image inspection did not return 100 images")
+    for task, image in zip(tasks, live_images):
+        fixed = imported[task["instance_id"]]
+        if image["Id"] != fixed["docker_image_id"] or image["RootFS"]["Layers"] != fixed["rootfs_diff_ids"]:
+            raise ValueError("live Docker image changed: " + task["instance_id"])
     for row in readiness["ready_images"]:
         fixed = imported[row["instance_id"]]
         if row["rootfs_layers"] != fixed["rootfs_diff_ids"] or row["image_id"] != fixed["docker_image_id"]:
@@ -138,20 +177,22 @@ def preflight(*, probe_testbeds: bool) -> dict:
         raise ValueError("less than 10 GiB free on a required drive")
     if probe_testbeds:
         checks = []
+        probe_log = PREP / ("testbed_live_checks_" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + ".jsonl")
         with ThreadPoolExecutor(max_workers=4) as pool:
             for row in pool.map(inspect_testbed, tasks):
                 checks.append(row)
-                with (PREP / "testbed_readiness.jsonl").open("a", encoding="utf-8") as stream:
+                with probe_log.open("a", encoding="utf-8") as stream:
                     stream.write(json.dumps(row) + "\n")
                 if len(checks) % 10 == 0:
                     print(json.dumps({"testbeds_checked": len(checks),
-                                      "passed": sum(item["passed"] for item in checks)}), flush=True)
-        if not all(row["passed"] for row in checks):
-            raise ValueError("a testbed HEAD or Python check failed; inspect saved readiness records")
-        save_json(PREP / "testbed_readiness.json", {"passed": True, "count": 100, "checks": checks})
+                                      "base_tree_clean": sum(item["passed"] for item in checks)}), flush=True)
+        save_json(PREP / "testbed_readiness.json", verify_testbed_records(checks, read_json(TESTBED_AUDIT)))
     testbeds = read_json(PREP / "testbed_readiness.json")
     if not testbeds.get("passed") or testbeds.get("count") != 100:
         raise ValueError("100 fixed testbeds have not been verified")
+    verify_testbed_records(testbeds["checks"], read_json(TESTBED_AUDIT))
+    if testbeds.get("audit_sha256") != sha256(TESTBED_AUDIT):
+        raise ValueError("testbed audit changed since preflight")
     dns_code = "import socket; print(len(socket.getaddrinfo('api.deepseek.com',443)))"
     dns_probe = subprocess.run([
         "docker", "run", "--rm", "--dns", "223.5.5.5", "--dns", "1.1.1.1",
@@ -160,9 +201,13 @@ def preflight(*, probe_testbeds: bool) -> dict:
     if dns_probe.returncode or not dns_probe.stdout.strip().isdigit() or int(dns_probe.stdout.strip()) < 1:
         raise ValueError("explicit container DNS probe failed")
     result = {"passed": True, "checked_at": datetime.now(timezone.utc).isoformat(),
+              "source_commit": git_bytes("rev-parse", "HEAD").decode().strip(),
               "preregistration_commit": PREREG_COMMIT, "origin_main": origin_head,
               "manifest_sha256": sha256(MANIFEST), "host_dataset_sha256": sha256(HOST_DATASET),
               "image_provenance_sha256": sha256(ROOT / "benchmarks/swebench/results/scale100-images-2026-11-14.json"),
+              "testbed_audit_sha256": sha256(TESTBED_AUDIT),
+              "initial_artifacts": {row["instance_id"]: row["review"].get("artifact_evidence", {}).get("files", [])
+                                    for row in read_json(TESTBED_AUDIT)["records"]},
               "source_hashes": frozen_files(), "disk_free_gib": disk,
               "agent_rows": len(safe_rows), "testbed_count": 100,
               "api_key_present": True, "model_request": "deepseek-v4-flash",
@@ -223,7 +268,7 @@ def stop_batch(pid: int, reason: str) -> dict:
     if prefixes:
         try:
             proc = subprocess.run(["docker", "ps", "--format", "{{.ID}} {{.Names}}"],
-                                  capture_output=True, text=True, timeout=30, check=True)
+                                  capture_output=True, text=True, encoding="utf-8", timeout=30, check=True)
             for line in proc.stdout.splitlines():
                 identifier, name = line.split(maxsplit=1)
                 if any(name == prefix or re.fullmatch(re.escape(prefix) + r"\.\d+", name)
@@ -305,6 +350,7 @@ def supervise() -> int:
         "--modes", "baseline,gated", "--test-preservation", "strict", "--max-turns", "60",
         "--concurrency", "2", "--dns", "223.5.5.5", "--dns", "1.1.1.1",
         "--label-suffix", SUFFIX, "--record-unknown-empty-patches", "--isolate-agent-runs",
+        "--exclude-preexisting-build-copies",
     ]
     with (RUN_ROOT / "runner.log").open("wb") as log:
         runner = subprocess.Popen(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT)
@@ -368,6 +414,10 @@ def supervise() -> int:
                 snapshot("halted_review_required")
                 return 2
             state = "completed_pending_verification" if code == 0 and len(result_rows()) == 200 else "interrupted_review_required"
+            if state == "interrupted_review_required":
+                stale = read_json(RUN_ROOT / "status.json")
+                stale.update(state="stale", reason="runner exited before verified completion", runner_exit_code=code)
+                save_json(RUN_ROOT / "status.json", stale)
             snapshot(state)
             if state == "completed_pending_verification":
                 review_host_interruptions(launch["launched_at"])

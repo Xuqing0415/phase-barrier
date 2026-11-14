@@ -3,6 +3,7 @@ import csv
 import json
 import hashlib
 import subprocess
+import pytest
 
 from scripts import scale100_runtime as runtime
 
@@ -60,3 +61,31 @@ def test_stop_only_cleans_exact_grader_names_for_saved_predictions(tmp_path, mon
     assert called == [
         ["docker", "ps", "--format", "{{.ID}} {{.Names}}"], ["docker", "rm", "-f", "ours"],
     ]
+
+
+def test_testbed_checks_tree_content_instead_of_setup_commit_identity(monkeypatch):
+    actual = {"head": "setup-commit", "head_tree": "same-tree", "base_tree": "same-tree",
+              "status": "", "testbed_python": "Python 3.9.0"}
+    monkeypatch.setattr(runtime.subprocess, "run", lambda argv, **kw:
+                        subprocess.CompletedProcess(argv, 0, json.dumps(actual)))
+    task = {"instance_id": "a__a-1", "image": "logicstar/a:latest", "base_commit": "base-commit"}
+    assert runtime.inspect_testbed(task)["passed"]
+    actual["status"] = " M source.py"
+    assert not runtime.inspect_testbed(task)["passed"]
+    actual["status"] = ""
+    actual["head_tree"] = "different-tree"
+    assert not runtime.inspect_testbed(task)["passed"]
+
+
+def test_reviewed_testbed_audit_rejects_unreviewed_drift(tmp_path, monkeypatch):
+    path = tmp_path / "audit.json"
+    path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(runtime, "TESTBED_AUDIT", path)
+    checks = [{"instance_id": str(i), "image": "image", "base_commit": "base",
+               "actual": {"head_tree": "reviewed-setup-tree", "status": ""}, "returncode": 0}
+              for i in range(100)]
+    audit = {"passed": True, "records": [{**row, "approved": True} for row in checks]}
+    assert runtime.verify_testbed_records(checks, audit)["passed"]
+    checks[0] = {**checks[0], "actual": {"head_tree": "new-tree", "status": ""}}
+    with pytest.raises(ValueError, match="differs from reviewed"):
+        runtime.verify_testbed_records(checks, audit)

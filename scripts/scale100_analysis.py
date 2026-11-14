@@ -91,6 +91,7 @@ def verify(manifest_path: Path, root: Path) -> tuple[dict, list[dict], list[str]
     tasks = manifest["tasks"]
     expected = {(task["instance_id"], mode) for task in tasks for mode in ("baseline", "gated")}
     errors: list[str] = []
+    prelaunch = {}
     prelaunch_path = root / "prelaunch.json"
     if prelaunch_path.exists():
         prelaunch = json.loads(prelaunch_path.read_text(encoding="utf-8"))
@@ -132,6 +133,16 @@ def verify(manifest_path: Path, root: Path) -> tuple[dict, list[dict], list[str]
                 continue
             label = _label(iid, mode)
             run_dir = root / "agent_runs" / label
+            if "initial_artifacts" in prelaunch:
+                try:
+                    artifacts = json.loads((run_dir / "initial_artifacts.json").read_text(encoding="utf-8"))
+                    expected_artifacts = prelaunch["initial_artifacts"][iid]
+                    if (artifacts.get("passed") is not True or artifacts.get("source_files_modified") is not False
+                            or artifacts.get("files") != expected_artifacts
+                            or artifacts.get("excluded_directory") != ("build/" if expected_artifacts else None)):
+                        errors.append(f"initial_artifacts_mismatch:{iid}:{mode}")
+                except (OSError, json.JSONDecodeError, KeyError):
+                    errors.append(f"initial_artifacts_evidence_missing:{iid}:{mode}")
             patch = run_dir / "model_patch.diff"
             stats_path = run_dir / "stats.json"
             report_path = root / "eval_runs" / "reports" / (label + ".json")

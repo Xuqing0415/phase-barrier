@@ -115,6 +115,37 @@ def test_extract_patch_excludes_gate_artifacts(tmp_path):
     assert ".agent_gate" not in patch and "spec.md" not in patch
 
 
+def test_reviewed_build_copies_are_preserved_but_not_submitted(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "test"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo, check=True)
+    source = repo / "source.py"
+    source.write_bytes(b"value = 1\n")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "-c", "core.autocrlf=false", "commit", "-qm", "initial"], cwd=repo, check=True)
+    artifact = repo / "build/lib/source.py"
+    artifact.parent.mkdir(parents=True)
+    artifact.write_bytes(subprocess.check_output(["git", "show", "HEAD:source.py"], cwd=repo))
+    # Use the committed bytes on platforms with an autocrlf user setting.
+    source.write_bytes(artifact.read_bytes())
+    artifact.write_bytes(b"unexpected content")
+    with pytest.raises(ValueError, match="differs from tracked HEAD"):
+        run_agent.exclude_verified_build_copies(repo)
+    artifact.write_bytes(source.read_bytes())
+    (repo / "unreviewed.txt").write_bytes(b"x")
+    with pytest.raises(ValueError, match="unreviewed initial artifact"):
+        run_agent.exclude_verified_build_copies(repo)
+    (repo / "unreviewed.txt").unlink()
+    record = run_agent.exclude_verified_build_copies(repo)
+    assert record["passed"] and len(record["files"]) == 1
+    assert artifact.read_bytes() == source.read_bytes()
+    source.write_bytes(b"value = 2\n")
+    patch, error = run_agent.extract_patch(repo)
+    assert not error and "source.py" in patch and "build/" not in patch
+
+
 def test_strip_message_and_clamp():
     msg = run_agent._strip_message({"role": "assistant", "content": None, "extra": 1})
     assert msg["content"] == "" and "extra" not in msg
@@ -266,10 +297,12 @@ def test_container_bootstraps_gate_deps(tmp_path):
         agent_script="/pb/benchmarks/swebench/run_agent.py", dataset="/pb/ds.json",
         instance_id="x__x-1", mode="gated", label="x_x-1_gated", outdir="/pb/runs",
         testbed_python="/opt/miniconda3/envs/testbed/bin/python",
-        gate_python="/opt/miniconda3/bin/python", max_turns=60, exec_timeout=300)
+        gate_python="/opt/miniconda3/bin/python", max_turns=60, exec_timeout=300,
+        exclude_preexisting_build_copies=True)
     assert container.GATE_DEPS_MOUNT in argv[-1]
     assert f"{container.GATE_DEPS_VOLUME}:{container.GATE_DEPS_MOUNT}" in argv
     assert "pydantic PyYAML structlog" in argv[-1]
+    assert "--exclude-preexisting-build-copies" in argv[-1]
     assert "/opt/miniconda3/bin/python /pb/benchmarks/swebench/run_agent.py" in argv[-1]
 
 

@@ -176,6 +176,9 @@ def test_isolated_output_mount_is_scoped_to_one_job(monkeypatch, tmp_path):
 
 @pytest.mark.parametrize("failure", ["timeout", "grade_exit_3"])
 def test_grade_transport_failure_is_not_coded_as_unresolved(monkeypatch, tmp_path, failure):
+    # Freshness has separate tests. Windows file timestamps can lag wall time
+    # by a clock tick and must not divert this transport test to empty_patch.
+    monkeypatch.setattr(runner, "patch_is_fresh", lambda *_: True)
     calls = []
     args = SimpleNamespace(label_suffix="_test", log_dir=tmp_path / "logs", agent_runs=tmp_path / "runs",
                            agent_script=tmp_path / "agent.py", repo_mount=ROOT, agent_dataset=tmp_path / "data.json",
@@ -198,6 +201,7 @@ def test_grade_transport_failure_is_not_coded_as_unresolved(monkeypatch, tmp_pat
     monkeypatch.setattr(runner, "_run", fake_run)
     row = runner.run_one({"instance_id": "x", "repo": "x/x", "mode": "baseline"}, args,
                          {"x": {"instance_id": "x", "image": "test:latest"}})
+    assert len(calls) == 2
     assert row["resolved"] == ""
     assert "grade_infra_failure" in row["note"].split()
     assert checks.monitoring_decision([row], args.log_dir)["stop"]

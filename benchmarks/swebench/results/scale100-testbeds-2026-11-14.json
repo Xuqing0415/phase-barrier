@@ -1,0 +1,2961 @@
+{
+  "passed": true,
+  "reviewed_at": "2026-11-14T07:51:41.167421+00:00",
+  "manifest_sha256": "400554bff9c43a5990a545f6cf9ea16a68ce14379adfd41629806439e562757f",
+  "raw_observations_sha256": "dbbb6732bf195a24954caf76d1c8b543dfbedfa395e6cc69a70123921399637d",
+  "reference_audit_sha256": "be3db8b133a553bbaba122f09206330d1898c68a2fc624174b6b07a20b0e1174",
+  "counts": {
+    "base_tree_clean": 87,
+    "environment_setup": 12,
+    "preexisting_build_copies": 1
+  },
+  "official_references": {
+    "astropy": {
+      "instance_id": "astropy__astropy-14369",
+      "image": "swebench/sweb.eval.x86_64.astropy_1776_astropy-14369:latest",
+      "official": {
+        "head": "16d94d6e901f64feb032b4008e24ca7929958f62",
+        "head_tree": "099adc2ba05837b8e1cfc452177a9f37143a8f1b",
+        "base_tree": "20f4185b85563340ac2526e7696275a3ac541310",
+        "status": "",
+        "diff": "diff --git a/pyproject.toml b/pyproject.toml\nindex 5b691556b..f24abc3b0 100644\n--- a/pyproject.toml\n+++ b/pyproject.toml\n@@ -1,5 +1,5 @@\n [build-system]\n-requires = [\"setuptools\",\n+requires = [\"setuptools==68.0.0\",\n             \"setuptools_scm>=6.2\",\n             \"wheel\",\n             \"cython==0.29.30\",",
+        "changed_files": [
+          "pyproject.toml"
+        ]
+      }
+    },
+    "sphinx": {
+      "instance_id": "sphinx-doc__sphinx-9281",
+      "image": "swebench/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9281:latest",
+      "official": {
+        "head": "c41dd636cec66e7b36713a9c4ce2d82f3dcab32c",
+        "head_tree": "713793e730ed1e20051313ac9e2d273f3ea08783",
+        "base_tree": "c46f02ca446d623894cc211f4cc74011a53fd1bb",
+        "status": "",
+        "diff": "diff --git a/setup.py b/setup.py\nindex 2538952e3..94e1d8b32 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -15,22 +15,22 @@ if sys.version_info < (3, 6):\n     sys.exit(1)\n \n install_requires = [\n-    'sphinxcontrib-applehelp',\n-    'sphinxcontrib-devhelp',\n+    'sphinxcontrib-applehelp<=1.0.7',\n+    'sphinxcontrib-devhelp<=1.0.5',\n     'sphinxcontrib-jsmath',\n-    'sphinxcontrib-htmlhelp',\n-    'sphinxcontrib-serializinghtml',\n-    'sphinxcontrib-qthelp',\n-    'Jinja2>=2.3',\n+    'sphinxcontrib-htmlhelp<=2.0.4',\n+    'sphinxcontrib-serializinghtml<=1.1.9',\n+    'sphinxcontrib-qthelp<=1.0.6',\n+    'Jinja2<3.0',\n     'Pygments>=2.0',\n     'docutils>=0.14,<0.18',\n     'snowballstemmer>=1.1',\n     'babel>=1.3',\n-    'alabaster>=0.7,<0.8',\n+    'alabaster>=0.7,<0.7.12',\n     'imagesize',\n     'requests>=2.5.0',\n     'setuptools',\n-    'packaging',\n+    'packaging', 'markupsafe<=2.0.1',\n ]\n \n extras_require = {\ndiff --git a/tox.ini b/tox.ini\nindex a363e187f..3b8bc12d0 100644\n--- a/tox.ini\n+++ b/tox.ini\n@@ -27,7 +27,7 @@ setenv =\n     PYTHONWARNINGS = all,ignore::ImportWarning:importlib._bootstrap_external,ignore::DeprecationWarning:site,ignore::DeprecationWarning:distutils,ignore::DeprecationWarning:pip._vendor.packaging.version\n     PYTEST_ADDOPTS = {env:PYTEST_ADDOPTS:} --color yes\n commands=\n-    python -X dev -m pytest --durations 25 {posargs}\n+    python -X dev -m pytest -rA --durations 25 {posargs}\n \n [testenv:flake8]\n basepython = python3",
+        "changed_files": [
+          "setup.py",
+          "tox.ini"
+        ]
+      }
+    }
+  },
+  "preparation_rule": "exclude_preexisting_build_copies; checked before any model call in both modes",
+  "records": [
+    {
+      "instance_id": "astropy__astropy-13398",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-13398:latest",
+      "base_commit": "6500928dc0e57be8f06d1162eacc3ba5e2eff692",
+      "passed": false,
+      "observed_head": "3f1fbe80901836f4a168a234bb64417289110465",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "3f1fbe80901836f4a168a234bb64417289110465",
+        "head_tree": "4a3e4d8dcec1f837a14b1fdf0cfdf37e0cbbd530",
+        "base_tree": "059e0f861b196c0e3d666cbef9c8b13281c31b9f",
+        "status": "",
+        "changed_files": [
+          "pyproject.toml"
+        ],
+        "diff": "diff --git a/pyproject.toml b/pyproject.toml\nindex 7a3b85fc9..83f08ed12 100644\n--- a/pyproject.toml\n+++ b/pyproject.toml\n@@ -1,5 +1,5 @@\n [build-system]\n-requires = [\"setuptools\",\n+requires = [\"setuptools==68.0.0\",\n             \"setuptools_scm>=6.2\",\n             \"wheel\",\n             \"cython==0.29.30\",",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "astropy__astropy-14369",
+        "signature_match": "identical paths and added/removed lines",
+        "scope": "setuptools==68.0.0 build dependency pin only",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "astropy__astropy-13579",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-13579:latest",
+      "base_commit": "0df94ff7097961e92fd7812036a24b145bc13ca8",
+      "passed": false,
+      "observed_head": "de93a0bc42d7f854f08dbda71f167bf36fc2bf7e",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "de93a0bc42d7f854f08dbda71f167bf36fc2bf7e",
+        "head_tree": "55a69b663232a3ee49ae06632d535dd3b1ced6c8",
+        "base_tree": "143afe34df1cb22c3b3c2860c036fa3a7f891c78",
+        "status": "",
+        "changed_files": [
+          "pyproject.toml"
+        ],
+        "diff": "diff --git a/pyproject.toml b/pyproject.toml\nindex 7a3b85fc9..83f08ed12 100644\n--- a/pyproject.toml\n+++ b/pyproject.toml\n@@ -1,5 +1,5 @@\n [build-system]\n-requires = [\"setuptools\",\n+requires = [\"setuptools==68.0.0\",\n             \"setuptools_scm>=6.2\",\n             \"wheel\",\n             \"cython==0.29.30\",",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "astropy__astropy-14369",
+        "signature_match": "identical paths and added/removed lines",
+        "scope": "setuptools==68.0.0 build dependency pin only",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "astropy__astropy-13977",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-13977:latest",
+      "base_commit": "5250b2442501e6c671c6b380536f1edb352602d1",
+      "passed": false,
+      "observed_head": "3b645be4fbbf5d4c45baaa3bb6665f234e68035e",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "3b645be4fbbf5d4c45baaa3bb6665f234e68035e",
+        "head_tree": "68be81398569d66614f3632c90aa555b1c022b9f",
+        "base_tree": "58bc2b3c3365d14ac9b4833b88b9920990db4707",
+        "status": "",
+        "changed_files": [
+          "pyproject.toml"
+        ],
+        "diff": "diff --git a/pyproject.toml b/pyproject.toml\nindex 486d6b9b3..1c5f74f3a 100644\n--- a/pyproject.toml\n+++ b/pyproject.toml\n@@ -1,5 +1,5 @@\n [build-system]\n-requires = [\"setuptools\",\n+requires = [\"setuptools==68.0.0\",\n             \"setuptools_scm>=6.2\",\n             \"wheel\",\n             \"cython==0.29.30\",",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "astropy__astropy-14369",
+        "signature_match": "identical paths and added/removed lines",
+        "scope": "setuptools==68.0.0 build dependency pin only",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "astropy__astropy-14995",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-14995:latest",
+      "base_commit": "b16c7d12ccbc7b2d20364b89fb44285bcbfede54",
+      "passed": false,
+      "observed_head": "1e905ced3a7e0598609c2776028ea7819561d601",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "1e905ced3a7e0598609c2776028ea7819561d601",
+        "head_tree": "a39399e8b16bc6e0881b0c91d2c0309fd152798e",
+        "base_tree": "42f255fb9186aed651a8ec96ec19a92d2c68ed77",
+        "status": "",
+        "changed_files": [
+          "pyproject.toml"
+        ],
+        "diff": "diff --git a/pyproject.toml b/pyproject.toml\nindex 15bb49f22..dc9c3c5f3 100644\n--- a/pyproject.toml\n+++ b/pyproject.toml\n@@ -1,5 +1,5 @@\n [build-system]\n-requires = [\"setuptools\",\n+requires = [\"setuptools==68.0.0\",\n             \"setuptools_scm>=6.2\",\n             \"cython==0.29.34\",\n             \"oldest-supported-numpy\",",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "astropy__astropy-14369",
+        "signature_match": "identical paths and added/removed lines",
+        "scope": "setuptools==68.0.0 build dependency pin only",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "astropy__astropy-7166",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-7166:latest",
+      "base_commit": "26d147868f8a891a6009a25cd6a8576d2e1bd747",
+      "passed": true,
+      "observed_head": "57a24807be942356290cc10b359f3c98499ed64b",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "57a24807be942356290cc10b359f3c98499ed64b",
+        "head_tree": "406fd93b4b5e09ed6828f9658651f25edf2e429a",
+        "base_tree": "406fd93b4b5e09ed6828f9658651f25edf2e429a",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "astropy__astropy-7671",
+      "image": "logicstar/sweb.eval.x86_64.astropy_1776_astropy-7671:latest",
+      "base_commit": "a7141cd90019b62688d507ae056298507678c058",
+      "passed": true,
+      "observed_head": "4b2d44bf93b94b488a696bc4fb7c11c466b8a2af",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "4b2d44bf93b94b488a696bc4fb7c11c466b8a2af",
+        "head_tree": "5883d72fd686705429269f18d491c61101cc414f",
+        "base_tree": "5883d72fd686705429269f18d491c61101cc414f",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-10880",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-10880:latest",
+      "base_commit": "838e432e3e5519c5383d12018e6c78f8ec7833c1",
+      "passed": true,
+      "observed_head": "7ef83de17a857a445baed9bbcf989067bcac73d7",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "7ef83de17a857a445baed9bbcf989067bcac73d7",
+        "head_tree": "1c649d7c2ff4c5b89198c8d30b3ccc34d42b3840",
+        "base_tree": "1c649d7c2ff4c5b89198c8d30b3ccc34d42b3840",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-11119",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-11119:latest",
+      "base_commit": "d4df5e1b0b1c643fe0fc521add0236764ec8e92a",
+      "passed": true,
+      "observed_head": "ae0833c437e43f0f663171a938cb409ffb8725db",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "ae0833c437e43f0f663171a938cb409ffb8725db",
+        "head_tree": "213b13802a232ed76b909f2605824a429b66babb",
+        "base_tree": "213b13802a232ed76b909f2605824a429b66babb",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-11138",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-11138:latest",
+      "base_commit": "c84b91b7603e488f7171fdff8f08368ef3d6b856",
+      "passed": true,
+      "observed_head": "a647b9a3e1e988a8401c6f1b65cb81d185197b18",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "a647b9a3e1e988a8401c6f1b65cb81d185197b18",
+        "head_tree": "7bb2d0d7f047e267e0146c34f89fab4cdaffaf53",
+        "base_tree": "7bb2d0d7f047e267e0146c34f89fab4cdaffaf53",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-11163",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-11163:latest",
+      "base_commit": "e6588aa4e793b7f56f4cadbfa155b581e0efc59a",
+      "passed": true,
+      "observed_head": "27cff066caadeaf58c324711b49ab0c6e6c68514",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "27cff066caadeaf58c324711b49ab0c6e6c68514",
+        "head_tree": "4c221e3aba9030ab459871106740934193ce1118",
+        "base_tree": "4c221e3aba9030ab459871106740934193ce1118",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-11490",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-11490:latest",
+      "base_commit": "a7038adbd02c916315b16939b835f021c2ee8880",
+      "passed": true,
+      "observed_head": "e733805652122ffea6278d9e20c3efc869d2a133",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "e733805652122ffea6278d9e20c3efc869d2a133",
+        "head_tree": "6241d294421f0453ec6c9e1e439eac3ed0618c4a",
+        "base_tree": "6241d294421f0453ec6c9e1e439eac3ed0618c4a",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-11999",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-11999:latest",
+      "base_commit": "84633905273fc916e3d17883810d9969c03f73c2",
+      "passed": true,
+      "observed_head": "bcfe5aa5be19530f9d0924a4df0c32e216d7d190",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "bcfe5aa5be19530f9d0924a4df0c32e216d7d190",
+        "head_tree": "8dae32f550d93a832d6ddfd137fa7d25f78e1297",
+        "base_tree": "8dae32f550d93a832d6ddfd137fa7d25f78e1297",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-12155",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-12155:latest",
+      "base_commit": "e8fcdaad5c428878d0a5d6ba820d957013f75595",
+      "passed": true,
+      "observed_head": "b7f112233f23681c43abda73e189b5f223a839b5",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "b7f112233f23681c43abda73e189b5f223a839b5",
+        "head_tree": "ad66ab6ad71490f87836fcbce891a0f0d6922c3c",
+        "base_tree": "ad66ab6ad71490f87836fcbce891a0f0d6922c3c",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-12325",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-12325:latest",
+      "base_commit": "29c126bb349526b5f1cd78facbe9f25906f18563",
+      "passed": true,
+      "observed_head": "ebbcaa211564f9bf7957d926ec15399b2f7758dd",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "ebbcaa211564f9bf7957d926ec15399b2f7758dd",
+        "head_tree": "1619db156a90607b54bce848c676867a67c86646",
+        "base_tree": "1619db156a90607b54bce848c676867a67c86646",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-12754",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-12754:latest",
+      "base_commit": "18759b2209ff556aed7f20d83cbf23e3d234e41c",
+      "passed": true,
+      "observed_head": "5c5610d223d1a1ec3ef806777c6ca4fa42682b84",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "5c5610d223d1a1ec3ef806777c6ca4fa42682b84",
+        "head_tree": "e43c6ebd3587209a30f4fb7132b27062303f0e8d",
+        "base_tree": "e43c6ebd3587209a30f4fb7132b27062303f0e8d",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-13128",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13128:latest",
+      "base_commit": "2d67222472f80f251607ae1b720527afceba06ad",
+      "passed": true,
+      "observed_head": "9e143521e78d64ac7da7e2ea1255b2fba10b3129",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "9e143521e78d64ac7da7e2ea1255b2fba10b3129",
+        "head_tree": "907832c80ca024ef8ff96430c98f53aa21016e4e",
+        "base_tree": "907832c80ca024ef8ff96430c98f53aa21016e4e",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-13212",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13212:latest",
+      "base_commit": "f4e93919e4608cfc50849a1f764fd856e0917401",
+      "passed": true,
+      "observed_head": "5c80eea77c16515222b146e35c59c7434a0e0d8d",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "5c80eea77c16515222b146e35c59c7434a0e0d8d",
+        "head_tree": "d80c18ab737ed40de0a29f84b426afb57480dbec",
+        "base_tree": "d80c18ab737ed40de0a29f84b426afb57480dbec",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-13315",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13315:latest",
+      "base_commit": "36bc47069ce071e80c8129500de3b8664d2058a7",
+      "passed": true,
+      "observed_head": "b85fb543b5a35906bc8692531cce734734e36915",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "b85fb543b5a35906bc8692531cce734734e36915",
+        "head_tree": "290c81b1c3462dc316b9259cfae9cb21299a6f4d",
+        "base_tree": "290c81b1c3462dc316b9259cfae9cb21299a6f4d",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-13344",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13344:latest",
+      "base_commit": "e39e727ded673e74016b5d3658d23cbe20234d11",
+      "passed": true,
+      "observed_head": "59126173b973b6fcce080b692d6db0fddda130c2",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "59126173b973b6fcce080b692d6db0fddda130c2",
+        "head_tree": "a9eae34a5459ca488ebd11696448920bd9ac807c",
+        "base_tree": "a9eae34a5459ca488ebd11696448920bd9ac807c",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-13658",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13658:latest",
+      "base_commit": "0773837e15bb632afffb6848a58c59a791008fa1",
+      "passed": true,
+      "observed_head": "61ab5c5977f8673a0e22bb5a839cf01a23223d04",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "61ab5c5977f8673a0e22bb5a839cf01a23223d04",
+        "head_tree": "b2891298b75e864c23de86c20b74ea440f690744",
+        "base_tree": "b2891298b75e864c23de86c20b74ea440f690744",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-13741",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-13741:latest",
+      "base_commit": "d746f28949c009251a8741ba03d156964050717f",
+      "passed": true,
+      "observed_head": "55a19f4f79f1de91ea3a8a5d4b536ce2b1f5d6bd",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "55a19f4f79f1de91ea3a8a5d4b536ce2b1f5d6bd",
+        "head_tree": "d2341d5ea529ca1fccc57856e04b7a1eb115495f",
+        "base_tree": "d2341d5ea529ca1fccc57856e04b7a1eb115495f",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-14351",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-14351:latest",
+      "base_commit": "06fd4df41afb5aa1d681b853c3c08d8c688ca3a5",
+      "passed": true,
+      "observed_head": "2ef4c36bcf7b6cec18404ad72c6bee9b7dc391c0",
+      "testbed_python": "Python 3.8.20",
+      "actual": {
+        "head": "2ef4c36bcf7b6cec18404ad72c6bee9b7dc391c0",
+        "head_tree": "ab9ee295772833a975639f3440b4569d029ab5ab",
+        "base_tree": "ab9ee295772833a975639f3440b4569d029ab5ab",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.8.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-14559",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-14559:latest",
+      "base_commit": "d79be3ed39b76d3e34431873eec16f6dd354ab17",
+      "passed": true,
+      "observed_head": "310a526111a0c01f67f0b7f7ba44b13b76cc585c",
+      "testbed_python": "Python 3.8.20",
+      "actual": {
+        "head": "310a526111a0c01f67f0b7f7ba44b13b76cc585c",
+        "head_tree": "819a76c2c37d1d259b3a2a40f43afe648436e66e",
+        "base_tree": "819a76c2c37d1d259b3a2a40f43afe648436e66e",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.8.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-14580",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-14580:latest",
+      "base_commit": "36fa071d6ebd18a61c4d7f1b5c9d17106134bd44",
+      "passed": true,
+      "observed_head": "7efeb4b6122ba6207e5c1ca59cec41732c5b62e7",
+      "testbed_python": "Python 3.8.20",
+      "actual": {
+        "head": "7efeb4b6122ba6207e5c1ca59cec41732c5b62e7",
+        "head_tree": "91289a6651b30587b212b0a1d96c14dc40faf103",
+        "base_tree": "91289a6651b30587b212b0a1d96c14dc40faf103",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.8.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-15128",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-15128:latest",
+      "base_commit": "cb383753c0e0eb52306e1024d32a782549c27e61",
+      "passed": true,
+      "observed_head": "cc9df6afc1b2f60e8382f89b5bba48b9623c7305",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "cc9df6afc1b2f60e8382f89b5bba48b9623c7305",
+        "head_tree": "0ce4810857634359794caca27a8feea9543b71bf",
+        "base_tree": "0ce4810857634359794caca27a8feea9543b71bf",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-15268",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-15268:latest",
+      "base_commit": "0ab58c120939093fea90822f376e1866fc714d1f",
+      "passed": true,
+      "observed_head": "a8be33d8ebcde36b6b26e3c801bfc2799f4c0c13",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "a8be33d8ebcde36b6b26e3c801bfc2799f4c0c13",
+        "head_tree": "83c0412efaf60c2715d5c3ffe8cd9e67dccb1fea",
+        "base_tree": "83c0412efaf60c2715d5c3ffe8cd9e67dccb1fea",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-15467",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-15467:latest",
+      "base_commit": "e0442a628eb480eac6a7888aed5a86f83499e299",
+      "passed": true,
+      "observed_head": "4acc56ed63b07a1168fe9ecfd3157053bf988573",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "4acc56ed63b07a1168fe9ecfd3157053bf988573",
+        "head_tree": "ab7943a80285196fcf7797bb9bf84ae86cf16ae6",
+        "base_tree": "ab7943a80285196fcf7797bb9bf84ae86cf16ae6",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-15503",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-15503:latest",
+      "base_commit": "859a87d873ce7152af73ab851653b4e1c3ffea4c",
+      "passed": true,
+      "observed_head": "48ab1e16966b518a742228666345a9784794de98",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "48ab1e16966b518a742228666345a9784794de98",
+        "head_tree": "72cda8bf81eb3bbd3e104850f72e6a145c9008fe",
+        "base_tree": "72cda8bf81eb3bbd3e104850f72e6a145c9008fe",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-15851",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-15851:latest",
+      "base_commit": "b4817d20b9e55df30be0b1b2ca8c8bb6d61aab07",
+      "passed": true,
+      "observed_head": "300d97ba0c0a95e815f5da375246e75406e3c3cd",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "300d97ba0c0a95e815f5da375246e75406e3c3cd",
+        "head_tree": "e9a3c8b5c5eaf505427370dc2a61c5568be221c9",
+        "base_tree": "e9a3c8b5c5eaf505427370dc2a61c5568be221c9",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-16082",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-16082:latest",
+      "base_commit": "bf47c719719d0e190a99fa2e7f959d5bbb7caf8a",
+      "passed": true,
+      "observed_head": "e926006d22587671a402a9c72a0df853a46349ac",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "e926006d22587671a402a9c72a0df853a46349ac",
+        "head_tree": "7e05c7276a77684f02f42070b923cab6a0f05753",
+        "base_tree": "7e05c7276a77684f02f42070b923cab6a0f05753",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "django__django-16116",
+      "image": "logicstar/sweb.eval.x86_64.django_1776_django-16116:latest",
+      "base_commit": "5d36a8266c7d5d1994d7a7eeb4016f80d9cb0401",
+      "passed": true,
+      "observed_head": "8c1fa6e482f3c159d9524ad668ef5bf23477acd5",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "8c1fa6e482f3c159d9524ad668ef5bf23477acd5",
+        "head_tree": "6388e96c288234c505189b084ab5073fd94970b2",
+        "base_tree": "6388e96c288234c505189b084ab5073fd94970b2",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-20826",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-20826:latest",
+      "base_commit": "a0d2e399729d36499a1924e5ca5bc067c8396810",
+      "passed": true,
+      "observed_head": "1d023040bbf95536b201c4e8b5ca03bd4a319b56",
+      "testbed_python": "Python 3.8.20",
+      "actual": {
+        "head": "1d023040bbf95536b201c4e8b5ca03bd4a319b56",
+        "head_tree": "9884729686596a531b0df8204e87d59404fa29d2",
+        "base_tree": "9884729686596a531b0df8204e87d59404fa29d2",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.8.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-21568",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-21568:latest",
+      "base_commit": "f0632c0fc7339f68e992ed63ae4cfac76cd41aad",
+      "passed": true,
+      "observed_head": "d20b78ff64d15ec792126139b0895e8c5652ecc7",
+      "testbed_python": "Python 3.8.20",
+      "actual": {
+        "head": "d20b78ff64d15ec792126139b0895e8c5652ecc7",
+        "head_tree": "210948c271883c45d64c5f46a474d6969ab52088",
+        "base_tree": "210948c271883c45d64c5f46a474d6969ab52088",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.8.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23299",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-23299:latest",
+      "base_commit": "3eadeacc06c9f2ddcdac6ae39819faa9fbee9e39",
+      "passed": true,
+      "observed_head": "1929d3bd0a23be91cd50d9aa34683be63af6a1da",
+      "testbed_python": "Python 3.11.11",
+      "actual": {
+        "head": "1929d3bd0a23be91cd50d9aa34683be63af6a1da",
+        "head_tree": "3a8a4fa3867252b790f2d373bafc457f32e89575",
+        "base_tree": "3a8a4fa3867252b790f2d373bafc457f32e89575",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.11.11",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23314",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-23314:latest",
+      "base_commit": "97fc1154992f64cfb2f86321155a7404efeb2d8a",
+      "passed": true,
+      "observed_head": "aa28996f78db71ab47d7341564218c1c172f8e16",
+      "testbed_python": "Python 3.11.11",
+      "actual": {
+        "head": "aa28996f78db71ab47d7341564218c1c172f8e16",
+        "head_tree": "4dace76824697a876986208a50c2dc236e6d6783",
+        "base_tree": "4dace76824697a876986208a50c2dc236e6d6783",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.11.11",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-24177",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-24177:latest",
+      "base_commit": "493d608e39d32a67173c23a7bbc47d6bfedcef61",
+      "passed": true,
+      "observed_head": "3a7e550ebf744cf83ef8ad75521e17b611e469ab",
+      "testbed_python": "Python 3.11.11",
+      "actual": {
+        "head": "3a7e550ebf744cf83ef8ad75521e17b611e469ab",
+        "head_tree": "7c9755d1307c403767cf16ab723163aed2727f24",
+        "base_tree": "7c9755d1307c403767cf16ab723163aed2727f24",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.11.11",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-24570",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-24570:latest",
+      "base_commit": "8f0003ae902952372824c9917975fb372c026a42",
+      "passed": true,
+      "observed_head": "23c537d450f9108b3bfdd8a35782758bba128add",
+      "testbed_python": "Python 3.11.11",
+      "actual": {
+        "head": "23c537d450f9108b3bfdd8a35782758bba128add",
+        "head_tree": "0087e1333e1a80de6fc44508bdb6497a1b90050a",
+        "base_tree": "0087e1333e1a80de6fc44508bdb6497a1b90050a",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.11.11",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-25287",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-25287:latest",
+      "base_commit": "f8ffce6d44127d4ea7d6491262ab30046b03294b",
+      "passed": true,
+      "observed_head": "e04cf1df928e265e4643a3415c8ed27dca700179",
+      "testbed_python": "Python 3.11.11",
+      "actual": {
+        "head": "e04cf1df928e265e4643a3415c8ed27dca700179",
+        "head_tree": "f566c495f20a962b3be122c019f848018756454d",
+        "base_tree": "f566c495f20a962b3be122c019f848018756454d",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.11.11",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-25311",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-25311:latest",
+      "base_commit": "430fb1db88843300fb4baae3edc499bbfe073b0c",
+      "passed": true,
+      "observed_head": "d2da9d67fa4125b57564768d17cd15ee2a8daaef",
+      "testbed_python": "Python 3.11.11",
+      "actual": {
+        "head": "d2da9d67fa4125b57564768d17cd15ee2a8daaef",
+        "head_tree": "40de1c266108f5bd3ba8a086013027c2e98b0778",
+        "base_tree": "40de1c266108f5bd3ba8a086013027c2e98b0778",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.11.11",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-26208",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-26208:latest",
+      "base_commit": "f0f133943d3e4f1e2e665291fe1c8f658a84cc09",
+      "passed": true,
+      "observed_head": "0e686291f18d5e97e5b56163c16f405f57b9d372",
+      "testbed_python": "Python 3.11.11",
+      "actual": {
+        "head": "0e686291f18d5e97e5b56163c16f405f57b9d372",
+        "head_tree": "e1d4fd09c1bfd37fd153aa32f773233775429b51",
+        "base_tree": "e1d4fd09c1bfd37fd153aa32f773233775429b51",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.11.11",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-26342",
+      "image": "logicstar/sweb.eval.x86_64.matplotlib_1776_matplotlib-26342:latest",
+      "base_commit": "2aee6ccd7c7e1f8d282c1e7579f4ee546b838542",
+      "passed": true,
+      "observed_head": "04451fb8bec6f1bba046957653c3809b994a62cb",
+      "testbed_python": "Python 3.11.11",
+      "actual": {
+        "head": "04451fb8bec6f1bba046957653c3809b994a62cb",
+        "head_tree": "740b5b529dae99d302f26f784fb21707a9e3ab55",
+        "base_tree": "740b5b529dae99d302f26f784fb21707a9e3ab55",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.11.11",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1142",
+      "image": "logicstar/sweb.eval.x86_64.psf_1776_requests-1142:latest",
+      "base_commit": "22623bd8c265b78b161542663ee980738441c307",
+      "passed": false,
+      "observed_head": "ed66af9c7994ad777ed53ae5239adb78acf1853b",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "ed66af9c7994ad777ed53ae5239adb78acf1853b",
+        "head_tree": "3b8ba30961592000c9a9a73b41d8452c871f47b4",
+        "base_tree": "3b8ba30961592000c9a9a73b41d8452c871f47b4",
+        "status": "?? build/",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "preexisting_build_copies",
+        "artifact_evidence": {
+          "passed": true,
+          "excluded_directory": "build/",
+          "files": [
+            {
+              "path": "build/lib/requests/__init__.py",
+              "source": "requests/__init__.py",
+              "sha256": "1e01150f46d7bada3dc81e09e0f74226d73472ee30ae177dfe10057d853b1225"
+            },
+            {
+              "path": "build/lib/requests/adapters.py",
+              "source": "requests/adapters.py",
+              "sha256": "0025468f820b19769978c3c92557799b5786f3754d413719d3802f70b7d82d4e"
+            },
+            {
+              "path": "build/lib/requests/api.py",
+              "source": "requests/api.py",
+              "sha256": "a137afb51c59436543468bbfdc1959f3ad9e0a5d68652945dd034d9d86576bd6"
+            },
+            {
+              "path": "build/lib/requests/auth.py",
+              "source": "requests/auth.py",
+              "sha256": "c0c8212d0b7497720f46d801d7b604ba6b9e90ea68df68a24211ccfb1b5a8333"
+            },
+            {
+              "path": "build/lib/requests/cacert.pem",
+              "source": "requests/cacert.pem",
+              "sha256": "fd4e2d1019ecc6556ee507293919d50e53c5c5a5f575bcee269c67f327ac92ee"
+            },
+            {
+              "path": "build/lib/requests/certs.py",
+              "source": "requests/certs.py",
+              "sha256": "b4df4e500e95d635ef0dfed78eecf5e370b38f31ca91df00857d73b8fc1927d8"
+            },
+            {
+              "path": "build/lib/requests/compat.py",
+              "source": "requests/compat.py",
+              "sha256": "059668e43665f2818d9bdb5db41642efcd149fb23d6dde9716624090a011933c"
+            },
+            {
+              "path": "build/lib/requests/cookies.py",
+              "source": "requests/cookies.py",
+              "sha256": "90814db35dd0ed96a5b0fd7d5b87708821e233c9d6c0f0c13f7d2479d599c1d6"
+            },
+            {
+              "path": "build/lib/requests/exceptions.py",
+              "source": "requests/exceptions.py",
+              "sha256": "cceda937a16cccd2d5b455f58fcfb7e17ed0d6629e2258d226e1e2741e8cb954"
+            },
+            {
+              "path": "build/lib/requests/hooks.py",
+              "source": "requests/hooks.py",
+              "sha256": "2f94e95766676ade5b05c373779accd348791ec0a74dfcdcd89cf578878f6f71"
+            },
+            {
+              "path": "build/lib/requests/models.py",
+              "source": "requests/models.py",
+              "sha256": "d9214453d8c7844deb50d985c79b89a30bacab6b3ffbd4079bcb81f7709da0b3"
+            },
+            {
+              "path": "build/lib/requests/packages/__init__.py",
+              "source": "requests/packages/__init__.py",
+              "sha256": "69791b3428ccfd686bc91068704e00680fe9efe093c4be4b3aeb58ed7cca9b8b"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/__init__.py",
+              "source": "requests/packages/charade/__init__.py",
+              "sha256": "bf169b51ee0d031d57b9b8562a151e593244a661d135489c7ac77e597a209733"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/big5freq.py",
+              "source": "requests/packages/charade/big5freq.py",
+              "sha256": "0fca13773f8633b260f13b1a5890e6eb9bccfce2c70b7c6e6faa94277ace82c4"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/big5prober.py",
+              "source": "requests/packages/charade/big5prober.py",
+              "sha256": "634d1245a63623cbcb0461109b9793c6ab696950817febdc0a4a10c306eadcd3"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/chardistribution.py",
+              "source": "requests/packages/charade/chardistribution.py",
+              "sha256": "357dcc8d63bc0dbb660ffb6368b4a7c9af9ec894fa97d4c54fb04000d4b41ff0"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/charsetgroupprober.py",
+              "source": "requests/packages/charade/charsetgroupprober.py",
+              "sha256": "cf3e4844ae8fb2ee52bcbad00b207e565ea7a90e80f47040a4303e11f48013d3"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/charsetprober.py",
+              "source": "requests/packages/charade/charsetprober.py",
+              "sha256": "678f28d8a88e8f6dc536a607f05ab3847e66d6a766deb23c0dc4e6d98aad9258"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/codingstatemachine.py",
+              "source": "requests/packages/charade/codingstatemachine.py",
+              "sha256": "0f9d4249cc0ce4cbe1a4a71ef9808a09ca52e3edf387ea171484f5a3da49985e"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/compat.py",
+              "source": "requests/packages/charade/compat.py",
+              "sha256": "7247b5db26ef686eded19003eeb0fd52f103f76c4d500ca87a4b2ce7dd9dd461"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/constants.py",
+              "source": "requests/packages/charade/constants.py",
+              "sha256": "f4e31b1a6e60ce88389a9a5279fa9acb5732ce2f8f437d98eb22c9dde45e8ccd"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/escprober.py",
+              "source": "requests/packages/charade/escprober.py",
+              "sha256": "42dd5a7ddb2ba31bc860dd2559b01e97becbb94350a976684a571dc8abf40eef"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/escsm.py",
+              "source": "requests/packages/charade/escsm.py",
+              "sha256": "a8aedee323f49615e42993354102c9cff31b2de69f36143fb924348b1a0657aa"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/eucjpprober.py",
+              "source": "requests/packages/charade/eucjpprober.py",
+              "sha256": "02757f08b6efd2b77bcd1bdd1418ca13fb8ca10c4650d56daf07cb3a0722bc5f"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/euckrfreq.py",
+              "source": "requests/packages/charade/euckrfreq.py",
+              "sha256": "4f9b1a2b99889b2486e728103edb29ea8dae2ae968b82c189b61253b216426a5"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/euckrprober.py",
+              "source": "requests/packages/charade/euckrprober.py",
+              "sha256": "41a0d843b64f476fe9947ac3afad6ae760cad375cf24d62fe414f953905a970a"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/euctwfreq.py",
+              "source": "requests/packages/charade/euctwfreq.py",
+              "sha256": "1bf234056f62d70d0e35e794c0862a57bfd4d3d6ee20776a87ec0d1d56aa97b2"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/euctwprober.py",
+              "source": "requests/packages/charade/euctwprober.py",
+              "sha256": "24acca6fe7f3a203da75ecc956bd94aed58fa24e2309a898faaba1445dbcac65"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/gb2312freq.py",
+              "source": "requests/packages/charade/gb2312freq.py",
+              "sha256": "336805768fea43f06c952b44721acf5b90ab3c464469c0b4bb20cbc38a24fa46"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/gb2312prober.py",
+              "source": "requests/packages/charade/gb2312prober.py",
+              "sha256": "e70daeb5116549dd6e87038f708db858bb566d1aa9816078b9d7966e13a6fd8e"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/hebrewprober.py",
+              "source": "requests/packages/charade/hebrewprober.py",
+              "sha256": "c80d2def4ad737eefb77294056c874846827ecb6b2d3b633155027fe41c69884"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/jisfreq.py",
+              "source": "requests/packages/charade/jisfreq.py",
+              "sha256": "65c2f84797a41c76cfd8a09819a915301b222aa659640001ce1c22fae4643a9b"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/jpcntx.py",
+              "source": "requests/packages/charade/jpcntx.py",
+              "sha256": "6f150c4ca073dbfea32569d2aea717bec4572c23d68e14953591ada928335ed9"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/langbulgarianmodel.py",
+              "source": "requests/packages/charade/langbulgarianmodel.py",
+              "sha256": "099ef7d18df5c155028b2fa3dfe2a4ff9756494174c6e6cc053c72a95dbe4cda"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/langcyrillicmodel.py",
+              "source": "requests/packages/charade/langcyrillicmodel.py",
+              "sha256": "677cba1452ee6eaf65c685e70495f485caeff338880c7acfe8d115761115bcc4"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/langgreekmodel.py",
+              "source": "requests/packages/charade/langgreekmodel.py",
+              "sha256": "36e7522734cac7c38176c02622239cc4a698d7af2bc20872a179af9801e6db3a"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/langhebrewmodel.py",
+              "source": "requests/packages/charade/langhebrewmodel.py",
+              "sha256": "7a875dab23139671e7df111a155dbecf68aab4cbbc685d4fceb0ef0217363f37"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/langhungarianmodel.py",
+              "source": "requests/packages/charade/langhungarianmodel.py",
+              "sha256": "b0164d313724a7e180cad9820808598f744b24987e9f58ca7b88fad17d5c2e7e"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/langthaimodel.py",
+              "source": "requests/packages/charade/langthaimodel.py",
+              "sha256": "b0be07dda1324a41b069365ecbf9499b02d6a7c21c40c0a543ca30d2fe75ba55"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/latin1prober.py",
+              "source": "requests/packages/charade/latin1prober.py",
+              "sha256": "c6d28f2b2b3a3748b9b67df5ff99ae3ecd76e31552d24745c295413fbd0221e9"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/mbcharsetprober.py",
+              "source": "requests/packages/charade/mbcharsetprober.py",
+              "sha256": "b7d266a154239664d0724c87b3be0b4a09559da5f441aefbded730f0d4f51513"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/mbcsgroupprober.py",
+              "source": "requests/packages/charade/mbcsgroupprober.py",
+              "sha256": "45cb472b6abf9fe64d98311c4961d962206b69e60a74c53c40a4ac8cad0485f0"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/mbcssm.py",
+              "source": "requests/packages/charade/mbcssm.py",
+              "sha256": "38d26bc5d540aae5c5bd99b3a90d37e3164d8a60a41384584c55e8023d1ab6e6"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/sbcharsetprober.py",
+              "source": "requests/packages/charade/sbcharsetprober.py",
+              "sha256": "2ecb0da7b8cfb7cb844a06374fac477f64a28f75b8a780c4d56e9dfad15cbae4"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/sbcsgroupprober.py",
+              "source": "requests/packages/charade/sbcsgroupprober.py",
+              "sha256": "9b54a835d4a368103aabd8efde1dbaa599c3bcb4aceab5df2ef87af278196dec"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/sjisprober.py",
+              "source": "requests/packages/charade/sjisprober.py",
+              "sha256": "dca883bd89e9d3360980c886e47433408ccf19f625456f61e65da1b803025d44"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/universaldetector.py",
+              "source": "requests/packages/charade/universaldetector.py",
+              "sha256": "b02b69e1ffb952f687546c3358805887cd652cf4062e2651a1bdb8b953992c1c"
+            },
+            {
+              "path": "build/lib/requests/packages/charade/utf8prober.py",
+              "source": "requests/packages/charade/utf8prober.py",
+              "sha256": "83aba58cd6ee9ef5c2705f6d36e6f0360fe83e80843990b6f85d59834795bbcb"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/__init__.py",
+              "source": "requests/packages/urllib3/__init__.py",
+              "sha256": "57891db349ff757a9414f62311bdf5a98b7da8436059afeaeb4cf43cdfac1ff5"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/_collections.py",
+              "source": "requests/packages/urllib3/_collections.py",
+              "sha256": "7e01b078a5457912af4188f636e9c497391fcba8d7ae8d4eb1efc1c87c68a0f4"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/connectionpool.py",
+              "source": "requests/packages/urllib3/connectionpool.py",
+              "sha256": "5d1016746d549cb47d13ef0fafb16ce839ac59021a8ad6d52b4b00b1c39846ba"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/exceptions.py",
+              "source": "requests/packages/urllib3/exceptions.py",
+              "sha256": "d9c2a9379a1dcb7194219081c2fa2156b606cc69bd1e5e228282d6a357f6de74"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/filepost.py",
+              "source": "requests/packages/urllib3/filepost.py",
+              "sha256": "7f91d86017f3ecdda72fdebdf75aa003c770ce864445d6e88b343350b2aec716"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/packages/__init__.py",
+              "source": "requests/packages/urllib3/packages/__init__.py",
+              "sha256": "10a09300e8d9b4f47f1c2e747bb5fc852e63e1b90590df3b5d9393f967697eeb"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/packages/ordered_dict.py",
+              "source": "requests/packages/urllib3/packages/ordered_dict.py",
+              "sha256": "1ed1e986d4ad265a2bcd0aa821ab7ccd41f496a2e7b38d7a81f48ef72fda4804"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/packages/six.py",
+              "source": "requests/packages/urllib3/packages/six.py",
+              "sha256": "53eacef9606b152f0fc4779a99297aa242828ea3c5d7c3618996f4a8f67aed73"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/packages/ssl_match_hostname/__init__.py",
+              "source": "requests/packages/urllib3/packages/ssl_match_hostname/__init__.py",
+              "sha256": "e06a17559caa0a8d87c0b86eafd13c7ab0b3ab143398a6fe71500de0bdef0be5"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/poolmanager.py",
+              "source": "requests/packages/urllib3/poolmanager.py",
+              "sha256": "6cd72a5d05600f43088ccd66609dad903360d3a09d856d1a9194e1c578d259a3"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/request.py",
+              "source": "requests/packages/urllib3/request.py",
+              "sha256": "46db4080c6c479914f076f30459ef85d739e65d3371e5e75b7672d26d9974309"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/response.py",
+              "source": "requests/packages/urllib3/response.py",
+              "sha256": "0a626483bc44ea7e83d0e11ec6d999d3f5d19b2ae746375a316a64a014d1fdbb"
+            },
+            {
+              "path": "build/lib/requests/packages/urllib3/util.py",
+              "source": "requests/packages/urllib3/util.py",
+              "sha256": "5936006e267460fa5973be466a2f64cb82295d2cb743d958d76d392c7a7dfb34"
+            },
+            {
+              "path": "build/lib/requests/sessions.py",
+              "source": "requests/sessions.py",
+              "sha256": "54bc557690517b61aa392b423ada8df4fb4b5e089b2c5bb87a69d6e198ab7719"
+            },
+            {
+              "path": "build/lib/requests/status_codes.py",
+              "source": "requests/status_codes.py",
+              "sha256": "187dc8310d5660557b70ca06cbf3a4149be17b21d0fbeb2704cb9d59fa1b8d01"
+            },
+            {
+              "path": "build/lib/requests/structures.py",
+              "source": "requests/structures.py",
+              "sha256": "aa38af8634e77f5682889d4c036548151273a01691ac78e04466eb0e83091263"
+            },
+            {
+              "path": "build/lib/requests/utils.py",
+              "source": "requests/utils.py",
+              "sha256": "597c666540191122c765efba7fd98f8198c1a6be47728c662170dead1d006e18"
+            }
+          ],
+          "source_files_modified": false,
+          "patch_empty_after_preparation": true,
+          "post_preparation_status": ""
+        },
+        "scope": "65 build/lib/requests files byte-equal to tracked HEAD sources",
+        "decision": "Keep files; opt-in /build/ Git exclude for both modes before gate/model initialization"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1724",
+      "image": "logicstar/sweb.eval.x86_64.psf_1776_requests-1724:latest",
+      "base_commit": "1ba83c47ce7b177efe90d5f51f7760680f72eda0",
+      "passed": true,
+      "observed_head": "9235cfbac6516ce1f1ae7cd1f293367bdc3ba105",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "9235cfbac6516ce1f1ae7cd1f293367bdc3ba105",
+        "head_tree": "c8e845adc2051eac27d5998697d3e83e920ef2c8",
+        "base_tree": "c8e845adc2051eac27d5998697d3e83e920ef2c8",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2931",
+      "image": "logicstar/sweb.eval.x86_64.psf_1776_requests-2931:latest",
+      "base_commit": "5f7a3a74aab1625c2bb65f643197ee885e3da576",
+      "passed": true,
+      "observed_head": "368e85b981fceab314e87be18ca322ceaa86c224",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "368e85b981fceab314e87be18ca322ceaa86c224",
+        "head_tree": "bf39b3a48488c8921c8ef8a6447c4db507f62418",
+        "base_tree": "bf39b3a48488c8921c8ef8a6447c4db507f62418",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "psf__requests-6028",
+      "image": "logicstar/sweb.eval.x86_64.psf_1776_requests-6028:latest",
+      "base_commit": "0192aac24123735b3eaf9b08df46429bb770c283",
+      "passed": true,
+      "observed_head": "3e34210a8f4d8c3e6acd049aea846fbe63ea23b6",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "3e34210a8f4d8c3e6acd049aea846fbe63ea23b6",
+        "head_tree": "94369dd609f8ae984d2397ca8bde82369e348a60",
+        "base_tree": "94369dd609f8ae984d2397ca8bde82369e348a60",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pydata__xarray-4075",
+      "image": "logicstar/sweb.eval.x86_64.pydata_1776_xarray-4075:latest",
+      "base_commit": "19b088636eb7d3f65ab7a1046ac672e0689371d8",
+      "passed": true,
+      "observed_head": "84d2435f98e5f44454350fe9c26d1951d1c110b9",
+      "testbed_python": "Python 3.10.15",
+      "actual": {
+        "head": "84d2435f98e5f44454350fe9c26d1951d1c110b9",
+        "head_tree": "3bf98cbdbbae631df845ad6b3d3df31beb0cb40f",
+        "base_tree": "3bf98cbdbbae631df845ad6b3d3df31beb0cb40f",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.10.15",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pydata__xarray-6599",
+      "image": "logicstar/sweb.eval.x86_64.pydata_1776_xarray-6599:latest",
+      "base_commit": "6bb2b855498b5c68d7cca8cceb710365d58e6048",
+      "passed": true,
+      "observed_head": "97193425af0b1a019116cf864a708ca47d938a87",
+      "testbed_python": "Python 3.10.16",
+      "actual": {
+        "head": "97193425af0b1a019116cf864a708ca47d938a87",
+        "head_tree": "95cfcf194ccdba9b5836ebc5f8baebc825da1726",
+        "base_tree": "95cfcf194ccdba9b5836ebc5f8baebc825da1726",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.10.16",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pydata__xarray-6992",
+      "image": "logicstar/sweb.eval.x86_64.pydata_1776_xarray-6992:latest",
+      "base_commit": "45c0a114e2b7b27b83c9618bc05b36afac82183c",
+      "passed": true,
+      "observed_head": "eb583db449b4014f3653099aae288f88f3100ba4",
+      "testbed_python": "Python 3.10.15",
+      "actual": {
+        "head": "eb583db449b4014f3653099aae288f88f3100ba4",
+        "head_tree": "7ac08be3eedce4cec37be5e6bec7835654ec3815",
+        "base_tree": "7ac08be3eedce4cec37be5e6bec7835654ec3815",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.10.15",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pylint-dev__pylint-4551",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-4551:latest",
+      "base_commit": "99589b08de8c5a2c6cc61e13a37420a868c80599",
+      "passed": true,
+      "observed_head": "2981dcff6a20b74ae1fc27dee9b7517fb28d7a21",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "2981dcff6a20b74ae1fc27dee9b7517fb28d7a21",
+        "head_tree": "1a619db3862bcc868bb22876d8f17eb4c22cac6c",
+        "base_tree": "1a619db3862bcc868bb22876d8f17eb4c22cac6c",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pylint-dev__pylint-4661",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-4661:latest",
+      "base_commit": "1d1619ef913b99b06647d2030bddff4800abdf63",
+      "passed": true,
+      "observed_head": "a2861b2e5371c47e058fdc2bf1b9d42c30ce5c6b",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "a2861b2e5371c47e058fdc2bf1b9d42c30ce5c6b",
+        "head_tree": "e39429f9c08dd3fc5aa99f250b4a399d5385b46e",
+        "base_tree": "e39429f9c08dd3fc5aa99f250b4a399d5385b46e",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pylint-dev__pylint-6528",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-6528:latest",
+      "base_commit": "273a8b25620467c1e5686aa8d2a1dbb8c02c78d0",
+      "passed": true,
+      "observed_head": "9672c236bad63e7cc6451f06aa89ef4642eea1fe",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "9672c236bad63e7cc6451f06aa89ef4642eea1fe",
+        "head_tree": "8fa1f4743fd5fbc9390b1075b9f30d433d7431d0",
+        "base_tree": "8fa1f4743fd5fbc9390b1075b9f30d433d7431d0",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pylint-dev__pylint-6903",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-6903:latest",
+      "base_commit": "ca80f03a43bc39e4cc2c67dc99817b3c9f13b8a6",
+      "passed": true,
+      "observed_head": "59e81748720c8cb3ef43fc187e7482f126e3ce82",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "59e81748720c8cb3ef43fc187e7482f126e3ce82",
+        "head_tree": "57d0e9d51e7c7c68cd3dca5af53edf2927cde4e3",
+        "base_tree": "57d0e9d51e7c7c68cd3dca5af53edf2927cde4e3",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7080",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-7080:latest",
+      "base_commit": "3c5eca2ded3dd2b59ebaf23eb289453b5d2930f0",
+      "passed": true,
+      "observed_head": "bdde96df5b9f00a0f0b3edeb728108637f51c71f",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "bdde96df5b9f00a0f0b3edeb728108637f51c71f",
+        "head_tree": "bd33b01d14be515d58ff55cb4877e04682a81a94",
+        "base_tree": "bd33b01d14be515d58ff55cb4877e04682a81a94",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7277",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-7277:latest",
+      "base_commit": "684a1d6aa0a6791e20078bc524f97c8906332390",
+      "passed": true,
+      "observed_head": "a72a43da8b5eab960501faa734894901b3148d6b",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "a72a43da8b5eab960501faa734894901b3148d6b",
+        "head_tree": "8df8529f048b0dc3b2e8457bdcfc16ca094c075d",
+        "base_tree": "8df8529f048b0dc3b2e8457bdcfc16ca094c075d",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pylint-dev__pylint-8898",
+      "image": "logicstar/sweb.eval.x86_64.pylint-dev_1776_pylint-8898:latest",
+      "base_commit": "1f8c4d9eb185c16a2c1d881c054f015e1c2eb334",
+      "passed": true,
+      "observed_head": "8117244c1353bc0aea317cb2a1dd09fd98155992",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "8117244c1353bc0aea317cb2a1dd09fd98155992",
+        "head_tree": "ddc0b886ddafd87fdc3d3d0b0fbc77fe012d7df3",
+        "base_tree": "ddc0b886ddafd87fdc3d3d0b0fbc77fe012d7df3",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pytest-dev__pytest-10051",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-10051:latest",
+      "base_commit": "aa55975c7d3f6c9f6d7f68accc41bb7cadf0eb9a",
+      "passed": true,
+      "observed_head": "e9c65fceab4112366e694fb82d641fc4f4b4b3ab",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "e9c65fceab4112366e694fb82d641fc4f4b4b3ab",
+        "head_tree": "44ae101b4de350f1929bc81530578c86e1ff760e",
+        "base_tree": "44ae101b4de350f1929bc81530578c86e1ff760e",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pytest-dev__pytest-10356",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-10356:latest",
+      "base_commit": "3c1534944cbd34e8a41bc9e76818018fadefc9a1",
+      "passed": true,
+      "observed_head": "6e890a0c3bbf998fd4fdf366a894529a08c822ad",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "6e890a0c3bbf998fd4fdf366a894529a08c822ad",
+        "head_tree": "3dad7ada3a2aa87a4c5c6ce6beec69d261e7ba06",
+        "base_tree": "3dad7ada3a2aa87a4c5c6ce6beec69d261e7ba06",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5631",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-5631:latest",
+      "base_commit": "cb828ebe70b4fa35cd5f9a7ee024272237eab351",
+      "passed": true,
+      "observed_head": "0259b59dfab5c391cbfdb00cbcec826dacb303c1",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "0259b59dfab5c391cbfdb00cbcec826dacb303c1",
+        "head_tree": "a5b5371c4a71b240342c5dd81f340ba29c6fe2c5",
+        "base_tree": "a5b5371c4a71b240342c5dd81f340ba29c6fe2c5",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5809",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-5809:latest",
+      "base_commit": "8aba863a634f40560e25055d179220f0eefabe9a",
+      "passed": true,
+      "observed_head": "311682f1602ab92b7328612e00d36d00936b68a4",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "311682f1602ab92b7328612e00d36d00936b68a4",
+        "head_tree": "c079ecfcaf315d35daaddfb0a32e07c9247349d5",
+        "base_tree": "c079ecfcaf315d35daaddfb0a32e07c9247349d5",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pytest-dev__pytest-6197",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-6197:latest",
+      "base_commit": "e856638ba086fcf5bebf1bebea32d5cf78de87b4",
+      "passed": true,
+      "observed_head": "3ab00df447c08dd562dc375823b7ef13a344f94b",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "3ab00df447c08dd562dc375823b7ef13a344f94b",
+        "head_tree": "4024da6943c752a72e2ed45b8b57c03ccd047371",
+        "base_tree": "4024da6943c752a72e2ed45b8b57c03ccd047371",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7982",
+      "image": "logicstar/sweb.eval.x86_64.pytest-dev_1776_pytest-7982:latest",
+      "base_commit": "a7e38c5c61928033a2dc1915cbee8caa8544a4d0",
+      "passed": true,
+      "observed_head": "f34b076ca3334c0392f5710620f41f77d6a589d8",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "f34b076ca3334c0392f5710620f41f77d6a589d8",
+        "head_tree": "52151016863265e75c2230d839c60957afd02f98",
+        "base_tree": "52151016863265e75c2230d839c60957afd02f98",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-10908",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-10908:latest",
+      "base_commit": "67d06b18c68ee4452768f8a1e868565dd4354abf",
+      "passed": true,
+      "observed_head": "98e7eddc7fa955f128bdfe653c7a14abdd223022",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "98e7eddc7fa955f128bdfe653c7a14abdd223022",
+        "head_tree": "d7e9da7c13c10167281372f397c7313c52c46077",
+        "base_tree": "d7e9da7c13c10167281372f397c7313c52c46077",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-11310",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-11310:latest",
+      "base_commit": "553b5fb8f84ba05c8397f26dd079deece2b05029",
+      "passed": true,
+      "observed_head": "04abc320ae56adef118d50cb64893580c2b29305",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "04abc320ae56adef118d50cb64893580c2b29305",
+        "head_tree": "805b9bb52e090f448ece82eddc5653af4a8e5933",
+        "base_tree": "805b9bb52e090f448ece82eddc5653af4a8e5933",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-12682",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-12682:latest",
+      "base_commit": "d360ffa7c5896a91ae498b3fb9cf464464ce8f34",
+      "passed": true,
+      "observed_head": "e8ae2d7e06a562ea2569fb6085e08fd7f039a2e4",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "e8ae2d7e06a562ea2569fb6085e08fd7f039a2e4",
+        "head_tree": "5e31a6fca4d5974c3b80d4a88f122520a8883bdf",
+        "base_tree": "5e31a6fca4d5974c3b80d4a88f122520a8883bdf",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13124",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-13124:latest",
+      "base_commit": "9f0b959a8c9195d1b6e203f08b698e052b426ca9",
+      "passed": true,
+      "observed_head": "1a6f6462713e4c2a689aa75c6277ee2608f5182c",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "1a6f6462713e4c2a689aa75c6277ee2608f5182c",
+        "head_tree": "72e1da048a03e5f2d1728e17a93b7b687ae78b80",
+        "base_tree": "72e1da048a03e5f2d1728e17a93b7b687ae78b80",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13135",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-13135:latest",
+      "base_commit": "a061ada48efccf0845acae17009553e01764452b",
+      "passed": true,
+      "observed_head": "5a92743b10a7bb1558564451981f7cfd01105a3b",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "5a92743b10a7bb1558564451981f7cfd01105a3b",
+        "head_tree": "3d54b70bd688467eef4faa7fa7bb57bfe3a740b6",
+        "base_tree": "3d54b70bd688467eef4faa7fa7bb57bfe3a740b6",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-14087",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-14087:latest",
+      "base_commit": "a5743ed36fbd3fbc8e351bdab16561fbfca7dfa1",
+      "passed": true,
+      "observed_head": "c51cc10f24be3cb51c47284169c6a67d0571a834",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "c51cc10f24be3cb51c47284169c6a67d0571a834",
+        "head_tree": "7d7295340fbce9e745d61d20376f8882af9c9c8b",
+        "base_tree": "7d7295340fbce9e745d61d20376f8882af9c9c8b",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-14496",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-14496:latest",
+      "base_commit": "d49a6f13af2f22228d430ac64ac2b518937800d0",
+      "passed": true,
+      "observed_head": "37aecc533478b18eee7bdff78ed7e009e976d117",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "37aecc533478b18eee7bdff78ed7e009e976d117",
+        "head_tree": "a03b3bd563dd512d2cdb3bacf32f3c78c3c28033",
+        "base_tree": "a03b3bd563dd512d2cdb3bacf32f3c78c3c28033",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-14983",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-14983:latest",
+      "base_commit": "06632c0d185128a53c57ccc73b25b6408e90bb89",
+      "passed": true,
+      "observed_head": "a60ff6c067ade8b02e18181c14fd5f3d06cb0168",
+      "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+      "actual": {
+        "head": "a60ff6c067ade8b02e18181c14fd5f3d06cb0168",
+        "head_tree": "64a00e918e97c4643041149a4c2e58e07f52ec78",
+        "base_tree": "64a00e918e97c4643041149a4c2e58e07f52ec78",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.6.13 :: Anaconda, Inc.",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-25232",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-25232:latest",
+      "base_commit": "f7eea978097085a6781a0e92fc14ba7712a52d75",
+      "passed": true,
+      "observed_head": "6be06ceafec1b2c914bb796dc256451fb0114815",
+      "testbed_python": "Python 3.9.21",
+      "actual": {
+        "head": "6be06ceafec1b2c914bb796dc256451fb0114815",
+        "head_tree": "ebc92b6061c327660b2fbab9eb133aa87f610b67",
+        "base_tree": "ebc92b6061c327660b2fbab9eb133aa87f610b67",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.21",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-25747",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-25747:latest",
+      "base_commit": "2c867b8f822eb7a684f0d5c4359e4426e1c9cfe0",
+      "passed": true,
+      "observed_head": "4c2732371d666f5f78c2a1264630450a19a55c8d",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "4c2732371d666f5f78c2a1264630450a19a55c8d",
+        "head_tree": "038ab12585aae3b421f0867a0f4acc0bf9bd6f8b",
+        "base_tree": "038ab12585aae3b421f0867a0f4acc0bf9bd6f8b",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-25973",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-25973:latest",
+      "base_commit": "10dbc142bd17ccf7bd38eec2ac04b52ce0d1009e",
+      "passed": true,
+      "observed_head": "64aded1e336cd267debb6643e6a6856bfa70d502",
+      "testbed_python": "Python 3.9.21",
+      "actual": {
+        "head": "64aded1e336cd267debb6643e6a6856bfa70d502",
+        "head_tree": "e2d89cd8bec8238f6422444a3a5531c515622c3a",
+        "base_tree": "e2d89cd8bec8238f6422444a3a5531c515622c3a",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.21",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-26194",
+      "image": "logicstar/sweb.eval.x86_64.scikit-learn_1776_scikit-learn-26194:latest",
+      "base_commit": "e886ce4e1444c61b865e7839c9cff5464ee20ace",
+      "passed": true,
+      "observed_head": "0e5e74b27719d113fe25f04b6fb83e15a27cf7bb",
+      "testbed_python": "Python 3.9.21",
+      "actual": {
+        "head": "0e5e74b27719d113fe25f04b6fb83e15a27cf7bb",
+        "head_tree": "397f77cbccdba6f28a82013bff8880c1a9ce680a",
+        "base_tree": "397f77cbccdba6f28a82013bff8880c1a9ce680a",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.21",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-7590",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-7590:latest",
+      "base_commit": "2e506c5ab457cba743bb47eb5b8c8eb9dd51d23d",
+      "passed": false,
+      "observed_head": "a78d1c6437711937bf3e3c4bdddd87859fffef8f",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "a78d1c6437711937bf3e3c4bdddd87859fffef8f",
+        "head_tree": "3e1532444f67959e878a83c500bd60bf5168d895",
+        "base_tree": "e3c9d6e97ffa9ecf8df8de72fd00c898f2987e57",
+        "status": "",
+        "changed_files": [
+          "setup.py",
+          "tox.ini"
+        ],
+        "diff": "diff --git a/setup.py b/setup.py\nindex a427d5493..978e3d8e0 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -15,22 +15,22 @@ if sys.version_info < (3, 5):\n     sys.exit(1)\n \n install_requires = [\n-    'sphinxcontrib-applehelp',\n-    'sphinxcontrib-devhelp',\n+    'sphinxcontrib-applehelp<=1.0.7',\n+    'sphinxcontrib-devhelp<=1.0.5',\n     'sphinxcontrib-jsmath',\n-    'sphinxcontrib-htmlhelp',\n-    'sphinxcontrib-serializinghtml',\n-    'sphinxcontrib-qthelp',\n-    'Jinja2>=2.3',\n+    'sphinxcontrib-htmlhelp<=2.0.4',\n+    'sphinxcontrib-serializinghtml<=1.1.9',\n+    'sphinxcontrib-qthelp<=1.0.6',\n+    'Jinja2<3.0',\n     'Pygments>=2.0',\n     'docutils>=0.12',\n     'snowballstemmer>=1.1',\n     'babel>=1.3',\n-    'alabaster>=0.7,<0.8',\n+    'alabaster>=0.7,<0.7.12',\n     'imagesize',\n     'requests>=2.5.0',\n     'setuptools',\n-    'packaging',\n+    'packaging', 'markupsafe<=2.0.1',\n ]\n \n extras_require = {\ndiff --git a/tox.ini b/tox.ini\nindex d9f040544..bf39854b6 100644\n--- a/tox.ini\n+++ b/tox.ini\n@@ -28,7 +28,7 @@ extras =\n setenv =\n     PYTHONWARNINGS = all,ignore::ImportWarning:importlib._bootstrap_external,ignore::DeprecationWarning:site,ignore::DeprecationWarning:distutils\n commands=\n-    pytest --durations 25 {posargs}\n+    pytest -rA --durations 25 {posargs}\n \n [testenv:flake8]\n basepython = python3",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "sphinx-doc__sphinx-9281",
+        "signature_match": "same pins and pytest -rA; preserves instance command prefix and existing lower bounds",
+        "scope": "dependency compatibility pins in setup.py and pytest result reporting -rA in tox.ini",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8120",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8120:latest",
+      "base_commit": "795747bdb6b8fb7d717d5bbfc2c3316869e66a73",
+      "passed": false,
+      "observed_head": "8788e13fb3ed6f4b9b344aebbffb2868f5abfe4d",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "8788e13fb3ed6f4b9b344aebbffb2868f5abfe4d",
+        "head_tree": "98b50b975c0907d04eadf860d98bc21f629b7530",
+        "base_tree": "c106dac3f3e990dffd6f9015a1cdba46f719784f",
+        "status": "",
+        "changed_files": [
+          "setup.py",
+          "tox.ini"
+        ],
+        "diff": "diff --git a/setup.py b/setup.py\nindex a404f1fa5..2c6848797 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -15,22 +15,22 @@ if sys.version_info < (3, 5):\n     sys.exit(1)\n \n install_requires = [\n-    'sphinxcontrib-applehelp',\n-    'sphinxcontrib-devhelp',\n+    'sphinxcontrib-applehelp<=1.0.7',\n+    'sphinxcontrib-devhelp<=1.0.5',\n     'sphinxcontrib-jsmath',\n-    'sphinxcontrib-htmlhelp',\n-    'sphinxcontrib-serializinghtml',\n-    'sphinxcontrib-qthelp',\n-    'Jinja2>=2.3',\n+    'sphinxcontrib-htmlhelp<=2.0.4',\n+    'sphinxcontrib-serializinghtml<=1.1.9',\n+    'sphinxcontrib-qthelp<=1.0.6',\n+    'Jinja2<3.0',\n     'Pygments>=2.0',\n     'docutils>=0.12',\n     'snowballstemmer>=1.1',\n     'babel>=1.3',\n-    'alabaster>=0.7,<0.8',\n+    'alabaster>=0.7,<0.7.12',\n     'imagesize',\n     'requests>=2.5.0',\n     'setuptools',\n-    'packaging',\n+    'packaging', 'markupsafe<=2.0.1',\n ]\n \n extras_require = {\ndiff --git a/tox.ini b/tox.ini\nindex a61299979..e2baccc07 100644\n--- a/tox.ini\n+++ b/tox.ini\n@@ -28,7 +28,7 @@ setenv =\n     PYTHONWARNINGS = all,ignore::ImportWarning:importlib._bootstrap_external,ignore::DeprecationWarning:site,ignore::DeprecationWarning:distutils\n     PYTEST_ADDOPTS = --color yes\n commands=\n-    pytest --durations 25 {posargs}\n+    pytest -rA --durations 25 {posargs}\n \n [testenv:flake8]\n basepython = python3",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "sphinx-doc__sphinx-9281",
+        "signature_match": "same pins and pytest -rA; preserves instance command prefix and existing lower bounds",
+        "scope": "dependency compatibility pins in setup.py and pytest result reporting -rA in tox.ini",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8459",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-8459:latest",
+      "base_commit": "68aa4fb29e7dfe521749e1e14f750d7afabb3481",
+      "passed": false,
+      "observed_head": "31a82781b23ba5905068aa4f212c53b85c0536d9",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "31a82781b23ba5905068aa4f212c53b85c0536d9",
+        "head_tree": "82cccfda1ba6ac08b440ffc4ed76a8cfed7a35d7",
+        "base_tree": "04c04816b7ddf02d512ab25783983da54d73c577",
+        "status": "",
+        "changed_files": [
+          "setup.py",
+          "tox.ini"
+        ],
+        "diff": "diff --git a/setup.py b/setup.py\nindex ca08a6d4a..21cb67b8f 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -15,22 +15,22 @@ if sys.version_info < (3, 5):\n     sys.exit(1)\n \n install_requires = [\n-    'sphinxcontrib-applehelp',\n-    'sphinxcontrib-devhelp',\n+    'sphinxcontrib-applehelp<=1.0.7',\n+    'sphinxcontrib-devhelp<=1.0.5',\n     'sphinxcontrib-jsmath',\n-    'sphinxcontrib-htmlhelp',\n-    'sphinxcontrib-serializinghtml',\n-    'sphinxcontrib-qthelp',\n-    'Jinja2>=2.3',\n+    'sphinxcontrib-htmlhelp<=2.0.4',\n+    'sphinxcontrib-serializinghtml<=1.1.9',\n+    'sphinxcontrib-qthelp<=1.0.6',\n+    'Jinja2<3.0',\n     'Pygments>=2.0',\n     'docutils>=0.12',\n     'snowballstemmer>=1.1',\n     'babel>=1.3',\n-    'alabaster>=0.7,<0.8',\n+    'alabaster>=0.7,<0.7.12',\n     'imagesize',\n     'requests>=2.5.0',\n     'setuptools',\n-    'packaging',\n+    'packaging', 'markupsafe<=2.0.1',\n ]\n \n extras_require = {\ndiff --git a/tox.ini b/tox.ini\nindex dbb705a3a..9f4fc3a32 100644\n--- a/tox.ini\n+++ b/tox.ini\n@@ -28,7 +28,7 @@ setenv =\n     PYTHONWARNINGS = all,ignore::ImportWarning:importlib._bootstrap_external,ignore::DeprecationWarning:site,ignore::DeprecationWarning:distutils\n     PYTEST_ADDOPTS = {env:PYTEST_ADDOPTS:} --color yes\n commands=\n-    python -X dev -m pytest --durations 25 {posargs}\n+    python -X dev -m pytest -rA --durations 25 {posargs}\n \n [testenv:flake8]\n basepython = python3",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "sphinx-doc__sphinx-9281",
+        "signature_match": "identical",
+        "scope": "dependency compatibility pins in setup.py and pytest result reporting -rA in tox.ini",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9229",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9229:latest",
+      "base_commit": "876fa81e0a038cda466925b85ccf6c5452e0f685",
+      "passed": false,
+      "observed_head": "58162e6a927f952987fab758c3cd10174c59ffd5",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "58162e6a927f952987fab758c3cd10174c59ffd5",
+        "head_tree": "04e78f94318e01cfba1eab7117690aaef1fdd0c4",
+        "base_tree": "a7d6621e661527c096859f260ed8a73e731ed716",
+        "status": "",
+        "changed_files": [
+          "setup.py",
+          "tox.ini"
+        ],
+        "diff": "diff --git a/setup.py b/setup.py\nindex b669afc00..0986baec3 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -15,22 +15,22 @@ if sys.version_info < (3, 6):\n     sys.exit(1)\n \n install_requires = [\n-    'sphinxcontrib-applehelp',\n-    'sphinxcontrib-devhelp',\n+    'sphinxcontrib-applehelp<=1.0.7',\n+    'sphinxcontrib-devhelp<=1.0.5',\n     'sphinxcontrib-jsmath',\n-    'sphinxcontrib-htmlhelp',\n-    'sphinxcontrib-serializinghtml',\n-    'sphinxcontrib-qthelp',\n-    'Jinja2>=2.3',\n+    'sphinxcontrib-htmlhelp<=2.0.4',\n+    'sphinxcontrib-serializinghtml<=1.1.9',\n+    'sphinxcontrib-qthelp<=1.0.6',\n+    'Jinja2<3.0',\n     'Pygments>=2.0',\n     'docutils>=0.14,<0.18',\n     'snowballstemmer>=1.1',\n     'babel>=1.3',\n-    'alabaster>=0.7,<0.8',\n+    'alabaster>=0.7,<0.7.12',\n     'imagesize',\n     'requests>=2.5.0',\n     'setuptools',\n-    'packaging',\n+    'packaging', 'markupsafe<=2.0.1',\n ]\n \n extras_require = {\ndiff --git a/tox.ini b/tox.ini\nindex a363e187f..3b8bc12d0 100644\n--- a/tox.ini\n+++ b/tox.ini\n@@ -27,7 +27,7 @@ setenv =\n     PYTHONWARNINGS = all,ignore::ImportWarning:importlib._bootstrap_external,ignore::DeprecationWarning:site,ignore::DeprecationWarning:distutils,ignore::DeprecationWarning:pip._vendor.packaging.version\n     PYTEST_ADDOPTS = {env:PYTEST_ADDOPTS:} --color yes\n commands=\n-    python -X dev -m pytest --durations 25 {posargs}\n+    python -X dev -m pytest -rA --durations 25 {posargs}\n \n [testenv:flake8]\n basepython = python3",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "sphinx-doc__sphinx-9281",
+        "signature_match": "identical",
+        "scope": "dependency compatibility pins in setup.py and pytest result reporting -rA in tox.ini",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9230",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9230:latest",
+      "base_commit": "567ff22716ac258b9edd2c1711d766b440ac0b11",
+      "passed": false,
+      "observed_head": "bcc2ac2e0e28589e1b7d0eebdcc089305369c339",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "bcc2ac2e0e28589e1b7d0eebdcc089305369c339",
+        "head_tree": "470b1ba8409d9f48a854409afe2a1c2f40843358",
+        "base_tree": "a47fb89c668c1a03b411406b6218672a6cb14444",
+        "status": "",
+        "changed_files": [
+          "setup.py",
+          "tox.ini"
+        ],
+        "diff": "diff --git a/setup.py b/setup.py\nindex 2538952e3..94e1d8b32 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -15,22 +15,22 @@ if sys.version_info < (3, 6):\n     sys.exit(1)\n \n install_requires = [\n-    'sphinxcontrib-applehelp',\n-    'sphinxcontrib-devhelp',\n+    'sphinxcontrib-applehelp<=1.0.7',\n+    'sphinxcontrib-devhelp<=1.0.5',\n     'sphinxcontrib-jsmath',\n-    'sphinxcontrib-htmlhelp',\n-    'sphinxcontrib-serializinghtml',\n-    'sphinxcontrib-qthelp',\n-    'Jinja2>=2.3',\n+    'sphinxcontrib-htmlhelp<=2.0.4',\n+    'sphinxcontrib-serializinghtml<=1.1.9',\n+    'sphinxcontrib-qthelp<=1.0.6',\n+    'Jinja2<3.0',\n     'Pygments>=2.0',\n     'docutils>=0.14,<0.18',\n     'snowballstemmer>=1.1',\n     'babel>=1.3',\n-    'alabaster>=0.7,<0.8',\n+    'alabaster>=0.7,<0.7.12',\n     'imagesize',\n     'requests>=2.5.0',\n     'setuptools',\n-    'packaging',\n+    'packaging', 'markupsafe<=2.0.1',\n ]\n \n extras_require = {\ndiff --git a/tox.ini b/tox.ini\nindex a363e187f..3b8bc12d0 100644\n--- a/tox.ini\n+++ b/tox.ini\n@@ -27,7 +27,7 @@ setenv =\n     PYTHONWARNINGS = all,ignore::ImportWarning:importlib._bootstrap_external,ignore::DeprecationWarning:site,ignore::DeprecationWarning:distutils,ignore::DeprecationWarning:pip._vendor.packaging.version\n     PYTEST_ADDOPTS = {env:PYTEST_ADDOPTS:} --color yes\n commands=\n-    python -X dev -m pytest --durations 25 {posargs}\n+    python -X dev -m pytest -rA --durations 25 {posargs}\n \n [testenv:flake8]\n basepython = python3",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "sphinx-doc__sphinx-9281",
+        "signature_match": "identical",
+        "scope": "dependency compatibility pins in setup.py and pytest result reporting -rA in tox.ini",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9320",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9320:latest",
+      "base_commit": "e05cef574b8f23ab1b57f57e7da6dee509a4e230",
+      "passed": false,
+      "observed_head": "a9c50591bea56d7f9bb411aeb0e01052cbd57740",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "a9c50591bea56d7f9bb411aeb0e01052cbd57740",
+        "head_tree": "ba2378b74dfffd4d0fa78b009d2050577e291b00",
+        "base_tree": "88425c82b4edd4c70dc1364d9e622908480a853a",
+        "status": "",
+        "changed_files": [
+          "setup.py",
+          "tox.ini"
+        ],
+        "diff": "diff --git a/setup.py b/setup.py\nindex 206ff4ad4..4bb5faeb1 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -15,22 +15,22 @@ if sys.version_info < (3, 6):\n     sys.exit(1)\n \n install_requires = [\n-    'sphinxcontrib-applehelp',\n-    'sphinxcontrib-devhelp',\n+    'sphinxcontrib-applehelp<=1.0.7',\n+    'sphinxcontrib-devhelp<=1.0.5',\n     'sphinxcontrib-jsmath',\n-    'sphinxcontrib-htmlhelp',\n-    'sphinxcontrib-serializinghtml',\n-    'sphinxcontrib-qthelp',\n-    'Jinja2>=2.3',\n+    'sphinxcontrib-htmlhelp<=2.0.4',\n+    'sphinxcontrib-serializinghtml<=1.1.9',\n+    'sphinxcontrib-qthelp<=1.0.6',\n+    'Jinja2<3.0',\n     'Pygments>=2.0',\n     'docutils>=0.14,<0.18',\n     'snowballstemmer>=1.1',\n     'babel>=1.3',\n-    'alabaster>=0.7,<0.8',\n+    'alabaster>=0.7,<0.7.12',\n     'imagesize',\n     'requests>=2.5.0',\n     'setuptools',\n-    'packaging',\n+    'packaging', 'markupsafe<=2.0.1',\n ]\n \n extras_require = {\ndiff --git a/tox.ini b/tox.ini\nindex a363e187f..3b8bc12d0 100644\n--- a/tox.ini\n+++ b/tox.ini\n@@ -27,7 +27,7 @@ setenv =\n     PYTHONWARNINGS = all,ignore::ImportWarning:importlib._bootstrap_external,ignore::DeprecationWarning:site,ignore::DeprecationWarning:distutils,ignore::DeprecationWarning:pip._vendor.packaging.version\n     PYTEST_ADDOPTS = {env:PYTEST_ADDOPTS:} --color yes\n commands=\n-    python -X dev -m pytest --durations 25 {posargs}\n+    python -X dev -m pytest -rA --durations 25 {posargs}\n \n [testenv:flake8]\n basepython = python3",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "sphinx-doc__sphinx-9281",
+        "signature_match": "identical",
+        "scope": "dependency compatibility pins in setup.py and pytest result reporting -rA in tox.ini",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9461",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9461:latest",
+      "base_commit": "939c7bb7ff7c53a4d27df067cea637540f0e1dad",
+      "passed": false,
+      "observed_head": "4819347ebc143618fc6af62ad87b18b62667ce31",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "4819347ebc143618fc6af62ad87b18b62667ce31",
+        "head_tree": "c85b987d3b891261e092f0b8b2a10566f4879629",
+        "base_tree": "91864e513235b324c3d57c8999b03df84fdeed5a",
+        "status": "",
+        "changed_files": [
+          "setup.py",
+          "tox.ini"
+        ],
+        "diff": "diff --git a/setup.py b/setup.py\nindex 4a1d5aeed..3faa58e79 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -15,22 +15,22 @@ if sys.version_info < (3, 6):\n     sys.exit(1)\n \n install_requires = [\n-    'sphinxcontrib-applehelp',\n-    'sphinxcontrib-devhelp',\n+    'sphinxcontrib-applehelp<=1.0.7',\n+    'sphinxcontrib-devhelp<=1.0.5',\n     'sphinxcontrib-jsmath',\n-    'sphinxcontrib-htmlhelp>=2.0.0',\n-    'sphinxcontrib-serializinghtml>=1.1.5',\n-    'sphinxcontrib-qthelp',\n-    'Jinja2>=2.3',\n+    'sphinxcontrib-htmlhelp>=2.0.0,<=2.0.4',\n+    'sphinxcontrib-serializinghtml>=1.1.5,<=1.1.9',\n+    'sphinxcontrib-qthelp<=1.0.6',\n+    'Jinja2<3.0',\n     'Pygments>=2.0',\n     'docutils>=0.14,<0.18',\n     'snowballstemmer>=1.1',\n     'babel>=1.3',\n-    'alabaster>=0.7,<0.8',\n+    'alabaster>=0.7,<0.7.12',\n     'imagesize',\n     'requests>=2.5.0',\n     'setuptools',\n-    'packaging',\n+    'packaging', 'markupsafe<=2.0.1',\n ]\n \n extras_require = {\ndiff --git a/tox.ini b/tox.ini\nindex a363e187f..3b8bc12d0 100644\n--- a/tox.ini\n+++ b/tox.ini\n@@ -27,7 +27,7 @@ setenv =\n     PYTHONWARNINGS = all,ignore::ImportWarning:importlib._bootstrap_external,ignore::DeprecationWarning:site,ignore::DeprecationWarning:distutils,ignore::DeprecationWarning:pip._vendor.packaging.version\n     PYTEST_ADDOPTS = {env:PYTEST_ADDOPTS:} --color yes\n commands=\n-    python -X dev -m pytest --durations 25 {posargs}\n+    python -X dev -m pytest -rA --durations 25 {posargs}\n \n [testenv:flake8]\n basepython = python3",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "sphinx-doc__sphinx-9281",
+        "signature_match": "same pins and pytest -rA; preserves instance command prefix and existing lower bounds",
+        "scope": "dependency compatibility pins in setup.py and pytest result reporting -rA in tox.ini",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9673",
+      "image": "logicstar/sweb.eval.x86_64.sphinx-doc_1776_sphinx-9673:latest",
+      "base_commit": "5fb51fb1467dc5eea7505402c3c5d9b378d3b441",
+      "passed": false,
+      "observed_head": "4d6c4b436abb59e1c49e9c4cb0d26ab7dfe7d0ac",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "4d6c4b436abb59e1c49e9c4cb0d26ab7dfe7d0ac",
+        "head_tree": "cc2b9c017fa94af5103a5fccb2e5807f832baac9",
+        "base_tree": "252528f22b1affa25b382ae5625e5e8722a1cc7e",
+        "status": "",
+        "changed_files": [
+          "setup.py",
+          "tox.ini"
+        ],
+        "diff": "diff --git a/setup.py b/setup.py\nindex 2b4504101..d865b8b37 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -15,22 +15,22 @@ if sys.version_info < (3, 6):\n     sys.exit(1)\n \n install_requires = [\n-    'sphinxcontrib-applehelp',\n-    'sphinxcontrib-devhelp',\n+    'sphinxcontrib-applehelp<=1.0.7',\n+    'sphinxcontrib-devhelp<=1.0.5',\n     'sphinxcontrib-jsmath',\n-    'sphinxcontrib-htmlhelp>=2.0.0',\n-    'sphinxcontrib-serializinghtml>=1.1.5',\n-    'sphinxcontrib-qthelp',\n-    'Jinja2>=2.3',\n+    'sphinxcontrib-htmlhelp>=2.0.0,<=2.0.4',\n+    'sphinxcontrib-serializinghtml>=1.1.5,<=1.1.9',\n+    'sphinxcontrib-qthelp<=1.0.6',\n+    'Jinja2<3.0',\n     'Pygments>=2.0',\n     'docutils>=0.14,<0.18',\n     'snowballstemmer>=1.1',\n     'babel>=1.3',\n-    'alabaster>=0.7,<0.8',\n+    'alabaster>=0.7,<0.7.12',\n     'imagesize',\n     'requests>=2.5.0',\n     'setuptools',\n-    'packaging',\n+    'packaging', 'markupsafe<=2.0.1',\n ]\n \n extras_require = {\ndiff --git a/tox.ini b/tox.ini\nindex b6a67fd85..483f2df92 100644\n--- a/tox.ini\n+++ b/tox.ini\n@@ -28,7 +28,7 @@ setenv =\n     PYTHONWARNINGS = all,ignore::ImportWarning:importlib._bootstrap_external,ignore::DeprecationWarning:site,ignore::DeprecationWarning:distutils,ignore::DeprecationWarning:pip._vendor.packaging.version\n     PYTEST_ADDOPTS = {env:PYTEST_ADDOPTS:} --color yes\n commands=\n-    python -X dev -m pytest --durations 25 {posargs}\n+    python -X dev -m pytest -rA --durations 25 {posargs}\n \n [testenv:flake8]\n basepython = python3",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "environment_setup",
+        "reference": "sphinx-doc__sphinx-9281",
+        "signature_match": "same pins and pytest -rA; preserves instance command prefix and existing lower bounds",
+        "scope": "dependency compatibility pins in setup.py and pytest result reporting -rA in tox.ini",
+        "decision": "Retain upstream setup identically in both agents and official grading; do not reset source",
+        "limitation": "Official reference validates setup transformation, not whole-image equivalence for this exact instance"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-11618",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-11618:latest",
+      "base_commit": "360290c4c401e386db60723ddb0109ed499c9f6e",
+      "passed": true,
+      "observed_head": "5d04139ee3094b08aac0c68148d56708936d2b13",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "5d04139ee3094b08aac0c68148d56708936d2b13",
+        "head_tree": "d0d3281d5418d2ebb12023fccb9cf2785e735366",
+        "base_tree": "d0d3281d5418d2ebb12023fccb9cf2785e735366",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-12489",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-12489:latest",
+      "base_commit": "aa9780761ad8c3c0f68beeef3a0ce5caac9e100b",
+      "passed": true,
+      "observed_head": "26af2117fad81bb9336adbb257e6754c1527579a",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "26af2117fad81bb9336adbb257e6754c1527579a",
+        "head_tree": "9a926891ed43c83629b4ff09d34a99f19a6b01e6",
+        "base_tree": "9a926891ed43c83629b4ff09d34a99f19a6b01e6",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-13852",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-13852:latest",
+      "base_commit": "c935e1d106743efd5bf0705fbeedbd18fadff4dc",
+      "passed": true,
+      "observed_head": "e17815384013ccecf084f721bb1c165bf5c896ad",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "e17815384013ccecf084f721bb1c165bf5c896ad",
+        "head_tree": "16f833c66a17caec55d319db9fa9262d8e4ec233",
+        "base_tree": "16f833c66a17caec55d319db9fa9262d8e4ec233",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-13878",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-13878:latest",
+      "base_commit": "7b127bdf71a36d85216315f80c1b54d22b060818",
+      "passed": true,
+      "observed_head": "2bcd57c1320aa9fe044f7681379623c5c0d5cb0a",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "2bcd57c1320aa9fe044f7681379623c5c0d5cb0a",
+        "head_tree": "cd5cc788abbc1368ca3cce5ef66bd514b6fc175b",
+        "base_tree": "cd5cc788abbc1368ca3cce5ef66bd514b6fc175b",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-14248",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-14248:latest",
+      "base_commit": "9986b38181cdd556a3f3411e553864f11912244e",
+      "passed": true,
+      "observed_head": "33c72dcc053ed8e905c999eefa4e9971aacdb61f",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "33c72dcc053ed8e905c999eefa4e9971aacdb61f",
+        "head_tree": "32dc0bcd641ea634520a6d7d80476959e76eaee0",
+        "base_tree": "32dc0bcd641ea634520a6d7d80476959e76eaee0",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-15017",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-15017:latest",
+      "base_commit": "6810dee426943c1a2fe85b5002dd0d4cf2246a05",
+      "passed": true,
+      "observed_head": "3499adc5a823ed71f8af48e7f528cfdfa78f6459",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "3499adc5a823ed71f8af48e7f528cfdfa78f6459",
+        "head_tree": "99dc0679ea6c2adacdb342c31337b7c169c93dba",
+        "base_tree": "99dc0679ea6c2adacdb342c31337b7c169c93dba",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-15809",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-15809:latest",
+      "base_commit": "28d913d3cead6c5646307ffa6540b21d65059dfd",
+      "passed": true,
+      "observed_head": "ae2b0e3cad46fb460a3f1b2debb4bb1c1f01a484",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "ae2b0e3cad46fb460a3f1b2debb4bb1c1f01a484",
+        "head_tree": "18fdb4b49ee254225a9cdbb40e5b39577c9bcf46",
+        "base_tree": "18fdb4b49ee254225a9cdbb40e5b39577c9bcf46",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-15875",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-15875:latest",
+      "base_commit": "b506169ad727ee39cb3d60c8b3ff5e315d443d8e",
+      "passed": true,
+      "observed_head": "44a653d94469426b45b50c28d1c621a045f8cdd8",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "44a653d94469426b45b50c28d1c621a045f8cdd8",
+        "head_tree": "cb2e71a8734560a1433ca337586649c56667ccb1",
+        "base_tree": "cb2e71a8734560a1433ca337586649c56667ccb1",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-15976",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-15976:latest",
+      "base_commit": "701441853569d370506514083b995d11f9a130bd",
+      "passed": true,
+      "observed_head": "e28f700ad818785ed93c54bc1d33dd506d56153b",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "e28f700ad818785ed93c54bc1d33dd506d56153b",
+        "head_tree": "d1b60b750de1bab2c5a69738e93fcd7110423117",
+        "base_tree": "d1b60b750de1bab2c5a69738e93fcd7110423117",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-16597",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-16597:latest",
+      "base_commit": "6fd65310fa3167b9626c38a5487e171ca407d988",
+      "passed": true,
+      "observed_head": "8e7e0f72b621c18bfd8661b9dec3dede316a06f2",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "8e7e0f72b621c18bfd8661b9dec3dede316a06f2",
+        "head_tree": "85cc9629e6e8c5d93514c1881671445ffacc184c",
+        "base_tree": "85cc9629e6e8c5d93514c1881671445ffacc184c",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-18199",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-18199:latest",
+      "base_commit": "ba80d1e493f21431b4bf729b3e0452cd47eb9566",
+      "passed": true,
+      "observed_head": "3c79c64afafaadc4848d6415e11a69a995de4ba5",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "3c79c64afafaadc4848d6415e11a69a995de4ba5",
+        "head_tree": "c922b8dd9aa5b3e3c98e19a4f0489d9dae7bde57",
+        "base_tree": "c922b8dd9aa5b3e3c98e19a4f0489d9dae7bde57",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-18698",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-18698:latest",
+      "base_commit": "3dff1b98a78f28c953ae2140b69356b8391e399c",
+      "passed": true,
+      "observed_head": "34973f2bb56de98d017ebde10d73b966cc8d1220",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "34973f2bb56de98d017ebde10d73b966cc8d1220",
+        "head_tree": "98178a19ee843268b4a4418ae12fd96d4e372dc9",
+        "base_tree": "98178a19ee843268b4a4418ae12fd96d4e372dc9",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-19495",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-19495:latest",
+      "base_commit": "25fbcce5b1a4c7e3956e6062930f4a44ce95a632",
+      "passed": true,
+      "observed_head": "51f8c57c2f47bcfe93017bf3704e020ad5367015",
+      "testbed_python": "Python 3.9.21",
+      "actual": {
+        "head": "51f8c57c2f47bcfe93017bf3704e020ad5367015",
+        "head_tree": "91f694b2d2e69d6cb5c164a07da22d4bf7954aaf",
+        "base_tree": "91f694b2d2e69d6cb5c164a07da22d4bf7954aaf",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.21",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-21379",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-21379:latest",
+      "base_commit": "624217179aaf8d094e6ff75b7493ad1ee47599b0",
+      "passed": true,
+      "observed_head": "b5c419b925d098525404d1e659ebf5fc33b249ad",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "b5c419b925d098525404d1e659ebf5fc33b249ad",
+        "head_tree": "4914f038f694c62fed6b2d4165783ced1f5da4ef",
+        "base_tree": "4914f038f694c62fed6b2d4165783ced1f5da4ef",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-21596",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-21596:latest",
+      "base_commit": "110997fe18b9f7d5ba7d22f624d156a29bf40759",
+      "passed": true,
+      "observed_head": "cf8137a5777dee24619cdb415f161f14e092d2a8",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "cf8137a5777dee24619cdb415f161f14e092d2a8",
+        "head_tree": "63d177592d7f32b407a1ea1a273c6b4fb420d916",
+        "base_tree": "63d177592d7f32b407a1ea1a273c6b4fb420d916",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-21847",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-21847:latest",
+      "base_commit": "d9b18c518d64d0ebe8e35a98c2fb519938b9b151",
+      "passed": true,
+      "observed_head": "76056dba817654a871754f1a3c614d6e6816ee47",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "76056dba817654a871754f1a3c614d6e6816ee47",
+        "head_tree": "af271a28d4d7d81268695f2ac75ef51eeb8d9efb",
+        "base_tree": "af271a28d4d7d81268695f2ac75ef51eeb8d9efb",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-21930",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-21930:latest",
+      "base_commit": "de446c6d85f633271dfec1452f6f28ea783e293f",
+      "passed": true,
+      "observed_head": "b663fe1aea598b8a983b64dd78e226ef5bf7f122",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "b663fe1aea598b8a983b64dd78e226ef5bf7f122",
+        "head_tree": "a8e44f94a63624d1f4af136f7382125a0794eecf",
+        "base_tree": "a8e44f94a63624d1f4af136f7382125a0794eecf",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-22456",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-22456:latest",
+      "base_commit": "a3475b3f9ac662cd425157dd3bdb93ad7111c090",
+      "passed": true,
+      "observed_head": "56f3a1d6c2546aacca8249a345312424b1e5246f",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "56f3a1d6c2546aacca8249a345312424b1e5246f",
+        "head_tree": "4bd4a0455474b31e4f46b609a7183ec2a8ee85b6",
+        "base_tree": "4bd4a0455474b31e4f46b609a7183ec2a8ee85b6",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-24562",
+      "image": "logicstar/sweb.eval.x86_64.sympy_1776_sympy-24562:latest",
+      "base_commit": "b1cb676cf92dd1a48365b731979833375b188bf2",
+      "passed": true,
+      "observed_head": "97b7843ced47ada3a5321a185d69500dc757ba65",
+      "testbed_python": "Python 3.9.20",
+      "actual": {
+        "head": "97b7843ced47ada3a5321a185d69500dc757ba65",
+        "head_tree": "c49c6e39e65cf6b3a5463adc3b2b1196996b01ef",
+        "base_tree": "c49c6e39e65cf6b3a5463adc3b2b1196996b01ef",
+        "status": "",
+        "changed_files": [],
+        "diff": "",
+        "head_subject": "SWE-bench",
+        "testbed_python": "Python 3.9.20",
+        "gate_python": "3.11.5"
+      },
+      "returncode": 0,
+      "approved": true,
+      "review": {
+        "kind": "base_tree_match",
+        "decision": "Retain unchanged image starting state"
+      }
+    }
+  ]
+}

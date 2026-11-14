@@ -1,0 +1,1896 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="反捷径校验 Skill：阶段门禁 + 证据校验 + 工具拦截，强制编码 Agent 遵循标准工程师 SOP">
+      
+      
+      
+        <link rel="canonical" href="https://docs.xshayncka.dev/benchmarks/verified20-to-scale100-implementation/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>从 Verified20 复核到 strict 扩样：执行记录 - phase-barrier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#verified20-strict" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="phase-barrier" class="md-header__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            phase-barrier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              从 Verified20 复核到 strict 扩样：执行记录
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../quickstart/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  快速开始
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../usage/" class="md-tabs__link">
+          
+  
+  
+  使用指南
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../integrations/" class="md-tabs__link">
+          
+  
+  
+  集成与生态
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tutorials/ci-incremental-gate/" class="md-tabs__link">
+          
+  
+  
+  教程
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../release/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  发布与供应链安全
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  贡献指南
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  更新日志
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="phase-barrier" class="md-nav__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    phase-barrier
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速开始
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    使用指南
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    使用指南
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI 使用
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../control-plane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    人机控制面
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../control-security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    控制面安全验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    配置指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../semantic-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语义级校验（v0.49.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../five-lines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    五道防线（v0.52.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../red-team/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    红队 Agent（路径 1，18 类逃逸技术，v0.60.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../formal-invariants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    形式化不变量（路径 2，v0.58.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-defense/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    学习型防线（路径 4，半自动闭环，v0.60.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../languages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语言适配器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../github-action/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../publish-to-marketplace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 上架
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orchestrator-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    编排器钩子 SDK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audit-logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    状态与审计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    拦截规则与安全加固
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    架构与设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../custom-domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    自定义域名（docs.xshayncka.dev）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    集成与生态
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    集成与生态
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent 框架集成
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件与生态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plugin-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件状态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../k8s/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    最佳实践
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    教程
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    教程
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/ci-incremental-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI 增量门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/k8s-sidecar-grpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s sidecar 加固与 gRPC 接口（v0.39.0 已实现）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/swe-bench-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 门禁基准
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/swe-bench-real/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 真实评测 harness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../swe-bench-scale20/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Scale-20 实测报告
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verified15-cached-2026-11-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Verified 缓存-15 交叉验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verified20-preregistered-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Verified20 预注册执行报告
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verified20-formal-gate-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verified20 门禁与官方评分差异审计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../video-tutorial-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    视频教程模板
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    发布与供应链安全
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    贡献指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    更新日志
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="verified20-strict">从 Verified20 复核到 strict 扩样：执行记录<a class="headerlink" href="#verified20-strict" title="Permanent link">&para;</a></h1>
+<p>用户方案接收于 2026-11-14。按阶段验收，后续阶段不越过前一阶段退出条件。</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>状态</th>
+<th>验收</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一：异常复核</td>
+<td>已完成</td>
+<td>40/40 证据重新核验；三 SymPy suspicious，命令漏识别而非日志漏写；后期未完成 7、早期实现校验未完成 1；SymPy 双组跨睡眠</td>
+</tr>
+<tr>
+<td>二：最终报告</td>
+<td>已完成</td>
+<td>提交 dff58c9 已推送 main；CI、docs、Security、Plugin CI 均 success；56 项相关测试及 MkDocs strict 通过</td>
+</tr>
+<tr>
+<td>三：测试演进约束</td>
+<td>已完成并发布 v1.2.0</td>
+<td>发布提交 db48bf8；2026-11-14 14:26 北京时间正式发布；CI、docs、Security、Plugin CI 及发布工作流 success；1808 passed / 22 skipped，核心覆盖率 93.68%；冒烟门禁完成 3/3、官方 resolved 2/3</td>
+</tr>
+<tr>
+<td>四：100 个新增实例扩样</td>
+<td>停机已修复，resume1 续跑中</td>
+<td>2026-11-14 19:34:30北京时间五分钟核验通过；26/200评分、13完整配对；归档、证据分类、故障注入测试和四项CI通过，最终核验与报告待完成</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_1">复核导致的方案修正<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ul>
+<li>三个正式 SymPy 不能归 benign：阶段 2 的 <code>cd ... &amp;&amp; python -m pytest ...</code> 被漏识别，原工具日志与 trace 相符。阶段三同时修复此已确认缺口。</li>
+<li>scikit-learn-25102、Sphinx-9281 分别停在 5/4，归后期组；Pylint 停在阶段 3，测试已完成，被存量负向语法夹具阻断。</li>
+<li>系统事件确认 SymPy-18211 双组跨 2026-11-13 11:59:40–14:22:42 宿主机睡眠。主要时间样本由 17/18 修正为 16/17；原结果不改写。</li>
+<li>重算后独立部分 baseline/gated P90 为 641.8/767.1 秒，描述性比值 <strong>1.20×</strong>；1.35× 为发现睡眠前的旧口径。</li>
+<li>四个异常类别合计 15 次归属、14 个不同任务，加另列的 Matplotlib baseline 后异常表为 15 行。</li>
+<li>“49 个”是历史不同实例数，不保证观测独立。扩样不按显著性筛选或停止；样本量不能保证方向或 p&lt;0.05。</li>
+<li>测试名保留只防止未声明删除/重命名，不保证同名断言强度、语义或覆盖率不下降；CHANGELOG 需准确表述。</li>
+<li>仓库实际生成器使用 <code>--update-main --output ... --summary ...</code>，没有 <code>--finalize</code>；运行器也不接受整数 <code>--tasks 3</code> 或 <code>--mode</code>，须用清单和 <code>--modes gated</code>。</li>
+</ul>
+<h2 id="_2">当前环境<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>Docker Desktop Linux engine 已恢复（服务端 29.6.1）；三实例镜像 3/3 就绪，模型凭据仅检查存在性，未输出或写入报告。
+2026-11-14 已独立确认 dff58c9 的四项远程工作流全部 success。
+Docker 恢复：Windows 原生文件移动/重命名无法处理旧重解析点；在 Docker 停止时通过 WSL 无覆盖备份 <code>docker-secrets-engine/engine.sock</code>，再备份仅含旧 <code>dockerInference</code> 的 <code>Docker/run</code> 目录并重建，启动成功。未清理凭据或重置 Docker；保留全部备份（含先前留下的空目录）。</p>
+<h2 id="2026-11-14">阶段三本地验收（2026-11-14）<a class="headerlink" href="#2026-11-14" title="Permanent link">&para;</a></h2>
+<ul>
+<li>最终源码 <code>d079f69</code> 的全量 <code>coverage run -m pytest tests/</code>：1830 项收集，1808 passed、22 skipped、0 failed；核心行+分支覆盖率 93.6781%。前一轮为 1807 passed / 22 skipped；补齐空登记跳过的边界用例后全量重跑。</li>
+<li>同一覆盖率报告的 control 97.0332%、permissions 99.1489%、service 98.7915%，<code>check_control_coverage.py</code> passed。</li>
+<li>新增测试保留专项 29 项，另增复合命令/运行器接线测试；Xarray 两份真实 <code>write_file</code> 内容连同 SHA256 来源记录入 fixture。</li>
+<li>红队使用工作流定义的十项快速技术：54 案例中 53 blocked、1 inconclusive，无未豁免逃逸、无过期豁免。首次运行仅输出阶段遇到 GBK 编码错误，使用 UTF-8 与新工作目录重跑成功。</li>
+<li>MkDocs strict 与 <code>git diff --check</code> 通过。摘要见 <code>benchmarks/swebench/results/v120-validation.json</code>；原始本地证据位于 <code>.pytest_tmp/stage3-*</code>。</li>
+<li>三实例 strict 冒烟固定为 Xarray-3993、SymPy-13480、Flask-5014；60 轮、并发 2、显式 DNS。首轮目录 <code>.pytest_tmp/v120_smoke_20261114</code>，修正空登记边界后按原清单全部重跑于 <code>.pytest_tmp/v120_smoke_final_20261114</code>，未按结果替换实例。</li>
+<li>最终源码哈希与启动快照一致；三个 trace / stats / state / patch / 官方 report / prediction 核验通过，门禁均完成到阶段 6，登记测试名均保留。三个实例都实际拦截了阶段 1/2 的复合 pytest 命令；测试保留专门拒绝数为 0（没有删除登记名），拒绝场景由真实 Xarray fixture 覆盖。</li>
+<li>两轮官方结果均为 SymPy / Flask resolved，Xarray unresolved（2/3），不能写为官方 3/3 通过。Xarray 仍是 Agent 实现及自测使用 DeprecationWarning、官方要求 FutureWarning 的契约差异；测试名保留不验证该语义。冒烟验收只确认门禁流程和证据链，已单独审阅此已知局限，不据此宣称门禁完成蕴含官方解决。</li>
+<li>机器可读最终证据见 <code>benchmarks/swebench/results/v120-smoke.json</code> 与 <code>v120-validation.json</code>。发布候选的远程 CI 与最终源码 <code>d079f69</code> 的手动红队（43564774497）需全部通过后才打 v1.2.0 标签；阶段四尚未启动。</li>
+</ul>
+<h2 id="2026-11-14_1">阶段三发布确认与阶段四预注册（2026-11-14）<a class="headerlink" href="#2026-11-14_1" title="Permanent link">&para;</a></h2>
+<ul>
+<li>v1.2.0 正式发布于 2026-11-14T06:26:02Z，标签指向 db48bf8；发布工作流 43566249333 success，主CI 43565279673 success，文档、Security及Plugin CI均success。</li>
+<li>历史49个不同实例中仅33个存在于当前Verified500数据，候选池实际为467。Flask/Seaborn排除后均无新实例；用户明确同意覆盖其余10仓、总样本100，原两仓9名额分配给Django/SymPy，使配额25/19，其余原配额不变。</li>
+<li>抽样seed=2026；难度使用原始时间桶，选中分布38/38/21/3（&lt;15分钟、15分钟–1小时、1–4小时、&gt;4小时）。不按镜像可用性、结果或显著性换样。</li>
+<li>公开JSON只包含实例ID、仓库、base_commit、difficulty及LogicStar镜像名；完整含gold数据仅宿主保留，Agent另用白名单脱敏数据和最小挂载。</li>
+<li>统计协议固定双侧精确McNemar、discordant odds的精确条件区间、按仓成对重采样10000次P90比值区间；不保证方向或显著。主成本仅排除有外部中断证据的配对，保留原始墙钟敏感性。</li>
+<li>停机规则按新方案：首次model_call_error或grade_infra_failure即停；未知空补丁仅记录，并保留旧批次的默认停机行为。</li>
+<li>下一步顺序：提交推送预注册 → 从既有OCI布局校验并导入100个固定镜像 → 核对RootFS/配置/base_commit/DNS/进程监督 → 启动200任务 → 完成证据核验、统计和最终报告。</li>
+<li>预注册已按上述顺序在44fb2a8推送，主CI 43568692050、docs 43568692045、Security 43568692180及Plugin CI 43568692025全部success，之后才调用OCI子集导入器；本次535个唯一blob约29.45 GiB。</li>
+<li>新运行监督工具为<code>scripts/scale100_runtime.py</code>：启动前核对预注册提交、宿主/脱敏数据、镜像RootFS与配置、100个base_commit/Python和显式DNS；启动后按实际Python PID核验，另存Windows虚拟环境启动器PID。</li>
+<li>每个Agent只挂载自己本次输出目录；评分超时或评分进程异常退出记为基础设施故障，不计作官方unresolved；stats新增Agent实际起止epoch，仅增加观测，不改变求解提示、工具或门禁策略。</li>
+<li>收尾查询Windows电源事件，按有外部证据的交叉时间生成配对成本排除记录；源代码哈希、200项官方证据与100对唯一性通过后才生成最终统计，结果发布仍需报告和异常审阅。</li>
+</ul>
+<h2 id="2026-11-14_2">阶段四镜像与起点审计（2026-11-14）<a class="headerlink" href="#2026-11-14_2" title="Permanent link">&para;</a></h2>
+<ul>
+<li>固定样本100个镜像全部导入，535个唯一blob均验证size及SHA256；Docker镜像ID、RootFS diff_ids和运行配置与OCI来源一致。公开证明为<code>benchmarks/swebench/results/scale100-images-2026-11-14.json</code>，ready=100、errors=[]。</li>
+<li>100个镜像均有SWE-bench环境准备提交，HEAD不同不代表源码不同。首次HEAD相等预检失败记录保留，随后按Git树内容逐项比较；未重置base_commit或替换实例。</li>
+<li>87个实例base tree一致且工作树干净；4个Astropy仅将构建依赖setuptools固定为68.0.0；8个Sphinx仅固定兼容依赖并增加pytest的<code>-rA</code>输出选项。两类变更与旧批保存的官方Astropy-14369及Sphinx-9281准备变换比对，Sphinx四项精确增删行一致，四项保留该实例的命令前缀或既有依赖下限。此证据证明准备变换范围，不代表这些新实例与同实例官方全镜像相等。</li>
+<li>Requests-1142预存未跟踪<code>build/</code>目录：65个<code>build/lib/requests/</code>文件逐字节等于HEAD中的相应源码，无符号链接。一次性容器验证保留这些文件，仅经<code>.git/info/exclude</code>排除构建目录后，补丁为空且tracked源码未改。两组启动均显式启用同一准备规则，调用模型前再次核验；其他初始未跟踪文件或不一致副本会被拒绝。每次运行保存<code>initial_artifacts.json</code>，最终核验与冻结审计逐文件比对。该规则不将build输出作为可提交的源文件。</li>
+<li>公开起点证据为<code>benchmarks/swebench/results/scale100-testbeds-2026-11-14.json</code>，保留100项原始观测、13项审阅依据和局限。后续预检必须精确匹配已审阅的树、差异及工作树状态；不能笼统忽略setup文件。启动前另复查100个实时镜像ID与RootFS。</li>
+<li>显式DNS容器探针通过，100条Agent白名单数据通过；该次预检C/D盘可用空间约59.6/146.0 GiB。原始完整gold数据仅宿主评分可见。</li>
+<li>工具提交4e6744b的主CI失败：文本子进程漏写编码；部分Windows任务另有评分传输测试被文件时间戳精度误导。已补编码并将传输测试与独立的新鲜度测试解耦，保留评分异常不编码为unresolved的断言。修正后须等待新的主CI，不沿用此前“全绿”状态。</li>
+<li>上述审计通过时尚未调用扩样Agent；正式启动状态见下节。最终完整性证明、统计与结果报告均未产生。</li>
+</ul>
+<h2 id="2026-11-14-1614">阶段四正式启动检查点（2026-11-14 16:14 北京时间）<a class="headerlink" href="#2026-11-14-1614" title="Permanent link">&para;</a></h2>
+<ul>
+<li>实际运行源码提交为<code>66b35e918c0128fe92d5a5b9931a4e062774cf95</code>；CI 43573577514、docs 43573577489、Security 43573577682、Plugin CI 43573577501全部success，修复了4e6744b的CI失败。本地全量1827 passed、22 skipped、0 failed，核心覆盖率约94%；67项相关测试通过，MkDocs strict退出码0。此计数为本轮工具验证，与v1.2.0发布验证分别保留。</li>
+<li>最终启动前再次核对100个实时镜像ID/RootFS、已发布预注册、起点审计、宿主/脱敏数据、显式DNS及源码哈希。预注册清单和统计协议相对44fb2a8未变；<code>anti_shortcut/</code>相对v1.2.0无修改。</li>
+<li>2026-11-14T08:09:09.730674Z（北京时间16:09:09）正式启动200项任务：baseline/gated、strict、60轮、并发2、DNS 223.5.5.5及1.1.1.1；每个Agent仅挂载自身输出目录。首个实例为Astropy-13398，双组均已调用模型并执行工具。</li>
+<li>2026-11-14T08:14:09.796149Z完成300.1秒启动核对：真实runner PID26288与status一致，监督器PID2156及runner均存活；CSV可读、Agent输出存在、冻结源码哈希一致。监督器状态running，尚无停机原因；此时官方评分0/200、完整配对0/100，不作解决率或显著性判断。</li>
+<li>正式输出根为<code>.pytest_tmp/scale100_20261114/</code>；实时状态在<code>monitor_status.json</code>，5分钟证据在<code>startup_verification.json</code>，启动快照在<code>launch.json</code>和<code>prelaunch.json</code>。监督器每2秒执行故障检查，每10配对或每小时保存检查点；首次模型或评分基础设施故障停机留证。</li>
+<li>公开启动凭据为<code>benchmarks/swebench/results/scale100-launch-2026-11-14.json</code>。它仅表示该时刻已启动且健康，不表示200项完成；最终仍须200/200官方证据与100配对核验、宿主中断成本审阅、预注册统计及异常/结果报告审阅发布。</li>
+</ul>
+<h2 id="2026-11-14-1934">阶段四停机修复与续跑检查点（2026-11-14 19:34 北京时间）<a class="headerlink" href="#2026-11-14-1934" title="Permanent link">&para;</a></h2>
+<ul>
+<li>17:34:56监督器状态替换遇到<code>PermissionError</code>，17:34:59已停止原任务并清理容器；保留23项官方评分、11完整配对。331文件同级归档及70冻结文件快照均通过哈希验证。</li>
+<li>新恢复控制器<code>518d384</code>已推送main，CI、docs、Security、Plugin CI全部成功；独立两实例故障注入/续跑验收通过。19:29:29正式启动<code>resume1</code>，原Agent、规则、样本、统计协议和模型参数继续冻结。</li>
+<li>19:34:30五分钟核验通过：26/200官方评分、13/100完整配对，运行器及监督器存活、源码哈希一致、无新停机原因。原23行评分及266个原证据文件逐项一致，旧<code>launch.json</code>和<code>prelaunch.json</code>保留。</li>
+<li>公开恢复启动凭据为<code>benchmarks/swebench/results/scale100-resume1-launch-2026-11-14.json</code>，详细时间线见<a href="../scale100-recovery-2026-11-14/">恢复记录</a>。小时观察器19:30:07首次复核无告警，之后每小时本地留档；它不重启实验或发送聊天通知。</li>
+<li>仍待剩余174项评分、200唯一结果/100对完整证据、异常与中断成本审阅、预注册统计、最终报告及v1.2.1发布。五分钟检查点不代表收尾验收。</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.top", "navigation.tabs", "toc.integrate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

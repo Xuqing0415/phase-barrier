@@ -1,0 +1,2531 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="反捷径校验 Skill：阶段门禁 + 证据校验 + 工具拦截，强制编码 Agent 遵循标准工程师 SOP">
+      
+      
+      
+        <link rel="canonical" href="https://docs.xshayncka.dev/benchmarks/verified20-final-results/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Verified20 final results - phase-barrier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="phase-barrier" class="md-header__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            phase-barrier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Verified20 final results
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../quickstart/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  快速开始
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../usage/" class="md-tabs__link">
+          
+  
+  
+  使用指南
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../integrations/" class="md-tabs__link">
+          
+  
+  
+  集成与生态
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tutorials/ci-incremental-gate/" class="md-tabs__link">
+          
+  
+  
+  教程
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../release/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  发布与供应链安全
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  贡献指南
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  更新日志
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="phase-barrier" class="md-nav__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    phase-barrier
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速开始
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    使用指南
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    使用指南
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI 使用
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../control-plane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    人机控制面
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../control-security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    控制面安全验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    配置指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../semantic-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语义级校验（v0.49.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../five-lines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    五道防线（v0.52.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../red-team/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    红队 Agent（路径 1，18 类逃逸技术，v0.60.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../formal-invariants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    形式化不变量（路径 2，v0.58.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-defense/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    学习型防线（路径 4，半自动闭环，v0.60.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../languages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语言适配器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../github-action/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../publish-to-marketplace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 上架
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orchestrator-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    编排器钩子 SDK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audit-logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    状态与审计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    拦截规则与安全加固
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    架构与设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../custom-domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    自定义域名（docs.xshayncka.dev）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    集成与生态
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    集成与生态
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent 框架集成
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件与生态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plugin-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件状态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../k8s/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    最佳实践
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    教程
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    教程
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/ci-incremental-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI 增量门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/k8s-sidecar-grpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s sidecar 加固与 gRPC 接口（v0.39.0 已实现）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/swe-bench-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 门禁基准
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/swe-bench-real/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 真实评测 harness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../swe-bench-scale20/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Scale-20 实测报告
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verified15-cached-2026-11-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Verified 缓存-15 交叉验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verified20-preregistered-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Verified20 预注册执行报告
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verified20-formal-gate-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verified20 门禁与官方评分差异审计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../video-tutorial-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    视频教程模板
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    发布与供应链安全
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    贡献指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    更新日志
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>Verified20 final results</h1>
+
+<h2 id="_1">正式结果<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>已完成 40 项官方评分、20/20 个完整配对，评分覆盖 12 个仓库。仅双组均 graded 的实例进入配对表；缺失不当作 unresolved。</p>
+<table>
+<thead>
+<tr>
+<th>批次 / 部分</th>
+<th style="text-align: right;">配对数</th>
+<th style="text-align: right;">baseline resolved</th>
+<th style="text-align: right;">gated resolved</th>
+<th style="text-align: right;">baseline-only</th>
+<th style="text-align: right;">gated-only</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lite Scale-20</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>Verified 缓存-15</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_2">三批实际去重<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>批次</th>
+<th style="text-align: right;">完整配对实例数</th>
+<th style="text-align: right;">跨批重叠</th>
+<th style="text-align: right;">新增不同实例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lite Scale-20</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">20</td>
+</tr>
+<tr>
+<td>Verified 缓存-15</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">11</td>
+</tr>
+<tr>
+<td>Verified 预注册-20</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">18</td>
+</tr>
+</tbody>
+</table>
+<p>累计 49 个不同实例；去重计数不保证观测相互独立。</p>
+<h3 id="_3">正式成本<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>秒数主表排除跨中断耗时；轮数、拦截和补丁字符仍保留该实例。</p>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th>模式</th>
+<th>指标</th>
+<th>口径</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">中位数</th>
+<th style="text-align: right;">P90</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>turns</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">43.0</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>seconds</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">375.4</td>
+<td style="text-align: right;">641.8</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">2448.5</td>
+<td style="text-align: right;">7369.7</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>turns</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">51.0</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>seconds</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">304.6</td>
+<td style="text-align: right;">767.1</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">4.0</td>
+<td style="text-align: right;">8.3</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">3988.0</td>
+<td style="text-align: right;">11077.1</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>baseline</td>
+<td>turns</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">33.0</td>
+<td style="text-align: right;">34.6</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>baseline</td>
+<td>seconds</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">559.8</td>
+<td style="text-align: right;">898.4</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1545.0</td>
+<td style="text-align: right;">2101.0</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>gated</td>
+<td>turns</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">44.0</td>
+<td style="text-align: right;">56.8</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>gated</td>
+<td>seconds</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">272.6</td>
+<td style="text-align: right;">423.5</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4.5</td>
+<td style="text-align: right;">5.7</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">3804.0</td>
+<td style="text-align: right;">4604.8</td>
+</tr>
+</tbody>
+</table>
+<p>matplotlib-24970 baseline 的 220,038.7 秒跨两次中断；SymPy-18211 baseline/gated 的 9,070.8/8,814.0 秒跨宿主机睡眠。三项均排除出主要耗时统计，原始结果、轮数和拦截数保留。
+宿主机在 2026-11-13 11:59:40–14:22:42（北京时间）睡眠，Windows Power-Troubleshooter 事件 1（record 51905）与两组 run/grade 边界相符。证据见 <a href="../verified20-formal-gate-audit/">机制审计</a>。
+不从原始墙钟中估算扣减睡眠时间；以下敏感性表保留完整原始墙钟，供核对排除影响。</p>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th>口径</th>
+<th style="text-align: right;">baseline n</th>
+<th style="text-align: right;">baseline P90 秒</th>
+<th style="text-align: right;">gated n</th>
+<th style="text-align: right;">gated P90 秒</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>独立部分</td>
+<td>全部实例（原始墙钟）</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">3433.0</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">1098.7</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">641.8</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">767.1</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>全部实例（原始墙钟）</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">898.4</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">423.5</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">898.4</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">423.5</td>
+</tr>
+</tbody>
+</table>
+<p>复用部分：排除跨中断耗时后，gated P90 为 baseline 的 0.47×（423.5s vs 898.4s；gated n=2、baseline n=2）。
+独立部分：排除跨中断耗时后，gated P90 为 baseline 的 1.20×（767.1s vs 641.8s；gated n=17、baseline n=16）。
+这是两组 P90 的描述性比值，不是逐实例平均减速，也不能隔离门禁、测试和模型重试各自的耗时贡献。部分结果不能证明总体解决率不降低；最终结论须同时报告配对解决率和成本。
+最终成本结论须基于全部 40 项核验证据，独立与复用分开；全量独立配对 n=18，排除跨中断耗时后 baseline 时间 n=16、gated n=17。P90 对离群值敏感，样本量有限；同一正式批的中途估计曾随样本增加由 2.16× 漂移至 1.87×，这些中间数字及最终比值均为点估计，不是精确值或置信区间。</p>
+<h3 id="_4">成本来源分段<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>来源按首次中断归档 CSV 中已评分的 instance+mode 划分。当前评分数：<code>{"中断前已评分": 9, "恢复后评分（含补评）": 31}</code>。
+全量时为中断前 9 项、恢复后 31 项评分。补评分沿用原 Agent 的轮数和耗时，因此“恢复后评分”不等于 Agent 全程使用新规则，也不证明环境稳定；不将其直接称为稳定环境下的成本。
+分段成本仍只取双组评分齐全的实例，秒数排除跨中断耗时；每行注明实际 n。</p>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th>评分来源</th>
+<th>模式</th>
+<th>指标</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">中位数</th>
+<th style="text-align: right;">P90</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>baseline</td>
+<td>turns</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">37.0</td>
+<td style="text-align: right;">59.6</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>baseline</td>
+<td>seconds</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">301.7</td>
+<td style="text-align: right;">379.8</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5495.0</td>
+<td style="text-align: right;">11034.8</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>turns</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">45.0</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>seconds</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">493.5</td>
+<td style="text-align: right;">675.7</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">2277.0</td>
+<td style="text-align: right;">5746.2</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>gated</td>
+<td>turns</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">60.0</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>gated</td>
+<td>seconds</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">516.5</td>
+<td style="text-align: right;">652.8</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">3.5</td>
+<td style="text-align: right;">6.8</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">11270.5</td>
+<td style="text-align: right;">13247.1</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>turns</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">47.5</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>seconds</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">272.8</td>
+<td style="text-align: right;">855.3</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">4.5</td>
+<td style="text-align: right;">8.7</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">2838.0</td>
+<td style="text-align: right;">5783.7</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>turns</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">33.0</td>
+<td style="text-align: right;">34.6</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>seconds</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">559.8</td>
+<td style="text-align: right;">898.4</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1545.0</td>
+<td style="text-align: right;">2101.0</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>turns</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">44.0</td>
+<td style="text-align: right;">56.8</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>seconds</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">272.6</td>
+<td style="text-align: right;">423.5</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4.5</td>
+<td style="text-align: right;">5.7</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">3804.0</td>
+<td style="text-align: right;">4604.8</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_5">重叠实例跨批一致率<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>比较</th>
+<th style="text-align: right;">重叠实例</th>
+<th style="text-align: right;">已比较</th>
+<th style="text-align: right;">一致</th>
+<th>不一致</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>链路 pilot-5 → 正式批</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">4</td>
+<td>astropy__astropy-14369</td>
+</tr>
+<tr>
+<td>前两批共有实例 → 正式批</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td>—</td>
+</tr>
+<tr>
+<td>缓存-15 → 正式批（复用）</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>一致指同一实例 baseline/gated 两个二元结果均一致。前两批相互重叠的 4 个实例与本批的交集按实际 ID 计算。
+逐项核对：前两批的 8 个重叠 instance+mode 比较均有记录；本批跨批复用 4 项任务，已 graded 4 项。两类键清单分别保存在汇总 JSON 的 <code>historical_overlap_jobs</code> 和 <code>formal_reuse_jobs</code>，不能把前者的 8 项当作本批有 8 项复用任务。</p>
+<h3 id="_6">两个复用实例的三次结果<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>实例</th>
+<th>模式</th>
+<th>缓存批 pilot</th>
+<th>缓存-15</th>
+<th>正式批</th>
+<th>运行间变异</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mwaskom__seaborn-3069</td>
+<td>baseline</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>未观察到</td>
+</tr>
+<tr>
+<td>mwaskom__seaborn-3069</td>
+<td>gated</td>
+<td>unresolved</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>有</td>
+</tr>
+<tr>
+<td>pallets__flask-5014</td>
+<td>baseline</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>未观察到</td>
+</tr>
+<tr>
+<td>pallets__flask-5014</td>
+<td>gated</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>未观察到</td>
+</tr>
+</tbody>
+</table>
+<p>此表缓存批 pilot 使用 <code>.pytest_tmp/verified15/pilot5_results.csv</code>，与链路 pilot-5 是不同运行。Flask 另有单实例 pilot 的 54 轮记录，未混入此表的缓存批 pilot-5（15 轮）。结果差异记录为运行间变异；代码与环境存在变化，不直接归因于门禁或模型采样。</p>
+<h3 id="_7">异常实例<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>实例</th>
+<th>模式</th>
+<th>标记</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>django__django-14631</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>django__django-16333</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>django__django-16901</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>matplotlib__matplotlib-24970</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>matplotlib__matplotlib-24970</td>
+<td>baseline</td>
+<td>over_60_minutes, cross_interruption_wall_time_excluded_from_efficiency, cross_interruption_excluded_from_efficiency</td>
+</tr>
+<tr>
+<td>mwaskom__seaborn-3069</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>psf__requests-2317</td>
+<td>gated</td>
+<td>gate_complete_official_unresolved, env_tls_interference</td>
+</tr>
+<tr>
+<td>pydata__xarray-3993</td>
+<td>gated</td>
+<td>gate_complete_official_unresolved, A_warning_mismatch+B_test_assertion_weakened</td>
+</tr>
+<tr>
+<td>pylint-dev__pylint-4970</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, early_stage_incomplete</td>
+</tr>
+<tr>
+<td>scikit-learn__scikit-learn-25102</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>sphinx-doc__sphinx-9281</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>sympy__sympy-13480</td>
+<td>gated</td>
+<td>zero_interception_suspicious</td>
+</tr>
+<tr>
+<td>sympy__sympy-17630</td>
+<td>gated</td>
+<td>zero_interception_suspicious</td>
+</tr>
+<tr>
+<td>sympy__sympy-18211</td>
+<td>gated</td>
+<td>over_60_minutes, cross_interruption_wall_time_excluded_from_efficiency, zero_interception_suspicious, cross_interruption_excluded_from_efficiency</td>
+</tr>
+<tr>
+<td>sympy__sympy-18211</td>
+<td>baseline</td>
+<td>over_60_minutes, cross_interruption_wall_time_excluded_from_efficiency, cross_interruption_excluded_from_efficiency</td>
+</tr>
+</tbody>
+</table>
+<p>正式异常已逐项复核：门禁完成但官方未通过 2 项、官方通过但门禁未完成 8 项、零拦截 3 项、SymPy 超 60 分钟 2 项；Matplotlib baseline 跨中断单列。
+四类合计 15 次类别归属、14 个不同任务（SymPy-18211 gated 重叠），加上 Matplotlib baseline 后异常实例表共 15 行。
+零拦截三项均归为 <code>zero_interception_suspicious</code>：阶段 2 的 <code>cd /testbed &amp;&amp; python -m pytest ...</code> 未被命令识别器识别；stdout 工具调用与 trace 的轮次/工具逐项一致，系命令漏识别，未发现拒绝事件漏写证据。
+8 个门禁未完成且官方 resolved 的实例：7 个在阶段 4/5 耗尽或接近轮数预算，Pylint 在阶段 3 因存量负向语法夹具阻断。详见 <a href="../verified20-formal-gate-audit/">完整归类与检查清单</a>。</p>
+<h3 id="2">门禁完成但官方未通过：正式批 2 项<a class="headerlink" href="#2" title="Permanent link">&para;</a></h3>
+<p>此处只计正式批 gated，不把 Astropy pilot 的 A 类混入正式批计数；Astropy 正式批双组 resolved。
+| 正式实例 | 归类 | 待核验依据 |
+|---|---|---|
+| psf__requests-2317 | env_tls_interference（环境混杂） | 原产物及同补丁独立容器重放已核验，详见统一审计记录 |
+| pydata__xarray-3993 | A 类警告断言差异 + B 类 test_assertion_weakened | 原产物及同补丁独立容器重放已核验，详见统一审计记录 |</p>
+<p>A 为测试覆盖不足；B 为测试篡改；C 为 delivery_clean 缺陷。仅凭两个结果标记不能判定归类，也不能断言门禁通过是官方 resolved 的必要条件；官方 resolved 且门禁未完成的观察另列。
+<a href="../verified20-formal-gate-audit/">统一审计记录</a> 保留 Requests 环境混杂与 Xarray 的 A/B 两项证据。
+<a href="../verified20-seaborn-comparison/">Seaborn 专项对照</a> 已核对缓存批 pilot 与正式批的补丁及阶段；共同触达 60 轮不能单独解释官方结果差异。</p>
+<p>Django gated 的 4 项运行依次为 django__django-14631：60 轮、阶段 4、gate_completed=0；django__django-16333：60 轮、阶段 4、gate_completed=0；django__django-16631：60 轮、阶段 5、gate_completed=0；django__django-16901：53 轮、阶段 5、gate_completed=0。官方结果为 3 resolved、1 unresolved。
+这些运行普遍触达或接近 60 轮上限，停在阶段 4/5。门禁未完成不能直接解读为官方评分受阻；3 个实例官方 resolved，可作为门禁未必阻断官方评分的观察，不作为门禁全流程有效的证据。这一模式与轮数预算和多阶段开销的交互相容；没有增加轮数预算的对照实验，尚不能确定因果。</p>
+<p>astropy__astropy-14369 gated：37 轮、4 次拦截、阶段 6、gate_completed=1、13,887 字符。</p>
+<p>matplotlib__matplotlib-23476 gated：58 轮、8 次拦截、阶段 6、gate_completed=1、1,328 字符。</p>
+<p>正式批最早完成全流程的是 Astropy-14369；Matplotlib-23476 是另一个接近 60 轮上限仍完成的实例。它表明该预算下存在完成全流程的案例，60 轮不是绝对阻断，但不能据此确定 Django 未完成的原因。</p>
+<p>机制审查与二元评分分别报告；自动统计不替代原产物核对和独立重放。</p>
+<h2 id="_8">局限与结论<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<ul>
+<li>全量三批涉及 49 个不同实例（名义 n=49），不保证观测独立，不足以宣称 p&lt;0.05。</li>
+<li>本批 2 个复用实例非完全独立。</li>
+<li>缓存-15 存在选择偏差。</li>
+<li>容器无 chroot，Agent 可读门禁源码。</li>
+<li>门禁通过不等于官方通过，保留 Astropy A 类历史案例。</li>
+<li>三批不合并 pooled 成功率或显著性检验；pilot 及审计复核不进入正式统计。</li>
+<li>运行间代码、环境与中断会影响结果及耗时，不能将观察到的差异单独归因于门禁。</li>
+<li>Xarray 重放证实阶段 2 的关键自写断言在阶段 3 被替换，最终测试通过而原登记断言失败；当前门禁未保证测试演进保留既定行为覆盖。证据与 A/B 两项解释见 <a href="../verified20-formal-gate-audit/">统一审计</a>，不单独归因于官方 warning 失败。</li>
+<li>成本 P90 样本量有限且对离群值敏感；2.16×→1.87× 是同一正式批随样本增加的中途漂移。全部 40 项证据齐全后重算，独立配对 n=18，排除跨中断耗时后的时间 n 为 baseline 16、gated 17；此前只排除 Matplotlib 得到的 1.35× 已被宿主机睡眠证据修正，最终比值见成本表，均为点估计。</li>
+<li>扩展到 100+ 实例仅为规划，不能保证显著性；所需样本量取决于效应及配对不一致率。</li>
+<li>8 个门禁未完成且官方 resolved 的实例不构成门禁全流程有效的证据；预算与门禁开销未做对照。另发现复合 shell 测试命令漏识别，以及 Pylint 存量负向语法夹具误阻断，均保留为待修复机制缺口。</li>
+</ul>
+<p>出现 baseline-only 的批次/部分：独立部分。需结合逐实例结果如实分析，不能宣称三批均未出现退步。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.top", "navigation.tabs", "toc.integrate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

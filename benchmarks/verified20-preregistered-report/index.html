@@ -1,0 +1,4364 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="反捷径校验 Skill：阶段门禁 + 证据校验 + 工具拦截，强制编码 Agent 遵循标准工程师 SOP">
+      
+      
+      
+        <link rel="canonical" href="https://docs.xshayncka.dev/benchmarks/verified20-preregistered-report/">
+      
+      
+        <link rel="prev" href="../verified15-cached-2026-11-08/">
+      
+      
+        <link rel="next" href="../verified20-formal-gate-audit/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>SWE-bench Verified20 预注册执行报告 - phase-barrier</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#verified-20" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="phase-barrier" class="md-header__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            phase-barrier
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              SWE-bench Verified20 预注册执行报告
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../quickstart/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  快速开始
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../usage/" class="md-tabs__link">
+          
+  
+  
+  使用指南
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../integrations/" class="md-tabs__link">
+          
+  
+  
+  集成与生态
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../tutorials/ci-incremental-gate/" class="md-tabs__link">
+          
+  
+  
+  教程
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../release/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  发布与供应链安全
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  贡献指南
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  更新日志
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="phase-barrier" class="md-nav__button md-logo" aria-label="phase-barrier" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    phase-barrier
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Xuqing0415/phase-barrier" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Xuqing0415/phase-barrier
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速开始
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    使用指南
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    使用指南
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI 使用
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../control-plane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    人机控制面
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../control-security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    控制面安全验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    配置指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../semantic-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语义级校验（v0.49.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../five-lines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    五道防线（v0.52.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../red-team/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    红队 Agent（路径 1，18 类逃逸技术，v0.60.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../formal-invariants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    形式化不变量（路径 2，v0.58.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-defense/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    学习型防线（路径 4，半自动闭环，v0.60.0）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../languages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    语言适配器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../github-action/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../publish-to-marketplace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Action 上架
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orchestrator-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    编排器钩子 SDK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audit-logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    状态与审计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    拦截规则与安全加固
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    架构与设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../custom-domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    自定义域名（docs.xshayncka.dev）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    集成与生态
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    集成与生态
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent 框架集成
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件与生态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plugin-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    插件状态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../k8s/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    最佳实践
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    教程
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    教程
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/ci-incremental-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI 增量门禁
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/k8s-sidecar-grpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    K8s sidecar 加固与 gRPC 接口（v0.39.0 已实现）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/swe-bench-gate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 门禁基准
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/swe-bench-real/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench 真实评测 harness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../swe-bench-scale20/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Scale-20 实测报告
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verified15-cached-2026-11-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Verified 缓存-15 交叉验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Verified20 预注册执行报告
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWE-bench Verified20 预注册执行报告
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        执行摘要
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三批样本去重
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        跨批结果一致性
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="跨批结果一致性">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        预注册批复用实例（不计入本批独立统计）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pilot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pilot 链路验收
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="pilot 链路验收">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pilot_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        已观察到的 pilot 异常组合
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pilot_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pilot 已完成记录（阶段性快照）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        拦截完整性审计发现与计数口径
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pilot_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pilot 收尾与修复状态
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#astropy-14369pilot-gated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        异常实例：astropy-14369（pilot gated）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        门禁完成但官方未通过：审计汇总与收尾安排
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="门禁完成但官方未通过：审计汇总与收尾安排">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#seaborn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seaborn 运行差异：已完成证据对照
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sympyastropy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SymPy/Astropy 审计复核（不并入正式统计）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        正式启动前置条件与运行记录
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="正式启动前置条件与运行记录">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-10 正式批中断与断点恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2026-11-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-11-13 再次恢复与运行期修复
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        轮数预算与完整流程的观察
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        解决率与耗时的工程权衡（人工记录，自动刷新保留）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        正式结果
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="正式结果">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三批实际去重
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        正式成本
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        成本来源分段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        重叠实例跨批一致率
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        两个复用实例的三次结果
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        异常实例
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        门禁完成但官方未通过：正式批 2 项
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        局限与结论
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        正式批运行快照（自动生成）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="正式批运行快照（自动生成）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        正式批逐项记录
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        正式批原始墙钟成本与异常（仅核对）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verified20-formal-gate-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verified20 门禁与官方评分差异审计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../video-tutorial-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    视频教程模板
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    发布与供应链安全
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    贡献指南
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    更新日志
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="verified-20">Verified 预注册-20：执行报告（正式评分完成）<a class="headerlink" href="#verified-20" title="Permanent link">&para;</a></h1>
+<h2 id="_1">执行摘要<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ul>
+<li>预注册 20 实例、12 仓库；正式批 20 实例双组评分完成，覆盖 12 个仓库。</li>
+<li>正式评分于 2026-11-13 14:27 完成，2026-11-14 重新逐项核验 40/40 证据并完成异常机制复核。
+  独立部分 baseline 16/18、gated 15/18；复用部分双组 2/2。唯一 baseline-only 为 Xarray。
+  三个正式 SymPy 零拦截均因复合 shell 测试命令漏识别归为 suspicious；八个官方 resolved
+  但门禁未完成的实例为后期组 7、早期实现校验组 1；缺陷已记录，尚不表示已修复。
+  SymPy-18211 双组跨宿主机睡眠，连同 Matplotlib baseline 排除主要秒数统计后，时间 n 为 16/17。
+  以下带明确时间的运行记录与文末原始墙钟快照为历史资料；当前结论见正式结果及统一审计。</li>
+<li>全量完成时，新增独立样本 n=18；2 个跨批复用实例单列。部分执行时按实际完成的独立配对数报告。</li>
+<li>三批计划涉及 49 个不同实例，不称为 49 个相互独立的观测；该数不是当前已完成正式实验数。</li>
+<li>镜像 20/20 就绪，运行 namespace 为 <code>logicstar</code>；来源、哈希与源码审计见
+  <code>benchmarks/swebench/results/verified20_environment.json</code>。预注册清单未修改。</li>
+<li>pilot 只验收链路，不参与正式批统计，不按解决率筛选样本。</li>
+<li>正式批于 2026-11-10 16:50:16（北京时间）启动：20 实例 × baseline/gated，
+  共 40 项任务，并发 2、最多 60 轮。实际 runner PID <code>26980</code> 与状态文件一致，
+  监督器 PID <code>21952</code>；首项 Astropy 双组已开始，完成数以文末运行快照为准。</li>
+<li>启动后核对：16:54:30 已确认两进程存活、PID 记录一致且 gated 进入评分；
+  16:55:54 补充保存人工核对凭据 <code>formal20_logicstar/operator_checkpoints.jsonl</code>，
+  CSV 可读，Astropy gated 四项审计产物齐备，尚无完成评分或基础设施失败。
+  当时启用每小时及每 5 配对监控；该启动检查为历史记录，正式批现已结束。</li>
+</ul>
+<h2 id="_2">三批样本去重<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>按两个已提交结果 CSV 和预注册清单的 <code>instance_id</code> 集合核验：</p>
+<table>
+<thead>
+<tr>
+<th>批次</th>
+<th style="text-align: right;">原始实例数</th>
+<th style="text-align: right;">与此前批次重叠</th>
+<th style="text-align: right;">去重后新增</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lite Scale-20</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">20</td>
+</tr>
+<tr>
+<td>Verified 缓存-15</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">4（与 Lite）</td>
+<td style="text-align: right;">11</td>
+</tr>
+<tr>
+<td>Verified 预注册-20</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">2（与此前批次）</td>
+<td style="text-align: right;">18</td>
+</tr>
+<tr>
+<td>合计（预注册全量完成时）</td>
+<td style="text-align: right;">55</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">49</td>
+</tr>
+</tbody>
+</table>
+<p>计算为 <strong>55 − 4 − 2 = 49</strong>。预注册批内部没有重复行；seaborn/flask 是跨批复用。
+去重只用于实例数量说明，原始运行和重复结果均保留，不合并 pooled 成功率或检验。</p>
+<h2 id="_3">跨批结果一致性<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>来源：<code>scale20_lite_container.csv</code> 与 <code>verified15_cached.csv</code>。
+以下单元格依次为 baseline / gated 的官方结果。</p>
+<table>
+<thead>
+<tr>
+<th>重叠实例</th>
+<th>Lite Scale-20</th>
+<th>Verified 缓存-15</th>
+<th>两组结果是否均一致</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>astropy__astropy-12907</td>
+<td>resolved / resolved</td>
+<td>resolved / resolved</td>
+<td>是</td>
+</tr>
+<tr>
+<td>astropy__astropy-14182</td>
+<td>resolved / resolved</td>
+<td>resolved / resolved</td>
+<td>是</td>
+</tr>
+<tr>
+<td>django__django-10914</td>
+<td>resolved / resolved</td>
+<td>resolved / resolved</td>
+<td>是</td>
+</tr>
+<tr>
+<td>scikit-learn__scikit-learn-10297</td>
+<td>resolved / resolved</td>
+<td>resolved / resolved</td>
+<td>是</td>
+</tr>
+</tbody>
+</table>
+<p>前两批这 4 个重复实例的二元评分一致率为 4/4；按模式比较为 8/8。
+这 4 个实例不在本批预注册清单中，不存在它们的“正式批重跑一致率”；本批实际复用为 2 个实例、4 项任务。
+这不等于补丁、轮数或行为轨迹一致，也不能证明 Agent 没有非确定性。</p>
+<p>另行记录 pilot 与正式批的运行差异：<code>astropy__astropy-14369</code> 在 pilot 中双组
+unresolved（gated 归类 A），正式批中双组 resolved（baseline 34 轮，gated 37 轮、
+4 次拦截、阶段 6、13,887 字符，note=graded）。正式两组 FAIL_TO_PASS 均为 3/3，
+PASS_TO_PASS 均为 732/732。该翻转是同一实例跨运行结果变异的直接观察，与 Agent
+非确定性相容；两次运行间存在代码修复及可能的环境差异，尚不能确定变异来源。
+不将差异归因于门禁效应，不在运行期追查根因；pilot 不作为正式统计，正式批结果
+独立记录。详见 <a href="../verified20-astropy-audit/">Astropy 三次运行记录</a>。</p>
+<h3 id="_4">预注册批复用实例（不计入本批独立统计）<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>实例</th>
+<th>缓存-15 正式批 gated</th>
+<th>本批正式 gated</th>
+<th>是否一致</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mwaskom__seaborn-3069</td>
+<td>resolved，54 轮</td>
+<td>resolved，60 轮</td>
+<td>是</td>
+</tr>
+<tr>
+<td>pallets__flask-5014</td>
+<td>resolved，39 轮</td>
+<td>resolved，28 轮</td>
+<td>是</td>
+</tr>
+</tbody>
+</table>
+<p>两个实例的 baseline 本批分别为 Seaborn 31 轮、Flask 35 轮，均官方 resolved，
+与缓存-15 baseline 的 resolved 一致。因此本批两个复用实例双组结果与缓存-15 为 2/2 一致。
+前两批的 4 个重叠与这 2 个复用
+是不同实例，不应混写成只有 4 个跨批重复实例。
+早先 pilot 中 seaborn 曾 unresolved（60 轮），flask 曾 resolved（54 轮）；
+该历史与缓存-15 正式批分开保留。若存在差异，记录轮数上限、模型参数及环境等可能因素，
+未做控制实验前不确定原因，不直接归因于门禁。
+其中 Flask 的 54 轮来自单实例 <code>pilot_one_results.csv</code>；后续三次结果对照统一采用
+缓存批 <code>pilot5_results.csv</code>（Flask gated 为 15 轮）、缓存-15 与本批，明确区分 pilot 来源。</p>
+<table>
+<thead>
+<tr>
+<th>实例（gated）</th>
+<th>缓存批 pilot-5</th>
+<th>缓存-15</th>
+<th>本批正式</th>
+<th>结果一致性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>seaborn-3069</td>
+<td>unresolved，60 轮，阶段 3</td>
+<td>resolved，54 轮</td>
+<td>resolved，60 轮</td>
+<td>pilot 与后两次不同</td>
+</tr>
+<tr>
+<td>flask-5014</td>
+<td>resolved，15 轮</td>
+<td>resolved，39 轮</td>
+<td>resolved，28 轮</td>
+<td>三次一致</td>
+</tr>
+</tbody>
+</table>
+<p>Seaborn pilot 在 60 轮上限结束、门禁未完成，与后两次形成运行间结果变异。
+“触达轮数上限”是记录事实，但缺少增加预算的对照，不能断言 unresolved 仅由截断造成，
+也不把它直接解释为门禁效应。Flask 单实例 pilot 的 54 轮运行同样 resolved，
+但它与表中的 pilot-5 不是同一次运行，另保留来源。上述变化与 Astropy 的跨运行翻转并列报告。</p>
+<h2 id="pilot">pilot 链路验收<a class="headerlink" href="#pilot" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>验收项</th>
+<th>标准</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>运行完整性</td>
+<td>5 实例 × 2 模式完成；最终尝试无容器异常退出或模型调用错误</td>
+<td>10/10 完成；历史中断另保留</td>
+</tr>
+<tr>
+<td>评分链路</td>
+<td>PB_GRADE_NOTE 与 CSV、官方报告、原始日志一致，无冲突误判</td>
+<td>10/10 graded，最终 chain audit 通过</td>
+</tr>
+<tr>
+<td>门禁链路</td>
+<td>gated 有拦截与成功阶段推进；核对阶段和完成标记</td>
+<td>通过；Astropy A 类及 SymPy 零拦截另行审查</td>
+</tr>
+<tr>
+<td>复用实例保护</td>
+<td>正式启动前四个实际输出目录均不存在或为空，保存检查凭据</td>
+<td>四个目录均通过，凭据已保存</td>
+</tr>
+</tbody>
+</table>
+<p>运行曾发生 runner 消失和 Docker 引擎不可用，具体中断原因未确定。
+已保留中断记录、唯一完成的评分及未完成产物备份，恢复后仅续跑未完成项。
+不能把此次恢复写成“整个历史从未异常”；验收须区分已恢复的中断与最终尝试的完整性。</p>
+<p>审计规则由 <code>scripts/verified20_checks.py</code> 实现，并已接入本地监督器调用的审计与启动脚本：</p>
+<ul>
+<li><code>official_resolved_gate_incomplete</code>：只标记，不因该组合否决 pilot。</li>
+<li><code>gate_complete_official_unresolved</code>：按本实验验收约定阻止正式启动，分析门禁证据与官方评分差异；此标记本身不证明漏洞。</li>
+<li>未完成且停在阶段 2/3：单独分析；十万字符及以上补丁另标记 <code>large_patch</code>。</li>
+<li>正式批使用新输出根目录；seaborn/flask 的 baseline/gated 四个目录逐项检查。
+  非空即拒绝启动，不删除历史证据；runner 自身清理与 <code>patch_is_fresh()</code> 仍生效。</li>
+</ul>
+<h3 id="pilot_1">已观察到的 pilot 异常组合<a class="headerlink" href="#pilot_1" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>Django gated 组官方 resolved，但 <code>gate_completed=0</code>，结束于阶段 4。
+该实例的 resolved 结果不纳入“门禁全流程有效”的证据，仅作为“门禁未阻断官方评分”的观察。</p>
+</blockquote>
+<p>该运行达到 60 轮上限，8 次拦截，耗时 509.1 秒；补丁为 4,972 字符，非十万字符级异常。
+官方 <code>PB_GRADE_NOTE=graded</code>，FAIL_TO_PASS 为 1 成功 / 0 失败，PASS_TO_PASS 为 6 成功 / 0 失败。
+这些是 pilot 观察，不能预填到正式批 Django 结果中。</p>
+<h3 id="pilot_2">pilot 已完成记录（阶段性快照）<a class="headerlink" href="#pilot_2" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>实例</th>
+<th>组别</th>
+<th style="text-align: right;">resolved</th>
+<th style="text-align: right;">gate_completed</th>
+<th style="text-align: right;">轮数</th>
+<th style="text-align: right;">耗时秒</th>
+<th style="text-align: right;">拦截次数</th>
+<th style="text-align: right;">补丁字符数</th>
+<th>note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>django__django-16901</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">509.1</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">4972</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>django__django-16901</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">166.9</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1395</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sympy__sympy-18211</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">330.0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2187</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sphinx-doc__sphinx-9281</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">835.9</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2480</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sympy__sympy-18211</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">49</td>
+<td style="text-align: right;">1551.4</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1771</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sphinx-doc__sphinx-9281</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">141.8</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">2372</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>matplotlib__matplotlib-23476</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">333.7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1401</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>matplotlib__matplotlib-23476</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">390.2</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">1720</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>astropy__astropy-14369</td>
+<td>gated</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">510.5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">14618</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>astropy__astropy-14369</td>
+<td>baseline</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">676.1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">15530</td>
+<td>graded</td>
+</tr>
+</tbody>
+</table>
+<p>运行中的 <code>results.csv</code> 在每个配对任务完成时追加并 flush 一行；上表只是已核对快照，
+历史阶段性表格不是独立验收依据，最终收尾和 chain audit 结果见后文。
+baseline 的 gate_completed=0 不用于门禁有效性评价。
+SymPy gated 的零拦截需单独审查：日志在第 24、28、31、35 轮分别成功进入
+阶段 2、3、4、6，最后因测试通过跳过修复阶段而进入交付。
+该轨迹说明门禁有参与，零拦截本身既不能证明绕过，也不能证明没有绕过；
+最终按现存日志和补丁审查归类 benign，证据限制及复核结果见下文。</p>
+<p>五个 pilot 实例均包含在正式预注册 20 个中；正式批使用独立输出目录全部重新执行，
+不合并、不跳过 pilot 已解决实例。最终报告须披露这五个实例的先前 pilot 暴露，
+“新增 18”是相对于前两批正式实验的实例身份口径，不表示所有实例从未运行过。</p>
+<p>正式启动前必须同时确认 pilot 审计通过、运行代码已推送且 CI 全绿、Docker 稳定、
+四个复用实例/模式输出目录检查通过。旧自动启动监督器已停止，pilot runner 不受影响。
+若本次续跑期间 Docker 再次出现 socket 异常，正式批前先恢复/重启并重新核验。
+正式批每小时核对 PID 和 stale 判定，每完成 5 个双组实例核对 note 分布；
+发现评分基础设施错误即停止推进并排查，低拦截实例单列分析。</p>
+<h3 id="_5">拦截完整性审计发现与计数口径<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>上述表中的拦截值保留原始计数，不作为已校准指标。只读审计发现 runner 在捕获
+<code>PermissionError</code> 时先加一，生成 <code>gate_denied</code> 结果后又加一，同一工具拒绝被重复计数。</p>
+<table>
+<thead>
+<tr>
+<th>pilot gated 实例</th>
+<th style="text-align: right;">原始计数</th>
+<th style="text-align: right;">日志工具拒绝事件</th>
+<th style="text-align: right;">阶段推进拒绝事件</th>
+<th style="text-align: right;">两类事件合计</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Django-16901</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr>
+<td>Matplotlib-23476</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">8</td>
+</tr>
+<tr>
+<td>Sphinx-9281</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td>SymPy-18211</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<p>原 pilot 产物只保存补丁、stats 和截断的 stdout，未导出门禁 state 或独立 trace。
+Skill 的可选 behavior trace 默认关闭，且其 tool_call 记录不等同于 blocked 事件，
+不能用 <code>grep blocked</code> 代替明确的工具拒绝与阶段拒绝口径。
+原 pilot 完成后已修复计数并持久化审计事件；修复状态及新的容器验证见下文。
+历史批次拦截成本也可能受相同实现影响，不能把修复前后的计数直接比较。</p>
+<p>SymPy gated 为 35 轮 / 2187 字符，baseline 为 49 轮 / 1771 字符；
+补丁不是小于 100 字符的表面改动。日志显示先写 spec、再写复现测试、
+阶段 3 才修改实现、阶段 4 执行测试，4→6 是状态机支持的“测试通过无需修复”转换，
+不要求人为经过阶段 5。已有信息未证明绕过，但缺少完整参数和持久化状态，
+历史快照曾暂标记 <code>zero_interception_suspicious</code>（证据不足待复核）；最终审查见下文。
+新复核的拦截值和归类单列，不将新运行轨迹冒充原 pilot 的完整历史。</p>
+<ul>
+<li>pilot 原始字段保持不变；事后按 stdout 重算为 Django 8→6、Matplotlib 11→8、
+  Sphinx 5→4、Astropy 5→4。上方表格仍保留原始值，重算值不伪称来自旧 trace。</li>
+<li>正式批使用修复后的逻辑，<code>gate_intercepts</code> 须与 <code>trace.jsonl</code> 中 <code>blocked=true</code>
+  的事件数一致（事件类型为 <code>blocked</code>）。</li>
+<li><strong>pilot 平均拦截次数不能与正式批直接比较</strong>；本报告拦截成本统计仅引用正式批数据，
+  不混入 pilot、审计复核或修复前历史批次。</li>
+</ul>
+<h3 id="pilot_3">pilot 收尾与修复状态<a class="headerlink" href="#pilot_3" title="Permanent link">&para;</a></h3>
+<p>pilot 于 2026-11-10 14:53:52（北京时间）完成，10/10 配对任务均为 <code>graded</code>；
+baseline 与 gated 各 4/5 resolved，仅描述 pilot，不作为正式统计。
+Astropy gated 的 <code>gate_completed=1</code> 但官方 unresolved，触发约定的验收阻断。
+补丁成功应用，官方报告 <code>infra_failure=false</code>，FAIL_TO_PASS 为 2 成功 / 1 失败，
+PASS_TO_PASS 为 730 成功 / 2 失败；因此不能作为评分基础设施错误重试至通过。
+未通过的 FAIL_TO_PASS 包括 <code>test_cds_grammar_fail[km/s.Mpc-1]</code>。
+门禁只证明 Agent 提交的测试证据满足当时交付条件，不保证覆盖官方全部测试。
+后续同补丁重放已完成，归类 A 的依据见下节；保留该失败观察。</p>
+<p>原 pilot 完成后，runner 已修复同一 PermissionError 重复计数，并新增持久化
+<code>trace.jsonl</code>（每次工具调用的参数、前后阶段、拒绝类型及结果状态）及最终 <code>state.json</code>。
+工具拒绝与阶段推进拒绝统一各计一个 blocked 事件，日志落盘失败不静默忽略。
+新增测试覆盖异常拒绝与返回值拒绝两条路径、计数与 trace 一致、阶段记录、密钥脱敏和写盘失败。
+最初 44 项相关测试通过；后续含审计产物解析与交付新鲜度的相关测试共 56 项通过，
+并完成 Astropy、Django 两个真实镜像的确定性验证（各 3 个事件、2 个 blocked，零模型请求）。
+这不替代下述 SymPy/Astropy 模型运行复核。
+原 pilot 历史计数保持原样，未回填修复后的新定义。</p>
+<h2 id="astropy-14369pilot-gated">异常实例：astropy-14369（pilot gated）<a class="headerlink" href="#astropy-14369pilot-gated" title="Permanent link">&para;</a></h2>
+<ul>
+<li>门禁：<code>gate_completed=1</code>，阶段 6，36 轮，14,618 字符。</li>
+<li>官方：unresolved，FAIL_TO_PASS 2/3 通过，PASS_TO_PASS 730/732 通过；
+  补丁成功应用，<code>infra_failure=false</code>。</li>
+<li>归类 A：<code>gate_completed_insufficient</code>。专项证据见 <a href="../verified20-astropy-audit/">Astropy 审计</a>。</li>
+<li>同一补丁重放：Agent 自写测试 4/4 通过，原有语法失败测试 20/20 通过。
+  官方 FAIL_TO_PASS 包含 Agent 未覆盖的“混用除号与点乘应抛 ValueError”场景。</li>
+<li>未修改既有测试文件，排除该补丁的 <code>test_tampering</code>。旧 state/trace 缺失，
+  无法逐时间戳核验；未发现 <code>delivery_clean</code> 漏洞的具体证据，不补造旧历史。</li>
+<li>baseline 同实例也 unresolved，官方失败测试与 gated 相同；该观察不支持将失败归因于门禁。</li>
+<li>门禁验证的是已提交测试证据，官方隐藏场景不在门禁可见范围内。
+  门禁通过是 gated 流程合规交付的必要条件，不是官方通过的充分条件。
+  该实例不作为“门禁有效”或“门禁有害”的证据，用于说明能力边界。</li>
+</ul>
+<h2 id="_6">门禁完成但官方未通过：审计汇总与收尾安排<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>截至 2026-11-13 10:46，完成 21/40 项，正式批该组合为 2 项；下表分开历史 pilot 与正式批，后续新增项汇入同一表。
+仅凭 <code>gate_completed=1</code> 与官方 unresolved 不能确定 A/B/C，更不能把“门禁通过”当作官方 resolved 的必要条件。</p>
+<table>
+<thead>
+<tr>
+<th>批次</th>
+<th>实例（gated）</th>
+<th>门禁 / 官方结果</th>
+<th>归类与证据状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pilot</td>
+<td>astropy-14369</td>
+<td>阶段 6，门禁完成；官方 unresolved</td>
+<td>A，覆盖不足；同补丁重放证据见专项审计，不计入正式批该组合数量</td>
+</tr>
+<tr>
+<td>正式批</td>
+<td>requests-2317</td>
+<td>27 轮，阶段 6，4 次拦截，4,524 字符；官方 unresolved，note=graded</td>
+<td><code>env_tls_interference</code>；F2P 7/8、P2P 127/133；baseline 和 gated 重放均有证书错误，单列于 A/B/C 之外</td>
+</tr>
+<tr>
+<td>正式批</td>
+<td>xarray-3993</td>
+<td>34 轮，阶段 6，6 次拦截，4,021 字符；官方 unresolved，note=graded</td>
+<td>A 类 warning 要求差异 + B 类 <code>test_assertion_weakened</code>，分别记录；F2P 0/2、P2P 2398/2398；重放证实登记断言被移除后最终测试通过</td>
+</tr>
+</tbody>
+</table>
+<p>正式批 Astropy 双组均 resolved，不列作正式批门禁完成却官方失败的实例。
+每次监控按 CSV 字段名核对新增组合，只标记、不停批；基础设施错误仍按已有根因规则停止。</p>
+<p>已完成两项证据初查及独立容器同补丁重放：<a href="../verified20-formal-gate-audit/">统一审计记录</a>；
+共用 <a href="../verified20-gate-audit-template/">A/B/C 模板</a> 已准备。
+两项持久化状态、计数和阶段连续性核验通过，保存状态上的 <code>delivery_clean()</code> 均为 true；
+这些检查不替代测试覆盖审查。Requests 自写测试重放 6/6 通过，官方失败测试在同一容器两次均报 TLS 证书错误，
+baseline 原日志也有同类错误，单列为环境混杂，不归 A。
+Xarray 最终自写测试重放 3/3 通过，阶段 2 原始版本为 2 通过、1 失败；
+两个官方 F2P 均复现 FutureWarning/DeprecationWarning 不符。断言弱化与 warning 行为差异分开记录，
+不能只以“未改官方测试”排除测试完整性问题，也不强行合并成单一 A 类。
+Astropy 仍只将历史 pilot 归 A，不写成“正式批三个均为 A”。
+初查证据清单 <code>formal_gate_preliminary_audit.json</code> 保留，追加的重放及 Seaborn 对照凭据为 <code>formal_parallel_audit_evidence.json</code>。</p>
+<p>40 项官方证据核验后，先复核新增异常及上述审计的证据完整性；对后续新增项按同一流程核对 state、trace、补丁和官方报告，
+必要时在独立目录重放，原评分不覆盖。A 为覆盖不足，B 为测试完整性问题，C 为 <code>delivery_clean</code> 缺陷；不能预填 A。
+若确认 B/C，先保留本批证据并披露受影响范围，再修门禁和验证；修复后的运行单列，不覆盖已有正式结果。
+表格自动填充与机制审计分开，存在待审计项时不宣称机制审查已定稿。</p>
+<h3 id="seaborn">Seaborn 运行差异：已完成证据对照<a class="headerlink" href="#seaborn" title="Permanent link">&para;</a></h3>
+<p>缓存批 pilot-5 gated 为 60 轮、阶段 3、官方 unresolved；正式批 gated 同为 60 轮，
+但为阶段 4、<code>gate_completed=0</code>、4,805 字符、官方 resolved。轮数上限是两次运行的共同现象，不能单独解释结果差异。
+pilot 补丁为 4,312 字符，F2P 1/2、P2P 94/94；正式补丁为 4,805 字符，F2P 2/2、P2P 94/94。
+pilot 的失败断言要求显式 y 范围 <code>(-1, 2.1)</code> 保持顺序，实际错误反转为 <code>(2.1, -1.0)</code>；
+正式补丁不改显式范围，自写测试也覆盖该行为。该具体补丁差异解释了原官方失败的断言结果。
+pilot 旧 state/trace 缺失，保留 stdout 证据限制；正式 trace 显示后期多次推进被“未检测到测试运行记录”拒绝。
+完整阶段、轮数、补丁与测试对照见 <a href="../verified20-seaborn-comparison/">Seaborn 专项对照</a>，不把新轨迹当作旧历史。
+未做控制实验前，原因保留为未确定，不单独归因于模型采样、中间代码修复或门禁开销。</p>
+<h2 id="sympyastropy">SymPy/Astropy 审计复核（不并入正式统计）<a class="headerlink" href="#sympyastropy" title="Permanent link">&para;</a></h2>
+<p>使用修复后的独立输出目录 <code>.pytest_tmp/verified20/audit_revalidation/</code>，
+验证新 <code>state.json</code> / <code>trace.jsonl</code> 持久化、拦截计数和零拦截归类。
+复核结果不并入正式批统计，不复用其补丁或 resolved 结果；正式 20 实例全部独立执行。</p>
+<table>
+<thead>
+<tr>
+<th>核验项</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>复核 runner 与两项官方评分完成</td>
+<td>已完成；宿主 runner 曾消失，保留中断证据并仅恢复原补丁评分，零新增模型请求</td>
+</tr>
+<tr>
+<td>SymPy 原 pilot 零拦截</td>
+<td><code>zero_interception_benign</code>，按现存日志与补丁解释；旧 state/trace 缺失的局限保留</td>
+</tr>
+<tr>
+<td>Astropy/SymPy 的 stats、state 与 trace 一致</td>
+<td>均通过；分别为 51/52 个事件、3/1 次 blocked</td>
+</tr>
+<tr>
+<td>Docker 复核期间稳定，无新增 stale socket</td>
+<td>当前引擎及 PostgreSQL 健康，复核时段日志未发现 stale socket/引擎失败；runner 中断原因未知</td>
+</tr>
+</tbody>
+</table>
+<p>SymPy 新复核：36 轮、1,761 字符、阶段 6、官方 resolved，FAIL_TO_PASS 1/1、
+PASS_TO_PASS 54/54。原 pilot 的 0 次与新复核的 1 次分开保留，
+详见 <a href="../verified20-sympy-audit/">SymPy 零拦截审计</a>。
+Astropy 新复核：44 轮、15,625 字符、阶段 6、官方 unresolved，FAIL_TO_PASS 2/3、
+PASS_TO_PASS 731/732；对新补丁单独核验交付新鲜度和覆盖差异后也归类 A。
+以上均为审计复核数据，不进入正式结果。</p>
+<h2 id="_7">正式启动前置条件与运行记录<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>状态 / 凭据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>4b71b20a7f8bfa806b09d4379cce973f2d19b66f</code> 已推送且 CI 全绿</td>
+<td>CI、Security、Plugin CI、docs 四项全部 success</td>
+</tr>
+<tr>
+<td>pilot 审计通过，Astropy A 类专项审查完成</td>
+<td>通过，10 行无 errors/manual review；专项报告已落盘</td>
+</tr>
+<tr>
+<td>Docker 稳定，复核已结束</td>
+<td>通过；无残余复核工作负载，20 个镜像 ID/RootFS 再校验一致</td>
+</tr>
+<tr>
+<td>seaborn/flask × baseline/gated 四个实际输出目录不存在或为空</td>
+<td>通过；正式输出中的 <code>reused_patch_preflight.json</code> 保存四项凭据</td>
+</tr>
+<tr>
+<td>新审计链路验证通过</td>
+<td>通过；两个真实镜像确定性验证、两项模型复核，本次重跑 74 项相关测试通过</td>
+</tr>
+</tbody>
+</table>
+<p>主 CI 凭据：<a href="https://github.com/Xuqing0415/phase-barrier/actions/runs/42774476828">CI 42774476828</a>。
+五项完整凭据在 <code>.pytest_tmp/verified20/formal_prelaunch.json</code>；
+本次相关回归覆盖审计产物、计数、复用保护、容器 runner 和交付后改码/红测路径。</p>
+<p>附件中的 <code>--manifest</code>、<code>--output-dir</code>、<code>--max-rounds</code> 和
+<code>--preflight-check-reuse-instances</code> 不是当前容器 runner 的参数。
+实际启动器为 <code>.pytest_tmp/verified20/run_verified_stage.py formal</code>，内部先检查四个复用目录，
+再使用 runner 的 <code>--tasks</code>、<code>--dataset</code>、<code>--results</code>、<code>--agent-runs</code>、<code>--eval-runs</code>、
+<code>--modes baseline,gated</code> 和 <code>--max-turns 60</code>；运行时仅替换镜像 namespace 为 <code>logicstar</code>。
+正式输出独立保存在 <code>.pytest_tmp/verified20/formal20_logicstar/</code>，进度文件名为 <code>results.csv</code>。</p>
+<p>启动后 5 分钟内核对 <code>launch.json</code>、<code>status.json</code> 与实际 runner PID 一致，
+并确认第一个实例已开始运行；PID 缺失或不一致立即停止并修复后再启动。
+每小时核对 runner 存活、stale 状态、完成配对数和 note 分布，每 5 个配对实例复查一次。
+出现 <code>grade_infra_failure</code> 即停止推进并排查；零拦截 gated 实例和超过 60 分钟的实例单列。
+中断时记录时间点，保留已完成评分与证据，修复后仅续跑未完成项。
+正式批后台监督器每秒检查新增 note，按每小时/每 5 配对保存监控快照，
+异常时停止该批进程和容器；其他 Docker 服务保留。
+正式数值和审计摘要自动写入输出目录及本文末尾，最终机制解释仍须复核异常证据。</p>
+<h3 id="2026-11-10">2026-11-10 正式批中断与断点恢复<a class="headerlink" href="#2026-11-10" title="Permanent link">&para;</a></h3>
+<p>17:45:59（Asia/Shanghai）监督器因 Matplotlib-23476 baseline 的 <code>empty_patch</code> 停止该批。
+容器日志显示模型调用重试后出现 <code>URLError: [Errno -2] Name or service not known</code>，
+该次空补丁归为 <code>model_call_error</code>，不作为 Agent 主动放弃或官方 unresolved。
+Django-16901 gated 同期也有模型调用错误，但 6,054 字符补丁及门禁审计已保存，官方评分未完成。
+中断时保留 9 项已完成官方评分（其中包含 4 个完整配对），不是 13 项；
+恢复清单为 <code>skip=9</code>、<code>regrade_only=1</code>、<code>rerun=1</code>、<code>pending=29</code>，合计 40 项。
+4 个完整配对内 baseline/gated 均为 3 resolved、1 unresolved；共同失败的是 Django-16631，
+因此当时 baseline-only 与 gated-only 均为 0。</p>
+<p>恢复前核验宿主机 DNS、容器 DNS 和 Docker daemon 配置。
+默认容器 DNS 连续探测 10/10 通过，显式 DNS 容器探测另有 10/10 通过；
+实际模型端点 <code>api.deepseek.com</code> 的 TLS 连接及证书校验 3/3 通过，未发送模型请求。
+宿主 Docker 配置未设置显式 DNS，未修改 daemon 或重启 Docker。
+续跑 Agent 容器采用 <code>--dns 223.5.5.5 --dns 1.1.1.1</code>。
+这些检查表明当时连接验证通过，并不证明间歇性 DNS 故障的根因已永久消除。
+证据保存在 <code>.pytest_tmp/verified20/</code> 下的 <code>dns_diagnostic_default.json</code>、
+<code>dns_diagnostic_override.json</code> 和 <code>model_transport_check.json</code>。</p>
+<p>运行规则改为按根因判定：<code>grade_infra_failure</code> 或模型调用基础设施错误立即停止；
+<code>empty_patch</code> 且 <code>agent_gave_up</code> 仅标记；根因不明的空补丁连续两项才停止。
+非空补丁如伴随模型调用失败也保留并停止，恢复时优先只补评分。
+零拦截、超过 60 分钟、补丁至少 100,000 字符、门禁与官方结果不一致均单列复核。
+真实 Matplotlib 中断日志分类为 <code>model_call_error</code>，停止策略验证通过；
+相关回归先有 92 项通过，最终修复后的变更相关子集为 59 项通过。
+运行中修改了编排、分类及监督规则，未修改 Agent 核心；源码哈希随恢复记录保存，
+运行间比较须保留这一代码差异信息。</p>
+<p>18:20:57 开始恢复准备与 Django 保存补丁的补评分，监督器 PID 为 3916。
+Matplotlib 原失败目录移入 <code>formal20_logicstar/recovery_20261110T102057Z/</code>，
+原始 CSV、状态、启动信息、日志及 62 个已完成证据文件的哈希均归档。
+恢复启动预检曾分别因模块导入和计划相对/绝对路径表示差异退出；
+两次均发生在评分与模型调用前，修复并保留错误日志后才继续。
+首小时每 15 分钟保存监控快照，其后每小时，且每 5 个完整配对额外保存一次；
+基础设施停止条件持续每秒检查。最终恢复时间和新 runner PID 以 <code>launch.json</code> 的
+<code>resume_attempts</code>、<code>pid_verification.json</code> 和 <code>supervision.json</code> 为准。</p>
+<p>20:43:41 正式恢复剩余 30 项 Agent 任务，runner PID 2540、监督器 PID 3916，
+<code>launch.json</code>、<code>status.json</code> 与实际 PID 一致。Django-16901 gated 使用原补丁补评分，
+官方 resolved，FAIL_TO_PASS 1/1、PASS_TO_PASS 6/6，未重跑 Agent。
+其 <code>gate_completed=0</code>、最终阶段 5，标记 <code>official_resolved_gate_incomplete</code>，
+且保留此前模型调用失败的中断背景，不作为门禁全流程有效的证据。
+恢复验收时原 9 项评分行逐项一致，62 个证据文件哈希全部未变；
+当前 10 项均 <code>graded</code>，5 个完整配对内 baseline/gated 各 resolved 4 项，
+baseline-only 与 gated-only 均为 0。这些为中途结果，尚非全批结论。
+实际 Matplotlib baseline/gated 容器均已核验显式 DNS 参数，活动输出目录为新建，
+gated 的 <code>trace.jsonl</code> 已开始更新；下一次计划监控为 20:58:41。</p>
+<h3 id="2026-11-13">2026-11-13 再次恢复与运行期修复<a class="headerlink" href="#2026-11-13" title="Permanent link">&para;</a></h3>
+<p>11 月 10 日 21:27:29，Seaborn-3069 baseline 的模型调用重试后出现
+<code>URLError: [Errno -3] Temporary failure in name resolution</code>。它已生成 2,240 字符补丁，
+记录为 <code>model_call_error</code>，未将模型错误直接算成官方 unresolved。
+监督器随后停止 runner，但清理 Docker 时用 Windows 默认 GBK 解码 UTF-8 JSON，
+触发 <code>UnicodeDecodeError</code> 及后续 <code>TypeError</code>，未能把 <code>status.json</code> 从 running 更新为 halted。
+11 月 13 日检查确认旧 runner 和监督器均已不存在，Docker 中没有该批活动容器；
+因此旧 running 是残留状态，不能据此认为实验一直在运行。</p>
+<p>实际恢复清单为 13 项已完成评分、2 项保存补丁只补评分、0 项重跑、25 项待开始，
+合计 40 项。Matplotlib-24970 baseline 保存了 1,038 字符补丁与统计，缺失宿主容器日志；
+统计记录 37 轮、220,038.7 秒，文件在 11 月 13 日才更新。
+这项跨中断耗时的具体构成未确定，保留原值并标记超过 60 分钟，
+不能当作正常模型执行时长或用它推断执行效率。</p>
+<p>修复停止链路：先持久化停机状态，再逐项清理容器；Docker inspect JSON 按原始字节解析，
+不依赖 Windows 活动代码页；单个容器检查失败不会中断后续清理。
+容器归属按本批挂载目录判断，避免仅凭通用标签误停其他批次。
+运行日志改为持续落盘，以便容器或宿主进程中断时保留部分输出。
+停止判定同时识别复合 note 中的 <code>model_call_error</code>，即使日志缺失也不漏停。
+恢复计划、已保留项数和新增行偏移改为动态计算，baseline 补评分不再要求 gated 审计产物。
+上述修复后 78 项相关测试通过；汇总工具另有 7 项测试通过。
+编排和监督代码的运行期变更保留源码哈希，不把本次恢复视为与初始运行完全相同的环境。</p>
+<p>本次宿主 DNS 核验完成，默认 DNS 与显式 DNS 的容器解析分别 10/10 通过，
+实际模型端点 TLS 及证书校验 3/3 通过，未发送诊断性模型请求。
+此前显式 DNS 仍发生过故障，因此此次验证不等于永久修复，继续保留模型错误即停策略。
+旧诊断和错误记录已归档，恢复目录为 <code>formal20_logicstar/recovery_20261113T021426Z/</code>，
+其中保存 13 项完成评分及 92 个证据文件的哈希。</p>
+<p>10:19:55（Asia/Shanghai）恢复剩余 25 项 Agent 任务，runner PID 16704、监督器 PID 31940，
+PID 核验通过。两个补评分均未重跑 Agent：Matplotlib-24970 baseline 官方 resolved，
+FAIL_TO_PASS 1/1、PASS_TO_PASS 253/253；Seaborn-3069 baseline 官方 resolved，
+FAIL_TO_PASS 2/2、PASS_TO_PASS 94/94。此时累计 15 项 graded、7 个完整配对，
+Seaborn baseline 的评分等待其 gated 结果后才进入配对统计。
+首小时按 15 分钟保存快照，其后每小时及每 5 配对检查；基础设施错误每秒检查。</p>
+<p>新增 <code>scripts/verified20_report.py</code> 从正式证据生成三批去重、独立/复用结果与成本、
+跨批一致率和逐项异常；它拒绝把不完整数据定稿。
+后台收尾监控等待本次 <code>completion_verification.json</code> 确认所有官方证据齐全后，
+才更新主报告及 <code>docs/benchmarks/verified20-final-results.md</code>。
+若门禁完成却官方 unresolved，仍保留 A/B/C 审计待办；零拦截仍须 benign/suspicious 复核，
+自动表格生成不代替机制审计。收尾状态见 <code>formal20_logicstar/report_finalization_status.json</code>。</p>
+<h3 id="_8">轮数预算与完整流程的观察<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p>Django gated 的 14631、16333、16631、16901 分别为 60、60、60、53 轮，
+最终阶段分别为 4、4、5、5，均 <code>gate_completed=0</code>；官方结果为 3 resolved、1 unresolved。
+门禁未完成不能直接解读为官方评分受阻：3 个官方 resolved 可作为门禁未必阻断官方评分的观察，
+不作为门禁全流程有效的证据。这一模式与轮数上限和多阶段开销的交互相容，
+但没有增加轮数预算的对照实验，尚不能确定未完成的原因。</p>
+<p>Matplotlib-23476 gated 为 58 轮、8 次拦截、阶段 6、<code>gate_completed=1</code>、1,328 字符，
+说明接近 60 轮上限仍存在完成全流程的实例，轮数上限并非绝对阻断。
+正式批最早完成全流程的是 Astropy-14369（37 轮、4 次拦截、阶段 6），
+不把 Matplotlib 记为第一个完成的实例。Django 模式与上述完成案例并列呈现，避免把完成标志等同于官方解决率。</p>
+<h3 id="_9">解决率与耗时的工程权衡（人工记录，自动刷新保留）<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<p>截至 2026-11-13 11:14，已完成 14 配对，正式批出现 1 个 baseline-only（Xarray-3993）：
+baseline resolved、gated unresolved。该配对保留在正式结果及成本样本中，不因已知原因删除或改写。
+同补丁重放分别证实阶段 3 替换阶段 2 的测试后丢失了同时传 coord/dim 应报错的断言，
+以及自写测试要求 DeprecationWarning、官方要求 FutureWarning 的行为差异；二者分开记录，
+不把断言替换说成官方 warning 失败的已证实原因。
+gated 已进入阶段 6 并交付，并非停在未完成阶段；该轨迹仍不能隔离门禁对补丁选择的因果影响。
+当前门禁允许测试演进而未保证既定行为断言覆盖不降低，属于设计边界；
+单个配对不构成总体因果效应，整体方向、解决率与耗时均以最终全量结果为准。</p>
+<p>在 2026-11-13 10:31 的中途成本快照中，独立部分有 7 个完整配对；
+排除 Matplotlib-24970 baseline 的跨中断墙钟后，baseline 时间样本 n=6、gated n=7。
+<strong>gated 组 P90 耗时为 baseline 的 2.16 倍（1,163.7s vs 539.0s），约增加 116%。</strong>
+该快照的双组 resolved 均为 6/7，未观察到配对解决率下降，同时观察到明显耗时增加；
+不能仅以解决率表述工程权衡。</p>
+<p>上述 2.16× 是注明样本与时点的历史快照，不是冻结的全批结论。
+新增 Requests 双组结果后，10:38 快照的独立部分为 8 个完整配对、双组各 resolved 6/8；
+排除跨中断后的 baseline n=7、gated n=8，P90 为 587.0s 与 1,098.7s，比值更新为 1.87×。
+最新与最终比值由下面的成本表和最终报告重算。这是两组 P90 的比值，
+不是逐实例平均减速，也不能视为控制了测试、重试及环境影响的门禁纯因果代价。
+有限中途样本中的解决率持平不足以证明总体不降低解决率；最终结论必须并列呈现解决率与成本。</p>
+<p>最终成本数字仅在全部 40 项官方证据核验后确定，独立与复用分开。
+全量独立配对 n=18；最终复核另发现 SymPy-18211 双组跨宿主机睡眠，排除三项秒数后，时间样本为 baseline n=16、gated n=17，
+其他指标及该实例的官方结果仍保留。成本比基于有限样本 P90，P90 对离群值敏感；
+2.16×→1.87× 是同一正式批中途随样本增加的漂移，不是不同批次间的成本比较。
+中间数字与最终数字均视为点估计，不作为精确值或置信区间；这一限制须在最终局限章节保留。</p>
+<h2 id="_10">正式结果<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<p>已完成 40 项官方评分、20/20 个完整配对，评分覆盖 12 个仓库。仅双组均 graded 的实例进入配对表；缺失不当作 unresolved。</p>
+<table>
+<thead>
+<tr>
+<th>批次 / 部分</th>
+<th style="text-align: right;">配对数</th>
+<th style="text-align: right;">baseline resolved</th>
+<th style="text-align: right;">gated resolved</th>
+<th style="text-align: right;">baseline-only</th>
+<th style="text-align: right;">gated-only</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lite Scale-20</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>Verified 缓存-15</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_11">三批实际去重<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>批次</th>
+<th style="text-align: right;">完整配对实例数</th>
+<th style="text-align: right;">跨批重叠</th>
+<th style="text-align: right;">新增不同实例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lite Scale-20</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">20</td>
+</tr>
+<tr>
+<td>Verified 缓存-15</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">11</td>
+</tr>
+<tr>
+<td>Verified 预注册-20</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">18</td>
+</tr>
+</tbody>
+</table>
+<p>累计 49 个不同实例；去重计数不保证观测相互独立。</p>
+<h3 id="_12">正式成本<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<p>秒数主表排除跨中断耗时；轮数、拦截和补丁字符仍保留该实例。</p>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th>模式</th>
+<th>指标</th>
+<th>口径</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">中位数</th>
+<th style="text-align: right;">P90</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>turns</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">43.0</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>seconds</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">375.4</td>
+<td style="text-align: right;">641.8</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">2448.5</td>
+<td style="text-align: right;">7369.7</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>turns</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">51.0</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>seconds</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">304.6</td>
+<td style="text-align: right;">767.1</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">4.0</td>
+<td style="text-align: right;">8.3</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td>全部实例</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">3988.0</td>
+<td style="text-align: right;">11077.1</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>baseline</td>
+<td>turns</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">33.0</td>
+<td style="text-align: right;">34.6</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>baseline</td>
+<td>seconds</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">559.8</td>
+<td style="text-align: right;">898.4</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1545.0</td>
+<td style="text-align: right;">2101.0</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>gated</td>
+<td>turns</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">44.0</td>
+<td style="text-align: right;">56.8</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>gated</td>
+<td>seconds</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">272.6</td>
+<td style="text-align: right;">423.5</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4.5</td>
+<td style="text-align: right;">5.7</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td>全部实例</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">3804.0</td>
+<td style="text-align: right;">4604.8</td>
+</tr>
+</tbody>
+</table>
+<p>matplotlib-24970 baseline 的 220,038.7 秒跨两次中断；SymPy-18211 baseline/gated 的 9,070.8/8,814.0 秒跨宿主机睡眠。三项均排除出主要耗时统计，原始结果、轮数和拦截数保留。
+宿主机在 2026-11-13 11:59:40–14:22:42（北京时间）睡眠，Windows Power-Troubleshooter 事件 1（record 51905）与两组 run/grade 边界相符。证据见 <a href="../verified20-formal-gate-audit/">机制审计</a>。
+不从原始墙钟中估算扣减睡眠时间；以下敏感性表保留完整原始墙钟，供核对排除影响。</p>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th>口径</th>
+<th style="text-align: right;">baseline n</th>
+<th style="text-align: right;">baseline P90 秒</th>
+<th style="text-align: right;">gated n</th>
+<th style="text-align: right;">gated P90 秒</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>独立部分</td>
+<td>全部实例（原始墙钟）</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">3433.0</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">1098.7</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">641.8</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">767.1</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>全部实例（原始墙钟）</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">898.4</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">423.5</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>排除跨中断耗时</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">898.4</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">423.5</td>
+</tr>
+</tbody>
+</table>
+<p>复用部分：排除跨中断耗时后，gated P90 为 baseline 的 0.47×（423.5s vs 898.4s；gated n=2、baseline n=2）。
+独立部分：排除跨中断耗时后，gated P90 为 baseline 的 1.20×（767.1s vs 641.8s；gated n=17、baseline n=16）。
+这是两组 P90 的描述性比值，不是逐实例平均减速，也不能隔离门禁、测试和模型重试各自的耗时贡献。部分结果不能证明总体解决率不降低；最终结论须同时报告配对解决率和成本。
+最终成本结论须基于全部 40 项核验证据，独立与复用分开；全量独立配对 n=18，排除跨中断耗时后 baseline 时间 n=16、gated n=17。P90 对离群值敏感，样本量有限；同一正式批的中途估计曾随样本增加由 2.16× 漂移至 1.87×，这些中间数字及最终比值均为点估计，不是精确值或置信区间。</p>
+<h3 id="_13">成本来源分段<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<p>来源按首次中断归档 CSV 中已评分的 instance+mode 划分。当前评分数：<code>{"中断前已评分": 9, "恢复后评分（含补评）": 31}</code>。
+全量时为中断前 9 项、恢复后 31 项评分。补评分沿用原 Agent 的轮数和耗时，因此“恢复后评分”不等于 Agent 全程使用新规则，也不证明环境稳定；不将其直接称为稳定环境下的成本。
+分段成本仍只取双组评分齐全的实例，秒数排除跨中断耗时；每行注明实际 n。</p>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th>评分来源</th>
+<th>模式</th>
+<th>指标</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">中位数</th>
+<th style="text-align: right;">P90</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>baseline</td>
+<td>turns</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">37.0</td>
+<td style="text-align: right;">59.6</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>baseline</td>
+<td>seconds</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">301.7</td>
+<td style="text-align: right;">379.8</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5495.0</td>
+<td style="text-align: right;">11034.8</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>turns</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">45.0</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>seconds</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">493.5</td>
+<td style="text-align: right;">675.7</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">2277.0</td>
+<td style="text-align: right;">5746.2</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>gated</td>
+<td>turns</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">60.0</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>gated</td>
+<td>seconds</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">516.5</td>
+<td style="text-align: right;">652.8</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">3.5</td>
+<td style="text-align: right;">6.8</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>中断前已评分</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">11270.5</td>
+<td style="text-align: right;">13247.1</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>turns</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">47.5</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>seconds</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">272.8</td>
+<td style="text-align: right;">855.3</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">4.5</td>
+<td style="text-align: right;">8.7</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">2838.0</td>
+<td style="text-align: right;">5783.7</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>turns</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">33.0</td>
+<td style="text-align: right;">34.6</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>seconds</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">559.8</td>
+<td style="text-align: right;">898.4</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1545.0</td>
+<td style="text-align: right;">2101.0</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>turns</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">44.0</td>
+<td style="text-align: right;">56.8</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>seconds</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">272.6</td>
+<td style="text-align: right;">423.5</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4.5</td>
+<td style="text-align: right;">5.7</td>
+</tr>
+<tr>
+<td>复用部分</td>
+<td>恢复后评分（含补评）</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">3804.0</td>
+<td style="text-align: right;">4604.8</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_14">重叠实例跨批一致率<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>比较</th>
+<th style="text-align: right;">重叠实例</th>
+<th style="text-align: right;">已比较</th>
+<th style="text-align: right;">一致</th>
+<th>不一致</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>链路 pilot-5 → 正式批</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">4</td>
+<td>astropy__astropy-14369</td>
+</tr>
+<tr>
+<td>前两批共有实例 → 正式批</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td>—</td>
+</tr>
+<tr>
+<td>缓存-15 → 正式批（复用）</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>一致指同一实例 baseline/gated 两个二元结果均一致。前两批相互重叠的 4 个实例与本批的交集按实际 ID 计算。
+逐项核对：前两批的 8 个重叠 instance+mode 比较均有记录；本批跨批复用 4 项任务，已 graded 4 项。两类键清单分别保存在汇总 JSON 的 <code>historical_overlap_jobs</code> 和 <code>formal_reuse_jobs</code>，不能把前者的 8 项当作本批有 8 项复用任务。</p>
+<h3 id="_15">两个复用实例的三次结果<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>实例</th>
+<th>模式</th>
+<th>缓存批 pilot</th>
+<th>缓存-15</th>
+<th>正式批</th>
+<th>运行间变异</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mwaskom__seaborn-3069</td>
+<td>baseline</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>未观察到</td>
+</tr>
+<tr>
+<td>mwaskom__seaborn-3069</td>
+<td>gated</td>
+<td>unresolved</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>有</td>
+</tr>
+<tr>
+<td>pallets__flask-5014</td>
+<td>baseline</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>未观察到</td>
+</tr>
+<tr>
+<td>pallets__flask-5014</td>
+<td>gated</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>resolved</td>
+<td>未观察到</td>
+</tr>
+</tbody>
+</table>
+<p>此表缓存批 pilot 使用 <code>.pytest_tmp/verified15/pilot5_results.csv</code>，与链路 pilot-5 是不同运行。Flask 另有单实例 pilot 的 54 轮记录，未混入此表的缓存批 pilot-5（15 轮）。结果差异记录为运行间变异；代码与环境存在变化，不直接归因于门禁或模型采样。</p>
+<h3 id="_16">异常实例<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>实例</th>
+<th>模式</th>
+<th>标记</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>django__django-14631</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>django__django-16333</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>django__django-16901</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>matplotlib__matplotlib-24970</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>matplotlib__matplotlib-24970</td>
+<td>baseline</td>
+<td>over_60_minutes, cross_interruption_wall_time_excluded_from_efficiency, cross_interruption_excluded_from_efficiency</td>
+</tr>
+<tr>
+<td>mwaskom__seaborn-3069</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>psf__requests-2317</td>
+<td>gated</td>
+<td>gate_complete_official_unresolved, env_tls_interference</td>
+</tr>
+<tr>
+<td>pydata__xarray-3993</td>
+<td>gated</td>
+<td>gate_complete_official_unresolved, A_warning_mismatch+B_test_assertion_weakened</td>
+</tr>
+<tr>
+<td>pylint-dev__pylint-4970</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, early_stage_incomplete</td>
+</tr>
+<tr>
+<td>scikit-learn__scikit-learn-25102</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>sphinx-doc__sphinx-9281</td>
+<td>gated</td>
+<td>official_resolved_gate_incomplete, budget_exhausted_at_late_stage</td>
+</tr>
+<tr>
+<td>sympy__sympy-13480</td>
+<td>gated</td>
+<td>zero_interception_suspicious</td>
+</tr>
+<tr>
+<td>sympy__sympy-17630</td>
+<td>gated</td>
+<td>zero_interception_suspicious</td>
+</tr>
+<tr>
+<td>sympy__sympy-18211</td>
+<td>gated</td>
+<td>over_60_minutes, cross_interruption_wall_time_excluded_from_efficiency, zero_interception_suspicious, cross_interruption_excluded_from_efficiency</td>
+</tr>
+<tr>
+<td>sympy__sympy-18211</td>
+<td>baseline</td>
+<td>over_60_minutes, cross_interruption_wall_time_excluded_from_efficiency, cross_interruption_excluded_from_efficiency</td>
+</tr>
+</tbody>
+</table>
+<p>正式异常已逐项复核：门禁完成但官方未通过 2 项、官方通过但门禁未完成 8 项、零拦截 3 项、SymPy 超 60 分钟 2 项；Matplotlib baseline 跨中断单列。
+四类合计 15 次类别归属、14 个不同任务（SymPy-18211 gated 重叠），加上 Matplotlib baseline 后异常实例表共 15 行。
+零拦截三项均归为 <code>zero_interception_suspicious</code>：阶段 2 的 <code>cd /testbed &amp;&amp; python -m pytest ...</code> 未被命令识别器识别；stdout 工具调用与 trace 的轮次/工具逐项一致，系命令漏识别，未发现拒绝事件漏写证据。
+8 个门禁未完成且官方 resolved 的实例：7 个在阶段 4/5 耗尽或接近轮数预算，Pylint 在阶段 3 因存量负向语法夹具阻断。详见 <a href="../verified20-formal-gate-audit/">完整归类与检查清单</a>。</p>
+<h3 id="2">门禁完成但官方未通过：正式批 2 项<a class="headerlink" href="#2" title="Permanent link">&para;</a></h3>
+<p>此处只计正式批 gated，不把 Astropy pilot 的 A 类混入正式批计数；Astropy 正式批双组 resolved。
+| 正式实例 | 归类 | 待核验依据 |
+|---|---|---|
+| psf__requests-2317 | env_tls_interference（环境混杂） | 原产物及同补丁独立容器重放已核验，详见统一审计记录 |
+| pydata__xarray-3993 | A 类警告断言差异 + B 类 test_assertion_weakened | 原产物及同补丁独立容器重放已核验，详见统一审计记录 |</p>
+<p>A 为测试覆盖不足；B 为测试篡改；C 为 delivery_clean 缺陷。仅凭两个结果标记不能判定归类，也不能断言门禁通过是官方 resolved 的必要条件；官方 resolved 且门禁未完成的观察另列。
+<a href="../verified20-formal-gate-audit/">统一审计记录</a> 保留 Requests 环境混杂与 Xarray 的 A/B 两项证据。
+<a href="../verified20-seaborn-comparison/">Seaborn 专项对照</a> 已核对缓存批 pilot 与正式批的补丁及阶段；共同触达 60 轮不能单独解释官方结果差异。</p>
+<p>Django gated 的 4 项运行依次为 django__django-14631：60 轮、阶段 4、gate_completed=0；django__django-16333：60 轮、阶段 4、gate_completed=0；django__django-16631：60 轮、阶段 5、gate_completed=0；django__django-16901：53 轮、阶段 5、gate_completed=0。官方结果为 3 resolved、1 unresolved。
+这些运行普遍触达或接近 60 轮上限，停在阶段 4/5。门禁未完成不能直接解读为官方评分受阻；3 个实例官方 resolved，可作为门禁未必阻断官方评分的观察，不作为门禁全流程有效的证据。这一模式与轮数预算和多阶段开销的交互相容；没有增加轮数预算的对照实验，尚不能确定因果。</p>
+<p>astropy__astropy-14369 gated：37 轮、4 次拦截、阶段 6、gate_completed=1、13,887 字符。</p>
+<p>matplotlib__matplotlib-23476 gated：58 轮、8 次拦截、阶段 6、gate_completed=1、1,328 字符。</p>
+<p>正式批最早完成全流程的是 Astropy-14369；Matplotlib-23476 是另一个接近 60 轮上限仍完成的实例。它表明该预算下存在完成全流程的案例，60 轮不是绝对阻断，但不能据此确定 Django 未完成的原因。</p>
+<p>机制审查与二元评分分别报告；自动统计不替代原产物核对和独立重放。</p>
+<h2 id="_17">局限与结论<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h2>
+<ul>
+<li>全量三批涉及 49 个不同实例（名义 n=49），不保证观测独立，不足以宣称 p&lt;0.05。</li>
+<li>本批 2 个复用实例非完全独立。</li>
+<li>缓存-15 存在选择偏差。</li>
+<li>容器无 chroot，Agent 可读门禁源码。</li>
+<li>门禁通过不等于官方通过，保留 Astropy A 类历史案例。</li>
+<li>三批不合并 pooled 成功率或显著性检验；pilot 及审计复核不进入正式统计。</li>
+<li>运行间代码、环境与中断会影响结果及耗时，不能将观察到的差异单独归因于门禁。</li>
+<li>Xarray 重放证实阶段 2 的关键自写断言在阶段 3 被替换，最终测试通过而原登记断言失败；当前门禁未保证测试演进保留既定行为覆盖。证据与 A/B 两项解释见 <a href="../verified20-formal-gate-audit/">统一审计</a>，不单独归因于官方 warning 失败。</li>
+<li>成本 P90 样本量有限且对离群值敏感；2.16×→1.87× 是同一正式批随样本增加的中途漂移。全部 40 项证据齐全后重算，独立配对 n=18，排除跨中断耗时后的时间 n 为 baseline 16、gated 17；此前只排除 Matplotlib 得到的 1.35× 已被宿主机睡眠证据修正，最终比值见成本表，均为点估计。</li>
+<li>扩展到 100+ 实例仅为规划，不能保证显著性；所需样本量取决于效应及配对不一致率。</li>
+<li>8 个门禁未完成且官方 resolved 的实例不构成门禁全流程有效的证据；预算与门禁开销未做对照。另发现复合 shell 测试命令漏识别，以及 Pylint 存量负向语法夹具误阻断，均保留为待修复机制缺口。</li>
+</ul>
+<p>出现 baseline-only 的批次/部分：独立部分。需结合逐实例结果如实分析，不能宣称三批均未出现退步。</p>
+<!-- FORMAL_RUNTIME_SNAPSHOT -->
+
+<h2 id="_18">正式批运行快照（自动生成）<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h2>
+<p>更新时间：2026-11-13T14:27:22.007318+08:00。状态：<code>completed_pending_final_review</code>。</p>
+<p>此处仅引用正式输出；pilot 和复核均未并入。仅 note=graded 的双组配对进入以下结果表。</p>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th style="text-align: right;">已完成配对</th>
+<th style="text-align: right;">baseline resolved</th>
+<th style="text-align: right;">gated resolved</th>
+<th style="text-align: right;">baseline-only</th>
+<th style="text-align: right;">gated-only</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>独立部分</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>复用部分（单列）</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_19">正式批逐项记录<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>实例</th>
+<th>模式</th>
+<th style="text-align: right;">resolved</th>
+<th style="text-align: right;">轮数</th>
+<th style="text-align: right;">秒</th>
+<th style="text-align: right;">拦截</th>
+<th style="text-align: right;">阶段</th>
+<th style="text-align: right;">gate_completed</th>
+<th style="text-align: right;">补丁字符</th>
+<th>note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>astropy__astropy-14369</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">237.0</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">13887</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>astropy__astropy-14369</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">346.1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">14064</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>django__django-14631</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">178.1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5495</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>django__django-16333</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">301.7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1994</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>django__django-14631</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">598.5</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10787</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>django__django-16333</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">434.4</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5227</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>django__django-16631</td>
+<td>baseline</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">59</td>
+<td style="text-align: right;">402.2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">6491</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>django__django-16901</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">132.1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1240</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>django__django-16631</td>
+<td>gated</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">676.1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">11754</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>django__django-16901</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">1554.1</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">6054</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>matplotlib__matplotlib-23476</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">675.7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1454</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>matplotlib__matplotlib-23476</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">903.5</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1328</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>matplotlib__matplotlib-24970</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">366.3</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5153</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>matplotlib__matplotlib-24970</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">220038.7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1038</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>mwaskom__seaborn-3069</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">983.0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2240</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>pallets__flask-5014</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">136.7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">850</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>pallets__flask-5014</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">84.1</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2803</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>mwaskom__seaborn-3069</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">461.2</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4805</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>psf__requests-2317</td>
+<td>gated</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">181.3</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">4524</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>psf__requests-2317</td>
+<td>baseline</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">527.9</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1356</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>pydata__xarray-3993</td>
+<td>gated</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">144.7</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">4021</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>pylint-dev__pylint-4970</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">607.8</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2620</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>pydata__xarray-3993</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">1016.8</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4967</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>pylint-dev__pylint-4970</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">304.6</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1959</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>pytest-dev__pytest-7205</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">267.3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2968</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>pytest-dev__pytest-7205</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">49</td>
+<td style="text-align: right;">353.7</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3955</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>scikit-learn__scikit-learn-15100</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">161.5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1215</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>scikit-learn__scikit-learn-15100</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">116.3</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3334</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>scikit-learn__scikit-learn-25102</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">55</td>
+<td style="text-align: right;">493.5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">9420</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sphinx-doc__sphinx-8593</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">197.8</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5941</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>scikit-learn__scikit-learn-25102</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">662.7</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">6442</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sphinx-doc__sphinx-8593</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">172.3</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2006</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sphinx-doc__sphinx-9281</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">251.4</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1680</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sphinx-doc__sphinx-9281</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">487.7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2277</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sympy__sympy-13480</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">127.2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1954</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sympy__sympy-13480</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">56</td>
+<td style="text-align: right;">512.0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1193</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sympy__sympy-17630</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">54</td>
+<td style="text-align: right;">348.7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2808</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sympy__sympy-17630</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">272.8</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1968</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sympy__sympy-18211</td>
+<td>gated</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">8814.0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2342</td>
+<td>graded</td>
+</tr>
+<tr>
+<td>sympy__sympy-18211</td>
+<td>baseline</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">9070.8</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">969</td>
+<td>graded</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_20">正式批原始墙钟成本与异常（仅核对）<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th>模式</th>
+<th>指标</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">中位数</th>
+<th style="text-align: right;">P90</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>turns</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">43.0</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>seconds</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">444.9</td>
+<td style="text-align: right;">3433.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">2448.5</td>
+<td style="text-align: right;">7369.7</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>turns</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">51.0</td>
+<td style="text-align: right;">60.0</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>seconds</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">329.1</td>
+<td style="text-align: right;">1098.7</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">4.0</td>
+<td style="text-align: right;">8.3</td>
+</tr>
+<tr>
+<td>独立部分</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">3988.0</td>
+<td style="text-align: right;">11077.1</td>
+</tr>
+<tr>
+<td>复用部分（单列）</td>
+<td>baseline</td>
+<td>turns</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">33.0</td>
+<td style="text-align: right;">34.6</td>
+</tr>
+<tr>
+<td>复用部分（单列）</td>
+<td>baseline</td>
+<td>seconds</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">559.8</td>
+<td style="text-align: right;">898.4</td>
+</tr>
+<tr>
+<td>复用部分（单列）</td>
+<td>baseline</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+</tr>
+<tr>
+<td>复用部分（单列）</td>
+<td>baseline</td>
+<td>diff_chars</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1545.0</td>
+<td style="text-align: right;">2101.0</td>
+</tr>
+<tr>
+<td>复用部分（单列）</td>
+<td>gated</td>
+<td>turns</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">44.0</td>
+<td style="text-align: right;">56.8</td>
+</tr>
+<tr>
+<td>复用部分（单列）</td>
+<td>gated</td>
+<td>seconds</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">272.6</td>
+<td style="text-align: right;">423.5</td>
+</tr>
+<tr>
+<td>复用部分（单列）</td>
+<td>gated</td>
+<td>gate_intercepts</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4.5</td>
+<td style="text-align: right;">5.7</td>
+</tr>
+<tr>
+<td>复用部分（单列）</td>
+<td>gated</td>
+<td>diff_chars</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">3804.0</td>
+<td style="text-align: right;">4604.8</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>note 分布：<code>{"graded": 40}</code>。</li>
+<li>零拦截 gated：<code>["sympy__sympy-13480", "sympy__sympy-17630", "sympy__sympy-18211"]</code>。</li>
+<li>超过 60 分钟：<code>["matplotlib__matplotlib-24970/baseline", "sympy__sympy-18211/gated", "sympy__sympy-18211/baseline"]</code>。</li>
+<li>至少 100,000 字符的补丁：<code>[]</code>。</li>
+<li>官方 resolved 但门禁未完成：<code>["django__django-14631", "django__django-16333", "django__django-16901", "matplotlib__matplotlib-24970", "mwaskom__seaborn-3069", "pylint-dev__pylint-4970", "scikit-learn__scikit-learn-25102", "sphinx-doc__sphinx-9281"]</code>。</li>
+<li>审计计数或状态异常：<code>[]</code>。</li>
+<li>门禁完成但官方 unresolved 的待审查实例：<code>["psf__requests-2317", "pydata__xarray-3993"]</code>。</li>
+<li>未合并三批成功率或检验；尚未人工复核的异常不作机制有效性结论。</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.top", "navigation.tabs", "toc.integrate", "content.code.copy"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

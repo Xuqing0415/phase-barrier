@@ -459,7 +459,8 @@ def run(args) -> int:
     if err:
         print(f"补丁提取警告: {err}", file=sys.stderr)
     (outdir / "model_patch.diff").write_text(patch, encoding="utf-8", newline="\n")
-    seconds = round(time.time() - started, 1)
+    finished = time.time()
+    seconds = round(finished - started, 1)
 
     final_stage = gate.current_stage if gate else ""
     completed = gate_completed(gate)  # 交付收尾校验：最终测试全绿才算完成
@@ -475,6 +476,8 @@ def run(args) -> int:
         "model": model_used,
         "turns": turns,
         "seconds": seconds,
+        "started_at_epoch": started,
+        "finished_at_epoch": finished,
         "diff_chars": len(patch),
         "gate_intercepts": intercepts if gate else 0,
         "test_preservation": getattr(args, "test_preservation", "warn") if gate else "off",

@@ -84,3 +84,13 @@ def test_scale_manifest_tasks_shape_is_accepted(tmp_path):
         {"instance_id": "django__django-1", "image": "logicstar/django:latest"}
     ]}), encoding="utf-8")
     assert checker._images(path) == [("django__django-1", "logicstar/django:latest")]
+
+
+def test_expected_readiness_fails_for_missing_image(tmp_path, monkeypatch):
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps({"count": 1, "tasks": [
+        {"instance_id": "x", "image": "logicstar/x:latest"}
+    ]}), encoding="utf-8")
+    monkeypatch.setattr(checker.subprocess, "run", lambda *a, **kw:
+                        subprocess.CompletedProcess([], 1, "", "No such image"))
+    assert checker.main(["--manifest", str(path), "--expect-ready", "1"]) == 1

@@ -8,12 +8,12 @@ import json
 import math
 import random
 import re
+import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-import sys
 
 sys.path.insert(0, str(ROOT))
 from scripts.verified20_checks import audit_persisted_run
@@ -91,6 +91,17 @@ def verify(manifest_path: Path, root: Path) -> tuple[dict, list[dict], list[str]
     tasks = manifest["tasks"]
     expected = {(task["instance_id"], mode) for task in tasks for mode in ("baseline", "gated")}
     errors: list[str] = []
+    prelaunch_path = root / "prelaunch.json"
+    if prelaunch_path.exists():
+        prelaunch = json.loads(prelaunch_path.read_text(encoding="utf-8"))
+        if prelaunch.get("manifest_sha256") != hashlib.sha256(manifest_path.read_bytes()).hexdigest():
+            errors.append("preregistered_manifest_changed_since_launch")
+        for relative, expected_hash in prelaunch.get("source_hashes", {}).items():
+            path = ROOT / relative
+            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != expected_hash:
+                errors.append("source_changed_since_launch:" + relative)
+    else:
+        errors.append("missing_prelaunch_snapshot")
     results_path = root / "results.csv"
     if not results_path.exists():
         rows = []
@@ -253,6 +264,16 @@ def analyze(pairs: list[dict], cost_exclusions: set[str], *, seed: int = 2026,
     }
 
 
+def json_safe(value):
+    if isinstance(value, float) and not math.isfinite(value):
+        return "Infinity" if value > 0 else "-Infinity"
+    if isinstance(value, dict):
+        return {key: json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [json_safe(item) for item in value]
+    return value
+
+
 def render_report(pairs: list[dict], proof: dict, analysis: dict) -> str:
     lines = ["# Scale-100 SWE-bench Verified Results", "", "## Primary results", "",
              "| Planned pairs | baseline resolved | gated resolved | baseline-only | gated-only | Exact McNemar p | Discordant OR (95% CI) |",
@@ -308,9 +329,9 @@ def main() -> int:
     summary["cost"]["exclusion_evidence"] = exclusion_evidence
     summary["completion_verification_sha256"] = hashlib.sha256(
         (args.run_root / "completion_verification.json").read_bytes()).hexdigest()
-    (args.run_root / "analysis.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (args.run_root / "analysis.json").write_text(json.dumps(json_safe(summary), ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     (args.run_root / "scale100-results.md").write_text(render_report(pairs, proof, summary), encoding="utf-8")
-    print(json.dumps({"passed": True, "verified_pairs": len(pairs), "analysis": summary}, ensure_ascii=False))
+    print(json.dumps(json_safe({"passed": True, "verified_pairs": len(pairs), "analysis": summary}), ensure_ascii=False, allow_nan=False))
     return 0
 
 

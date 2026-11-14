@@ -310,6 +310,9 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
         agent_dataset=args.agent_dataset,
         agent_runs=args.agent_runs,
     )
+    if getattr(args, "isolate_agent_runs", False):
+        label_dir.mkdir(parents=True, exist_ok=False)
+        agent_mounts[-1] = (label_dir.resolve(), "/pb_runs/" + label, False)
     argv = build_agent_docker_command(
         image=container_image(instance), mounts=agent_mounts,
         agent_script="/pb/benchmarks/swebench/run_agent.py",
@@ -321,6 +324,7 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
         dns_servers=getattr(args, "dns", None),
         test_preservation=getattr(args, "test_preservation", "warn"),
         extra_env={"DEEPSEEK_API_KEY": os.environ.get("DEEPSEEK_API_KEY", ""),
+                   "PYTHONUNBUFFERED": "1",
                    **({"PB_DS_MODEL": os.environ["PB_DS_MODEL"]} if os.environ.get("PB_DS_MODEL") else {})},
     )
     print(f"[{time.strftime('%H:%M:%S')}] [run ] {iid} {mode} {container_image(instance)}", flush=True)
@@ -364,8 +368,8 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
         gproc, gout = _run(grade_cmd, args.grade_timeout + 120,
                            Path(args.log_dir) / f"{label}.grade.log" if args.log_dir else None)
     except subprocess.TimeoutExpired:
-        row["note"] = (row["note"] + " grade_timeout").strip()
-        row["resolved"] = "0"
+        row["note"] = (row["note"] + " grade_infra_failure grade_timeout").strip()
+        row["resolved"] = ""
         return row
     gpb = parse_pb(gout)
     row["resolved"] = gpb.get("PB_RESOLVED", "0")
@@ -374,7 +378,10 @@ def run_one(job: dict, args, instances: dict[str, dict]) -> dict:
         if note:
             row["note"] = note
     if gproc.returncode not in (0, 2):  # grade.py: 0=resolved, 2=unresolved
-        row["note"] = (row["note"] + f" grade_exit_{gproc.returncode}").strip()
+        row["note"] = (row["note"] + f" grade_infra_failure grade_exit_{gproc.returncode}").strip()
+        row["resolved"] = ""
+    if "grade_infra_failure" in row["note"].split():
+        row["resolved"] = ""
     return row
 
 
@@ -439,6 +446,8 @@ def main() -> int:
     ap.add_argument("--skip-existing", action="store_true")
     ap.add_argument("--record-unknown-empty-patches", action="store_true",
                     help="record unknown empty patches without the legacy two-consecutive stop")
+    ap.add_argument("--isolate-agent-runs", action="store_true",
+                    help="mount only this job's output directory into its Agent container")
     ap.add_argument("--dns", action="append", default=[],
                     help="DNS server for Agent containers; repeat for a fallback server")
     args = ap.parse_args()

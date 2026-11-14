@@ -45,6 +45,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--timeout", type=float, default=20.0)
     parser.add_argument("--output", type=Path, help="append the JSON snapshot to this JSONL file")
+    parser.add_argument("--expect-ready", type=int, help="fail unless exactly this many images are ready")
     args = parser.parse_args(argv)
     if args.timeout <= 0:
         parser.error("--timeout must be positive")
@@ -118,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         with args.output.open("a", encoding="utf-8") as output_file:
             output_file.write(json.dumps(report) + "\n")
-    return 1 if errors else 0
+    return 1 if errors or (args.expect_ready is not None and len(ready) != args.expect_ready) else 0
 
 
 if __name__ == "__main__":

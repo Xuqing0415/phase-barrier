@@ -3,6 +3,7 @@ from scripts.scale100_analysis import analyze, clopper_pearson, exact_mcnemar, p
 from scripts.prepare_scale100_preregistration import prepare
 import json
 from pathlib import Path
+import math
 
 
 def test_exact_mcnemar_reference_counts():
@@ -15,6 +16,9 @@ def test_conditional_exact_interval_is_bounded_and_ordered():
     low, high = clopper_pearson(9, 10)
     assert 0.5 < low < 0.9
     assert 0.9 < high < 1
+    lo, hi = clopper_pearson(0, 10)
+    assert lo == 0
+    assert math.isclose(hi, 1 - 0.025**0.1, rel_tol=1e-12)
 
 
 def test_linear_percentile_interpolates():

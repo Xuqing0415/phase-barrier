@@ -71,7 +71,7 @@ def monitoring_decision(rows, log_dir, label_suffix="_verified20_formal", *, sto
     return {"stop": False, "reason": None, "classifications": classifications}
 
 
-def build_resume_plan(results, tasks):
+def build_resume_plan(results, tasks, label_suffix="_verified20_formal"):
     """Verify official evidence and partition unique jobs without counting pairs twice."""
     results = Path(results)
     root = results.parent
@@ -92,7 +92,7 @@ def build_resume_plan(results, tasks):
     plan = {"skip": [], "regrade_only": [], "rerun": [], "pending": []}
     for iid, mode in expected:
         record = {"instance_id": iid, "mode": mode}
-        label = iid.replace("__", "_") + "_" + mode + "_verified20_formal"
+        label = iid.replace("__", "_") + "_" + mode + label_suffix
         directory = root / "agent_runs" / label
         patch = directory / "model_patch.diff"
         stats_path = directory / "stats.json"
@@ -221,8 +221,9 @@ def main():
     parser.add_argument("--tasks", type=Path, default=Path(__file__).resolve().parents[1] /
                         "benchmarks/swebench/manifests/verified20-preregistered-2026-11-08.json")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--label-suffix", default="_verified20_formal")
     args = parser.parse_args()
-    plan = build_resume_plan(args.results, args.tasks)
+    plan = build_resume_plan(args.results, args.tasks, args.label_suffix)
     args.output.write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"passed": plan["passed"], **plan["counts"],
                       "completed_pairs": plan["completed_pairs"], "total_jobs": plan["total_jobs"]}))

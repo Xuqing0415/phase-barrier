@@ -156,6 +156,53 @@ def test_runner_never_grades_model_transport_failure(monkeypatch, tmp_path):
     assert row["resolved"] == "" and len(calls) == 1
 
 
+def test_isolated_output_mount_is_scoped_to_one_job(monkeypatch, tmp_path):
+    calls = []
+
+    def fake_run(argv, timeout, log):
+        calls.append(argv)
+        return subprocess.CompletedProcess(argv, 0), "PB_DIFF_CHARS=0\n[turn 1] 模型错误: stopped"
+
+    monkeypatch.setattr(runner, "_run", fake_run)
+    args = SimpleNamespace(label_suffix="_test", log_dir=tmp_path / "logs", agent_runs=tmp_path / "runs",
+                           agent_script=tmp_path / "agent.py", repo_mount=ROOT, agent_dataset=tmp_path / "data.json",
+                           testbed_python="python", gate_python="python", max_turns=60, exec_timeout=1,
+                           agent_timeout=1, dns=[], isolate_agent_runs=True)
+    runner.run_one({"instance_id": "x", "repo": "x/x", "mode": "baseline"}, args,
+                   {"x": {"instance_id": "x", "image": "test:latest"}})
+    assert f"{(args.agent_runs / 'x_baseline_test').resolve()}:/pb_runs/x_baseline_test" in calls[0]
+    assert f"{args.agent_runs.resolve()}:/pb_runs" not in calls[0]
+
+
+@pytest.mark.parametrize("failure", ["timeout", "grade_exit_3"])
+def test_grade_transport_failure_is_not_coded_as_unresolved(monkeypatch, tmp_path, failure):
+    calls = []
+    args = SimpleNamespace(label_suffix="_test", log_dir=tmp_path / "logs", agent_runs=tmp_path / "runs",
+                           agent_script=tmp_path / "agent.py", repo_mount=ROOT, agent_dataset=tmp_path / "data.json",
+                           testbed_python="python", gate_python="python", max_turns=60, exec_timeout=1,
+                           agent_timeout=1, grade_timeout=1, grade_python=Path(sys.executable),
+                           grade_script=tmp_path / "grade.py", dataset=tmp_path / "full.json",
+                           eval_runs=tmp_path / "eval", dns=["223.5.5.5"])
+
+    def fake_run(argv, timeout, log):
+        calls.append(argv)
+        if len(calls) == 1:
+            patch_dir = args.agent_runs / "x_baseline_test"
+            patch_dir.mkdir(parents=True)
+            (patch_dir / "model_patch.diff").write_text("new patch", encoding="utf-8")
+            return subprocess.CompletedProcess(argv, 0), "PB_DIFF_CHARS=9"
+        if failure == "timeout":
+            raise subprocess.TimeoutExpired(argv, 1)
+        return subprocess.CompletedProcess(argv, 3), 'PB_RESOLVED=0\nPB_GRADE_SUMMARY={"error":"infra"}'
+
+    monkeypatch.setattr(runner, "_run", fake_run)
+    row = runner.run_one({"instance_id": "x", "repo": "x/x", "mode": "baseline"}, args,
+                         {"x": {"instance_id": "x", "image": "test:latest"}})
+    assert row["resolved"] == ""
+    assert "grade_infra_failure" in row["note"].split()
+    assert checks.monitoring_decision([row], args.log_dir)["stop"]
+
+
 def test_batch_stops_scheduling_after_model_failure(monkeypatch, tmp_path):
     tasks = tmp_path / "tasks.json"
     tasks.write_text(json.dumps([{"instance_id": "x__x-1"}, {"instance_id": "x__x-2"}]))

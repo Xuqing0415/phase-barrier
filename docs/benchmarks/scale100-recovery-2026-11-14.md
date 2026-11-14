@@ -65,5 +65,6 @@ python scripts/scale100_runtime.py resume --run-root <运行根> --execution-roo
 不声称 n=100 保证检测某种效应，不把差异不显著写成非劣效。
 
 本地全量回归通过，核心覆盖率 94%，最终专项 41 项通过；独立故障注入验收通过，正式恢复前仍强制等待已推送修复的远程 CI 全绿。
+首个修复提交 `6eac776` 的远程回归发现三处 Git 文本子进程查询遗漏显式编码。此前本地全量运行时新恢复脚本尚未进入 Git 跟踪范围，因此仓库的 tracked-file 编码检查未覆盖它；提交后 CI 正确阻止恢复。三处均已补充 UTF-8，重新通过该静态检查，并等待新提交全量 CI，不沿用失败提交的状态。
 机器可读验收位于仓库的 `benchmarks/swebench/results/scale100-recovery-validation.json`。
 后续仍须 200 项/100 对完整证据核验、异常逐项审阅、成本敏感性、最终报告和 v1.2.1 发布。

@@ -212,10 +212,10 @@ def check_archive(root, archive):
 
 
 def published_ci():
-    commit = subprocess.check_output(["git","rev-parse","HEAD"],cwd=CODE,text=True).strip()
-    if subprocess.check_output(["git","status","--porcelain"],cwd=CODE,text=True).strip():
+    commit = subprocess.check_output(["git","rev-parse","HEAD"],cwd=CODE,text=True,encoding="utf-8").strip()
+    if subprocess.check_output(["git","status","--porcelain"],cwd=CODE,text=True,encoding="utf-8").strip():
         raise ValueError("controller worktree must be clean")
-    remote = subprocess.check_output(["git","ls-remote","origin","refs/heads/main"],cwd=CODE,text=True).split()[0]
+    remote = subprocess.check_output(["git","ls-remote","origin","refs/heads/main"],cwd=CODE,text=True,encoding="utf-8").split()[0]
     if remote != commit: raise ValueError("controller must be published on main")
     runs = json.loads(subprocess.check_output(["gh","run","list","--commit",commit,
         "--json","name,status,conclusion,databaseId"],cwd=CODE,text=True,encoding="utf-8"))

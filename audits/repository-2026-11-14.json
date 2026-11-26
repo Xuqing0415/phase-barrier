@@ -1,0 +1,3474 @@
+{
+  "checked_at": "2026-11-14T09:33:35.473031+00:00",
+  "audited_source_commit": "38dd6a2c2867e2273c45beae53087122012c1589",
+  "audited_source_tree": "f9f1a1f0711c2de1b746367f3e022879196c78ba",
+  "source_tree_files": 471,
+  "source_tree_bytes": 5393090,
+  "validation_counts": {
+    "git_blob_hash_verified": 471,
+    "yaml_syntax_valid": 38,
+    "python_ast_valid": 261,
+    "json_valid": 36
+  },
+  "parse_errors": [],
+  "credential_pattern_hits": [
+    {
+      "path": "tests/test_builtin_rules.py",
+      "line": 104,
+      "detector": "private_key_pem",
+      "review": "Synthetic truncated PEM fixture in test_no_hardcoded_secrets_blocks_private_key; not a usable private key.",
+      "classification": "reviewed_test_fixture"
+    }
+  ],
+  "helm_templates_require_render_validation": [
+    "deploy/helm/phase-barrier/templates/configmap.yaml",
+    "deploy/helm/phase-barrier/templates/deployment.yaml",
+    "deploy/helm/phase-barrier/templates/job-gatekeeper.yaml",
+    "deploy/helm/phase-barrier/templates/pvc.yaml",
+    "deploy/helm/phase-barrier/templates/secret.yaml",
+    "deploy/helm/phase-barrier/templates/service.yaml"
+  ],
+  "helm_validation_note": "Go templates are not plain YAML; validation is delegated to the existing CI Helm/Kubernetes checks. Local helm is unavailable.",
+  "large_files_over_10_mib": [],
+  "symlinks_or_submodules": [],
+  "remote_branches": [
+    {
+      "ref": "origin/codex/release-packaging-recovery",
+      "commit": "4743ad3efb08fae83c2fed56a0a4c872ea7e8838",
+      "included_in_reviewed_head": false
+    },
+    {
+      "ref": "origin/codex/release-v1.0.0",
+      "commit": "3bf7c7dd8d348e1d65f465cad1a76846485795e1",
+      "included_in_reviewed_head": false
+    },
+    {
+      "ref": "origin/gh-pages",
+      "commit": "1616e9cc817495d11c247670a2a31b9c214972b7",
+      "included_in_reviewed_head": false
+    },
+    {
+      "ref": "origin/learning-loop/20261026-40305791885",
+      "commit": "22fcd30f753cf72210c06084bbea1c86e1922cba",
+      "included_in_reviewed_head": true
+    },
+    {
+      "ref": "origin/learning-loop/20261102-41445749340",
+      "commit": "115cf8d221db3aad39ab27fe8b9d4b293c3b9b60",
+      "included_in_reviewed_head": true
+    },
+    {
+      "ref": "origin/learning-loop/20261109-42621450319",
+      "commit": "e0e06cbbbd6447c469393f04c22f3325e1214c3f",
+      "included_in_reviewed_head": true
+    },
+    {
+      "ref": "origin/main",
+      "commit": "dc3344731bf665812cd07f358b0fc6dbc3234820",
+      "included_in_reviewed_head": true
+    },
+    {
+      "ref": "origin/plugin-status/38233637574",
+      "commit": "d6f755ddf389e9ad6d4667763ac437bd07b3abf9",
+      "included_in_reviewed_head": true
+    },
+    {
+      "ref": "origin/plugin-status/39221760698",
+      "commit": "8befc377de6c2e1133714a77c84fa2daaf03f663",
+      "included_in_reviewed_head": true
+    },
+    {
+      "ref": "origin/plugin-status/40291341572",
+      "commit": "6fb86bc9599484d5f8ced64b1b95228a9d32c6c3",
+      "included_in_reviewed_head": true
+    },
+    {
+      "ref": "origin/plugin-status/41427973712",
+      "commit": "be564f90b1f9b031a387124f83297e43cb3a5ef4",
+      "included_in_reviewed_head": true
+    },
+    {
+      "ref": "origin/plugin-status/42602536955",
+      "commit": "183a51d52009b89ea5131bd66531623657da41c0",
+      "included_in_reviewed_head": true
+    }
+  ],
+  "merges": [
+    {
+      "pr": 10,
+      "source_ref": "origin/plugin-status/39221760698",
+      "source_commit": "8befc377de6c2e1133714a77c84fa2daaf03f663",
+      "merge_commit": "e05f47c45d36e0d1b343ec13f09049581a3567d4",
+      "resolved_paths": [],
+      "author_email": "1370392438@qq.com",
+      "committer_email": "1370392438@qq.com"
+    },
+    {
+      "pr": 11,
+      "source_ref": "origin/plugin-status/40291341572",
+      "source_commit": "6fb86bc9599484d5f8ced64b1b95228a9d32c6c3",
+      "merge_commit": "0afce380ef3cf05e0e8be24674cb783f0385143e",
+      "resolved_paths": [
+        "docs/plugin-status.md",
+        "plugins.json"
+      ],
+      "author_email": "1370392438@qq.com",
+      "committer_email": "1370392438@qq.com"
+    },
+    {
+      "pr": 12,
+      "source_ref": "origin/learning-loop/20261026-40305791885",
+      "source_commit": "22fcd30f753cf72210c06084bbea1c86e1922cba",
+      "merge_commit": "09f3e8fccc61615701718108608ea99ad3680c61",
+      "resolved_paths": [],
+      "author_email": "1370392438@qq.com",
+      "committer_email": "1370392438@qq.com"
+    },
+    {
+      "pr": 13,
+      "source_ref": "origin/plugin-status/41427973712",
+      "source_commit": "be564f90b1f9b031a387124f83297e43cb3a5ef4",
+      "merge_commit": "5bf7dfe080d86c8595e6a52ff2152b224d5a8e0b",
+      "resolved_paths": [
+        "docs/plugin-status.md",
+        "plugins.json"
+      ],
+      "author_email": "1370392438@qq.com",
+      "committer_email": "1370392438@qq.com"
+    },
+    {
+      "pr": 14,
+      "source_ref": "origin/learning-loop/20261102-41445749340",
+      "source_commit": "115cf8d221db3aad39ab27fe8b9d4b293c3b9b60",
+      "merge_commit": "ef706e27c3a2d777d341571e9d360bcb95cfd64e",
+      "resolved_paths": [
+        "anti_shortcut/defense/learned_rules.yaml"
+      ],
+      "author_email": "1370392438@qq.com",
+      "committer_email": "1370392438@qq.com"
+    },
+    {
+      "pr": 15,
+      "source_ref": "origin/plugin-status/42602536955",
+      "source_commit": "183a51d52009b89ea5131bd66531623657da41c0",
+      "merge_commit": "4ebf4ab31607333dc15850bc054aa030f67e83c7",
+      "resolved_paths": [
+        "docs/plugin-status.md",
+        "plugins.json"
+      ],
+      "author_email": "1370392438@qq.com",
+      "committer_email": "1370392438@qq.com"
+    },
+    {
+      "pr": 16,
+      "source_ref": "origin/learning-loop/20261109-42621450319",
+      "source_commit": "e0e06cbbbd6447c469393f04c22f3325e1214c3f",
+      "merge_commit": "69b9cee2e1b4e878496bf7343aad2d9ac8a88268",
+      "resolved_paths": [
+        "anti_shortcut/defense/learned_rules.yaml"
+      ],
+      "author_email": "1370392438@qq.com",
+      "committer_email": "1370392438@qq.com"
+    }
+  ],
+  "scope": "All blobs in reviewed main source tree; syntax, integrity and specific credential-pattern checks. Historical remote objects are checked separately by git fsck; this is not a claim of exhaustive semantic or vulnerability review.",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e433dd703514785afffb8b669fb3fe61c56f5a26",
+      "bytes": 270
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "39a06066bafbda07381b907bcb8d500577d857ac",
+      "bytes": 1592
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/config.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "75bbb870ca97a12c755d1ce6f430b043a2d9de32",
+      "bytes": 267
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature_request.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d6a9fab3a413d1c625dceaec3fc39bfb92032b77",
+      "bytes": 780
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/plugin_submission.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0fc082938ff6d6636e12d11d67f1195d327092fb",
+      "bytes": 997
+    },
+    {
+      "path": ".github/actions/plugin-test/action.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dbccb4335c335325ed593808a8047a46b930d024",
+      "bytes": 1525
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1741570fd1b0274ddb0b953a6589172423f634e0",
+      "bytes": 28942
+    },
+    {
+      "path": ".github/workflows/docs.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "566ed0a6476631fee56e80868b3ff8354f4f99f8",
+      "bytes": 2451
+    },
+    {
+      "path": ".github/workflows/learning-loop.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e3778c2a23c9d43eee127eb3611e13ea23012335",
+      "bytes": 14756
+    },
+    {
+      "path": ".github/workflows/plugin-check.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d4474080e9e8b74c5fc06fb50f8dba9042b9b3fe",
+      "bytes": 2561
+    },
+    {
+      "path": ".github/workflows/plugin-test.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6367cdbdf94265cddb3c70955e67e8c7fd7e9717",
+      "bytes": 693
+    },
+    {
+      "path": ".github/workflows/plugin-verification.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3ebaf98861e8b17612d977c30e626381dc71bb73",
+      "bytes": 5423
+    },
+    {
+      "path": ".github/workflows/red-team.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a34b90d03dfb1196b55151f4e003653a21e4e82b",
+      "bytes": 10369
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "180d5b3a4fa3b133898d59bbe818e9e02397c907",
+      "bytes": 3389
+    },
+    {
+      "path": ".github/workflows/security.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "54b6aec9e932d4dc89d115cd29a0353910268508",
+      "bytes": 1280
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1dd6114e3521e58aa58574e0d8f2584e808b6c3d",
+      "bytes": 867
+    },
+    {
+      "path": "CHANGELOG.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "93ff496570606184ff57eead996c46cbe52e9279",
+      "bytes": 147926
+    },
+    {
+      "path": "CNAME",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a7e5616fb84860041b1f4dc22e87161fcc509bf0",
+      "bytes": 18
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b2c6a72417190c0b0619571b7fdf31e50664b3e0",
+      "bytes": 7347
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d090bcd1206ee239fd0400ed41514640e0b6c0ce",
+      "bytes": 1083
+    },
+    {
+      "path": "MANIFEST.in",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4a48942f62881ea59caafd2f993d9b5daaa0bab2",
+      "bytes": 155
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a04b45a2b7dc7b480cb36541501b17f95379b721",
+      "bytes": 12792
+    },
+    {
+      "path": "action.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9950fbd94c7df5fe42730b512aa48d7d25f2eff9",
+      "bytes": 9980
+    },
+    {
+      "path": "anti_shortcut/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "458dafe3d01b96494da5a018b5e67314fa5b937d",
+      "bytes": 3810
+    },
+    {
+      "path": "anti_shortcut/__main__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6e02882a6d1d67d7fd4a268c4ce0876f405ffac2",
+      "bytes": 35175
+    },
+    {
+      "path": "anti_shortcut/audit.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3ce9e80682cdd49d0214c12ab046956d7b2d14d7",
+      "bytes": 5391
+    },
+    {
+      "path": "anti_shortcut/config.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "784c84ad31ff59006821a821e53bbdaa8d0dbbee",
+      "bytes": 33802
+    },
+    {
+      "path": "anti_shortcut/control/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "382edcd527c01b84912ea0a28b3c73a7fb361322",
+      "bytes": 148
+    },
+    {
+      "path": "anti_shortcut/control/cli.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "09cfe151e219ac91b04bfe366e35453ea8978974",
+      "bytes": 3541
+    },
+    {
+      "path": "anti_shortcut/control/diff.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b606fb7496502fa12e790af4454a5531f90155c5",
+      "bytes": 4757
+    },
+    {
+      "path": "anti_shortcut/control/events.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3aa2304a6623e0c6be44492681f0eae297e03aa3",
+      "bytes": 1803
+    },
+    {
+      "path": "anti_shortcut/control/permissions.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5921eeac2ce5cfdfb79bda90f2616c17d5f97e16",
+      "bytes": 10144
+    },
+    {
+      "path": "anti_shortcut/control/scheduler.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7ab23173d5c35906aa28d17b1c564bd1645c1d19",
+      "bytes": 6629
+    },
+    {
+      "path": "anti_shortcut/control/service.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7c814a9d5ad506b9609b3a208a410338b2eeda5b",
+      "bytes": 17045
+    },
+    {
+      "path": "anti_shortcut/control/storage.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8c336f93d76a36987d48a1427b95a67c608ce73e",
+      "bytes": 2074
+    },
+    {
+      "path": "anti_shortcut/control/tui.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "87116e5d96ff67eeaa7d4b6d8a5ed758d698d92d",
+      "bytes": 8679
+    },
+    {
+      "path": "anti_shortcut/defense/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "29936bb693ae21c46757273558aedcd9393a2908",
+      "bytes": 4210
+    },
+    {
+      "path": "anti_shortcut/defense/_base.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d6d40c148676447bee8aacf1ed5e2eeed07b7b87",
+      "bytes": 1607
+    },
+    {
+      "path": "anti_shortcut/defense/_common.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a38eb2272f5c8d193c43b56a19fcad74075eb125",
+      "bytes": 4479
+    },
+    {
+      "path": "anti_shortcut/defense/behavior_audit.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1edb9f14aa9132f1ad010b61c3e2fb70408caff5",
+      "bytes": 21414
+    },
+    {
+      "path": "anti_shortcut/defense/case_analysis.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b8ff62d845c018a53f0f6cada91beed0d0cf6b3a",
+      "bytes": 30147
+    },
+    {
+      "path": "anti_shortcut/defense/case_library.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6a71d150ec204056d703efaaed35616f634a4f9e",
+      "bytes": 11009
+    },
+    {
+      "path": "anti_shortcut/defense/dual_review.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0a6232584a1018f74da51458e895207f35b298a8",
+      "bytes": 10510
+    },
+    {
+      "path": "anti_shortcut/defense/formal_check.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fb00acbfaf5dc556937d5d0fd3025c740955c8c3",
+      "bytes": 15180
+    },
+    {
+      "path": "anti_shortcut/defense/human_review.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6d349c3869acd7afb1a60cbb5d162f89233bb0a6",
+      "bytes": 17157
+    },
+    {
+      "path": "anti_shortcut/defense/learned_rules.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0b3670d5adb78055c65e2af8f7c5a81ecb050910",
+      "bytes": 5791
+    },
+    {
+      "path": "anti_shortcut/defense/prompts/coverage_check.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ffdf654dbcb963e32e9f35603a88f1737245a7ba",
+      "bytes": 587
+    },
+    {
+      "path": "anti_shortcut/defense/prompts/tamper_check.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9bbd898414ccc0b2c48a323edd64c0b344c001ef",
+      "bytes": 894
+    },
+    {
+      "path": "anti_shortcut/defense/requirement_template.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8b1d5e2e7831da1135216dfc3a8b7f8157e9512d",
+      "bytes": 10216
+    },
+    {
+      "path": "anti_shortcut/evidence.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1ba580644c08e7b12e2bccf60acab042a380cabb",
+      "bytes": 11812
+    },
+    {
+      "path": "anti_shortcut/formal/PhaseBarrier.cfg",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9cca7dc3913975aefb83b293a33d7ef9c0aadf1d",
+      "bytes": 528
+    },
+    {
+      "path": "anti_shortcut/formal/PhaseBarrier.tla",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "687e5e48af4ac3781801a927023d6210141b1fbb",
+      "bytes": 8314
+    },
+    {
+      "path": "anti_shortcut/formal/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0a2db122de92a06e0ce1853c0a9b31d83d592b9e",
+      "bytes": 5065
+    },
+    {
+      "path": "anti_shortcut/grpc_service.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6c4a138d00ba5efb54f17cb5c6ad9a08c0f6b51d",
+      "bytes": 12732
+    },
+    {
+      "path": "anti_shortcut/init.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f580dff07fe41ed4aa5f15bc95c93dee52f18a8a",
+      "bytes": 12429
+    },
+    {
+      "path": "anti_shortcut/integration.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a4f48f32e0620102ffd0f3e4adeeb734e156fbaf",
+      "bytes": 3919
+    },
+    {
+      "path": "anti_shortcut/interceptors.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "001088ede26d19806f4b47fb84aa22816b3e558e",
+      "bytes": 26127
+    },
+    {
+      "path": "anti_shortcut/languages/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dc83212a18038e14ec0f5a03483b9a02eb9f92e0",
+      "bytes": 11212
+    },
+    {
+      "path": "anti_shortcut/languages/base.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3bb4c78759ab5d211716d1af5e69bd452b5da13b",
+      "bytes": 8325
+    },
+    {
+      "path": "anti_shortcut/languages/cpp.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "73ea20ee93f4f929c20b5904db3d4eb28f879a13",
+      "bytes": 9061
+    },
+    {
+      "path": "anti_shortcut/languages/csharp.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d4c158a78d5670b252e68eeb2799743116a43903",
+      "bytes": 7593
+    },
+    {
+      "path": "anti_shortcut/languages/dart.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "414e0b6f26be9ce3a0b6e6929cb40fa3e682deba",
+      "bytes": 7354
+    },
+    {
+      "path": "anti_shortcut/languages/dotnet.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4551d02b59283de90b3aa0149829461662a0f1cd",
+      "bytes": 1018
+    },
+    {
+      "path": "anti_shortcut/languages/go.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3c69a7c4b69a7def614ece2d9300298f43d81aef",
+      "bytes": 6377
+    },
+    {
+      "path": "anti_shortcut/languages/java.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c7db9f5923a69961520a1fe8be935331ce80b355",
+      "bytes": 22449
+    },
+    {
+      "path": "anti_shortcut/languages/javascript.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "80d4432936f8b7ad8a6365ac7c3a9c5ec4567de2",
+      "bytes": 16301
+    },
+    {
+      "path": "anti_shortcut/languages/js_count_tests.cjs",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1dc265c92fd0b08e2709c46ee4fefed467c0188b",
+      "bytes": 3798
+    },
+    {
+      "path": "anti_shortcut/languages/kotlin.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "49200fc49d5f14370d5b8893b7e5eed53db59295",
+      "bytes": 5217
+    },
+    {
+      "path": "anti_shortcut/languages/php.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d73f62d13a47a5aa85d12e47e84a5aeef4bd0f9f",
+      "bytes": 5899
+    },
+    {
+      "path": "anti_shortcut/languages/python.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "65f68f1f6b052580d9cf25ee837e6277935bb63d",
+      "bytes": 3094
+    },
+    {
+      "path": "anti_shortcut/languages/ruby.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "623317d74ebb5e8ed64c6f0142c315bc1abd8001",
+      "bytes": 6777
+    },
+    {
+      "path": "anti_shortcut/languages/rust.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ae3d57a9254af6e18893bdee1d3517a70e95256f",
+      "bytes": 7509
+    },
+    {
+      "path": "anti_shortcut/languages/scala.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "353387248d68068a69b695d80b6500e0b646304e",
+      "bytes": 6853
+    },
+    {
+      "path": "anti_shortcut/languages/swift.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d9a84e25f0fd9752f516754ba76e3ddf8af28603",
+      "bytes": 11560
+    },
+    {
+      "path": "anti_shortcut/paths.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6573f865a7bdb81664b5bc9f1193a502a8942ba8",
+      "bytes": 5534
+    },
+    {
+      "path": "anti_shortcut/plugins.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "deb3eabe2316fab9f2e7d949fc903c9cc4ae9e9a",
+      "bytes": 8040
+    },
+    {
+      "path": "anti_shortcut/proto/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "246f182d58a1f40b017c29b1a4b09daebe5a8d34",
+      "bytes": 55
+    },
+    {
+      "path": "anti_shortcut/proto/sidecar.proto",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7d9cdbf3b4904cde290035b7a62af783b78b8bc9",
+      "bytes": 2913
+    },
+    {
+      "path": "anti_shortcut/proto/sidecar_pb2.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4290b09b08c2f113e428e799834e708a321fa5a8",
+      "bytes": 5702
+    },
+    {
+      "path": "anti_shortcut/proto/sidecar_pb2_grpc.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "178ec7b343a85c99bae0d79ce8920c5baefd09a8",
+      "bytes": 16314
+    },
+    {
+      "path": "anti_shortcut/proxy.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "db5b88a85526988ef2810e161c0bf9cdb7fc2eca",
+      "bytes": 10228
+    },
+    {
+      "path": "anti_shortcut/proxy_client.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a0c5d1c4158c0d2e365102036882c595d7f8d0df",
+      "bytes": 6013
+    },
+    {
+      "path": "anti_shortcut/remote_audit.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "259663e12d47b6acd8379dbc03a8251e58d5e906",
+      "bytes": 14482
+    },
+    {
+      "path": "anti_shortcut/rules/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d3f882208018ecb8545f1b09fbf9e85ec40adc07",
+      "bytes": 7191
+    },
+    {
+      "path": "anti_shortcut/sdk.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ef4a9eed648dbd7a3372131fe859a4c739b76526",
+      "bytes": 18483
+    },
+    {
+      "path": "anti_shortcut/semantic.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "92732f8f5bd097be2597f3bfc2d64ef3aa634cb8",
+      "bytes": 54207
+    },
+    {
+      "path": "anti_shortcut/sidecar.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "22e3342c27b2755972997bf92590a3dc3d960eb3",
+      "bytes": 26788
+    },
+    {
+      "path": "anti_shortcut/skill.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a93bf6414965369dd882fa0bb7cc5bcc3e51cf93",
+      "bytes": 34174
+    },
+    {
+      "path": "anti_shortcut/state.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b76e4b72810e55c83e1e8d711d5e9a58d11e2bcc",
+      "bytes": 21562
+    },
+    {
+      "path": "anti_shortcut/validators.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7a8478947904342b0395b0bffe9ee482b25ea921",
+      "bytes": 19151
+    },
+    {
+      "path": "anti_shortcut/write_audit.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2bf8a17b6256dcc7cf80e6933f001142b7dda275",
+      "bytes": 4733
+    },
+    {
+      "path": "benchmarks/bench.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "797f8dfe1daf9c865a641ef2b30dffcf6f6a79a3",
+      "bytes": 13666
+    },
+    {
+      "path": "benchmarks/control_red_team/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8e4e055588c812d2e5a1650ff69d45e567b4b7f1",
+      "bytes": 243
+    },
+    {
+      "path": "benchmarks/control_red_team/base.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dad36986b11f74838137fe1d51f18cced0930ce9",
+      "bytes": 5671
+    },
+    {
+      "path": "benchmarks/control_red_team/known_residual.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8a9409c267ef976e9de2548996783cfa81e7d4d1",
+      "bytes": 23
+    },
+    {
+      "path": "benchmarks/control_red_team/results/2026-10-20/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e801e622ab8fc0529a93ac9fab6e49106b370118",
+      "bytes": 1421
+    },
+    {
+      "path": "benchmarks/control_red_team/results/2026-10-20/red-team.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5e067f19bc5501077b7bb25f518d5a1423395388",
+      "bytes": 36832
+    },
+    {
+      "path": "benchmarks/control_red_team/results/2026-10-20/verification.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7c6b6e663b051ebe54cdf37855aaf7cde503ea8d",
+      "bytes": 36317
+    },
+    {
+      "path": "benchmarks/control_red_team/run_control_red_team.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d85cb44deec8e46d63547c1b3dfa33051384f380",
+      "bytes": 699
+    },
+    {
+      "path": "benchmarks/control_red_team/techniques/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "acedf74fe258921c3ae5d2c9dad031d4f6ba255c",
+      "bytes": 365
+    },
+    {
+      "path": "benchmarks/control_red_team/techniques/break_glass_reuse.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1ff54103acb986c888b0043dc0505fcf57189050",
+      "bytes": 2239
+    },
+    {
+      "path": "benchmarks/control_red_team/techniques/control_bypass.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "633287f994d70efb289bd5346ce3709ab84979d7",
+      "bytes": 2831
+    },
+    {
+      "path": "benchmarks/control_red_team/techniques/goal_binding_escape.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ab1e5e70c693cd30b04affc4f2304e7c051a0a12",
+      "bytes": 2811
+    },
+    {
+      "path": "benchmarks/control_red_team/techniques/policy_fail_open.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d83cd66af891a6a1769a803edfd79247f2331d47",
+      "bytes": 2356
+    },
+    {
+      "path": "benchmarks/control_red_team/techniques/task_state_skip.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b806cde6f10538df38c6f4f6f5ccb21f77accfa0",
+      "bytes": 2342
+    },
+    {
+      "path": "benchmarks/fuzz_parsers.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cbf5a7b2f33bca3cd34ddd40ecfd6aa635f87a54",
+      "bytes": 12036
+    },
+    {
+      "path": "benchmarks/fuzz_sidecar.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4a00ea33c0c3f34b01df080617d7aaf9e8930764",
+      "bytes": 19125
+    },
+    {
+      "path": "benchmarks/red_team/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0dac3506a65b8a197055cab3f761b816c6b8cbb7",
+      "bytes": 96
+    },
+    {
+      "path": "benchmarks/red_team/agent.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bc93f94e3dd35c0cc73d8c65422a8489e0166546",
+      "bytes": 19225
+    },
+    {
+      "path": "benchmarks/red_team/known_residual.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c8a44113f80cef390401cb3ac348fef1e900cef5",
+      "bytes": 2415
+    },
+    {
+      "path": "benchmarks/red_team/payloads.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "80ae87c36ecfa22f1db8435d75f666e69196772e",
+      "bytes": 5454
+    },
+    {
+      "path": "benchmarks/red_team/residuals.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "43f61b74cd53ac2132c4ce5a96925cd09ed4dd90",
+      "bytes": 4498
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop/after/report.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9ce1e697a4b21b63de3606dc273f03f71876853e",
+      "bytes": 53817
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop/after/report.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "63364f255ff306db1bc747babe31766e15ea7f13",
+      "bytes": 6960
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop/analysis_report.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3b8cd4a5ba0265b5aa30de1b69ea518d8c7757dd",
+      "bytes": 5475
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop/analysis_report.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "41c2b8e181bbb0116f71bc3d09581cb6b7ade573",
+      "bytes": 767
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop/before/report.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d35a527f96fb0d85fe4207003726f1026b7cab12",
+      "bytes": 52249
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop/before/report.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cdae744a2a742fff129b36bcc809e82ad08dded3",
+      "bytes": 7052
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop/case_library.jsonl",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7860612b9b337f6e7296cb456d240f2490016f33",
+      "bytes": 41388
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop/suggestions.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9087d18ca682225858b1a0c1aa514229c10f8998",
+      "bytes": 1785
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop_p1/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "563a0c91ac7ba6db2ffc4dd130f5f6d260dc36f7",
+      "bytes": 1932
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop_p1/after.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f68a68f6e1075bc197b3dc872fc9b1169fceaab3",
+      "bytes": 4624
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop_p1/analysis_report.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "622de112575afc3c53c532b2f0d123a6c7ad9416",
+      "bytes": 1737
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop_p1/analysis_report.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e791850d6491f69e1a64fbe22f465b5962ded53d",
+      "bytes": 461
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop_p1/apply.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d0528122e61efe28109ab84c12cd7cb2c52cd930",
+      "bytes": 246
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop_p1/case_library.jsonl",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f355f2ccca2ee8eea29083609e4741c05d67fb70",
+      "bytes": 10425
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop_p1/promote.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d354673615c2624c120b2cbbbd3d36a9a9268b30",
+      "bytes": 269
+    },
+    {
+      "path": "benchmarks/red_team/results/learning_loop_p1/suggestions.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "67e0cf844aa3f8259a2e99cc73c999e7e2b7d553",
+      "bytes": 954
+    },
+    {
+      "path": "benchmarks/red_team/results/report.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a09cbb60fd22726ae7af9a7f35cb4713445fb84a",
+      "bytes": 136693
+    },
+    {
+      "path": "benchmarks/red_team/results/report.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6c675b94ddbd71b56e4711dc01faf2a0d942dd8e",
+      "bytes": 16685
+    },
+    {
+      "path": "benchmarks/red_team/run_red_team.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fb4bc28e74aa1e7094955b1c22b03ce78d6baf03",
+      "bytes": 12609
+    },
+    {
+      "path": "benchmarks/red_team/techniques/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9f3f1d24f7627d8e7f50febcedd9b34c2c57c714",
+      "bytes": 4047
+    },
+    {
+      "path": "benchmarks/red_team/techniques/base.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "50f67683dadbc6b6dc9db2e021728337f7154a59",
+      "bytes": 13523
+    },
+    {
+      "path": "benchmarks/red_team/techniques/chains.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "83431823419b648062334542dbc4eaf519fb846f",
+      "bytes": 4917
+    },
+    {
+      "path": "benchmarks/red_team/techniques/compact_syntax.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3b5a45750e855e056af456833631f333ab7a9522",
+      "bytes": 5046
+    },
+    {
+      "path": "benchmarks/red_team/techniques/constraint_replace.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9169c914f756649061ff38308ec97153de231ea3",
+      "bytes": 2639
+    },
+    {
+      "path": "benchmarks/red_team/techniques/constraint_weaken.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5e8b1d4a87013ce3926354f3ec0814bfbd3fb3f2",
+      "bytes": 2557
+    },
+    {
+      "path": "benchmarks/red_team/techniques/coverage_disguise.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "82fa538cc57ae743f16f28b4028c5043c127a3db",
+      "bytes": 2721
+    },
+    {
+      "path": "benchmarks/red_team/techniques/equivalent_op.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "33417a328130e0b0047f338bf0891c13efe00bbf",
+      "bytes": 4625
+    },
+    {
+      "path": "benchmarks/red_team/techniques/formal_evade.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9b187b1a66dbb91f54a57c31c4bb83384edeb611",
+      "bytes": 3550
+    },
+    {
+      "path": "benchmarks/red_team/techniques/misc_attacks.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fa996a4b64e5641ebc6514c8a38f680ef4d4ec6e",
+      "bytes": 3018
+    },
+    {
+      "path": "benchmarks/red_team/techniques/obfuscated.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "76f6d589adaea5b6390a116a54bc4593f3b7f0ac",
+      "bytes": 3535
+    },
+    {
+      "path": "benchmarks/red_team/techniques/risk_camouflage.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3754ce130e9e0ad41ed78f5b98f9db618fdda733",
+      "bytes": 4562
+    },
+    {
+      "path": "benchmarks/red_team/techniques/session_attacks.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c6262d41d0936e933da1eb975bde725a7383c100",
+      "bytes": 6315
+    },
+    {
+      "path": "benchmarks/red_team/techniques/template_filler.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1b7e6fd774fc44ee62f42540f9cd9381af7c82d8",
+      "bytes": 1998
+    },
+    {
+      "path": "benchmarks/red_team/techniques/timing_evade.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a90300212f8efde2b95be6121846e15820d6147e",
+      "bytes": 2765
+    },
+    {
+      "path": "benchmarks/red_team/techniques/tool_chains.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e77c8e34b046690f4a78c0f5adc8f9214523023a",
+      "bytes": 4823
+    },
+    {
+      "path": "benchmarks/swe_bench_gate.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c37ce339af0b793cf5e95be58a92f918f0cbdc6a",
+      "bytes": 13824
+    },
+    {
+      "path": "benchmarks/swebench/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fdc35365760581982b7090c9a95f4e4b228878a0",
+      "bytes": 5964
+    },
+    {
+      "path": "benchmarks/swebench/analyze_results.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cb3a2977be13a0c2deb7a573475e6a57eac0895c",
+      "bytes": 7399
+    },
+    {
+      "path": "benchmarks/swebench/gold_check.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7e0aabb110a810ef0de5c8273772227758766d92",
+      "bytes": 4141
+    },
+    {
+      "path": "benchmarks/swebench/grade.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "affb29ccdea8efa4e75705c4e7fe2c453a678132",
+      "bytes": 8739
+    },
+    {
+      "path": "benchmarks/swebench/manifests/exclude-historical-49.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "30a041e4bd957330c84ea506fa73c3f6e2e2ca88",
+      "bytes": 2822
+    },
+    {
+      "path": "benchmarks/swebench/manifests/link_check_5.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5dce4190f94c4045ec1bc807504712d4df2e92ac",
+      "bytes": 1977
+    },
+    {
+      "path": "benchmarks/swebench/manifests/scale100-verified-2026-11-14.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2089fbdc2da372f0182649ba9c982263d5048c18",
+      "bytes": 29045
+    },
+    {
+      "path": "benchmarks/swebench/manifests/scale100-verified-2026-11-14.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "153dc1635a90e4b0c790654acc84240213754d91",
+      "bytes": 5742
+    },
+    {
+      "path": "benchmarks/swebench/manifests/scale50-lite-2026-10-20.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0f60e97ee2be9ebd0df05b2319f234450eedbf25",
+      "bytes": 12240
+    },
+    {
+      "path": "benchmarks/swebench/manifests/scale50-lite-2026-10-20.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c95f9b5cda4a87f03b62ee00a6d266033e6f40ca",
+      "bytes": 2642
+    },
+    {
+      "path": "benchmarks/swebench/manifests/v120-smoke-2026-11-14.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "faafaaa99b821ef6d7fae593a4bd1ce768c82922",
+      "bytes": 1137
+    },
+    {
+      "path": "benchmarks/swebench/manifests/verified15-cached-2026-11-07.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7d99b674e82a74b6f535b5bb0ecdc443310c4f35",
+      "bytes": 2878
+    },
+    {
+      "path": "benchmarks/swebench/manifests/verified20-preregistered-2026-11-08.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5bbb996ecaa40411f7dcc2cfcbc9b3c4891ebeb6",
+      "bytes": 9861
+    },
+    {
+      "path": "benchmarks/swebench/manifests/verified20-preregistered-2026-11-08.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b96eb02ee9108ae4b6803922ea7a1016558cfe5f",
+      "bytes": 4727
+    },
+    {
+      "path": "benchmarks/swebench/prepare_dataset.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "caf3e5aead732923a095201aef69c5e923c69f3c",
+      "bytes": 5893
+    },
+    {
+      "path": "benchmarks/swebench/regrade_cross_shard.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8b47630101e13c8a1dd5bcc45c8ea6959f2442c2",
+      "bytes": 5037
+    },
+    {
+      "path": "benchmarks/swebench/results/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "75b8e98248164ab08efb2fabd062f87324ead966",
+      "bytes": 4694
+    },
+    {
+      "path": "benchmarks/swebench/results/scale100-images-2026-11-14.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "49449efd584387c1eb1b7736e4a939353f2466db",
+      "bytes": 567053
+    },
+    {
+      "path": "benchmarks/swebench/results/scale100-launch-2026-11-14.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f411fa8eac466fb54d9fa8b6c0ee91ef61db2bf0",
+      "bytes": 9229
+    },
+    {
+      "path": "benchmarks/swebench/results/scale100-testbeds-2026-11-14.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b250810fe262305e0f59da30125ef744c83ddede",
+      "bytes": 130082
+    },
+    {
+      "path": "benchmarks/swebench/results/scale20_lite_container.csv",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d8df42c552a3dae2f74c808ebfc9cec949cab8dc",
+      "bytes": 3079
+    },
+    {
+      "path": "benchmarks/swebench/results/v120-smoke.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "61383cdf122bc8f6a947c6d21829d9feca5d1d3f",
+      "bytes": 7688
+    },
+    {
+      "path": "benchmarks/swebench/results/v120-validation.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6a977bf2ed1b2b7c5d2b0a0edb9fa540b98718bb",
+      "bytes": 3097
+    },
+    {
+      "path": "benchmarks/swebench/results/verified15_cached.csv",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4c64cbf828cb79fffe7e9eb22ad28107278d006d",
+      "bytes": 2373
+    },
+    {
+      "path": "benchmarks/swebench/results/verified15_cached_audit.csv",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3578ed684ee268fc7d470b1944c96914d09c99aa",
+      "bytes": 2166
+    },
+    {
+      "path": "benchmarks/swebench/results/verified15_cached_selection.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "182f8df4a82fc68eafd41bd4ff370ed5348e34ab",
+      "bytes": 18371
+    },
+    {
+      "path": "benchmarks/swebench/results/verified15_cached_summary.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dadf62292cd2161b3c56ce3300f6fa48a999d3ab",
+      "bytes": 2003
+    },
+    {
+      "path": "benchmarks/swebench/results/verified20_anomaly_audit.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7eac485b19f119e4fd43c8aa4fa88dee3bb53262",
+      "bytes": 31691
+    },
+    {
+      "path": "benchmarks/swebench/results/verified20_environment.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c69e9710748f21c4440227cb2b12af38618b3bf1",
+      "bytes": 75583
+    },
+    {
+      "path": "benchmarks/swebench/results/verified20_host_sleep_events.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5e2db7bc1a25c5a9d1b7437330153d7807a2e430",
+      "bytes": 454
+    },
+    {
+      "path": "benchmarks/swebench/results/verified_regrade.csv",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "48f7f5898f200255fb9e57d605094f9f6995a135",
+      "bytes": 1231
+    },
+    {
+      "path": "benchmarks/swebench/run_agent.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fc0fb1beae85a06b99940e7afd50668fe5ccdd72",
+      "bytes": 25938
+    },
+    {
+      "path": "benchmarks/swebench/run_status.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "755b36f5fcad84e5c0018a41b7f78679f74be4aa",
+      "bytes": 4862
+    },
+    {
+      "path": "benchmarks/swebench_runner.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8d8aae16ff75aca2a3859e0788b77081a38e8995",
+      "bytes": 12694
+    },
+    {
+      "path": "deploy/Dockerfile",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "188cb7468efa2915d5dd91f4c58dde3d06107540",
+      "bytes": 426
+    },
+    {
+      "path": "deploy/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "89d4222e3827addf5ff494205307fefb19fcf6b7",
+      "bytes": 1461
+    },
+    {
+      "path": "deploy/docker-compose.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0ed10975f7c2948eb4e6f51a271ac2c01b4d626f",
+      "bytes": 579
+    },
+    {
+      "path": "deploy/helm/phase-barrier/Chart.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d12396014094fd9b6e4af35a3af1dda061a961ed",
+      "bytes": 492
+    },
+    {
+      "path": "deploy/helm/phase-barrier/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9bab8825c1944f804e7cd44aadaefcf647e650ef",
+      "bytes": 2325
+    },
+    {
+      "path": "deploy/helm/phase-barrier/templates/NOTES.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ec49ce4894ff77e30911bfe9eff8a6be960564ec",
+      "bytes": 936
+    },
+    {
+      "path": "deploy/helm/phase-barrier/templates/_helpers.tpl",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4f9501f3173a0f25ea7552eb092f68ac76007d88",
+      "bytes": 683
+    },
+    {
+      "path": "deploy/helm/phase-barrier/templates/configmap.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2539843f3ddcc8ccfa4294a4c3ea12ef56e98fcd",
+      "bytes": 276
+    },
+    {
+      "path": "deploy/helm/phase-barrier/templates/deployment.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "696231423d747fbaa27715a380076e07a2a50f83",
+      "bytes": 4338
+    },
+    {
+      "path": "deploy/helm/phase-barrier/templates/job-gatekeeper.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b1dbb0131d3a3bc1650ce4e8a89ebbcddff1eca2",
+      "bytes": 1406
+    },
+    {
+      "path": "deploy/helm/phase-barrier/templates/pvc.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cb28145d9511087edc3698e0e7cad190d1cdc7d1",
+      "bytes": 848
+    },
+    {
+      "path": "deploy/helm/phase-barrier/templates/secret.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5e70764ce31647ec8c7a55ae849982f8a179ca55",
+      "bytes": 496
+    },
+    {
+      "path": "deploy/helm/phase-barrier/templates/service.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dcbe2da0b1a89044b4252209c318fed59be77d30",
+      "bytes": 434
+    },
+    {
+      "path": "deploy/helm/phase-barrier/values.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3c2f1d5a081c9077866445acc34f92dc8dc344d3",
+      "bytes": 2453
+    },
+    {
+      "path": "deploy/k8s/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fc4f24eefc38db1fab7c5652d34e4574e0a57eb7",
+      "bytes": 9304
+    },
+    {
+      "path": "deploy/k8s/e2e-values.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6d1c105b35bcc7c88602a1bc35a67735c05bb7a9",
+      "bytes": 376
+    },
+    {
+      "path": "deploy/k8s/e2e.Dockerfile",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ee98295b02a3c79f9f83cd13efab784fc44414ca",
+      "bytes": 671
+    },
+    {
+      "path": "deploy/k8s/e2e_agent.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a71ce800e04eb81a02fb1747563d5ae45cb0bdc8",
+      "bytes": 3237
+    },
+    {
+      "path": "deploy/k8s/gate-keeper.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c1b6817b17c712ba0bdd9b621a419459e3de0187",
+      "bytes": 1323
+    },
+    {
+      "path": "deploy/k8s/gate-sidecar.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7b73fe5e255383085c82cdbfd0f54828f95ae16f",
+      "bytes": 3420
+    },
+    {
+      "path": "deploy/k8s/kind-e2e-test.sh",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6cc56a35cda6f7a766ec70cba939edeaafaa0802",
+      "bytes": 3262
+    },
+    {
+      "path": "deploy/k8s/pvc.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fa6c9b4873af6d91d1447b2f3f114aa436ddb582",
+      "bytes": 625
+    },
+    {
+      "path": "deploy/probe.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1865a4565549b402cd89ad38d9d54a8c4403318f",
+      "bytes": 1630
+    },
+    {
+      "path": "deploy/seed_gate.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9a948369e2619a0b7c655991560885c17c4afb64",
+      "bytes": 3170
+    },
+    {
+      "path": "docker/demo/Dockerfile",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "894739e3d6bd42c5183427cad7eb2e0fad18028e",
+      "bytes": 455
+    },
+    {
+      "path": "docker/demo/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7c5fa3825ab3ee1e5b462a408f6c162c79155b22",
+      "bytes": 889
+    },
+    {
+      "path": "docker/demo/agent_demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c9e08acb06d6fa55872bc285f8574fa5666d748f",
+      "bytes": 4112
+    },
+    {
+      "path": "docker/demo/entrypoint.sh",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "303bd66e52373f410c7a50780ee95f1a6a9742cb",
+      "bytes": 377
+    },
+    {
+      "path": "docs/CNAME",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6341fc9bea50607f6a7a11e6f4ea3128873facf0",
+      "bytes": 19
+    },
+    {
+      "path": "docs/api.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f4aba7eb0305f9309165ae4fb242619d2f457e50",
+      "bytes": 8053
+    },
+    {
+      "path": "docs/architecture.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ea42ed40a2994c74df95af97f52f656ad2ecc4de",
+      "bytes": 7613
+    },
+    {
+      "path": "docs/audit-logging.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "48a2d507ee37a8dc1a4bd11ce4a2934b7a074240",
+      "bytes": 1490
+    },
+    {
+      "path": "docs/benchmarks/scale100-operations.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "26f4b9831a42659ba57ee272bc70ae15df51df4f",
+      "bytes": 7969
+    },
+    {
+      "path": "docs/benchmarks/scale100-statistical-protocol.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c4e9ea6b95b58aaeaa74cdae58a21b5c24c7d8d1",
+      "bytes": 2920
+    },
+    {
+      "path": "docs/benchmarks/swe-bench-scale20.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e023d96a683354691dce00ffc45505086e6b9ff7",
+      "bytes": 9728
+    },
+    {
+      "path": "docs/benchmarks/verified15-cached-2026-11-08.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "84547bc01fc5038dc2697d76be629f253e1c1b2c",
+      "bytes": 10524
+    },
+    {
+      "path": "docs/benchmarks/verified20-astropy-audit.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b71bb853ee7dd3ca3b991622c7adeac930f43bc4",
+      "bytes": 7048
+    },
+    {
+      "path": "docs/benchmarks/verified20-execution-readiness-2026-11-08.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d91f15a1d6ccb8fb6aa952c612342a0a3d41405a",
+      "bytes": 7453
+    },
+    {
+      "path": "docs/benchmarks/verified20-final-results.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "261b90656c6fda15c5c3f5b023bae78a7a3ab5a0",
+      "bytes": 14848
+    },
+    {
+      "path": "docs/benchmarks/verified20-formal-gate-audit.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "aeeb3e33a60ecfdce1bb217d7ff4aea391e4f521",
+      "bytes": 15690
+    },
+    {
+      "path": "docs/benchmarks/verified20-gate-audit-template.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4f062d1c9752b3fc10722588dab736cc9701e8e9",
+      "bytes": 4163
+    },
+    {
+      "path": "docs/benchmarks/verified20-preregistered-report.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f33ed1b822aef93fe3247ec695fece8eedb9a0cb",
+      "bytes": 55817
+    },
+    {
+      "path": "docs/benchmarks/verified20-seaborn-comparison.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8034631235ddaafa68e073a5513fdcc8360d5cf5",
+      "bytes": 3417
+    },
+    {
+      "path": "docs/benchmarks/verified20-sympy-audit.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ace75077ed3f8428d5cb6a4f63ae1e1d83023028",
+      "bytes": 3495
+    },
+    {
+      "path": "docs/benchmarks/verified20-to-scale100-implementation.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5b48c7d91e21adae6414b8e697dc293977d2100c",
+      "bytes": 11970
+    },
+    {
+      "path": "docs/best-practices.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d0d5ee0432c9d5ce501d14aee704e36ce65cec1b",
+      "bytes": 5562
+    },
+    {
+      "path": "docs/blog/2026-08-29-phase-barrier-intro.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "08390037d27f190973aca36c3186ee2b2f16b219",
+      "bytes": 6917
+    },
+    {
+      "path": "docs/blog/2026-09-12-swe-bench-scale20-en.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "11ab4ccbf99ad7d85fdee2776d3f914ebd8694d4",
+      "bytes": 5442
+    },
+    {
+      "path": "docs/blog/2026-09-12-swe-bench-scale20-zh.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0f558ddc5b29470d8bad3c4bf5a7c7804008b5d2",
+      "bytes": 4628
+    },
+    {
+      "path": "docs/changelog.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0eb8c259ffdd26484a58d825451b5303702e662b",
+      "bytes": 383
+    },
+    {
+      "path": "docs/configuration.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4a8c4b7d1fabdb372b92710c757a9b2ab7cc996f",
+      "bytes": 13004
+    },
+    {
+      "path": "docs/contributing.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "52c2e57e552af36f61c0eeea0aa9e53e1a207dec",
+      "bytes": 1741
+    },
+    {
+      "path": "docs/control-plane.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b5ad597b5163d4c4a0118bd15f3171f87cfce9c5",
+      "bytes": 12874
+    },
+    {
+      "path": "docs/control-security.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5443b731d9824ea49ff7f96be0fd94a08a36ca5a",
+      "bytes": 5734
+    },
+    {
+      "path": "docs/custom-domain.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e82420dedd60bb435e1fd294b8cabb001ca18d14",
+      "bytes": 4615
+    },
+    {
+      "path": "docs/faq.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "41e67ca3abd96e59f35051aba55288dcd4e33e7a",
+      "bytes": 1885
+    },
+    {
+      "path": "docs/five-lines.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ffec68952bd915b92626cc787d9ab5491044dd6e",
+      "bytes": 10926
+    },
+    {
+      "path": "docs/formal-invariants.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "803d67a051223efdb65d339dc39ceb7b91fe29c8",
+      "bytes": 5383
+    },
+    {
+      "path": "docs/github-action.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "88f2d5721840fdfaeef2da6b84eff8589191e40d",
+      "bytes": 4124
+    },
+    {
+      "path": "docs/index.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "771a82053eb9bac9d14cf31f15a1969d90eb0e7b",
+      "bytes": 4294
+    },
+    {
+      "path": "docs/integrations.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7f304822e76956d556f759669f7cd545457819be",
+      "bytes": 8972
+    },
+    {
+      "path": "docs/k8s.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "42f97b635d37572d83678d877e92c9969cffe17b",
+      "bytes": 2378
+    },
+    {
+      "path": "docs/languages.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "82dcc4fffac08f6e4654d2508b11248f9c9a5048",
+      "bytes": 10941
+    },
+    {
+      "path": "docs/learning-defense.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c26486ee142d4f2d9c908f6b4bd89f572d3d0f6a",
+      "bytes": 10088
+    },
+    {
+      "path": "docs/media/phase-barrier-demo.mp4",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9548729de08ce6af0bd3ef48cfd2cd9091bd9a92",
+      "bytes": 886550
+    },
+    {
+      "path": "docs/orchestrator-hooks.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "84460b7907c4c99842b7a0164df6605870410c4a",
+      "bytes": 2596
+    },
+    {
+      "path": "docs/plugin-status.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f48793a4a3e2c3a8c75a7630493448f2490e0070",
+      "bytes": 2462
+    },
+    {
+      "path": "docs/plugins.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "83a839efb0b1552b6b083e3acae0bb68188870bf",
+      "bytes": 17266
+    },
+    {
+      "path": "docs/promotion/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e4a46fb68b31e1b8267f53f0b96771d666f6408d",
+      "bytes": 9126
+    },
+    {
+      "path": "docs/promotion/outreach.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "44b99513127772742a44325a47dacc6213402b79",
+      "bytes": 5038
+    },
+    {
+      "path": "docs/publish-to-marketplace.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bed3b019c3e62f76883c97708f940ed9b8bffb5b",
+      "bytes": 3055
+    },
+    {
+      "path": "docs/quickstart.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fc3dde963c6422d844013afddf6e2ff433140f31",
+      "bytes": 2504
+    },
+    {
+      "path": "docs/red-team.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f52595083b80ec42d8bad189d2edef5206e374ac",
+      "bytes": 12389
+    },
+    {
+      "path": "docs/release.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "279dd17f7b2d6e0baaf082755efba42a39820e62",
+      "bytes": 5681
+    },
+    {
+      "path": "docs/roadmap.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dc084a049f9d25679a9912d54d7de3201505dfc6",
+      "bytes": 34733
+    },
+    {
+      "path": "docs/security-rules.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "aae4072694aeeabf460e37eb88d3828777591e17",
+      "bytes": 7608
+    },
+    {
+      "path": "docs/semantic-validation.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "624dce77bfb04ab8aa61016fda82d4882e19397e",
+      "bytes": 13625
+    },
+    {
+      "path": "docs/tutorials/ci-incremental-gate.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0fcf52ac89f365419575fc87899cd420cbf690d2",
+      "bytes": 2793
+    },
+    {
+      "path": "docs/tutorials/k8s-sidecar-grpc.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5694763516974285ff4b9855e665982c1df96b63",
+      "bytes": 6134
+    },
+    {
+      "path": "docs/tutorials/swe-bench-gate.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7a2501261e6b2a4fd227c86d9df851b3c19d8717",
+      "bytes": 7012
+    },
+    {
+      "path": "docs/tutorials/swe-bench-real.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e43158db14de8a43f82db8d542040112f1831a5a",
+      "bytes": 26151
+    },
+    {
+      "path": "docs/usage.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a726f6f495f5a5384e785bd99ea166297a964417",
+      "bytes": 2355
+    },
+    {
+      "path": "docs/video-tutorial-template.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2cb0f866e08a3c8df26d6de931a3fcb19cd035c7",
+      "bytes": 4577
+    },
+    {
+      "path": "examples/anti_shortcut_config.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c677122b3e6229b3f6ac5d1fed3efbb7d061ffc6",
+      "bytes": 2953
+    },
+    {
+      "path": "examples/anti_shortcut_go_config.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e3a58bfae96839714b16c94762f7b0ed0ff72961",
+      "bytes": 963
+    },
+    {
+      "path": "examples/anti_shortcut_js_config.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "41da4a46326fa271d33478aafdbfb26ac3414ee9",
+      "bytes": 2036
+    },
+    {
+      "path": "examples/anti_shortcut_rust_config.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "02eba81288ad1b6f913361b58c19a3e3a34bd8bf",
+      "bytes": 1241
+    },
+    {
+      "path": "examples/autogpt_integration/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d847f3a6dcbf9dff259f77ee32f93b676196b013",
+      "bytes": 1095
+    },
+    {
+      "path": "examples/autogpt_integration/gate_command_wrapper.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4eccc6fdbbae206badeaeca914885d3cab1a3cda",
+      "bytes": 6600
+    },
+    {
+      "path": "examples/custom_adapter/demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "462464b0016b09bd1ce15eb0079eb85e39fbf2f3",
+      "bytes": 3305
+    },
+    {
+      "path": "examples/custom_adapter/foo_config.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "700f633eb29068e69823d341d8203a72b6f325d1",
+      "bytes": 283
+    },
+    {
+      "path": "examples/custom_adapter/foo_language.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5715a8abea6299964db9b51be7cf772675f26747",
+      "bytes": 1999
+    },
+    {
+      "path": "examples/custom_adapter/pyproject.toml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "92d21f47f626ea31594caf6052cfa2d57facdaa1",
+      "bytes": 628
+    },
+    {
+      "path": "examples/demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e4f13b56f7551548534db86157298d4d5faf530f",
+      "bytes": 8411
+    },
+    {
+      "path": "examples/github-action/evidence-gate.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c4549954d8e67627cd90e78cfa4c0ff09ec65cec",
+      "bytes": 1388
+    },
+    {
+      "path": "examples/github-action/gate-go.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e6eb819634343a166b01d2a38082aa6cefcd67b7",
+      "bytes": 1334
+    },
+    {
+      "path": "examples/github-action/gate-pr.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e2ec0d6a09c6c9763efc1245be512214b54615df",
+      "bytes": 924
+    },
+    {
+      "path": "examples/github-action/gate-rust.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3c552cfee4faf21ebe450fdfc39a08e197d8329a",
+      "bytes": 1328
+    },
+    {
+      "path": "examples/github-action/gate.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8e45310d47b129b3eb70eac981b7d91550adfe1e",
+      "bytes": 977
+    },
+    {
+      "path": "examples/k8s_proxy/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f6ddecf500c9b79aa5807c8d1ebe5758c19ea440",
+      "bytes": 2127
+    },
+    {
+      "path": "examples/k8s_proxy/demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "09dfabc6b85485e29dcea597cb96492104367de5",
+      "bytes": 4152
+    },
+    {
+      "path": "examples/langchain_integration/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e64d1e04c35cd3ec082f10b9b2c65bea94e06599",
+      "bytes": 3315
+    },
+    {
+      "path": "examples/langchain_integration/demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ac37554586e2952ad95682ce8a92084bc620eb4b",
+      "bytes": 4477
+    },
+    {
+      "path": "examples/langchain_integration/gate_tools.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c370fb980b1146169e5ce388d95e78f3ae4064af",
+      "bytes": 5197
+    },
+    {
+      "path": "examples/langchain_integration/phase_barrier_tool.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "175b6734b048ca463730e96724e811162faed4fb",
+      "bytes": 3860
+    },
+    {
+      "path": "examples/minimal_agent.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9c3b44c1f2d09c874fcf56d33fd962b5eebaf7a6",
+      "bytes": 3745
+    },
+    {
+      "path": "examples/mtls_audit/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9b5158f1ec94dccf29bdeaf09010176bd479ffc8",
+      "bytes": 2287
+    },
+    {
+      "path": "examples/mtls_audit/anti_shortcut_mtls.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "db870ea8476e458cf3b0da106f3f255ee80cb0e6",
+      "bytes": 393
+    },
+    {
+      "path": "examples/mtls_audit/demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "45324ee410421ef38bd972a24de10668970926c3",
+      "bytes": 3226
+    },
+    {
+      "path": "examples/mtls_audit/generate_certs.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "46b013a352dca111006e85242d1865a0b958d80e",
+      "bytes": 5959
+    },
+    {
+      "path": "examples/mtls_audit/server.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a2bb19fcb50e2e374e8b59653172facb28734527",
+      "bytes": 2943
+    },
+    {
+      "path": "examples/mtls_sidecar/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0fa664b0165fc6e3922301ac2f67fcd4a9b04064",
+      "bytes": 2007
+    },
+    {
+      "path": "examples/mtls_sidecar/demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "330df6eb03e51df74c6675b422d01dcfab7d9d1a",
+      "bytes": 2866
+    },
+    {
+      "path": "examples/mtls_sidecar/generate_certs.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a57484349fd71331a4513b6a6e6063f7c776457d",
+      "bytes": 5983
+    },
+    {
+      "path": "examples/orchestrator_hooks/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1b225c2e08b5445958ce964cd4d7ea0088d85fd3",
+      "bytes": 2585
+    },
+    {
+      "path": "examples/orchestrator_hooks/demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0eed8136404eeb25cdb3cbffc448a4bf6116df22",
+      "bytes": 7597
+    },
+    {
+      "path": "examples/orchestrator_hooks/multi_agent.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "51343bb6fd87d7911673b88c28eb0c36357ebe37",
+      "bytes": 8647
+    },
+    {
+      "path": "examples/plugin_rules/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b2800d7f2d34c9a0b3658675dc0621037b5ab4ef",
+      "bytes": 2191
+    },
+    {
+      "path": "examples/plugin_rules/demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d2196c56f7eed5672e81bbf803af9002a838ebad",
+      "bytes": 3028
+    },
+    {
+      "path": "examples/plugin_rules/phase_barrier_plugin/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "865bb4bd006a29158a265e89198d0a5a5e4c0719",
+      "bytes": 1377
+    },
+    {
+      "path": "examples/plugin_rules/pyproject.toml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "03c2f7e3322d7a302b83a3fc1b6d5028c780c737",
+      "bytes": 609
+    },
+    {
+      "path": "examples/semantic_llm_check/demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9bc41f74a2a074e3f8167ac25501c4c71067800b",
+      "bytes": 3541
+    },
+    {
+      "path": "examples/semantic_llm_check/llm_semantic_check/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c898f3d6b949f31fc24227a53d9440e1c2eb2021",
+      "bytes": 7848
+    },
+    {
+      "path": "examples/semantic_llm_check/pyproject.toml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "461a69ca1c833376707c22bf00a21329c96df775",
+      "bytes": 604
+    },
+    {
+      "path": "examples/swe_agent_integration/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8d65d499d30c60383723b2483f9978a7b1d2e3be",
+      "bytes": 1226
+    },
+    {
+      "path": "examples/swe_agent_integration/gate_tool.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7dc6679b5b1392e8de9fe045ea0ba7ca3e3eaaf8",
+      "bytes": 5079
+    },
+    {
+      "path": "examples/swe_agent_integration/swe_agent_example.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b9614f5de089de2757eeac431d0431d34494ec0a",
+      "bytes": 840
+    },
+    {
+      "path": "mkdocs.yml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9f68fcbe48f68fa8ded39e68587aba49f505754c",
+      "bytes": 3115
+    },
+    {
+      "path": "plugins.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0e9774faeb6760c828f45405883fbe476ac3359b",
+      "bytes": 2277
+    },
+    {
+      "path": "pyproject.toml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "62b160a9beb663d64098f3ce4d04156f8880a8d7",
+      "bytes": 4292
+    },
+    {
+      "path": "scripts/analyze_cases.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "94fcd6a552ebdd7ddae719bce2011665de451bdf",
+      "bytes": 4825
+    },
+    {
+      "path": "scripts/auto_discover_plugins.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "06acdebae8e9f05fd00b782b01ffdfcbd3f20d73",
+      "bytes": 20488
+    },
+    {
+      "path": "scripts/check_control_coverage.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b292aa7ec9ea78b119a3e00e7f06f210a76bf025",
+      "bytes": 2139
+    },
+    {
+      "path": "scripts/check_custom_domain.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "34e7307bf3616da5feac9ead89aba81b3d9cd440",
+      "bytes": 2609
+    },
+    {
+      "path": "scripts/check_prereg_images.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8ea5d223e16ae5078935f8cab3843727b5b65a09",
+      "bytes": 5102
+    },
+    {
+      "path": "scripts/cleanup_bench_dirs.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c8346f229635f605f2f456688a8355053cb377c7",
+      "bytes": 5641
+    },
+    {
+      "path": "scripts/cleanup_pytest_tmp.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e231cab8d9d7b5acaf4e625e4fd408c084bc29a7",
+      "bytes": 3642
+    },
+    {
+      "path": "scripts/gen_grpc.sh",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e95a9747db8ccd90b1d818e3eb4722c15a3a2fdd",
+      "bytes": 741
+    },
+    {
+      "path": "scripts/import_scale100_oci_images.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eb38f0f5d9d81b6f4e4549298061bc719665ccc7",
+      "bytes": 8484
+    },
+    {
+      "path": "scripts/make_demo_video.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4b2756752ee56de3b94a34b2cb8bd889e03a3a9d",
+      "bytes": 13965
+    },
+    {
+      "path": "scripts/prepare_scale100_preregistration.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "53e7c2b2275a84e9528d483c6c6cc5454b6e0fd2",
+      "bytes": 5395
+    },
+    {
+      "path": "scripts/pull_swebench_images.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bd0ff7d786e1ec012fe5f5b8dedd47708b09017a",
+      "bytes": 4956
+    },
+    {
+      "path": "scripts/run_swebench_batch.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f19c27d3bfe7b64e9f772d9673c774b0221f289c",
+      "bytes": 14358
+    },
+    {
+      "path": "scripts/run_swebench_batch_container.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ee7697ff470219d9c8f77a1e15b3633b2e3ee507",
+      "bytes": 26737
+    },
+    {
+      "path": "scripts/scale100_analysis.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d33dd3c7cb8b1ea188425c5da3b6be74f9a7ee31",
+      "bytes": 18136
+    },
+    {
+      "path": "scripts/scale100_observer.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "97de46f79be3ac4664c8899dffb106b4b245b29e",
+      "bytes": 9561
+    },
+    {
+      "path": "scripts/scale100_runtime.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cd6947117d6fc3c10e8bb8d7a5dcb635b73711da",
+      "bytes": 26392
+    },
+    {
+      "path": "scripts/select_swe_tasks.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cb06d5d81f319b4194aec0dba925517aeb4fd2a1",
+      "bytes": 21213
+    },
+    {
+      "path": "scripts/update_rules.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f7c365a7685ae56bd463aa8ba370e1645ba4082a",
+      "bytes": 7177
+    },
+    {
+      "path": "scripts/verified20_anomaly_audit.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "051ae24b490c76f4a83ec44e3c066e117661caa2",
+      "bytes": 7140
+    },
+    {
+      "path": "scripts/verified20_checks.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9d4db054d3d5f9dc7afdcfeec7cf182f18d58dd4",
+      "bytes": 12476
+    },
+    {
+      "path": "scripts/verified20_report.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4b8836685df46d9412d1a0bac5d3be676c0e56ce",
+      "bytes": 33962
+    },
+    {
+      "path": "scripts/verified20_runtime.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "84d39231a8fa4a2aaf9b99877505c5fe391a92ee",
+      "bytes": 3750
+    },
+    {
+      "path": "scripts/verify_plugins.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a2cb3574147d6d6826b066fc78d1fc110b61e936",
+      "bytes": 14553
+    },
+    {
+      "path": "tests/conftest.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bcec7fcc4d1fb2de0a5f1ba0aa4b7ee3387a0aec",
+      "bytes": 4388
+    },
+    {
+      "path": "tests/fixtures/java_outputs/gradle-junit5-fail.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3beb309a9b67db6b66c2aa1a920057f083cad2e0",
+      "bytes": 265
+    },
+    {
+      "path": "tests/fixtures/java_outputs/gradle-junit5-pass.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b46748a64590da6b4c37a52c12e7651d6e4712fb",
+      "bytes": 161
+    },
+    {
+      "path": "tests/fixtures/java_outputs/gradle-testng-fail.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "241036d0d544400844c78b88e83fe6c9fac67843",
+      "bytes": 173
+    },
+    {
+      "path": "tests/fixtures/java_outputs/junit-console-fail.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f1380acd3f16fcda8ec96081133ec5acf9eadc25",
+      "bytes": 279
+    },
+    {
+      "path": "tests/fixtures/java_outputs/junit-console-pass.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "59c6b02826346ca0844c2d347e2258b72b50589e",
+      "bytes": 175
+    },
+    {
+      "path": "tests/fixtures/java_outputs/surefire-junit5-errors-fail.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "14155c3c38966480edcd529e497a383d83467b91",
+      "bytes": 513
+    },
+    {
+      "path": "tests/fixtures/java_outputs/surefire-junit5-pass.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ae37157e243352c9d1d2b4ab4371d061da4f9b1c",
+      "bytes": 321
+    },
+    {
+      "path": "tests/fixtures/java_outputs/surefire-testng-skipped-variant.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d62b3a72c621b8056d864fb0cc9a50f9bd9de5ea",
+      "bytes": 229
+    },
+    {
+      "path": "tests/fixtures/java_outputs/testng-maven-fail.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "156ade12eff55437032d26dc0915eb1424899d06",
+      "bytes": 239
+    },
+    {
+      "path": "tests/fixtures/java_outputs/testng-maven-pass.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "52825b182e75e680047a493a2c4deeb8604fcd1a",
+      "bytes": 144
+    },
+    {
+      "path": "tests/fixtures/plugin_alpha/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1375f6bd6dd02992a98820f9add1e01589b7f74b",
+      "bytes": 535
+    },
+    {
+      "path": "tests/fixtures/plugin_alpha/plugin_alpha/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "625841e03568069d6acc8d9569d3946f3be7f37b",
+      "bytes": 93
+    },
+    {
+      "path": "tests/fixtures/plugin_alpha/plugin_alpha/integration.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ef2a6d09b8406f17cd59865b4b9d776817f11d01",
+      "bytes": 344
+    },
+    {
+      "path": "tests/fixtures/plugin_alpha/plugin_alpha/language.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c63d0ccc0f4fbebff8252dd1345dcb21dd54c21e",
+      "bytes": 1481
+    },
+    {
+      "path": "tests/fixtures/plugin_alpha/plugin_alpha/rules.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e60bdbe7e21e5505508c82dfdd86341322a373ac",
+      "bytes": 455
+    },
+    {
+      "path": "tests/fixtures/plugin_alpha/plugin_alpha/validators.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "81881ffacc8b78e3928a4a3511211a4f2bef69cd",
+      "bytes": 798
+    },
+    {
+      "path": "tests/fixtures/plugin_alpha/pyproject.toml",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8d7afb9531056d5067551b39e7320143be6e7772",
+      "bytes": 854
+    },
+    {
+      "path": "tests/fixtures/test_preservation/xarray_3993/provenance.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "87925881857d80bf5216372c08474453891c122e",
+      "bytes": 791
+    },
+    {
+      "path": "tests/fixtures/test_preservation/xarray_3993/stage2.py.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f9555bcd7ef6628fdda0b6651ad9f7537a936ac7",
+      "bytes": 966
+    },
+    {
+      "path": "tests/fixtures/test_preservation/xarray_3993/stage3.py.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a570eb77640af951813a9576bd978e018fe81d3c",
+      "bytes": 1065
+    },
+    {
+      "path": "tests/fixtures/verified20_audit/astropy_new_trace_validation/README.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8d86f29764615b8039e23bb06a6a8fd86c8cd361",
+      "bytes": 119
+    },
+    {
+      "path": "tests/fixtures/verified20_audit/astropy_new_trace_validation/state.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8538f5bf346b0b2082d35726ba518c0780007a41",
+      "bytes": 5926
+    },
+    {
+      "path": "tests/fixtures/verified20_audit/astropy_new_trace_validation/stats.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "75ca45755eb3cd5a1946b7d4a463e350680fb506",
+      "bytes": 277
+    },
+    {
+      "path": "tests/fixtures/verified20_audit/astropy_new_trace_validation/trace.jsonl",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cc047c20399dd16b7ce423e8a4986ca0269f97f7",
+      "bytes": 947
+    },
+    {
+      "path": "tests/fixtures/verified20_audit/astropy_pilot.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eb6ba3f8b7d231e122e1f09f229d40d7f02414eb",
+      "bytes": 933
+    },
+    {
+      "path": "tests/fixtures/verified20_audit/django_new_trace_validation/README.txt",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8d86f29764615b8039e23bb06a6a8fd86c8cd361",
+      "bytes": 119
+    },
+    {
+      "path": "tests/fixtures/verified20_audit/django_new_trace_validation/state.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9e73896d01cb758f28d16208286cb7d42f38a28b",
+      "bytes": 2576
+    },
+    {
+      "path": "tests/fixtures/verified20_audit/django_new_trace_validation/stats.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8751c81092ff3187cf18bf8b0500b386e9193098",
+      "bytes": 274
+    },
+    {
+      "path": "tests/fixtures/verified20_audit/django_new_trace_validation/trace.jsonl",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cc047c20399dd16b7ce423e8a4986ca0269f97f7",
+      "bytes": 947
+    },
+    {
+      "path": "tests/fixtures/verified20_audit/django_pilot.json",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "56ecd20d428c7dfa7c987dee479c9eea74bfe67c",
+      "bytes": 685
+    },
+    {
+      "path": "tests/test_action_meta.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e79501c95be8c356abe7009de409676d182e7c95",
+      "bytes": 4915
+    },
+    {
+      "path": "tests/test_audit_pipeline.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "111fa41a341288231733c7104d3cecff4bbc47d4",
+      "bytes": 2539
+    },
+    {
+      "path": "tests/test_auto_discover.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "707a05841a9268d6a2ffdc857a0163dc3190cab2",
+      "bytes": 23414
+    },
+    {
+      "path": "tests/test_auto_discover_e2e.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fdcf20670602366dd3d167622dad2be2cf81ca71",
+      "bytes": 13299
+    },
+    {
+      "path": "tests/test_behavior_chain_audit.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c9e0c835f2d75b98755fc23bcb9d929728900bd4",
+      "bytes": 5286
+    },
+    {
+      "path": "tests/test_benchmarks.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "18be498077b1c134f29aae066a5e3d318af7f2e3",
+      "bytes": 2919
+    },
+    {
+      "path": "tests/test_builtin_rules.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ab003b19e43923cad859a54a87b0a5cf87051abe",
+      "bytes": 8082
+    },
+    {
+      "path": "tests/test_check_custom_domain.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c8e603f92af09a3bddc8f7f71f1b1e223ee34895",
+      "bytes": 2050
+    },
+    {
+      "path": "tests/test_check_prereg_images.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "2d67bed096c9fc84a3688df75014bf4ebc9d44ae",
+      "bytes": 4376
+    },
+    {
+      "path": "tests/test_cli.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "af41717ee428cd35180f469090a641c8433fda76",
+      "bytes": 4612
+    },
+    {
+      "path": "tests/test_cli_extra_commands.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "378637a255d848a9eaf011442f0c33937658b182",
+      "bytes": 12430
+    },
+    {
+      "path": "tests/test_cli_gate_commands.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bae82064cbc52f44aea53383bceb2983b63e61b4",
+      "bytes": 5926
+    },
+    {
+      "path": "tests/test_config.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "95676b76d44dd838750eb0d4ae7c8a7c4167f9ff",
+      "bytes": 2570
+    },
+    {
+      "path": "tests/test_config_boundaries.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "19cb1844c7b9bc5dc50174bfb7a463e5c17a2ef8",
+      "bytes": 3673
+    },
+    {
+      "path": "tests/test_control_plane.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3c68dc466d0fdadf985c088f441a9119880bafa4",
+      "bytes": 31174
+    },
+    {
+      "path": "tests/test_control_security.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a2d90acbdb528d7cf545101c1aa0b5935d5435df",
+      "bytes": 12561
+    },
+    {
+      "path": "tests/test_control_security_gates.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8a39481b55c0fd26a7e9cd335dcec5d94c43af5a",
+      "bytes": 3288
+    },
+    {
+      "path": "tests/test_cov_gate.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b41a4851cf00487000b89b345829c436372a2997",
+      "bytes": 5826
+    },
+    {
+      "path": "tests/test_cpp_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bf2ebb87aa901a5dedfc30b5a5d6c7f577d44b71",
+      "bytes": 8542
+    },
+    {
+      "path": "tests/test_csharp_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5cda4e268d969df02969d52758c5838b4cb450d6",
+      "bytes": 8125
+    },
+    {
+      "path": "tests/test_dart_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fcefe11d242fffc8521e4d4ddb991c497acb33fa",
+      "bytes": 7352
+    },
+    {
+      "path": "tests/test_defense_edge_cases.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5ef920bec52545971a83c443b9d9c4c69657353c",
+      "bytes": 24159
+    },
+    {
+      "path": "tests/test_defense_hardening.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "a895c9fc3b7b3300df5014d784beff4709693203",
+      "bytes": 14771
+    },
+    {
+      "path": "tests/test_defense_lines.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "952c145c6bc63aa44773c5bfdfb3b3ee4707c54c",
+      "bytes": 21732
+    },
+    {
+      "path": "tests/test_delivery_final_green.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "916371ec7d726ca61b9107520c150bcdfd318dfc",
+      "bytes": 5455
+    },
+    {
+      "path": "tests/test_docker_demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "01ac4f6260b87c065488b988ce6ca8736b1e419f",
+      "bytes": 3282
+    },
+    {
+      "path": "tests/test_docs_consistency.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d70a480b13e9a7825a3089fa92e42957c9a13243",
+      "bytes": 2440
+    },
+    {
+      "path": "tests/test_docs_site.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3d49e02c6c89e05563072c09dc8a69ae21d77645",
+      "bytes": 1709
+    },
+    {
+      "path": "tests/test_dotnet_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1a15b06c8a02a1d5d858fee477175dc938661191",
+      "bytes": 1130
+    },
+    {
+      "path": "tests/test_evidence_manifest.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f3431ea945ac30b84886b85a03af44cc56205bab",
+      "bytes": 8147
+    },
+    {
+      "path": "tests/test_formal_alignment.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "45c6c1afda37b466019d86436cca5e5044f7fcac",
+      "bytes": 11630
+    },
+    {
+      "path": "tests/test_fuzz.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "58ba08b768c3b53f70145771f74b5c7f12cbea22",
+      "bytes": 2725
+    },
+    {
+      "path": "tests/test_fuzz_sidecar.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9e58efa4dbe6d2c1043c0e103803661f43cb0586",
+      "bytes": 3907
+    },
+    {
+      "path": "tests/test_gate_regressions.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fa1d3b326e3e9a9f8f152cf5acea73dbb179d4c3",
+      "bytes": 7325
+    },
+    {
+      "path": "tests/test_git_evidence_gate.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0ef0f2d7c81ebd770aa6999de0e4791868b6c7db",
+      "bytes": 4567
+    },
+    {
+      "path": "tests/test_go_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "70c15142bc0874110f8f77e1fcc99ae7ca148e58",
+      "bytes": 7573
+    },
+    {
+      "path": "tests/test_grpc_service.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ab9be2d49f895593243ec0a902e2105764a59d47",
+      "bytes": 9936
+    },
+    {
+      "path": "tests/test_grpc_service_direct.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b0a13bf285cf5f40d8e6d8226c6a80f98c619ec6",
+      "bytes": 11597
+    },
+    {
+      "path": "tests/test_init.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "db41bacf4b47958b733a17ba36f9d51e4dabd8da",
+      "bytes": 2947
+    },
+    {
+      "path": "tests/test_integration.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "81efcae6d8150d9c0896f98da3df4d4aee50768f",
+      "bytes": 2969
+    },
+    {
+      "path": "tests/test_integration_examples.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "fac718dc532be4c99198d7b8d94702bf142b6870",
+      "bytes": 5144
+    },
+    {
+      "path": "tests/test_interceptor_rules.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "56dc82718606dcc8d26af5c551f9a9028e5f75e2",
+      "bytes": 4175
+    },
+    {
+      "path": "tests/test_interceptors.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "40fba90bdccc7fea085ca5231c47a925874a4535",
+      "bytes": 8317
+    },
+    {
+      "path": "tests/test_interceptors_redirection.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "161e125a3ade737f401351e218a96220594e67be",
+      "bytes": 5183
+    },
+    {
+      "path": "tests/test_java_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "1f1d3a6bbce5e79a32e723a198b66405301e1cf2",
+      "bytes": 23035
+    },
+    {
+      "path": "tests/test_java_output_parsing_matrix.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "db0dbccfa6b1c10350de9287081114dac87809d4",
+      "bytes": 2890
+    },
+    {
+      "path": "tests/test_javascript_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0906526b616a6041439d7f88958b1a7e400219b2",
+      "bytes": 16021
+    },
+    {
+      "path": "tests/test_key_rotation.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "62f3332fa9899bcd9415853018c179b97e4b9c1a",
+      "bytes": 9643
+    },
+    {
+      "path": "tests/test_kotlin_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "462e062a8eabef487c87e303a95ada666405bc83",
+      "bytes": 6665
+    },
+    {
+      "path": "tests/test_languages.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "35a95fd6aefca77e0c06b25a707e53b801a52904",
+      "bytes": 15600
+    },
+    {
+      "path": "tests/test_learning_defense.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b566fce0bc0f25d337ebc9433d12715b1fb53e02",
+      "bytes": 28063
+    },
+    {
+      "path": "tests/test_make_demo_video.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "c82bd57d993a207aa250abc6a5f179a41c1d5d05",
+      "bytes": 3537
+    },
+    {
+      "path": "tests/test_mtls_e2e.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9e214a9b63053ea3c0aaec6a8d32c71a52b7db26",
+      "bytes": 4276
+    },
+    {
+      "path": "tests/test_php_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ebabf66b4604bb275187a68058c58a05b3952120",
+      "bytes": 7774
+    },
+    {
+      "path": "tests/test_plugin_validators.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6eef79ad58d1370d4edc8f6c9423969a6301e76a",
+      "bytes": 3543
+    },
+    {
+      "path": "tests/test_plugin_verify.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4ae4bea92086b3f216068841b32a141cdb991d92",
+      "bytes": 13086
+    },
+    {
+      "path": "tests/test_proxy_audit.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "6b1544a3e7570697e7256518b45efed02e76a4d1",
+      "bytes": 8090
+    },
+    {
+      "path": "tests/test_red_team_agent.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "5c69815d317c53c3dea6467c2db437cf78105c41",
+      "bytes": 13579
+    },
+    {
+      "path": "tests/test_red_team_residuals.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "92271a2c66839260630f22d37eb3a68f561fb7c7",
+      "bytes": 7313
+    },
+    {
+      "path": "tests/test_red_team_techniques.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "969f0a1975b589d75b7dc7adac8b14c37e401b3f",
+      "bytes": 17679
+    },
+    {
+      "path": "tests/test_remote_audit.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "caa21ca9a6e3fe3a045c281ccb4c944bb4a1b716",
+      "bytes": 16934
+    },
+    {
+      "path": "tests/test_repo_hygiene.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "85b87ac9fd6cdc5a416370e141832603f32792ad",
+      "bytes": 3073
+    },
+    {
+      "path": "tests/test_ruby_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "37150a85288a88c4443bf318db3f1f327570e466",
+      "bytes": 6282
+    },
+    {
+      "path": "tests/test_run_status.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4695f52ca8b268199a4382041d0905d28a937f25",
+      "bytes": 3617
+    },
+    {
+      "path": "tests/test_rust_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "07bcc2c5fefde7b930bf5ae03d481250c3b88b5c",
+      "bytes": 8760
+    },
+    {
+      "path": "tests/test_scala_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ddf566523db86ea726e1169f34baf3c6016adf19",
+      "bytes": 7865
+    },
+    {
+      "path": "tests/test_scale100_analysis.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "f92bc38c61e2f8bffdb64fe06fbddca3a49d2e51",
+      "bytes": 3126
+    },
+    {
+      "path": "tests/test_scale100_observer.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "67835aa29324c7a16cadc0a5c1fa171721724d54",
+      "bytes": 3140
+    },
+    {
+      "path": "tests/test_scale100_oci.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0afb8e7513e49dd1f197fa005d7ebfd7c5dc2c85",
+      "bytes": 1606
+    },
+    {
+      "path": "tests/test_scale100_runtime.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "16664a9201076b56b7b46603aeb5ea4fe575ec03",
+      "bytes": 4535
+    },
+    {
+      "path": "tests/test_sdk.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "58120ed06f336d97766762faf36f28c8ef6016ca",
+      "bytes": 27807
+    },
+    {
+      "path": "tests/test_semantic.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3183bd593d298faa09bca938837d6ce9be2c9628",
+      "bytes": 32065
+    },
+    {
+      "path": "tests/test_semantic_depth.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "4d773773a170292104b02a0f870cbfd1822f4731",
+      "bytes": 14680
+    },
+    {
+      "path": "tests/test_semantic_naming.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "8b498065a591237ceede18fb364ade36580b4ada",
+      "bytes": 7386
+    },
+    {
+      "path": "tests/test_semantic_trace.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "d0f331c9b54f8184da326738ace1724e2e754255",
+      "bytes": 14039
+    },
+    {
+      "path": "tests/test_sidecar.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9428a8461bdade1f82baedb41c92f8e0eb1cb23b",
+      "bytes": 7394
+    },
+    {
+      "path": "tests/test_sidecar_audit_api.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "18e4c52de790fe1e903b4cbb706fbe9f8c85aead",
+      "bytes": 10867
+    },
+    {
+      "path": "tests/test_sidecar_proxy.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "dae312af43ca1eb46dacc922ee7d036f2cca3d1d",
+      "bytes": 14114
+    },
+    {
+      "path": "tests/test_sidecar_v21.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "851a77972c7cccff111076fee0c843b0caba6f1d",
+      "bytes": 8386
+    },
+    {
+      "path": "tests/test_skill.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7bafaf82c423d9b1562f4123158e94b56de0e922",
+      "bytes": 11037
+    },
+    {
+      "path": "tests/test_stage2_scope.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "20f1bfcf3ac510cbd132f6c3e6feeb2ea250bc9f",
+      "bytes": 9126
+    },
+    {
+      "path": "tests/test_state.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "0516178b5b3fd4ff1af699bdf1d031b14bdd3ddb",
+      "bytes": 1976
+    },
+    {
+      "path": "tests/test_state_concurrency.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "bf85b8057e86df7b6c6dc22f4936e34301bf885a",
+      "bytes": 4486
+    },
+    {
+      "path": "tests/test_state_signing.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e6b8a9e9ac01d69b7c11188759b32d532740a38c",
+      "bytes": 3685
+    },
+    {
+      "path": "tests/test_subprocess_locale_hygiene.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e86a2e8fd8fea605e3e9c6b642e2268cf38c2e71",
+      "bytes": 3502
+    },
+    {
+      "path": "tests/test_swe_agent_audit.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ba7b61eafd5fe20bfcaa203dbc0c60b800abcfa0",
+      "bytes": 3268
+    },
+    {
+      "path": "tests/test_swe_bench_gate.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "444a0dddb95b719b0b9354339301b50fadfec132",
+      "bytes": 3049
+    },
+    {
+      "path": "tests/test_swe_scripts.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "75e9a80d96956d544a4593a27946c7bab5734e2e",
+      "bytes": 18320
+    },
+    {
+      "path": "tests/test_swebench_analysis.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7d28a0b2066774d907855904a2a1ea7dd855c883",
+      "bytes": 5993
+    },
+    {
+      "path": "tests/test_swebench_harness.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "b073ecb22db334d5eaf49f2015df0324cd3ecd75",
+      "bytes": 23494
+    },
+    {
+      "path": "tests/test_swebench_runner.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "70bdd8352e9765570dd79770ab2433e192402bbe",
+      "bytes": 5726
+    },
+    {
+      "path": "tests/test_swift_adapter.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ea9fa3a320337f30240981406858577b49c30c5b",
+      "bytes": 13729
+    },
+    {
+      "path": "tests/test_test_preservation.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "7ea54f163f58b5b07820c3e6c76a154a639e47f0",
+      "bytes": 10848
+    },
+    {
+      "path": "tests/test_v0130_edge_cases.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "3376b924c96063c2cc89a6b8a1e84cd66609596a",
+      "bytes": 9704
+    },
+    {
+      "path": "tests/test_v0140_edge_cases.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "03e4ceb603b5bfd417fce258692c667fb57989b6",
+      "bytes": 7896
+    },
+    {
+      "path": "tests/test_v0160_edge_cases.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "142931fed3a57b990133a7967d54fe9302bda9b6",
+      "bytes": 12291
+    },
+    {
+      "path": "tests/test_validators.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "9915545d8a1677f43af0e62f9889666307be3b19",
+      "bytes": 9175
+    },
+    {
+      "path": "tests/test_verified20_checks.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "64771d808977b6244f3678b1d0760fee9cc8d43f",
+      "bytes": 1642
+    },
+    {
+      "path": "tests/test_verified20_recovery.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "eaedcbeb685e96e3e8de8c13b02819159fafcdf3",
+      "bytes": 12739
+    },
+    {
+      "path": "tests/test_verified20_report.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cf6bcb6991cb0801d412981e92c08db9c4460396",
+      "bytes": 9378
+    },
+    {
+      "path": "tests/test_verified20_runtime.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e43428c64d0addc2c5f8a8390ad5b7f7f0ad3ebf",
+      "bytes": 4229
+    },
+    {
+      "path": "tests/test_verify_plugins_index.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "e3646e4c15b64d74d5c333746249686e56cdbabc",
+      "bytes": 14811
+    },
+    {
+      "path": "tests/test_workflows.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "cf66584c75231a36e740b5ad847d237d1c17775a",
+      "bytes": 7895
+    },
+    {
+      "path": "tests/test_write_audit.py",
+      "mode": "100644",
+      "type": "blob",
+      "oid": "ab0e530ee7fa55068e0c5296dbdbc235de524bc1",
+      "bytes": 5358
+    }
+  ]
+}

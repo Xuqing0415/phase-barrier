@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "kind": "documentation_commit_ci_archive_not_experiment_acceptance",
+  "checked_at": "2026-11-26T04:49:20.8622277+00:00",
+  "commit": "f98977911c340ea887059bd8cf9da2ec10ddf162",
+  "scope": "Confirms the halted-state review documentation commit passed its workflows; does not authorize recovery or establish experiment completion.",
+  "runs": [
+    {
+      "conclusion": "success",
+      "createdAt": "2026-11-26T04:17:00Z",
+      "databaseId": 45754214763,
+      "headSha": "f98977911c340ea887059bd8cf9da2ec10ddf162",
+      "name": "CI",
+      "status": "completed",
+      "updatedAt": "2026-11-26T04:25:43Z",
+      "url": "https://github.com/Xuqing0415/phase-barrier/actions/runs/45754214763"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-11-26T04:17:00Z",
+      "databaseId": 45754214829,
+      "headSha": "f98977911c340ea887059bd8cf9da2ec10ddf162",
+      "name": "docs",
+      "status": "completed",
+      "updatedAt": "2026-11-26T04:17:29Z",
+      "url": "https://github.com/Xuqing0415/phase-barrier/actions/runs/45754214829"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-11-26T04:17:00Z",
+      "databaseId": 45754215032,
+      "headSha": "f98977911c340ea887059bd8cf9da2ec10ddf162",
+      "name": "Security",
+      "status": "completed",
+      "updatedAt": "2026-11-26T04:17:34Z",
+      "url": "https://github.com/Xuqing0415/phase-barrier/actions/runs/45754215032"
+    },
+    {
+      "conclusion": "success",
+      "createdAt": "2026-11-26T04:17:00Z",
+      "databaseId": 45754214727,
+      "headSha": "f98977911c340ea887059bd8cf9da2ec10ddf162",
+      "name": "Plugin CI",
+      "status": "completed",
+      "updatedAt": "2026-11-26T04:17:22Z",
+      "url": "https://github.com/Xuqing0415/phase-barrier/actions/runs/45754214727"
+    }
+  ]
+}

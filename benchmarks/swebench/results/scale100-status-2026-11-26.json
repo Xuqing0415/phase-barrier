@@ -1,0 +1,69 @@
+{
+  "kind": "halted_monitoring_checkpoint_not_final_results",
+  "checked_at": "2026-11-26T04:13:55.974959+00:00",
+  "state": "halted",
+  "halt_reason": "grade_infra_failure",
+  "halt_observed_at": "2026-11-14T15:29:43.269812+00:00",
+  "planned_jobs": 200,
+  "csv_rows": 99,
+  "unique_csv_keys": 99,
+  "officially_graded_jobs": 98,
+  "completed_pairs": 49,
+  "remaining_official_grades": 102,
+  "remaining_complete_pairs": 51,
+  "failed_grading_records": 1,
+  "results_without_csv_row": 101,
+  "test_preservation_intercepts": 1,
+  "processes": [
+    {
+      "role": "runner",
+      "recorded_pid": 22604,
+      "alive_at_check": false
+    },
+    {
+      "role": "supervisor",
+      "recorded_pid": 19452,
+      "alive_at_check": false
+    },
+    {
+      "role": "observer",
+      "recorded_pid": 27184,
+      "alive_at_check": false
+    }
+  ],
+  "frozen_files_checked": 70,
+  "frozen_source_hashes_match": true,
+  "controller_files_checked": 6,
+  "controller_hashes_match": true,
+  "last_hourly_review_at": "2026-11-14T15:30:07.543482+00:00",
+  "next_review_at": null,
+  "new_supervisor_error_or_fallback_found": false,
+  "completion_verification_exists": false,
+  "failed_task": {
+    "instance_id": "pylint-dev__pylint-4661",
+    "mode": "gated",
+    "note": "graded grade_infra_failure grade_exit_3",
+    "resolved_assigned": false,
+    "patch_and_stats_saved": true,
+    "official_report_exists": false,
+    "observed_error": "Patch Apply Failed; harness_returned_none; grade_exit_3",
+    "cause_status": "Observed patch application failure; underlying cause not established."
+  },
+  "resume1_elapsed_until_halt_seconds": 14414.246895,
+  "resume1_elapsed_scope": "Calendar interval of the recovery attempt; not Agent cost or total compute cost.",
+  "actions_this_review": {
+    "restart": false,
+    "manual_experiment_intervention": false,
+    "run_root_writes": false,
+    "completion_verification": false,
+    "statistics": false,
+    "release": false
+  },
+  "release_blocked_by": [
+    "Incomplete official grading and pairs",
+    "Failed grading and interrupted baseline require evidence review",
+    "Full evidence verification",
+    "Anomaly and interruption cost review",
+    "Preregistered statistics and final report"
+  ]
+}
